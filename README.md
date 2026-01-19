@@ -13,10 +13,12 @@ A castbar addon for World of Warcraft: The Burning Crusade Classic.
 - Five Second Rule tracker (mana regeneration)
 - Swing timers (melee and ranged)
 - DoT tracker
-- Multi-DoT tracker (track DoTs on multiple targets)
+- Multi-DoT tracker (track DoTs on multiple targets)*
 - Cooldown tracker
 - Proc tracker
 - Interrupt tracker
+
+*\*Experimental - may have issues*
 
 ## Installation
 
