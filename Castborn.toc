@@ -1,0 +1,32 @@
+## Interface: 20504
+## Title: Castborn
+## Notes: Castbar addon with DoT tracking, swing timers, and more
+## Author: Lightborn
+## Version: 2.0.0
+## SavedVariables: CastbornDB
+## OptionalDeps: Masque
+## IconTexture: Interface\Icons\Spell_Arcane_Arcane04
+
+Core.lua
+
+Systems/Anchoring.lua
+Systems/Profiles.lua
+Systems/ClassDefaults.lua
+Systems/GridPosition.lua
+Systems/Masque.lua
+
+Data/SpellData.lua
+
+Modules/CastBars.lua
+Modules/GCDIndicator.lua
+Modules/FiveSecondRule.lua
+Modules/SwingTimer.lua
+Modules/DoTTracker.lua
+Modules/MultiDoTTracker.lua
+Modules/ProcTracker.lua
+Modules/CooldownTracker.lua
+Modules/InterruptTracker.lua
+
+Systems/Options.lua
+Systems/Config.lua
+Systems/Tutorial.lua
