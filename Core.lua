@@ -555,9 +555,22 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         if CB.InitOptions then CB:InitOptions() end
 
         -- Fire READY callback after a short delay to ensure all modules loaded
-        C_Timer.After(0.1, function()
-            CB:FireCallback("READY")
-        end)
+        if C_Timer and C_Timer.After then
+            C_Timer.After(0.1, function()
+                CB:FireCallback("READY")
+            end)
+        else
+            -- TBC fallback using OnUpdate
+            local readyFrame = CreateFrame("Frame")
+            local elapsed = 0
+            readyFrame:SetScript("OnUpdate", function(self, delta)
+                elapsed = elapsed + delta
+                if elapsed >= 0.1 then
+                    self:SetScript("OnUpdate", nil)
+                    CB:FireCallback("READY")
+                end
+            end)
+        end
     end
 end)
 

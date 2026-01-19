@@ -161,8 +161,9 @@ function CB:InitSwingTimers()
     local playerGUID = UnitGUID("player")
     local autoShotting = false
     
-    eventFrame:SetScript("OnEvent", function(self, event, timestamp, subevent, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellId, spellName, ...)
+    eventFrame:SetScript("OnEvent", function(self, event, ...)
         if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+            local timestamp, subevent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName = CombatLogGetCurrentEventInfo()
             if sourceGUID ~= playerGUID then return end
 
             if subevent == "SWING_DAMAGE" or subevent == "SWING_MISSED" then

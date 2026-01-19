@@ -99,7 +99,9 @@ local function CreateContainer()
     return frame
 end
 
-local function OnCombatLogEvent(self, event, timestamp, subEvent, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellId, spellName)
+local function OnCombatLogEvent(self, event, ...)
+    local timestamp, subEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName, spellSchool = CombatLogGetCurrentEventInfo()
+
     if sourceGUID ~= UnitGUID("player") then return end
 
     local dotInfo = Castborn.SpellData and Castborn.SpellData:GetDoTInfo(spellId)
@@ -226,7 +228,7 @@ local function UpdateDisplay()
         targetCount = targetCount + 1
     end
 
-    if targetCount < 2 then
+    if targetCount == 0 then
         frame:Hide()
         return
     end
