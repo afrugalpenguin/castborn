@@ -169,22 +169,26 @@ end
 
 local function GetSortedTargets()
     local sorted = {}
+    local currentTargetGUID = UnitGUID("target")
 
     for guid, data in pairs(trackedTargets) do
-        local minRemaining = 999
-        for spellId, dot in pairs(data.dots) do
-            local remaining = dot.expirationTime - GetTime()
-            if remaining < minRemaining then
-                minRemaining = remaining
+        -- Skip current target - that's what the regular DoT tracker is for
+        if guid ~= currentTargetGUID then
+            local minRemaining = 999
+            for spellId, dot in pairs(data.dots) do
+                local remaining = dot.expirationTime - GetTime()
+                if remaining < minRemaining then
+                    minRemaining = remaining
+                end
             end
-        end
 
-        table.insert(sorted, {
-            guid = guid,
-            name = data.name,
-            dots = data.dots,
-            urgency = minRemaining,
-        })
+            table.insert(sorted, {
+                guid = guid,
+                name = data.name,
+                dots = data.dots,
+                urgency = minRemaining,
+            })
+        end
     end
 
     table.sort(sorted, function(a, b)
@@ -222,21 +226,16 @@ local function UpdateDisplay()
         end
     end
 
-    local targetCount = 0
-    for _ in pairs(trackedTargets) do
-        targetCount = targetCount + 1
-    end
+    ScanTargetDebuffs()
 
-    if targetCount == 0 then
+    local sorted = GetSortedTargets()
+
+    if #sorted == 0 then
         frame:Hide()
         return
     end
 
     frame:Show()
-
-    ScanTargetDebuffs()
-
-    local sorted = GetSortedTargets()
 
     for i = 1, MAX_TARGETS do
         local row = targetFrames[i]
