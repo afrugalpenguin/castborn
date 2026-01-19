@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.0
+## v2.0.0
 
 ### Features
 - Player, target, focus, and target-of-target castbars
