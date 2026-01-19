@@ -1,6 +1,6 @@
 # Castborn
 
-<p align="center">
+<p>
   <img src="images/logo.png" width="200">
 </p>
 
