@@ -9,7 +9,7 @@ local MAX_TARGETS = 5
 local defaults = {
     enabled = true,
     displayMode = "panel",
-    width = 180,
+    width = 220,
     rowHeight = 20,
     point = "CENTER",
     x = 580,
@@ -32,17 +32,11 @@ local function CreateTargetRow(parent, index)
     row.bg:SetAllPoints()
     row.bg:SetColorTexture(0.1, 0.1, 0.1, 0.7)
 
-    row.name = row:CreateFontString(nil, "OVERLAY")
-    row.name:SetFont("Fonts\\ARIALN.TTF", 9, "OUTLINE")
-    row.name:SetPoint("LEFT", 4, 0)
-    row.name:SetWidth(60)
-    row.name:SetJustifyH("LEFT")
-
     row.dots = {}
     for i = 1, 6 do
         local dot = CreateFrame("Frame", nil, row)
         dot:SetSize(db.rowHeight - 4, db.rowHeight - 4)
-        dot:SetPoint("LEFT", row, "LEFT", 65 + (i - 1) * (db.rowHeight - 2), 0)
+        dot:SetPoint("LEFT", row, "LEFT", 5 + (i - 1) * (db.rowHeight - 2), 0)
 
         dot.icon = dot:CreateTexture(nil, "ARTWORK")
         dot.icon:SetAllPoints()
@@ -55,6 +49,11 @@ local function CreateTargetRow(parent, index)
         dot:Hide()
         row.dots[i] = dot
     end
+
+    row.name = row:CreateFontString(nil, "OVERLAY")
+    row.name:SetFont("Fonts\\ARIALN.TTF", 9, "OUTLINE")
+    row.name:SetPoint("LEFT", row, "LEFT", 5 + 6 * (db.rowHeight - 2), 0)
+    row.name:SetJustifyH("LEFT")
 
     row.urgency = row:CreateTexture(nil, "OVERLAY")
     row.urgency:SetSize(3, db.rowHeight)
@@ -244,8 +243,7 @@ local function UpdateDisplay()
         local target = sorted[i]
 
         if target then
-            local displayName = string.sub(target.name or "Unknown", 1, 8)
-            row.name:SetText(displayName)
+            row.name:SetText(target.name or "Unknown")
 
             row.urgency:SetColorTexture(GetUrgencyColor(target.urgency))
 
@@ -272,6 +270,12 @@ local function UpdateDisplay()
             for j = dotIndex, 6 do
                 row.dots[j]:Hide()
             end
+
+            -- Position name after the visible dots
+            local db = CastbornDB.multidot
+            local numDots = dotIndex - 1
+            row.name:ClearAllPoints()
+            row.name:SetPoint("LEFT", row, "LEFT", 5 + numDots * (db.rowHeight - 2) + 2, 0)
 
             row:Show()
         else
