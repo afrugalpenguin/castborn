@@ -1,0 +1,10 @@
+package-as: Castborn
+
+ignore:
+  - images
+  - README.md
+  - CHANGELOG.md
+  - .gitignore
+  - .pkgmeta
+  - "*.svg"
+  - "*.png"
