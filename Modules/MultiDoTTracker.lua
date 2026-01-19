@@ -26,7 +26,7 @@ local function CreateTargetRow(parent, index)
     local db = CastbornDB.multidot
 
     local row = CreateFrame("Frame", "Castborn_MultiDoT_Row" .. index, parent)
-    row:SetSize(db.width, db.rowHeight)
+    row:SetSize(db.width - 4, db.rowHeight)
 
     row.bg = row:CreateTexture(nil, "BACKGROUND")
     row.bg:SetAllPoints()

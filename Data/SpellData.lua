@@ -97,6 +97,21 @@ SpellData.dots = {
     [28271] = { name = "Polymorph: Turtle", school = 64, duration = 50 },
     [28272] = { name = "Polymorph: Pig", school = 64, duration = 50 },
 
+    -- Mage - Frostbolt (chill effect, all ranks)
+    [116] = { name = "Frostbolt", school = 16, duration = 9 },
+    [205] = { name = "Frostbolt", school = 16, duration = 9 },
+    [837] = { name = "Frostbolt", school = 16, duration = 9 },
+    [7322] = { name = "Frostbolt", school = 16, duration = 9 },
+    [8406] = { name = "Frostbolt", school = 16, duration = 9 },
+    [8407] = { name = "Frostbolt", school = 16, duration = 9 },
+    [8408] = { name = "Frostbolt", school = 16, duration = 9 },
+    [10179] = { name = "Frostbolt", school = 16, duration = 9 },
+    [10180] = { name = "Frostbolt", school = 16, duration = 9 },
+    [10181] = { name = "Frostbolt", school = 16, duration = 9 },
+    [25304] = { name = "Frostbolt", school = 16, duration = 9 },
+    [27071] = { name = "Frostbolt", school = 16, duration = 9 },     -- TBC Rank 12
+    [27072] = { name = "Frostbolt", school = 16, duration = 9 },     -- TBC Rank 13
+
     -- Mage - Other debuffs
     [12654] = { name = "Ignite", school = 4, duration = 4 },        -- Fire talent
     [22959] = { name = "Fire Vulnerability", school = 4, duration = 30 }, -- Improved Scorch
