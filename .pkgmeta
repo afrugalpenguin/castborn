@@ -6,5 +6,6 @@ ignore:
   - CHANGELOG.md
   - .gitignore
   - .pkgmeta
+  - .github
   - "*.svg"
   - "*.png"

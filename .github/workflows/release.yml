@@ -1,0 +1,27 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create addon zip
+        run: |
+          mkdir -p Castborn
+          cp -r Core.lua Systems/ Modules/ Data/ Castborn.toc Castborn/
+          zip -r Castborn-${{ github.ref_name }}.zip Castborn
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: Castborn-${{ github.ref_name }}.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
