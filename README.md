@@ -1,5 +1,9 @@
 # Castborn
 
+<p align="center">
+  <img src="images/logo.png" width="200">
+</p>
+
 A castbar addon for World of Warcraft: The Burning Crusade Classic.
 
 ## Screenshots
