@@ -2,6 +2,10 @@
 
 A castbar addon for World of Warcraft: The Burning Crusade Classic.
 
+## Screenshots
+
+<img src="images/combat.png" width="250"> <img src="images/testmode.png" width="250"> <img src="images/options.png" width="250">
+
 ## Features
 
 - Player, target, focus, and target-of-target castbars
