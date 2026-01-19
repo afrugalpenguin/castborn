@@ -103,9 +103,7 @@ local function CreateLockoutDisplay()
     return lockoutFrame
 end
 
-local function OnCombatLogEvent()
-    local _, subEvent, _, sourceGUID, _, _, _, destGUID, _, _, _, spellId, _, _, extraSchool = CombatLogGetCurrentEventInfo()
-
+local function OnCombatLogEvent(self, event, timestamp, subEvent, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellId, spellName, spellSchool, extraSpellId, extraSpellName, extraSchool)
     if sourceGUID ~= UnitGUID("player") then return end
 
     if subEvent == "SPELL_INTERRUPT" then

@@ -161,11 +161,10 @@ function CB:InitSwingTimers()
     local playerGUID = UnitGUID("player")
     local autoShotting = false
     
-    eventFrame:SetScript("OnEvent", function(self, event, ...)
+    eventFrame:SetScript("OnEvent", function(self, event, timestamp, subevent, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellId, spellName, ...)
         if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-            local timestamp, subevent, _, sourceGUID = CombatLogGetCurrentEventInfo()
             if sourceGUID ~= playerGUID then return end
-            
+
             if subevent == "SWING_DAMAGE" or subevent == "SWING_MISSED" then
                 StartSwing("mainhand")
                 local _, offSpeed = GetWeaponSpeeds()
@@ -173,7 +172,6 @@ function CB:InitSwingTimers()
             elseif subevent == "RANGE_DAMAGE" or subevent == "RANGE_MISSED" then
                 if autoShotting then StartSwing("ranged") end
             elseif subevent == "SPELL_DAMAGE" or subevent == "SPELL_MISSED" then
-                local spellId, spellName = select(12, CombatLogGetCurrentEventInfo())
                 if swingResetSpells[spellName] then ResetSwing("mainhand") end
             end
         elseif event == "PLAYER_ENTER_COMBAT" then

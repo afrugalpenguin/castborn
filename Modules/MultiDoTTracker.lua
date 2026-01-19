@@ -99,9 +99,7 @@ local function CreateContainer()
     return frame
 end
 
-local function OnCombatLogEvent()
-    local _, subEvent, _, sourceGUID, _, _, _, destGUID, destName, _, _, spellId = CombatLogGetCurrentEventInfo()
-
+local function OnCombatLogEvent(self, event, timestamp, subEvent, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellId, spellName)
     if sourceGUID ~= UnitGUID("player") then return end
 
     local dotInfo = Castborn.SpellData and Castborn.SpellData:GetDoTInfo(spellId)
