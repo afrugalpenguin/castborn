@@ -240,6 +240,13 @@ SpellData.cooldowns = {
         { spellId = 2894, name = "Fire Elemental Totem" },
         { spellId = 2062, name = "Earth Elemental Totem" },
     },
+    HUNTER = {
+        { spellId = 19574, name = "Bestial Wrath" },
+        { spellId = 23989, name = "Readiness" },
+        { spellId = 19263, name = "Deterrence" },
+        { spellId = 3045, name = "Rapid Fire" },
+        { spellId = 34490, name = "Silencing Shot" },
+    },
 }
 
 function SpellData:GetClassCooldowns(class)
