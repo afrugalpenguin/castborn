@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.4.1
+
+### Fixes
+- Updated Interface version for TBC Anniversary (2.5.5)
+
 ## v2.4.0
 
 ### Changes

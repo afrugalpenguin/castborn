@@ -1,4 +1,4 @@
-## Interface: 20504
+## Interface: 20505
 ## Title: Castborn
 ## Notes: Castbar addon with DoT tracking, swing timers, and more
 ## Author: Lightborn
