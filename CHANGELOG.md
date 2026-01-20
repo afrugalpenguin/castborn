@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.5.0
+
+### Features
+- Added default cooldown tracking for Mage, Priest, Warlock, and Paladin
+- Cooldown tracker now automatically shows class-relevant abilities (Cold Snap, Icy Veins, etc.)
+
 ## v2.4.2
 
 ### Changes

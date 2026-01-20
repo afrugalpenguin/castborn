@@ -214,6 +214,15 @@ Castborn:RegisterCallback("INIT", function()
 end)
 
 Castborn:RegisterCallback("READY", function()
+    -- Load class defaults if no spells are tracked
+    local db = CastbornDB.cooldowns
+    if not db.trackedSpells or #db.trackedSpells == 0 then
+        local _, class = UnitClass("player")
+        if class and Castborn.SpellData then
+            db.trackedSpells = Castborn.SpellData:GetClassCooldowns(class)
+        end
+    end
+
     CreateContainer()
     UpdateLayout()
 
