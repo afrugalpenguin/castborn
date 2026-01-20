@@ -474,12 +474,10 @@ function Options:BuildCastbars(parent)
 
     CastbornDB.player = CastbornDB.player or {}
 
-    local cb1 = CreateCheckbox(parent, "Enabled", CastbornDB.player, "enabled")
-    cb1:SetPoint("TOPLEFT", 0, y)
     local cb2 = CreateCheckbox(parent, "Show Icon", CastbornDB.player, "showIcon")
-    cb2:SetPoint("TOPLEFT", 150, y)
+    cb2:SetPoint("TOPLEFT", 0, y)
     local cb3 = CreateCheckbox(parent, "Show Time", CastbornDB.player, "showTime")
-    cb3:SetPoint("TOPLEFT", 280, y)
+    cb3:SetPoint("TOPLEFT", 150, y)
     y = y - 26
 
     local cb4 = CreateCheckbox(parent, "Show Spell Name", CastbornDB.player, "showSpellName")
@@ -524,27 +522,11 @@ function Options:BuildCastbars(parent)
 
     CastbornDB.target = CastbornDB.target or {}
 
-    local tcb1 = CreateCheckbox(parent, "Enabled", CastbornDB.target, "enabled")
-    tcb1:SetPoint("TOPLEFT", 0, y)
     local tcb2 = CreateCheckbox(parent, "Show Icon", CastbornDB.target, "showIcon")
-    tcb2:SetPoint("TOPLEFT", 150, y)
+    tcb2:SetPoint("TOPLEFT", 0, y)
     local tcb3 = CreateCheckbox(parent, "Show Time", CastbornDB.target, "showTime")
-    tcb3:SetPoint("TOPLEFT", 280, y)
+    tcb3:SetPoint("TOPLEFT", 150, y)
     y = y - 40
-
-    -- Other castbars
-    local header3 = CreateHeader(parent, "Other Castbars")
-    header3:SetPoint("TOPLEFT", 0, y)
-    header3:SetPoint("TOPRIGHT", 0, y)
-    y = y - 30
-
-    CastbornDB.focus = CastbornDB.focus or {}
-    CastbornDB.targettarget = CastbornDB.targettarget or {}
-
-    local fcb = CreateCheckbox(parent, "Focus Castbar", CastbornDB.focus, "enabled")
-    fcb:SetPoint("TOPLEFT", 0, y)
-    local totcb = CreateCheckbox(parent, "Target of Target", CastbornDB.targettarget, "enabled")
-    totcb:SetPoint("TOPLEFT", 150, y)
 end
 
 function Options:BuildLookFeel(parent)
@@ -636,13 +618,6 @@ function Options:BuildModule(parent, key)
 
     CastbornDB[key] = CastbornDB[key] or {}
     local db = CastbornDB[key]
-
-    -- Enabled checkbox
-    local enabledCB = CreateCheckbox(parent, "Enabled", db, "enabled", function()
-        Castborn:FireCallback("SETTINGS_CHANGED")
-    end)
-    enabledCB:SetPoint("TOPLEFT", 0, y)
-    y = y - 30
 
     -- Width/Height sliders for applicable modules
     if key == "gcd" or key == "fsr" or key == "dots" or key == "swing" then
@@ -912,7 +887,7 @@ local function CreateInterfacePanel()
 
     local version = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
-    version:SetText("Version 2.3.1")
+    version:SetText("Version 2.4.0")
 
     local desc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     desc:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -12)

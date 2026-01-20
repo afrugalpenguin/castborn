@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.4.0
+
+### Changes
+- Removed duplicate "Enabled" checkboxes from individual module settings
+- Module enable/disable toggles now only on General screen to avoid confusion
+
 ## v2.3.1
 
 ### Fixes
