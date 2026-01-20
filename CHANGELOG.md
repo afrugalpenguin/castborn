@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.6.1
+
+### Features
+- Added Ice Barrier to Mage default cooldowns
+
 ## v2.6.0
 
 ### Features
