@@ -239,6 +239,7 @@ local function ScanProcs()
 
         if proc then
             procFrame.icon:SetTexture(proc.icon)
+            procFrame.expirationTime = proc.expirationTime
 
             if db.showDuration and proc.expirationTime and proc.expirationTime > 0 then
                 local remaining = proc.expirationTime - GetTime()
@@ -249,6 +250,7 @@ local function ScanProcs()
                 end
             else
                 procFrame.duration:SetText("")
+                procFrame.expirationTime = nil
             end
 
             if db.showStacks and proc.stacks and proc.stacks > 1 then
@@ -264,6 +266,7 @@ local function ScanProcs()
             procFrame:Show()
         else
             procFrame:Hide()
+            procFrame.expirationTime = nil
         end
     end
 end
@@ -289,6 +292,29 @@ Castborn:RegisterCallback("READY", function()
     eventFrame:SetScript("OnEvent", function(self, event, unit)
         if unit == "player" then
             ScanProcs()
+        end
+    end)
+
+    -- OnUpdate for smooth duration countdown
+    local elapsed = 0
+    frame:SetScript("OnUpdate", function(self, delta)
+        elapsed = elapsed + delta
+        if elapsed >= 0.1 then
+            elapsed = 0
+            local db = CastbornDB.procs
+            if not db.showDuration then return end
+
+            for i = 1, MAX_PROCS do
+                local procFrame = procFrames[i]
+                if procFrame:IsShown() and procFrame.expirationTime then
+                    local remaining = procFrame.expirationTime - GetTime()
+                    if remaining > 0 then
+                        procFrame.duration:SetText(string.format("%.1f", remaining))
+                    else
+                        procFrame.duration:SetText("")
+                    end
+                end
+            end
         end
     end)
 
