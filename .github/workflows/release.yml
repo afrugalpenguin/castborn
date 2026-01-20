@@ -21,6 +21,8 @@ jobs:
           rm -rf Castborn castborn
           mkdir Castborn
           cp -r Core.lua Systems/ Modules/ Data/ Castborn.toc CHANGELOG.md Castborn/
+          # Replace version placeholder with tag
+          sed -i "s/@project-version@/${{ github.ref_name }}/g" Castborn/Castborn.toc
           # Use -r to recurse and preserve folder name exactly
           zip -r "Castborn-${{ github.ref_name }}.zip" Castborn/
 
