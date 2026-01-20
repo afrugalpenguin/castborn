@@ -214,12 +214,13 @@ Castborn:RegisterCallback("INIT", function()
 end)
 
 Castborn:RegisterCallback("READY", function()
-    -- Load class defaults if no spells are tracked
+    -- Load class defaults if no spells tracked or upgrading from pre-2.5.0
     local db = CastbornDB.cooldowns
-    if not db.trackedSpells or #db.trackedSpells == 0 then
+    if not db.trackedSpells or #db.trackedSpells == 0 or not db.defaultsLoaded then
         local _, class = UnitClass("player")
         if class and Castborn.SpellData then
             db.trackedSpells = Castborn.SpellData:GetClassCooldowns(class)
+            db.defaultsLoaded = "2.5.0"
         end
     end
 

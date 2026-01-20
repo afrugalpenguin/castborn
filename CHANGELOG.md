@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.5.1
+
+### Fixes
+- Added Ice Block to Mage default cooldowns
+- Fixed upgrade migration so existing users get new default cooldowns
+
 ## v2.5.0
 
 ### Features
