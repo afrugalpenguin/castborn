@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.6.8
+
+### Fixes
+- Added all ranks of Druid DoTs (Moonfire, Insect Swarm, Rake, Rip)
+
 ## v2.6.7
 
 ### Fixes
