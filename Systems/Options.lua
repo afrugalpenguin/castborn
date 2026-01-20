@@ -470,6 +470,16 @@ function Options:BuildCastbars(parent)
     cb4:SetPoint("TOPLEFT", 0, y)
     local cb5 = CreateCheckbox(parent, "Show Latency", CastbornDB.player, "showLatency")
     cb5:SetPoint("TOPLEFT", 150, y)
+    y = y - 26
+
+    local cb6 = CreateCheckbox(parent, "Hide Blizzard Castbar", CastbornDB.player, "hideBlizzardCastBar", function(checked)
+        if checked then
+            Castborn:HideBlizzardCastBar()
+        else
+            Castborn:ShowBlizzardCastBar()
+        end
+    end)
+    cb6:SetPoint("TOPLEFT", 0, y)
     y = y - 36
 
     local slider1 = CreateSlider(parent, "Width", CastbornDB.player, "width", 100, 400, 10, function(v)
@@ -869,7 +879,7 @@ local function CreateInterfacePanel()
 
     local version = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
-    version:SetText("Version 2.1.0")
+    version:SetText("Version 2.2.0")
 
     local desc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     desc:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -12)

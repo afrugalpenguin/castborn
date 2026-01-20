@@ -358,9 +358,9 @@ function CB:InitCastBars()
     CB.castbars.targettarget = CreateCastBar("targettarget", "targettarget")
     CB.castbars.focus = CreateCastBar("focus", "focus")
 
-    -- Hide the default Blizzard castbar when player castbar is enabled
-    if CB.db.player and CB.db.player.enabled then
-        CB:HideBlizzardCastBar()
+    -- Hide the default Blizzard castbar if setting is enabled
+    if CB.db.player and CB.db.player.hideBlizzardCastBar then
+        CB:HideBlizzardCastBar(true)  -- silent on init
     end
 
     -- Fire callback so GCD and 5SR modules can anchor to the player castbar
@@ -455,7 +455,7 @@ function CB:InitCastBars()
 end
 
 -- Hide the default Blizzard castbar
-function CB:HideBlizzardCastBar()
+function CB:HideBlizzardCastBar(silent)
     -- Try different names used across WoW versions
     local blizzardCastBars = {
         "CastingBarFrame",           -- Classic/TBC
@@ -472,7 +472,9 @@ function CB:HideBlizzardCastBar()
         end
     end
 
-    CB:Print("Default Blizzard castbar disabled")
+    if not silent then
+        CB:Print("Default Blizzard castbar hidden")
+    end
 end
 
 -- Restore the default Blizzard castbar (if needed)
@@ -482,7 +484,7 @@ function CB:ShowBlizzardCastBar()
         frame:SetScript("OnShow", nil)
         -- Re-register events would require knowing original events
         -- For now, just recommend /reload to restore
-        CB:Print("Reload UI to fully restore Blizzard castbar")
+        CB:Print("Reload UI to fully restore Blizzard castbar (/reload)")
     end
 end
 

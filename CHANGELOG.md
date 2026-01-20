@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.2.0
+
+### Features
+- Added option to hide default Blizzard cast bar (under Player Castbar settings)
+
+## v2.1.0
+
+### Fixes
+- Adjusted default positions for target-of-target and focus castbars to avoid overlap with action bars
+- Fixed release zip containing lowercase folder name causing addon to fail to load
+
 ## v2.0.0
 
 ### Features
