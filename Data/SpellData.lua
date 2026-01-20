@@ -45,9 +45,27 @@ SpellData.dots = {
     [27243] = { name = "Seed of Corruption", school = 32, duration = 18 },
     [18265] = { name = "Siphon Life", school = 32, duration = 30 },
 
-    -- Priest
+    -- Priest - Shadow Word: Pain (all ranks)
     [589] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
+    [594] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
+    [970] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
+    [992] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
+    [2767] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
+    [10892] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
+    [10893] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
+    [10894] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
+    [25367] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
+    [25368] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
+
+    -- Priest - Devouring Plague (all ranks)
     [2944] = { name = "Devouring Plague", school = 32, duration = 24 },
+    [19276] = { name = "Devouring Plague", school = 32, duration = 24 },
+    [19277] = { name = "Devouring Plague", school = 32, duration = 24 },
+    [19278] = { name = "Devouring Plague", school = 32, duration = 24 },
+    [19279] = { name = "Devouring Plague", school = 32, duration = 24 },
+    [19280] = { name = "Devouring Plague", school = 32, duration = 24 },
+    [25467] = { name = "Devouring Plague", school = 32, duration = 24 },
+
     [15487] = { name = "Silence", school = 32, duration = 5 },
 
     -- Druid
