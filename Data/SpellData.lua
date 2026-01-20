@@ -254,6 +254,14 @@ SpellData.cooldowns = {
         { spellId = 14185, name = "Preparation" },
         { spellId = 31224, name = "Cloak of Shadows" },
     },
+    WARRIOR = {
+        { spellId = 12292, name = "Death Wish" },
+        { spellId = 12328, name = "Sweeping Strikes" },
+        { spellId = 23881, name = "Bloodthirst" },
+        { spellId = 12294, name = "Mortal Strike" },
+        { spellId = 871, name = "Shield Wall" },
+        { spellId = 1719, name = "Recklessness" },
+    },
 }
 
 function SpellData:GetClassCooldowns(class)
