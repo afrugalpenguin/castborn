@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.6.9
+
+### Fixes
+- Added Holy Fire to Priest Multi-DoT tracking
+
 ## v2.6.8
 
 ### Fixes

@@ -108,6 +108,17 @@ SpellData.dots = {
 
     [15487] = { name = "Silence", school = 32, duration = 5 },
 
+    -- Priest - Holy Fire (all ranks)
+    [14914] = { name = "Holy Fire", school = 2, duration = 10 },
+    [15262] = { name = "Holy Fire", school = 2, duration = 10 },
+    [15263] = { name = "Holy Fire", school = 2, duration = 10 },
+    [15264] = { name = "Holy Fire", school = 2, duration = 10 },
+    [15265] = { name = "Holy Fire", school = 2, duration = 10 },
+    [15266] = { name = "Holy Fire", school = 2, duration = 10 },
+    [15267] = { name = "Holy Fire", school = 2, duration = 10 },
+    [15261] = { name = "Holy Fire", school = 2, duration = 10 },
+    [25384] = { name = "Holy Fire", school = 2, duration = 10 },
+
     -- Priest - Vampiric Touch (all ranks)
     [34914] = { name = "Vampiric Touch", school = 32, duration = 15 },
     [34916] = { name = "Vampiric Touch", school = 32, duration = 15 },
