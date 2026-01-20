@@ -247,6 +247,13 @@ SpellData.cooldowns = {
         { spellId = 3045, name = "Rapid Fire" },
         { spellId = 34490, name = "Silencing Shot" },
     },
+    ROGUE = {
+        { spellId = 14177, name = "Cold Blood" },
+        { spellId = 13750, name = "Adrenaline Rush" },
+        { spellId = 13877, name = "Blade Flurry" },
+        { spellId = 14185, name = "Preparation" },
+        { spellId = 31224, name = "Cloak of Shadows" },
+    },
 }
 
 function SpellData:GetClassCooldowns(class)
