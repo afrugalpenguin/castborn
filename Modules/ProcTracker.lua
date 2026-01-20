@@ -85,8 +85,8 @@ local function CreateProcFrame(parent, index)
     local f = CreateFrame("Button", "Castborn_Proc" .. index, parent)
     f:SetSize(size, size)
 
-    -- Icon texture
-    f.icon = f:CreateTexture(nil, "ARTWORK")
+    -- Icon texture (sublevel 1 to be above Normal texture)
+    f.icon = f:CreateTexture(nil, "ARTWORK", nil, 1)
     f.icon:SetAllPoints()
     f.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     f.Icon = f.icon  -- Masque alias

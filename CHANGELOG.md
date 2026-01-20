@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.6.4
+
+### Fixes
+- Fixed proc tracker icons showing as grey boxes (draw layer issue)
+
 ## v2.6.3
 
 ### Fixes
