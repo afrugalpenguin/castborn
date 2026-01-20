@@ -227,6 +227,12 @@ SpellData.cooldowns = {
         { spellId = 642, name = "Divine Shield" },
         { spellId = 1044, name = "Blessing of Freedom" },
     },
+    DRUID = {
+        { spellId = 17116, name = "Nature's Swiftness" },
+        { spellId = 29166, name = "Innervate" },
+        { spellId = 22812, name = "Barkskin" },
+        { spellId = 33831, name = "Force of Nature" },
+    },
 }
 
 function SpellData:GetClassCooldowns(class)
