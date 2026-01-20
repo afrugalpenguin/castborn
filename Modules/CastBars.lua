@@ -11,6 +11,32 @@ CB.castbars = {}
 -- Test mode flag to prevent update from hiding test bars
 local testModeActive = false
 
+-- Cached player class color
+local playerClassColor = nil
+
+-- Get the player's class color (cached)
+local function GetPlayerClassColor()
+    if not playerClassColor then
+        local _, class = UnitClass("player")
+        if class and RAID_CLASS_COLORS[class] then
+            local c = RAID_CLASS_COLORS[class]
+            playerClassColor = { c.r, c.g, c.b, 1 }
+        else
+            playerClassColor = { 0.6, 0.6, 0.9, 1 }  -- fallback
+        end
+    end
+    return playerClassColor
+end
+
+-- Get bar color based on settings (class color or configured color)
+local function GetBarColor(dbKey)
+    local cfg = CB.db[dbKey]
+    if CB.db.useClassColors and dbKey == "player" then
+        return GetPlayerClassColor()
+    end
+    return cfg.barColor
+end
+
 -- Create a single castbar
 local function CreateCastBar(unit, dbKey)
     local cfg = CB.db[dbKey]
@@ -48,7 +74,8 @@ local function CreateCastBar(unit, dbKey)
     bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
     bar:SetMinMaxValues(0, 1)
     bar:SetValue(0)
-    bar:SetStatusBarColor(cfg.barColor[1], cfg.barColor[2], cfg.barColor[3], cfg.barColor[4])
+    local barColor = GetBarColor(dbKey)
+    bar:SetStatusBarColor(barColor[1], barColor[2], barColor[3], barColor[4])
     frame.bar = bar
     
     -- Background for the bar
@@ -241,10 +268,11 @@ local function StartCast(frame, unit)
     frame.endTime = endTime / 1000
     frame.fadeOut = 0
     
-    frame.bar:SetStatusBarColor(cfg.barColor[1], cfg.barColor[2], cfg.barColor[3], cfg.barColor[4])
+    local barColor = GetBarColor(frame.dbKey)
+    frame.bar:SetStatusBarColor(barColor[1], barColor[2], barColor[3], barColor[4])
     if frame.icon then frame.icon:SetTexture(texture) end
     if frame.spellText then frame.spellText:SetText(text or name) end
-    
+
     if frame.latency and unit == "player" then
         local _, _, lagHome, lagWorld = GetNetStats()
         local lag = (lagHome + lagWorld) / 1000
@@ -253,11 +281,11 @@ local function StartCast(frame, unit)
         frame.latency:SetWidth(lagWidth)
         frame.latency:Show()
     end
-    
+
     if frame.shield then
         if notInterruptible then
             frame.shield:Show()
-            frame.bar:SetStatusBarColor(cfg.barColor[1] * 0.6, cfg.barColor[2] * 0.6, cfg.barColor[3] * 0.6, cfg.barColor[4])
+            frame.bar:SetStatusBarColor(barColor[1] * 0.6, barColor[2] * 0.6, barColor[3] * 0.6, barColor[4])
         else
             frame.shield:Hide()
         end
@@ -284,15 +312,16 @@ local function StartChannel(frame, unit)
     frame.endTime = endTime / 1000
     frame.fadeOut = 0
     
-    frame.bar:SetStatusBarColor(cfg.channelColor[1], cfg.channelColor[2], cfg.channelColor[3], cfg.channelColor[4])
+    local barColor = GetBarColor(frame.dbKey)
+    frame.bar:SetStatusBarColor(barColor[1], barColor[2], barColor[3], barColor[4])
     if frame.icon then frame.icon:SetTexture(texture) end
     if frame.spellText then frame.spellText:SetText(text or name) end
     if frame.latency then frame.latency:Hide() end
-    
+
     if frame.shield then
         if notInterruptible then
             frame.shield:Show()
-            frame.bar:SetStatusBarColor(cfg.channelColor[1] * 0.6, cfg.channelColor[2] * 0.6, cfg.channelColor[3] * 0.6, cfg.channelColor[4])
+            frame.bar:SetStatusBarColor(barColor[1] * 0.6, barColor[2] * 0.6, barColor[3] * 0.6, barColor[4])
         else
             frame.shield:Hide()
         end
@@ -485,6 +514,17 @@ function CB:ShowBlizzardCastBar()
         -- Re-register events would require knowing original events
         -- For now, just recommend /reload to restore
         CB:Print("Reload UI to fully restore Blizzard castbar (/reload)")
+    end
+end
+
+-- Refresh castbar colors (called when class colors setting changes)
+function CB:RefreshCastbarColors()
+    if not CB.castbars then return end
+    for dbKey, frame in pairs(CB.castbars) do
+        if frame and frame.bar then
+            local barColor = GetBarColor(dbKey)
+            frame.bar:SetStatusBarColor(barColor[1], barColor[2], barColor[3], barColor[4])
+        end
     end
 end
 

@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "2.2.0"
+CB.version = "2.3.0"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -119,6 +119,7 @@ end
 
 CB.defaults = {
     locked = false,
+    useClassColors = true,
 
     player = {
         enabled = true,

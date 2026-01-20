@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.3.0
+
+### Features
+- Player castbar now uses class colors by default
+- Added "Look & Feel" section in options with class colors toggle
+- Added divider in options menu to separate module settings from appearance/profiles
+
 ## v2.2.0
 
 ### Features

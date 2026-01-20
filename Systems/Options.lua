@@ -48,6 +48,8 @@ local categories = {
     { id = "buffs", name = "Buff Tracker" },
     { id = "cooldowns", name = "Cooldowns" },
     { id = "interrupt", name = "Interrupt" },
+    { divider = true },
+    { id = "lookfeel", name = "Look & Feel" },
     { id = "profiles", name = "Profiles" },
 }
 
@@ -257,38 +259,48 @@ local function CreateOptionsFrame()
     -- Category buttons
     local y = -8
     for i, cat in ipairs(categories) do
-        local btn = CreateFrame("Button", nil, sidebar)
-        btn:SetSize(120, 22)
-        btn:SetPoint("TOPLEFT", 5, y)
+        if cat.divider then
+            -- Create a horizontal divider line
+            local divider = sidebar:CreateTexture(nil, "ARTWORK")
+            divider:SetHeight(1)
+            divider:SetPoint("TOPLEFT", 10, y - 6)
+            divider:SetPoint("TOPRIGHT", -10, y - 6)
+            divider:SetColorTexture(unpack(C.borderDark))
+            y = y - 14
+        else
+            local btn = CreateFrame("Button", nil, sidebar)
+            btn:SetSize(120, 22)
+            btn:SetPoint("TOPLEFT", 5, y)
 
-        btn.bg = btn:CreateTexture(nil, "BACKGROUND")
-        btn.bg:SetAllPoints()
-        btn.bg:SetColorTexture(0, 0, 0, 0)
+            btn.bg = btn:CreateTexture(nil, "BACKGROUND")
+            btn.bg:SetAllPoints()
+            btn.bg:SetColorTexture(0, 0, 0, 0)
 
-        btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        btn.text:SetPoint("LEFT", 8, 0)
-        btn.text:SetText(cat.name)
-        btn.text:SetTextColor(unpack(C.grey))
+            btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            btn.text:SetPoint("LEFT", 8, 0)
+            btn.text:SetText(cat.name)
+            btn.text:SetTextColor(unpack(C.grey))
 
-        btn:SetScript("OnEnter", function(self)
-            if currentCategory ~= cat.id then
-                self.bg:SetColorTexture(1, 1, 1, 0.1)
-            end
-        end)
+            btn:SetScript("OnEnter", function(self)
+                if currentCategory ~= cat.id then
+                    self.bg:SetColorTexture(1, 1, 1, 0.1)
+                end
+            end)
 
-        btn:SetScript("OnLeave", function(self)
-            if currentCategory ~= cat.id then
-                self.bg:SetColorTexture(0, 0, 0, 0)
-            end
-        end)
+            btn:SetScript("OnLeave", function(self)
+                if currentCategory ~= cat.id then
+                    self.bg:SetColorTexture(0, 0, 0, 0)
+                end
+            end)
 
-        btn:SetScript("OnClick", function()
-            Options:ShowCategory(cat.id)
-            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-        end)
+            btn:SetScript("OnClick", function()
+                Options:ShowCategory(cat.id)
+                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+            end)
 
-        cat.button = btn
-        y = y - 22
+            cat.button = btn
+            y = y - 22
+        end
     end
 
     -- Content area
@@ -322,12 +334,14 @@ function Options:ShowCategory(catId)
 
     -- Update sidebar buttons
     for _, cat in ipairs(categories) do
-        if cat.id == catId then
-            cat.button.bg:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], 0.3)
-            cat.button.text:SetTextColor(unpack(C.white))
-        else
-            cat.button.bg:SetColorTexture(0, 0, 0, 0)
-            cat.button.text:SetTextColor(unpack(C.grey))
+        if cat.button then  -- Skip dividers
+            if cat.id == catId then
+                cat.button.bg:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], 0.3)
+                cat.button.text:SetTextColor(unpack(C.white))
+            else
+                cat.button.bg:SetColorTexture(0, 0, 0, 0)
+                cat.button.text:SetTextColor(unpack(C.grey))
+            end
         end
     end
 
@@ -351,6 +365,8 @@ function Options:CreateContent(catId)
         self:BuildGeneral(content)
     elseif catId == "castbars" then
         self:BuildCastbars(content)
+    elseif catId == "lookfeel" then
+        self:BuildLookFeel(content)
     elseif catId == "profiles" then
         self:BuildProfiles(content)
     else
@@ -529,6 +545,23 @@ function Options:BuildCastbars(parent)
     fcb:SetPoint("TOPLEFT", 0, y)
     local totcb = CreateCheckbox(parent, "Target of Target", CastbornDB.targettarget, "enabled")
     totcb:SetPoint("TOPLEFT", 150, y)
+end
+
+function Options:BuildLookFeel(parent)
+    local y = 0
+
+    local header1 = CreateHeader(parent, "Colors")
+    header1:SetPoint("TOPLEFT", 0, y)
+    header1:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    local cb1 = CreateCheckbox(parent, "Use Class Colors", CastbornDB, "useClassColors", function(checked)
+        -- Refresh castbar colors
+        if Castborn.RefreshCastbarColors then
+            Castborn:RefreshCastbarColors()
+        end
+    end)
+    cb1:SetPoint("TOPLEFT", 0, y)
 end
 
 function Options:BuildProfiles(parent)
@@ -879,7 +912,7 @@ local function CreateInterfacePanel()
 
     local version = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
-    version:SetText("Version 2.2.0")
+    version:SetText("Version 2.3.0")
 
     local desc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     desc:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -12)
