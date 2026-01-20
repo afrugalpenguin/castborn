@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.6.3
+
+### Fixes
+- Proc tracker duration now updates smoothly every 0.1s instead of only on buff changes
+
 ## v2.6.2
 
 ### Fixes
