@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "1.2.0"
+CB.version = "2.1.0"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -164,9 +164,9 @@ CB.defaults = {
         width = 180,
         height = 12,
         x = 0,
-        y = -480,
+        y = -390,
         xPct = 0,
-        yPct = -0.44,
+        yPct = -0.361,
         point = "CENTER",
         showIcon = true,
         showTime = true,
@@ -182,10 +182,10 @@ CB.defaults = {
         enabled = false,
         width = 200,
         height = 16,
-        x = 0,
-        y = -500,
-        xPct = 0,
-        yPct = -0.46,
+        x = 350,
+        y = -410,
+        xPct = 0.18,
+        yPct = -0.380,
         point = "CENTER",
         showIcon = true,
         showTime = true,
