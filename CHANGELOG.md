@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.6.0
+
+### Features
+- Added default cooldown tracking for Druid, Shaman, Hunter, Rogue, and Warrior
+- All 9 classes now have default cooldowns configured
+
 ## v2.5.1
 
 ### Fixes

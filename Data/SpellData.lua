@@ -227,6 +227,41 @@ SpellData.cooldowns = {
         { spellId = 642, name = "Divine Shield" },
         { spellId = 1044, name = "Blessing of Freedom" },
     },
+    DRUID = {
+        { spellId = 17116, name = "Nature's Swiftness" },
+        { spellId = 29166, name = "Innervate" },
+        { spellId = 22812, name = "Barkskin" },
+        { spellId = 33831, name = "Force of Nature" },
+    },
+    SHAMAN = {
+        { spellId = 16188, name = "Nature's Swiftness" },
+        { spellId = 16166, name = "Elemental Mastery" },
+        { spellId = 30823, name = "Shamanistic Rage" },
+        { spellId = 2894, name = "Fire Elemental Totem" },
+        { spellId = 2062, name = "Earth Elemental Totem" },
+    },
+    HUNTER = {
+        { spellId = 19574, name = "Bestial Wrath" },
+        { spellId = 23989, name = "Readiness" },
+        { spellId = 19263, name = "Deterrence" },
+        { spellId = 3045, name = "Rapid Fire" },
+        { spellId = 34490, name = "Silencing Shot" },
+    },
+    ROGUE = {
+        { spellId = 14177, name = "Cold Blood" },
+        { spellId = 13750, name = "Adrenaline Rush" },
+        { spellId = 13877, name = "Blade Flurry" },
+        { spellId = 14185, name = "Preparation" },
+        { spellId = 31224, name = "Cloak of Shadows" },
+    },
+    WARRIOR = {
+        { spellId = 12292, name = "Death Wish" },
+        { spellId = 12328, name = "Sweeping Strikes" },
+        { spellId = 23881, name = "Bloodthirst" },
+        { spellId = 12294, name = "Mortal Strike" },
+        { spellId = 871, name = "Shield Wall" },
+        { spellId = 1719, name = "Recklessness" },
+    },
 }
 
 function SpellData:GetClassCooldowns(class)
