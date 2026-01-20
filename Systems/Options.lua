@@ -552,49 +552,11 @@ function Options:BuildProfiles(parent)
     local header1 = CreateHeader(parent, "Profile Management")
     header1:SetPoint("TOPLEFT", 0, y)
     header1:SetPoint("TOPRIGHT", 0, y)
-    y = y - 30
-
-    local currentName = "Default"
-    if Castborn.Profiles and Castborn.Profiles.GetCurrentProfileName then
-        currentName = Castborn.Profiles:GetCurrentProfileName()
-    end
-
-    local profileLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    profileLabel:SetPoint("TOPLEFT", 0, y)
-    profileLabel:SetText("Current Profile: |cffFFCC00" .. currentName .. "|r")
-    y = y - 30
-
-    local newBtn = CreateButton(parent, "New Profile", 100, function()
-        if Castborn.Profiles and Castborn.Profiles.CreateProfile then
-            local name = "Profile " .. (Castborn.Profiles:GetProfileCount() + 1)
-            Castborn.Profiles:CreateProfile(name)
-            Options:ShowCategory("profiles")
-        end
-    end)
-    newBtn:SetPoint("TOPLEFT", 0, y)
-
-    local copyBtn = CreateButton(parent, "Copy", 70, function()
-        if Castborn.Profiles and Castborn.Profiles.CopyProfile then
-            Castborn.Profiles:CopyProfile()
-            Options:ShowCategory("profiles")
-        end
-    end)
-    copyBtn:SetPoint("LEFT", newBtn, "RIGHT", 8, 0)
-
-    local deleteBtn = CreateButton(parent, "Delete", 70, function()
-        if Castborn.Profiles and Castborn.Profiles.DeleteProfile then
-            Castborn.Profiles:DeleteProfile()
-            Options:ShowCategory("profiles")
-        end
-    end)
-    deleteBtn:SetPoint("LEFT", copyBtn, "RIGHT", 8, 0)
     y = y - 40
 
-    if not (Castborn.Profiles and Castborn.Profiles.GetAllProfiles) then
-        local note = parent:CreateFontString(nil, "OVERLAY", "GameFontDisable")
-        note:SetPoint("TOPLEFT", 0, y)
-        note:SetText("Profile system not available")
-    end
+    local note = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    note:SetPoint("TOPLEFT", 0, y)
+    note:SetText("|cffFFCC00Coming Soon|r")
 end
 
 function Options:BuildModule(parent, key)
@@ -887,7 +849,7 @@ local function CreateInterfacePanel()
 
     local version = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
-    version:SetText("Version 2.4.1")
+    version:SetText("Version 2.4.2")
 
     local desc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     desc:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -12)

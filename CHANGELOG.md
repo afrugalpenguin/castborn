@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.4.2
+
+### Changes
+- Profiles section now shows "Coming Soon" (not yet implemented)
+
 ## v2.4.1
 
 ### Fixes
