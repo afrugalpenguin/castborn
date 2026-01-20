@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.6.6
+
+### Fixes
+- Added Vampiric Touch to Priest Multi-DoT tracking
+
 ## v2.6.5
 
 ### Fixes

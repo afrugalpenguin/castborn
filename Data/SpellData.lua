@@ -68,6 +68,11 @@ SpellData.dots = {
 
     [15487] = { name = "Silence", school = 32, duration = 5 },
 
+    -- Priest - Vampiric Touch (all ranks)
+    [34914] = { name = "Vampiric Touch", school = 32, duration = 15 },
+    [34916] = { name = "Vampiric Touch", school = 32, duration = 15 },
+    [34917] = { name = "Vampiric Touch", school = 32, duration = 15 },
+
     -- Druid
     [8921] = { name = "Moonfire", school = 64, duration = 12 },
     [93402] = { name = "Sunfire", school = 8, duration = 12 },
