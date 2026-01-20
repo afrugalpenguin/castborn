@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.3.1
+
+### Fixes
+- Fixed CurseForge showing incorrect version number
+
 ## v2.3.0
 
 ### Features
