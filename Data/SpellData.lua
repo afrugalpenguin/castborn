@@ -195,6 +195,78 @@ SpellData.dots = {
     [25457] = { name = "Flame Shock", school = 4, duration = 12 },    -- TBC
 }
 
+-- Class cooldowns to track by default
+SpellData.cooldowns = {
+    MAGE = {
+        { spellId = 11958, name = "Cold Snap" },           -- Frost talent, resets frost CDs
+        { spellId = 12472, name = "Icy Veins" },           -- Frost talent
+        { spellId = 12042, name = "Arcane Power" },        -- Arcane talent
+        { spellId = 12043, name = "Presence of Mind" },    -- Arcane talent
+        { spellId = 11129, name = "Combustion" },          -- Fire talent
+        { spellId = 12051, name = "Evocation" },           -- Mana regen
+    },
+    WARLOCK = {
+        { spellId = 18708, name = "Fel Domination" },      -- Instant demon summon
+        { spellId = 17962, name = "Conflagrate" },         -- Destruction
+        { spellId = 18288, name = "Amplify Curse" },       -- Affliction
+        { spellId = 17877, name = "Shadowburn" },          -- Destruction
+        { spellId = 18223, name = "Curse of Exhaustion" }, -- Affliction
+    },
+    PRIEST = {
+        { spellId = 14751, name = "Inner Focus" },         -- Discipline talent
+        { spellId = 10060, name = "Power Infusion" },      -- Discipline talent
+        { spellId = 15487, name = "Silence" },             -- Shadow talent
+        { spellId = 34433, name = "Shadowfiend" },         -- TBC baseline
+        { spellId = 32379, name = "Shadow Word: Death" },  -- TBC
+    },
+    DRUID = {
+        { spellId = 17116, name = "Nature's Swiftness" },  -- Resto talent
+        { spellId = 29166, name = "Innervate" },           -- Mana regen
+        { spellId = 22812, name = "Barkskin" },            -- Defensive
+        { spellId = 33831, name = "Force of Nature" },     -- Balance talent (treants)
+    },
+    SHAMAN = {
+        { spellId = 16188, name = "Nature's Swiftness" },  -- Resto talent
+        { spellId = 16166, name = "Elemental Mastery" },   -- Elemental talent
+        { spellId = 30823, name = "Shamanistic Rage" },    -- Enhancement talent
+        { spellId = 2894, name = "Fire Elemental Totem" }, -- TBC
+        { spellId = 2062, name = "Earth Elemental Totem" },-- TBC
+    },
+    HUNTER = {
+        { spellId = 19574, name = "Bestial Wrath" },       -- BM talent
+        { spellId = 23989, name = "Readiness" },           -- Survival talent (resets CDs)
+        { spellId = 19263, name = "Deterrence" },          -- Survival talent
+        { spellId = 3045, name = "Rapid Fire" },           -- Attack speed
+        { spellId = 34490, name = "Silencing Shot" },      -- Marks talent
+    },
+    ROGUE = {
+        { spellId = 14177, name = "Cold Blood" },          -- Assassination talent
+        { spellId = 13750, name = "Adrenaline Rush" },     -- Combat talent
+        { spellId = 13877, name = "Blade Flurry" },        -- Combat talent
+        { spellId = 14185, name = "Preparation" },         -- Subtlety talent (resets CDs)
+        { spellId = 31224, name = "Cloak of Shadows" },    -- TBC baseline
+    },
+    WARRIOR = {
+        { spellId = 12292, name = "Death Wish" },          -- Fury talent
+        { spellId = 12328, name = "Sweeping Strikes" },    -- Arms talent
+        { spellId = 23881, name = "Bloodthirst" },         -- Fury talent
+        { spellId = 12294, name = "Mortal Strike" },       -- Arms talent
+        { spellId = 871, name = "Shield Wall" },           -- Defensive
+        { spellId = 1719, name = "Recklessness" },         -- Offensive CD
+    },
+    PALADIN = {
+        { spellId = 31842, name = "Divine Illumination" }, -- Holy talent
+        { spellId = 20216, name = "Divine Favor" },        -- Holy talent
+        { spellId = 31884, name = "Avenging Wrath" },      -- TBC baseline
+        { spellId = 642, name = "Divine Shield" },         -- Bubble
+        { spellId = 1044, name = "Blessing of Freedom" },  -- Utility
+    },
+}
+
+function SpellData:GetClassCooldowns(class)
+    return self.cooldowns[class] or {}
+end
+
 function SpellData:GetSchoolColor(school)
     return self.schoolColors[school] or { 0.7, 0.7, 0.7, 1 }
 end
