@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.6.10
+
+### Fixes
+- Added Fear Ward to Priest cooldown tracking
+
 ## v2.6.9
 
 ### Fixes

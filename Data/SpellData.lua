@@ -322,6 +322,7 @@ SpellData.cooldowns = {
         { spellId = 18223, name = "Curse of Exhaustion" },
     },
     PRIEST = {
+        { spellId = 6346, name = "Fear Ward" },
         { spellId = 14751, name = "Inner Focus" },
         { spellId = 10060, name = "Power Infusion" },
         { spellId = 15487, name = "Silence" },
