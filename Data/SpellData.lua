@@ -198,6 +198,7 @@ SpellData.dots = {
 -- Class cooldowns to track by default
 SpellData.cooldowns = {
     MAGE = {
+        { spellId = 45438, name = "Ice Block" },
         { spellId = 11958, name = "Cold Snap" },
         { spellId = 12472, name = "Icy Veins" },
         { spellId = 12042, name = "Arcane Power" },
