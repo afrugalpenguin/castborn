@@ -14,9 +14,12 @@ jobs:
 
       - name: Create addon zip
         run: |
-          mkdir -p Castborn
-          cp -r Core.lua Systems/ Modules/ Data/ Castborn.toc Castborn/
-          zip -r Castborn-${{ github.ref_name }}.zip Castborn
+          # Create fresh directory with correct case
+          rm -rf Castborn castborn
+          mkdir Castborn
+          cp -r Core.lua Systems/ Modules/ Data/ Castborn.toc CHANGELOG.md Castborn/
+          # Use -r to recurse and preserve folder name exactly
+          zip -r "Castborn-${{ github.ref_name }}.zip" Castborn/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
