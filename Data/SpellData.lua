@@ -195,6 +195,43 @@ SpellData.dots = {
     [25457] = { name = "Flame Shock", school = 4, duration = 12 },    -- TBC
 }
 
+-- Class cooldowns to track by default
+SpellData.cooldowns = {
+    MAGE = {
+        { spellId = 11958, name = "Cold Snap" },
+        { spellId = 12472, name = "Icy Veins" },
+        { spellId = 12042, name = "Arcane Power" },
+        { spellId = 12043, name = "Presence of Mind" },
+        { spellId = 11129, name = "Combustion" },
+        { spellId = 12051, name = "Evocation" },
+    },
+    WARLOCK = {
+        { spellId = 18708, name = "Fel Domination" },
+        { spellId = 17962, name = "Conflagrate" },
+        { spellId = 18288, name = "Amplify Curse" },
+        { spellId = 17877, name = "Shadowburn" },
+        { spellId = 18223, name = "Curse of Exhaustion" },
+    },
+    PRIEST = {
+        { spellId = 14751, name = "Inner Focus" },
+        { spellId = 10060, name = "Power Infusion" },
+        { spellId = 15487, name = "Silence" },
+        { spellId = 34433, name = "Shadowfiend" },
+        { spellId = 32379, name = "Shadow Word: Death" },
+    },
+    PALADIN = {
+        { spellId = 31842, name = "Divine Illumination" },
+        { spellId = 20216, name = "Divine Favor" },
+        { spellId = 31884, name = "Avenging Wrath" },
+        { spellId = 642, name = "Divine Shield" },
+        { spellId = 1044, name = "Blessing of Freedom" },
+    },
+}
+
+function SpellData:GetClassCooldowns(class)
+    return self.cooldowns[class] or {}
+end
+
 function SpellData:GetSchoolColor(school)
     return self.schoolColors[school] or { 0.7, 0.7, 0.7, 1 }
 end
