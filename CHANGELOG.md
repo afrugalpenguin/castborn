@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.6.7
+
+### Fixes
+- Added all ranks of Warlock DoTs (Corruption, Immolate, Curse of Agony, Curse of Doom, Unstable Affliction, Siphon Life)
+- Removed Sunfire (not in TBC)
+
 ## v2.6.6
 
 ### Fixes

@@ -36,14 +36,54 @@ SpellData.interrupts = {
 
 -- Known DoT/Debuff spells with their colors and durations
 SpellData.dots = {
-    -- Warlock
+    -- Warlock - Corruption (all ranks)
     [172] = { name = "Corruption", school = 32, duration = 18 },
+    [6222] = { name = "Corruption", school = 32, duration = 18 },
+    [6223] = { name = "Corruption", school = 32, duration = 18 },
+    [7648] = { name = "Corruption", school = 32, duration = 18 },
+    [11671] = { name = "Corruption", school = 32, duration = 18 },
+    [11672] = { name = "Corruption", school = 32, duration = 18 },
+    [25311] = { name = "Corruption", school = 32, duration = 18 },
+    [27216] = { name = "Corruption", school = 32, duration = 18 },
+
+    -- Warlock - Immolate (all ranks)
     [348] = { name = "Immolate", school = 4, duration = 15 },
+    [707] = { name = "Immolate", school = 4, duration = 15 },
+    [1094] = { name = "Immolate", school = 4, duration = 15 },
+    [2941] = { name = "Immolate", school = 4, duration = 15 },
+    [11665] = { name = "Immolate", school = 4, duration = 15 },
+    [11667] = { name = "Immolate", school = 4, duration = 15 },
+    [11668] = { name = "Immolate", school = 4, duration = 15 },
+    [25309] = { name = "Immolate", school = 4, duration = 15 },
+    [27215] = { name = "Immolate", school = 4, duration = 15 },
+
+    -- Warlock - Curse of Agony (all ranks)
     [980] = { name = "Curse of Agony", school = 32, duration = 24 },
+    [1014] = { name = "Curse of Agony", school = 32, duration = 24 },
+    [6217] = { name = "Curse of Agony", school = 32, duration = 24 },
+    [11711] = { name = "Curse of Agony", school = 32, duration = 24 },
+    [11712] = { name = "Curse of Agony", school = 32, duration = 24 },
+    [11713] = { name = "Curse of Agony", school = 32, duration = 24 },
+    [27218] = { name = "Curse of Agony", school = 32, duration = 24 },
+
+    -- Warlock - Curse of Doom (all ranks)
     [603] = { name = "Curse of Doom", school = 32, duration = 60 },
+    [30910] = { name = "Curse of Doom", school = 32, duration = 60 },
+
+    -- Warlock - Unstable Affliction (all ranks)
     [30108] = { name = "Unstable Affliction", school = 32, duration = 18 },
+    [30404] = { name = "Unstable Affliction", school = 32, duration = 18 },
+    [30405] = { name = "Unstable Affliction", school = 32, duration = 18 },
+
+    -- Warlock - Seed of Corruption
     [27243] = { name = "Seed of Corruption", school = 32, duration = 18 },
+
+    -- Warlock - Siphon Life (all ranks)
     [18265] = { name = "Siphon Life", school = 32, duration = 30 },
+    [18879] = { name = "Siphon Life", school = 32, duration = 30 },
+    [18880] = { name = "Siphon Life", school = 32, duration = 30 },
+    [18881] = { name = "Siphon Life", school = 32, duration = 30 },
+    [27264] = { name = "Siphon Life", school = 32, duration = 30 },
 
     -- Priest - Shadow Word: Pain (all ranks)
     [589] = { name = "Shadow Word: Pain", school = 32, duration = 18 },
@@ -75,7 +115,6 @@ SpellData.dots = {
 
     -- Druid
     [8921] = { name = "Moonfire", school = 64, duration = 12 },
-    [93402] = { name = "Sunfire", school = 8, duration = 12 },
     [1822] = { name = "Rake", school = 1, duration = 9 },
     [1079] = { name = "Rip", school = 1, duration = 12 },
     [33745] = { name = "Lacerate", school = 1, duration = 15 },
