@@ -869,7 +869,7 @@ local function CreateInterfacePanel()
 
     local version = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
-    version:SetText("Version 2.0.0")
+    version:SetText("Version 2.1.0")
 
     local desc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     desc:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -12)
