@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.6.2
+
+### Fixes
+- Fixed CurseForge changelog display
+
 ## v2.6.1
 
 ### Features
