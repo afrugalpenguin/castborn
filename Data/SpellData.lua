@@ -233,6 +233,13 @@ SpellData.cooldowns = {
         { spellId = 22812, name = "Barkskin" },
         { spellId = 33831, name = "Force of Nature" },
     },
+    SHAMAN = {
+        { spellId = 16188, name = "Nature's Swiftness" },
+        { spellId = 16166, name = "Elemental Mastery" },
+        { spellId = 30823, name = "Shamanistic Rage" },
+        { spellId = 2894, name = "Fire Elemental Totem" },
+        { spellId = 2062, name = "Earth Elemental Totem" },
+    },
 }
 
 function SpellData:GetClassCooldowns(class)
