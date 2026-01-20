@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.6.5
+
+### Fixes
+- Added all ranks of Shadow Word: Pain and Devouring Plague for Priest Multi-DoT tracking
+
 ## v2.6.4
 
 ### Fixes
