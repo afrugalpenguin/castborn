@@ -113,12 +113,46 @@ SpellData.dots = {
     [34916] = { name = "Vampiric Touch", school = 32, duration = 15 },
     [34917] = { name = "Vampiric Touch", school = 32, duration = 15 },
 
-    -- Druid
+    -- Druid - Moonfire (all ranks)
     [8921] = { name = "Moonfire", school = 64, duration = 12 },
-    [1822] = { name = "Rake", school = 1, duration = 9 },
-    [1079] = { name = "Rip", school = 1, duration = 12 },
-    [33745] = { name = "Lacerate", school = 1, duration = 15 },
+    [8924] = { name = "Moonfire", school = 64, duration = 12 },
+    [8925] = { name = "Moonfire", school = 64, duration = 12 },
+    [8926] = { name = "Moonfire", school = 64, duration = 12 },
+    [8927] = { name = "Moonfire", school = 64, duration = 12 },
+    [8928] = { name = "Moonfire", school = 64, duration = 12 },
+    [8929] = { name = "Moonfire", school = 64, duration = 12 },
+    [9833] = { name = "Moonfire", school = 64, duration = 12 },
+    [9834] = { name = "Moonfire", school = 64, duration = 12 },
+    [9835] = { name = "Moonfire", school = 64, duration = 12 },
+    [26987] = { name = "Moonfire", school = 64, duration = 12 },
+    [26988] = { name = "Moonfire", school = 64, duration = 12 },
+
+    -- Druid - Insect Swarm (all ranks)
     [5570] = { name = "Insect Swarm", school = 8, duration = 12 },
+    [24974] = { name = "Insect Swarm", school = 8, duration = 12 },
+    [24975] = { name = "Insect Swarm", school = 8, duration = 12 },
+    [24976] = { name = "Insect Swarm", school = 8, duration = 12 },
+    [24977] = { name = "Insect Swarm", school = 8, duration = 12 },
+    [27013] = { name = "Insect Swarm", school = 8, duration = 12 },
+
+    -- Druid - Rake (all ranks)
+    [1822] = { name = "Rake", school = 1, duration = 9 },
+    [1823] = { name = "Rake", school = 1, duration = 9 },
+    [1824] = { name = "Rake", school = 1, duration = 9 },
+    [9904] = { name = "Rake", school = 1, duration = 9 },
+    [27003] = { name = "Rake", school = 1, duration = 9 },
+
+    -- Druid - Rip (all ranks)
+    [1079] = { name = "Rip", school = 1, duration = 12 },
+    [9492] = { name = "Rip", school = 1, duration = 12 },
+    [9493] = { name = "Rip", school = 1, duration = 12 },
+    [9752] = { name = "Rip", school = 1, duration = 12 },
+    [9894] = { name = "Rip", school = 1, duration = 12 },
+    [9896] = { name = "Rip", school = 1, duration = 12 },
+    [27008] = { name = "Rip", school = 1, duration = 12 },
+
+    -- Druid - Lacerate
+    [33745] = { name = "Lacerate", school = 1, duration = 15 },
 
     -- Mage - Fireball (all ranks, DoT component)
     [133] = { name = "Fireball", school = 4, duration = 8 },
