@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "2.6.10"
+CB.version = "2.6.12"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -213,6 +213,7 @@ CB.defaults = {
         showOnlyMine = true,
         bgColor = {0.05, 0.05, 0.05, 0.85},
         borderColor = {0.3, 0.3, 0.3, 1},
+        anchored = false,
     },
 
     fsr = {
@@ -246,6 +247,7 @@ CB.defaults = {
         rangedColor = {0.4, 0.7, 0.4, 1},
         bgColor = {0.1, 0.1, 0.1, 0.8},
         borderColor = {0.3, 0.3, 0.3, 1},
+        anchored = false,
     },
 
     gcd = {
@@ -286,6 +288,7 @@ CB.defaults = {
         y = -255,
         xPct = 0,
         yPct = -0.237,
+        anchored = false,
     },
 
     cooldowns = {

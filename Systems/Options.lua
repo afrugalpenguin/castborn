@@ -147,44 +147,79 @@ local function CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step,
     local valueText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     valueText:SetPoint("TOPRIGHT", 0, 0)
 
-    local slider = CreateFrame("Slider", nil, frame)
-    slider:SetPoint("TOPLEFT", 0, -20)
-    slider:SetPoint("TOPRIGHT", 0, -20)
-    slider:SetHeight(16)
+    local slider = CreateFrame("Slider", nil, frame, "BackdropTemplate")
+    slider:SetPoint("TOPLEFT", 0, -18)
+    slider:SetPoint("TOPRIGHT", 0, -18)
+    slider:SetHeight(18)
+    slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(minVal, maxVal)
     slider:SetValueStep(step)
     slider:SetObeyStepOnDrag(true)
     slider:EnableMouse(true)
 
-    -- Track background
-    local track = slider:CreateTexture(nil, "BACKGROUND")
-    track:SetPoint("TOPLEFT", 0, -6)
-    track:SetPoint("BOTTOMRIGHT", 0, 6)
-    track:SetColorTexture(0.15, 0.15, 0.15, 1)
+    -- Track background with subtle rounded look
+    slider:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 },
+    })
+    slider:SetBackdropColor(0.12, 0.12, 0.12, 1)
+    slider:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
 
-    -- Track border
-    local trackBorder = slider:CreateTexture(nil, "BORDER")
-    trackBorder:SetPoint("TOPLEFT", track, -1, 1)
-    trackBorder:SetPoint("BOTTOMRIGHT", track, 1, -1)
-    trackBorder:SetColorTexture(0.3, 0.3, 0.3, 1)
+    -- Fill bar (shows progress)
+    local fill = slider:CreateTexture(nil, "ARTWORK", nil, 1)
+    fill:SetHeight(6)
+    fill:SetPoint("LEFT", 4, 0)
+    fill:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], 0.6)
+    slider.fill = fill
 
-    -- Thumb
-    local thumb = slider:CreateTexture(nil, "ARTWORK")
-    thumb:SetSize(14, 14)
-    thumb:SetColorTexture(0.6, 0.6, 0.6, 1)
+    -- Thumb texture - use WoW's slider thumb for better look
+    local thumb = slider:CreateTexture(nil, "OVERLAY")
+    thumb:SetSize(16, 16)
+    thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
     slider:SetThumbTexture(thumb)
+
+    -- Min/max labels
+    local minLabel = slider:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    minLabel:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 2, -2)
+    minLabel:SetText(minVal)
+    minLabel:SetTextColor(unpack(C.darkGrey))
+
+    local maxLabel = slider:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    maxLabel:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", -2, -2)
+    maxLabel:SetText(maxVal)
+    maxLabel:SetTextColor(unpack(C.darkGrey))
 
     local currentValue = (dbTable and dbKey and dbTable[dbKey]) or minVal
     slider:SetValue(currentValue)
     valueText:SetText(currentValue)
 
+    -- Update fill bar width based on value
+    local function UpdateFill(value)
+        local range = maxVal - minVal
+        if range > 0 then
+            local pct = (value - minVal) / range
+            local trackWidth = slider:GetWidth() - 8
+            fill:SetWidth(math.max(1, trackWidth * pct))
+        end
+    end
+
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value / step + 0.5) * step
         valueText:SetText(value)
+        UpdateFill(value)
         if dbTable and dbKey then
             dbTable[dbKey] = value
         end
         if onChange then onChange(value) end
+    end)
+
+    -- Initialize fill when slider gets its size
+    slider:SetScript("OnSizeChanged", function(self, width, height)
+        if width and width > 0 then
+            UpdateFill(self:GetValue())
+        end
     end)
 
     frame.slider = slider

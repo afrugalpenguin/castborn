@@ -138,7 +138,15 @@ local function CreateContainer()
     end
 
     if Castborn.Anchoring then
-        Castborn.Anchoring:MakeDraggable(frame, db, nil, "Procs Tracker")
+        Castborn.Anchoring:MakeDraggable(frame, db, function(f)
+            CastbornDB.procs = CastbornDB.procs or {}
+            CastbornDB.procs.anchored = false
+        end, "Procs Tracker")
+    end
+
+    -- Apply position only if not anchored
+    if not db.anchored or db.anchored == false then
+        Castborn:ApplyPosition(frame, "procs")
     end
 
     frame:Hide()  -- Start hidden, will show when procs are active
@@ -429,6 +437,41 @@ end
 -- Register with TestManager
 Castborn:RegisterCallback("READY", function()
     Castborn.TestManager:Register("Procs", function() Castborn:TestProcs() end, function() Castborn:EndTestProcs() end)
+
+    -- If player castbar already exists and we should be anchored, attach now
+    local cfg = CastbornDB.procs
+    if cfg and cfg.anchored ~= false and Castborn.Anchoring and frame then
+        local playerCastbar = Castborn.castbars and Castborn.castbars.player
+        if playerCastbar then
+            Castborn.Anchoring:ReattachToCastbar(frame, CastbornDB.procs, "BOTTOM", -2)
+        end
+    end
+end)
+
+-- Listen for player castbar creation
+Castborn:RegisterCallback("PLAYER_CASTBAR_READY", function(castbar)
+    -- Anchor BELOW the player castbar if configured
+    if frame and CastbornDB.procs and CastbornDB.procs.anchored ~= false and Castborn.Anchoring then
+        Castborn.Anchoring:ReattachToCastbar(frame, CastbornDB.procs, "BOTTOM", -2)
+    end
+end)
+
+-- Detach Proc tracker from castbar
+Castborn:RegisterCallback("DETACH_PROCS", function()
+    if not frame then return end
+    if Castborn.Anchoring then
+        Castborn.Anchoring:DetachFromCastbar(frame, CastbornDB.procs)
+    end
+    Castborn:Print("Proc Tracker detached from castbar")
+end)
+
+-- Reattach Proc tracker to castbar
+Castborn:RegisterCallback("REATTACH_PROCS", function()
+    if not frame then return end
+    if Castborn.Anchoring then
+        Castborn.Anchoring:ReattachToCastbar(frame, CastbornDB.procs, "BOTTOM", -2)
+    end
+    Castborn:Print("Proc Tracker anchored to castbar")
 end)
 
 Castborn:RegisterModule("ProcTracker", ProcTracker)

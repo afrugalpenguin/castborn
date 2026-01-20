@@ -210,11 +210,18 @@ function CB:InitDoTTracker()
     frame.border = border
 
     if Castborn.Anchoring then
-        Castborn.Anchoring:MakeDraggable(frame, CastbornDB.dots or {}, nil, "DoT Tracker")
+        Castborn.Anchoring:MakeDraggable(frame, CastbornDB.dots or {}, function(f)
+            CastbornDB.dots = CastbornDB.dots or {}
+            CastbornDB.dots.anchored = false
+        end, "DoT Tracker")
     else
         CB:MakeMoveable(frame, "dots")
     end
-    CB:ApplyPosition(frame, "dots")
+
+    -- Apply position only if not anchored
+    if not CastbornDB.dots or CastbornDB.dots.anchored == false then
+        CB:ApplyPosition(frame, "dots")
+    end
     frame:Hide()
     CB.dotTracker = frame
 
@@ -366,4 +373,39 @@ end
 -- Register with TestManager
 CB:RegisterCallback("READY", function()
     CB.TestManager:Register("DoTTracker", function() CB:TestDoTTracker() end, function() CB:EndTestDoTTracker() end)
+
+    -- If player castbar already exists and we should be anchored, attach now
+    local cfg = CastbornDB.dots
+    if cfg and cfg.anchored ~= false and Castborn.Anchoring then
+        local playerCastbar = CB.castbars and CB.castbars.player
+        if playerCastbar then
+            Castborn.Anchoring:ReattachToCastbar(CB.dotTracker, CastbornDB.dots, "BOTTOM", -2)
+        end
+    end
+end)
+
+-- Listen for player castbar creation
+CB:RegisterCallback("PLAYER_CASTBAR_READY", function(frame)
+    -- Anchor BELOW the player castbar if configured
+    if CB.dotTracker and CastbornDB.dots and CastbornDB.dots.anchored ~= false and Castborn.Anchoring then
+        Castborn.Anchoring:ReattachToCastbar(CB.dotTracker, CastbornDB.dots, "BOTTOM", -2)
+    end
+end)
+
+-- Detach DoT tracker from castbar
+CB:RegisterCallback("DETACH_DOTS", function()
+    if not CB.dotTracker then return end
+    if Castborn.Anchoring then
+        Castborn.Anchoring:DetachFromCastbar(CB.dotTracker, CastbornDB.dots)
+    end
+    CB:Print("DoT Tracker detached from castbar")
+end)
+
+-- Reattach DoT tracker to castbar
+CB:RegisterCallback("REATTACH_DOTS", function()
+    if not CB.dotTracker then return end
+    if Castborn.Anchoring then
+        Castborn.Anchoring:ReattachToCastbar(CB.dotTracker, CastbornDB.dots, "BOTTOM", -2)
+    end
+    CB:Print("DoT Tracker anchored to castbar")
 end)

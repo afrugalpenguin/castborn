@@ -121,11 +121,18 @@ local function CreateSwingContainer()
     container:SetFrameLevel(4)
 
     if Castborn.Anchoring then
-        Castborn.Anchoring:MakeDraggable(container, CB.db.swing, nil, "Swing Timer")
+        Castborn.Anchoring:MakeDraggable(container, CB.db.swing, function(f)
+            CastbornDB.swing = CastbornDB.swing or {}
+            CastbornDB.swing.anchored = false
+        end, "Swing Timer")
     else
         CB:MakeMoveable(container, "swing")
     end
-    CB:ApplyPosition(container, "swing")
+
+    -- Apply position only if not anchored
+    if not CastbornDB.swing or CastbornDB.swing.anchored == false then
+        CB:ApplyPosition(container, "swing")
+    end
     container:Hide()  -- Start hidden, will show when swings are active
     return container
 end
@@ -264,4 +271,39 @@ end
 -- Register with TestManager
 CB:RegisterCallback("READY", function()
     CB.TestManager:Register("SwingTimer", function() CB:TestSwingTimers() end, function() CB:EndTestSwingTimers() end)
+
+    -- If player castbar already exists and we should be anchored, attach now
+    local cfg = CastbornDB.swing
+    if cfg and cfg.anchored ~= false and Castborn.Anchoring and CB.swingTimers.container then
+        local playerCastbar = CB.castbars and CB.castbars.player
+        if playerCastbar then
+            Castborn.Anchoring:ReattachToCastbar(CB.swingTimers.container, CastbornDB.swing, "BOTTOM", -2)
+        end
+    end
+end)
+
+-- Listen for player castbar creation
+CB:RegisterCallback("PLAYER_CASTBAR_READY", function(frame)
+    -- Anchor BELOW the player castbar if configured
+    if CB.swingTimers.container and CastbornDB.swing and CastbornDB.swing.anchored ~= false and Castborn.Anchoring then
+        Castborn.Anchoring:ReattachToCastbar(CB.swingTimers.container, CastbornDB.swing, "BOTTOM", -2)
+    end
+end)
+
+-- Detach Swing timer from castbar
+CB:RegisterCallback("DETACH_SWING", function()
+    if not CB.swingTimers.container then return end
+    if Castborn.Anchoring then
+        Castborn.Anchoring:DetachFromCastbar(CB.swingTimers.container, CastbornDB.swing)
+    end
+    CB:Print("Swing Timer detached from castbar")
+end)
+
+-- Reattach Swing timer to castbar
+CB:RegisterCallback("REATTACH_SWING", function()
+    if not CB.swingTimers.container then return end
+    if Castborn.Anchoring then
+        Castborn.Anchoring:ReattachToCastbar(CB.swingTimers.container, CastbornDB.swing, "BOTTOM", -2)
+    end
+    CB:Print("Swing Timer anchored to castbar")
 end)

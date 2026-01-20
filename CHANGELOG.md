@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.6.12
+
+### Features
+- Implemented "Anchor to Castbar" for DoT Tracker, Swing Timer, and Proc Tracker
+- All anchorable modules now properly follow the player castbar when moved
+
+### Fixes
+- Fixed `/cb reset` not resetting Swing Timer and other modules with anchoring
+
+## v2.6.11
+
+### Fixes
+- Fixed options sliders sliding vertically instead of horizontally
+- Improved slider aesthetics with progress fill bar and native WoW thumb
+
 ## v2.6.10
 
 ### Fixes

@@ -36,12 +36,15 @@ function CB:ResetPositions()
         end
     end
     if CB.dotTracker then
-        CB:ApplyPosition(CB.dotTracker, "dots")
+        if CB.db.dots.anchored then
+            Castborn:FireCallback("REATTACH_DOTS")
+        else
+            CB:ApplyPosition(CB.dotTracker, "dots")
+        end
         CB.dotTracker:SetWidth(CB.db.dots.width)
     end
     if CB.fsrFrame then
         if CB.db.fsr.anchored then
-            -- Re-anchor FSR to castbar
             Castborn:FireCallback("REATTACH_FSR")
         else
             CB:ApplyPosition(CB.fsrFrame, "fsr")
@@ -49,7 +52,11 @@ function CB:ResetPositions()
         CB.fsrFrame:SetSize(CB.db.fsr.width, CB.db.fsr.height)
     end
     if CB.swingTimers and CB.swingTimers.container then
-        CB:ApplyPosition(CB.swingTimers.container, "swing")
+        if CB.db.swing.anchored then
+            Castborn:FireCallback("REATTACH_SWING")
+        else
+            CB:ApplyPosition(CB.swingTimers.container, "swing")
+        end
     end
     if CB.gcdFrame then
         if CB.db.gcd.anchored then
@@ -67,7 +74,11 @@ function CB:ResetPositions()
     end
     local procFrame = _G["Castborn_ProcTracker"]
     if procFrame and CB.db.procs then
-        CB:ApplyPosition(procFrame, "procs")
+        if CB.db.procs.anchored then
+            Castborn:FireCallback("REATTACH_PROCS")
+        else
+            CB:ApplyPosition(procFrame, "procs")
+        end
     end
     local cdFrame = _G["Castborn_CooldownTracker"]
     if cdFrame and CB.db.cooldowns then
