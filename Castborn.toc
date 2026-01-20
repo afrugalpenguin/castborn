@@ -2,7 +2,7 @@
 ## Title: Castborn
 ## Notes: Castbar addon with DoT tracking, swing timers, and more
 ## Author: Lightborn
-## Version: 2.1.0
+## Version: 2.2.0
 ## SavedVariables: CastbornDB
 ## OptionalDeps: Masque
 ## IconTexture: Interface\Icons\Spell_Arcane_Arcane04

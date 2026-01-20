@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "2.1.0"
+CB.version = "2.2.0"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -133,6 +133,7 @@ CB.defaults = {
         showTime = true,
         showSpellName = true,
         showLatency = true,
+        hideBlizzardCastBar = true,
         barColor = {0.4, 0.6, 0.9, 1},
         channelColor = {0.3, 0.8, 0.3, 1},
         bgColor = {0.1, 0.1, 0.1, 0.8},
