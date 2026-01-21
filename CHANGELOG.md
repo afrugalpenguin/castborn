@@ -9,11 +9,15 @@
 ### Fixes
 - Fixed `/cb reset` not resetting Swing Timer and other modules with anchoring
 
+### Docs
+- Reorganized README with clearer sections and added missing commands
+
 ## v2.6.11
 
 ### Fixes
 - Fixed options sliders sliding vertically instead of horizontally
 - Improved slider aesthetics with progress fill bar and native WoW thumb
+- Exclude self-casts from non-player castbars (target/ToT/focus no longer show your casts when those units are you)
 
 ## v2.6.10
 
