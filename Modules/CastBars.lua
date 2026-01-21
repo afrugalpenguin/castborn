@@ -256,7 +256,10 @@ end
 local function StartCast(frame, unit)
     local cfg = CB.db[frame.dbKey]
     if not cfg.enabled then return end
-    
+
+    -- Skip self-casts on non-player castbars (e.g., when target/focus is the player)
+    if unit ~= "player" and UnitIsUnit(unit, "player") then return end
+
     local name, text, texture, startTime, endTime, isTradeSkill, castID, notInterruptible
     name, text, texture, startTime, endTime, isTradeSkill, castID, notInterruptible = UnitCastingInfo(unit)
     
@@ -300,7 +303,10 @@ end
 local function StartChannel(frame, unit)
     local cfg = CB.db[frame.dbKey]
     if not cfg.enabled then return end
-    
+
+    -- Skip self-casts on non-player castbars (e.g., when target/focus is the player)
+    if unit ~= "player" and UnitIsUnit(unit, "player") then return end
+
     local name, text, texture, startTime, endTime, isTradeSkill, notInterruptible
     name, text, texture, startTime, endTime, isTradeSkill, notInterruptible = UnitChannelInfo(unit)
     
@@ -368,7 +374,15 @@ local function CheckUnitCast(frame, unit)
         frame.channeling = false
         return
     end
-    
+
+    -- Skip self-casts on non-player castbars (e.g., when target/focus is the player)
+    if unit ~= "player" and UnitIsUnit(unit, "player") then
+        frame:Hide()
+        frame.casting = false
+        frame.channeling = false
+        return
+    end
+
     local name = UnitCastingInfo(unit)
     local channelName = UnitChannelInfo(unit)
     
