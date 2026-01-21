@@ -213,15 +213,47 @@ Castborn:RegisterCallback("INIT", function()
     CastbornDB.cooldowns = Castborn:MergeDefaults(CastbornDB.cooldowns or {}, defaults)
 end)
 
+-- Merge new default spells into existing tracked list (for upgrades)
+local function MergeNewDefaults(existingSpells, defaultSpells)
+    local existingIds = {}
+    for _, spell in ipairs(existingSpells) do
+        existingIds[spell.spellId] = true
+    end
+
+    local added = 0
+    for _, spell in ipairs(defaultSpells) do
+        if not existingIds[spell.spellId] then
+            table.insert(existingSpells, spell)
+            added = added + 1
+        end
+    end
+
+    return added
+end
+
 Castborn:RegisterCallback("READY", function()
-    -- Load class defaults if no spells tracked or upgrading from pre-2.5.0
     local db = CastbornDB.cooldowns
-    if not db.trackedSpells or #db.trackedSpells == 0 or not db.defaultsLoaded then
-        local _, class = UnitClass("player")
+    local _, class = UnitClass("player")
+    local currentVersion = Castborn.version
+
+    if not db.trackedSpells or #db.trackedSpells == 0 then
+        -- First time setup: load all class defaults
         if class and Castborn.SpellData then
             db.trackedSpells = Castborn.SpellData:GetClassCooldowns(class)
-            db.defaultsLoaded = "2.5.0"
+            db.defaultsLoaded = currentVersion
         end
+    elseif db.defaultsLoaded ~= currentVersion then
+        -- Version changed: merge any new default spells
+        if class and Castborn.SpellData then
+            local defaults = Castborn.SpellData:GetClassCooldowns(class)
+            if defaults then
+                local added = MergeNewDefaults(db.trackedSpells, defaults)
+                if added > 0 then
+                    Castborn:Print(added .. " new cooldown(s) added from defaults")
+                end
+            end
+        end
+        db.defaultsLoaded = currentVersion
     end
 
     CreateContainer()
