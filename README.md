@@ -4,41 +4,55 @@
   <img src="images/logo.png" width="200">
 </p>
 
-A castbar addon for World of Warcraft: The Burning Crusade Classic.
+**Castborn** is a lightweight, all-in-one casting and combat tracker for TBC Classic. It provides clean, customisable castbars alongside essential tracking tools for DoTs, procs, cooldowns, and swing timers.
 
 ## Screenshots
 
 <img src="images/combat.png" width="250"> <img src="images/testmode.png" width="250"> <img src="images/options.png" width="250">
 
+## Castbars
+
+- Player, Target, Focus, Target-of-Target
+- Class-coloured bars (optional)
+- Latency indicator for player casts
+- Option to hide Blizzard's default castbar
+
+## Tracking Modules
+
+- **GCD Indicator** – visualise global cooldown
+- **Five Second Rule** – track mana regeneration timing
+- **Swing Timer** – mainhand, offhand, and ranged auto-attacks
+- **DoT Tracker** – debuffs on your current target
+- **Multi-DoT Tracker** – DoTs across multiple targets simultaneously
+- **Proc Tracker** – important buffs and procs (Clearcasting, Shadow Trance, etc.)
+- **Cooldown Tracker** – class abilities with configurable defaults
+- **Interrupt Tracker** – monitor kick/counterspell availability
+
 ## Features
 
-- Player, target, focus, and target-of-target castbars
-- GCD indicator
-- Five Second Rule tracker (mana regeneration)
-- Swing timers (melee and ranged)
-- DoT tracker
-- Multi-DoT tracker (track DoTs on multiple targets)*
-- Cooldown tracker
-- Proc tracker
-- Interrupt tracker
-
-*\*Experimental - may have issues*
+- **Onboarding tour** – guided introduction for new users
+- **Layout grid** – snap frames to a customisable grid for pixel-perfect alignment
+- Drag-and-drop positioning
+- Anchor modules to follow your player castbar
+- Test mode to preview and arrange all elements
+- Masque support for proc icons
+- Per-class defaults for procs and cooldowns
 
 ## Installation
 
 1. Download and extract to `Interface/AddOns/Castborn`
 2. Restart WoW or `/reload`
 
-## Usage
+## Commands
 
-- `/cb` - Open options panel
-- `/cb unlock` - Unlock frames for repositioning
-- `/cb lock` - Lock frames
-- `/cb test` - Show test mode
-- `/cb reset` - Reset all positions
+- `/cb` – Open options
+- `/cb unlock` – Unlock frames for repositioning
+- `/cb lock` – Lock frames
+- `/cb test` – Enter test mode
+- `/cb grid` – Toggle layout grid
+- `/cb reset` – Reset all positions to defaults
+- `/cb tutorial` – Restart the onboarding tour
 
-## Configuration
+## Feedback
 
-All frames can be repositioned by unlocking (`/cb unlock`) and dragging. The GCD indicator and Five Second Rule tracker anchor to the player castbar by default.
-
-Colours, sizes, and module toggles are available in the options panel (`/cb`).
+Found a bug or have a suggestion? Create a ticket on [CurseForge](https://legacy.curseforge.com/wow/addons/castborn/settings/issues) or [GitHub](https://github.com/afrugalpenguin/castborn/issues)
