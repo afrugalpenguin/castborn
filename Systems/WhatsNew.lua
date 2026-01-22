@@ -14,6 +14,16 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "2.9.0",
+        features = {
+            "Cooldown icons now show a subtle golden glow when abilities become ready, drawing attention to available cooldowns",
+            "Added \"Cooldowns Glow\" toggle under Look & Feel > Effects to enable/disable the ready glow",
+        },
+        fixes = {
+            "Removed Multi-DoT click-to-target feature (TargetUnit is a Blizzard-protected action that cannot be called from addon code in combat)",
+        },
+    },
+    {
         version = "2.8.2",
         features = {},
         fixes = {
@@ -31,7 +41,6 @@ local changelog = {
         version = "2.8.0",
         features = {
             "Added \"Changelog\" menu item in options (under Profiles) with scrollable version history",
-            "Multi-DoT Tracker: Ctrl+Click on a row to target that mob (requires visible nameplate)",
         },
         fixes = {
             "Multi-DoT Tracker now shows actual debuff durations instead of hardcoded values",
