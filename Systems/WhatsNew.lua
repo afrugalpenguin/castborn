@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "2.8.2",
+        features = {},
+        fixes = {
+            "Improved default positions: DoT tracker now mirrors cooldowns, Multi-DoT next to it",
+        },
+    },
+    {
         version = "2.8.1",
         features = {},
         fixes = {

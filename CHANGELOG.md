@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.8.2
+
+### Fixes
+- Improved default positions: DoT tracker now mirrors cooldowns (right of castbar), Multi-DoT next to it
+
 ## v2.8.1
 
 ### Fixes
