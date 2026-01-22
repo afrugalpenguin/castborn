@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.6.13
+## v2.7.0
 
 ### Features
 - Cooldown tracker now auto-merges new default spells when addon updates (no more missing spells after upgrades)
