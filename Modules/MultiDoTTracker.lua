@@ -12,9 +12,9 @@ local defaults = {
     width = 220,
     rowHeight = 20,
     point = "CENTER",
-    x = 580,
+    x = 660,
     y = -300,
-    xPct = 0.32,
+    xPct = 0.345,
     yPct = -0.278,
     showCyclingIndicator = true,
 }
