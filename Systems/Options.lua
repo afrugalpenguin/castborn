@@ -724,6 +724,11 @@ function Options:Toggle()
     else
         self:ShowCategory("general")
         optionsFrame:Show()
+
+        -- Show What's New overlay if version changed
+        if Castborn.WhatsNew and Castborn.WhatsNew:ShouldShow() then
+            Castborn.WhatsNew:Show()
+        end
     end
 end
 
@@ -884,7 +889,7 @@ local function CreateInterfacePanel()
 
     local version = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
-    version:SetText("Version 2.4.2")
+    version:SetText("Version " .. (Castborn.version or "?"))
 
     local desc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     desc:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -12)

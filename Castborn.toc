@@ -27,6 +27,7 @@ Modules/ProcTracker.lua
 Modules/CooldownTracker.lua
 Modules/InterruptTracker.lua
 
+Systems/WhatsNew.lua
 Systems/Options.lua
 Systems/Config.lua
 Systems/Tutorial.lua
