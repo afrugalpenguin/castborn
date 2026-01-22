@@ -301,6 +301,7 @@ CB.defaults = {
         xPct = -0.234,
         yPct = -0.278,
         anchored = true,
+        showReadyGlow = true,
     },
 
     multidot = {

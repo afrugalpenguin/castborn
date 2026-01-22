@@ -20,6 +20,7 @@ local defaults = {
     anchored = true,
     anchorPosition = "LEFT",  -- LEFT, RIGHT, TOP, BOTTOM
     growDirection = "LEFT",   -- LEFT or RIGHT
+    showReadyGlow = true,     -- Animated edge glow when ready
 }
 
 local function CreateCooldownFrame(parent, index)
@@ -60,8 +61,9 @@ local function CreateCooldownFrame(parent, index)
     f.glowOuter:SetBlendMode("ADD")
     f.glowOuter:SetPoint("TOPLEFT", -8, 8)
     f.glowOuter:SetPoint("BOTTOMRIGHT", 8, -8)
-    f.glowOuter:SetVertexColor(0.3, 1, 0.3, 0)
+    f.glowOuter:SetVertexColor(1, 0.8, 0.3, 0)
     f.glow = f.glowOuter  -- Keep reference for existing code
+
 
     -- Register with Masque if available
     if Castborn.Masque and Castborn.Masque.enabled then
@@ -93,6 +95,19 @@ local function CreateContainer()
 
     frame:Hide()  -- Start hidden, will show when cooldowns are tracked
     return frame
+end
+
+-- Static glow for ready cooldowns
+local function StartEdgePulse(cdFrame)
+    if cdFrame.edgePulseActive then return end
+    cdFrame.edgePulseActive = true
+    cdFrame.glow:SetAlpha(0.3)
+end
+
+local function StopEdgePulse(cdFrame)
+    if not cdFrame.edgePulseActive then return end
+    cdFrame.edgePulseActive = false
+    cdFrame.glow:SetAlpha(0)
 end
 
 local function UpdateLayout()
@@ -161,24 +176,17 @@ local function UpdateCooldowns()
                     if duration > 3 then
                         lastCooldownDuration[spell.spellId] = duration
                     end
+                    -- Stop edge pulse when on cooldown
+                    StopEdgePulse(cdFrame)
                 else
                     cdFrame.cooldown:Clear()
                     cdFrame.icon:SetDesaturated(false)
 
-                    -- Only glow if it was a real cooldown (> 3 seconds), not just a GCD or combat state change
-                    if wasReady[spell.spellId] == false and lastCooldownDuration[spell.spellId] then
-                        local elapsed = 0
-                        cdFrame:SetScript("OnUpdate", function(self, delta)
-                            elapsed = elapsed + delta
-                            local alpha = math.sin(elapsed * 6) * 0.4 + 0.3
-                            alpha = math.max(0, math.min(1, alpha))  -- Clamp to valid range
-                            cdFrame.glow:SetAlpha(alpha)
-                            if elapsed > 0.75 then
-                                cdFrame:SetScript("OnUpdate", nil)
-                                cdFrame.glow:SetAlpha(0)
-                            end
-                        end)
-                        lastCooldownDuration[spell.spellId] = nil  -- Reset after glow
+                    -- Start edge pulse if enabled and was a real cooldown
+                    if db.showReadyGlow ~= false and lastCooldownDuration[spell.spellId] then
+                        if not cdFrame.edgePulseActive then
+                            StartEdgePulse(cdFrame)
+                        end
                     end
                     wasReady[spell.spellId] = true
                 end
@@ -374,6 +382,12 @@ function Castborn:TestCooldowns()
             if i == 2 then
                 -- Simulate a cooldown on the second icon
                 cdFrame.cooldown:SetCooldown(GetTime() - 5, 30)
+                StopEdgePulse(cdFrame)
+            else
+                -- Show edge glow on ready icons (1 and 3)
+                if db.showReadyGlow ~= false then
+                    StartEdgePulse(cdFrame)
+                end
             end
             cdFrame:Show()
         end
@@ -391,7 +405,10 @@ function Castborn:EndTestCooldowns()
     if frame then
         frame:Hide()
         for i = 1, MAX_COOLDOWNS do
-            if cdFrames[i] then cdFrames[i]:Hide() end
+            if cdFrames[i] then
+                StopEdgePulse(cdFrames[i])
+                cdFrames[i]:Hide()
+            end
         end
     end
 end
