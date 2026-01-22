@@ -582,6 +582,20 @@ function Options:BuildLookFeel(parent)
         end
     end)
     cb1:SetPoint("TOPLEFT", 0, y)
+    y = y - 40
+
+    local header2 = CreateHeader(parent, "Effects")
+    header2:SetPoint("TOPLEFT", 0, y)
+    header2:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    CastbornDB.cooldowns = CastbornDB.cooldowns or {}
+    local cb2 = CreateCheckbox(parent, "Cooldowns Glow", CastbornDB.cooldowns, "showReadyGlow", function(checked)
+        if not checked then
+            Castborn:FireCallback("COOLDOWNS_GLOW_OFF")
+        end
+    end)
+    cb2:SetPoint("TOPLEFT", 0, y)
 end
 
 function Options:BuildProfiles(parent)

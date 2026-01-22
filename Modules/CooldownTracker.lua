@@ -221,6 +221,14 @@ Castborn:RegisterCallback("INIT", function()
     CastbornDB.cooldowns = Castborn:MergeDefaults(CastbornDB.cooldowns or {}, defaults)
 end)
 
+Castborn:RegisterCallback("COOLDOWNS_GLOW_OFF", function()
+    for i = 1, MAX_COOLDOWNS do
+        if cdFrames[i] then
+            StopEdgePulse(cdFrames[i])
+        end
+    end
+end)
+
 -- Merge new default spells into existing tracked list (for upgrades)
 local function MergeNewDefaults(existingSpells, defaultSpells)
     local existingIds = {}
