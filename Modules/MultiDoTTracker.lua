@@ -59,47 +59,12 @@ local function GetDebuffDuration(unitId, spellId)
     return nil
 end
 
--- Handle row click to target the mob
-local function OnRowClick(self, button)
-    if not IsControlKeyDown() then return end
-
-    local guid = self.targetGUID
-    if not guid then return end
-
-    -- Find unitId from GUID by scanning nameplates
-    local unitId = GetUnitIdFromGUID(guid)
-    if unitId then
-        TargetUnit(unitId)
-    end
-    -- If no unitId found, the mob's nameplate isn't visible - nothing we can do
-end
-
--- Tooltip handlers for row hover
-local function OnRowEnter(self)
-    if self.targetName then
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine(self.targetName, 1, 1, 1)
-        GameTooltip:AddLine("Ctrl+Click to target", 0.7, 0.7, 0.7)
-        GameTooltip:AddLine("(requires visible nameplate)", 0.5, 0.5, 0.5)
-        GameTooltip:Show()
-    end
-end
-
-local function OnRowLeave(self)
-    GameTooltip:Hide()
-end
 
 local function CreateTargetRow(parent, index)
     local db = CastbornDB.multidot
 
     local row = CreateFrame("Frame", "Castborn_MultiDoT_Row" .. index, parent)
     row:SetSize(db.width - 4, db.rowHeight)
-
-    -- Enable clicking for Ctrl+Click to target
-    row:EnableMouse(true)
-    row:SetScript("OnMouseUp", OnRowClick)
-    row:SetScript("OnEnter", OnRowEnter)
-    row:SetScript("OnLeave", OnRowLeave)
 
     row.bg = row:CreateTexture(nil, "BACKGROUND")
     row.bg:SetAllPoints()
@@ -340,10 +305,6 @@ local function UpdateDisplay()
         local target = sorted[i]
 
         if target then
-            -- Store target info for click-to-target
-            row.targetGUID = target.guid
-            row.targetName = target.name
-
             row.name:SetText(target.name or "Unknown")
 
             row.urgency:SetColorTexture(GetUrgencyColor(target.urgency))
@@ -380,9 +341,6 @@ local function UpdateDisplay()
 
             row:Show()
         else
-            -- Clear target info when hiding
-            row.targetGUID = nil
-            row.targetName = nil
             row:Hide()
         end
     end
