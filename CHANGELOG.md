@@ -4,6 +4,7 @@
 
 ### Features
 - Cooldown tracker now auto-merges new default spells when addon updates (no more missing spells after upgrades)
+- Added "What's New" overlay that shows changelog when opening `/cb` after an addon update
 
 ## v2.6.12
 
