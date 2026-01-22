@@ -1,11 +1,19 @@
 # Changelog
 
+## v2.8.0
+
+### Features
+- Added "Changelog" menu item in options (under Profiles) with scrollable version history
+- Multi-DoT Tracker: Ctrl+Click on a row to target that mob (requires visible nameplate)
+
+### Fixes
+- Multi-DoT Tracker now shows actual debuff durations instead of hardcoded values (fixes Polymorph showing wrong time)
+
 ## v2.7.0
 
 ### Features
 - Cooldown tracker now auto-merges new default spells when addon updates (no more missing spells after upgrades)
 - Added "What's New" overlay that shows changelog when opening `/cb` after an addon update
-- Added "Changelog" menu item in options (under Profiles) with scrollable version history
 
 ## v2.6.12
 
