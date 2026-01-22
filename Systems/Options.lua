@@ -51,6 +51,7 @@ local categories = {
     { divider = true },
     { id = "lookfeel", name = "Look & Feel" },
     { id = "profiles", name = "Profiles" },
+    { id = "changelog", name = "Changelog" },
 }
 
 --------------------------------------------------------------------------------
@@ -404,6 +405,8 @@ function Options:CreateContent(catId)
         self:BuildLookFeel(content)
     elseif catId == "profiles" then
         self:BuildProfiles(content)
+    elseif catId == "changelog" then
+        self:BuildChangelog(content)
     else
         self:BuildModule(content, catId)
     end
@@ -592,6 +595,109 @@ function Options:BuildProfiles(parent)
     local note = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     note:SetPoint("TOPLEFT", 0, y)
     note:SetText("|cffFFCC00Coming Soon|r")
+end
+
+function Options:BuildChangelog(parent)
+    local y = 0
+
+    local header1 = CreateHeader(parent, "Version History")
+    header1:SetPoint("TOPLEFT", 0, y)
+    header1:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    -- Create scroll frame
+    local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 0, y)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -24, 0)
+
+    local scrollChild = CreateFrame("Frame", nil, scrollFrame)
+    scrollChild:SetWidth(scrollFrame:GetWidth() or 400)
+    scrollFrame:SetScrollChild(scrollChild)
+
+    -- Get changelog data from WhatsNew module
+    local changelog = Castborn.WhatsNew and Castborn.WhatsNew:GetChangelog() or {}
+
+    local contentY = 0
+    local contentWidth = 400
+
+    for i, entry in ipairs(changelog) do
+        -- Version header
+        local versionHeader = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        versionHeader:SetPoint("TOPLEFT", 0, contentY)
+        versionHeader:SetWidth(contentWidth)
+        versionHeader:SetJustifyH("LEFT")
+
+        if i == 1 then
+            versionHeader:SetText("|cffFFCC00v" .. entry.version .. " (Current)|r")
+        else
+            versionHeader:SetText("|cff888888v" .. entry.version .. "|r")
+        end
+
+        contentY = contentY - 18
+
+        -- Features section
+        if entry.features and #entry.features > 0 then
+            local featuresLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            featuresLabel:SetPoint("TOPLEFT", 8, contentY)
+            featuresLabel:SetText("|cff88ddffFeatures:|r")
+            contentY = contentY - 14
+
+            for _, feature in ipairs(entry.features) do
+                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                bullet:SetPoint("TOPLEFT", 16, contentY)
+                bullet:SetWidth(contentWidth - 24)
+                bullet:SetJustifyH("LEFT")
+                bullet:SetText("|cffcccccc-|r " .. feature)
+                bullet:SetSpacing(2)
+                local textHeight = bullet:GetStringHeight()
+                contentY = contentY - textHeight - 2
+            end
+        end
+
+        -- Changes section
+        if entry.changes and #entry.changes > 0 then
+            local changesLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            changesLabel:SetPoint("TOPLEFT", 8, contentY)
+            changesLabel:SetText("|cffffcc00Changes:|r")
+            contentY = contentY - 14
+
+            for _, change in ipairs(entry.changes) do
+                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                bullet:SetPoint("TOPLEFT", 16, contentY)
+                bullet:SetWidth(contentWidth - 24)
+                bullet:SetJustifyH("LEFT")
+                bullet:SetText("|cffcccccc-|r " .. change)
+                bullet:SetSpacing(2)
+                local textHeight = bullet:GetStringHeight()
+                contentY = contentY - textHeight - 2
+            end
+        end
+
+        -- Fixes section
+        if entry.fixes and #entry.fixes > 0 then
+            local fixesLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            fixesLabel:SetPoint("TOPLEFT", 8, contentY)
+            fixesLabel:SetText("|cff88ff88Fixes:|r")
+            contentY = contentY - 14
+
+            for _, fix in ipairs(entry.fixes) do
+                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                bullet:SetPoint("TOPLEFT", 16, contentY)
+                bullet:SetWidth(contentWidth - 24)
+                bullet:SetJustifyH("LEFT")
+                bullet:SetText("|cffcccccc-|r " .. fix)
+                bullet:SetSpacing(2)
+                local textHeight = bullet:GetStringHeight()
+                contentY = contentY - textHeight - 2
+            end
+        end
+
+        -- Spacing between versions
+        contentY = contentY - 10
+    end
+
+    -- Set scroll child height
+    scrollChild:SetHeight(math.abs(contentY) + 20)
 end
 
 function Options:BuildModule(parent, key)
@@ -813,6 +919,9 @@ SlashCmdList["CASTBORN"] = function(msg)
     elseif cmd == "profiles" then
         Options:Show()
         Options:ShowCategory("profiles")
+    elseif cmd == "changelog" then
+        Options:Show()
+        Options:ShowCategory("changelog")
     elseif cmd == "tutorial" then
         if Castborn.Tutorial then
             Castborn.Tutorial:Start()
@@ -862,6 +971,7 @@ SlashCmdList["CASTBORN"] = function(msg)
         print("  |cffFFCC00/cb test|r - Test mode")
         print("  |cffFFCC00/cb grid|r - Toggle grid")
         print("  |cffFFCC00/cb reset|r - Reset positions")
+        print("  |cffFFCC00/cb changelog|r - View version history")
         print("  |cffFFCC00/cb player|target|tot|focus|dots|fsr|swing|gcd [on/off]|r - Toggle modules")
     else
         Castborn:Print("Unknown command. Type /cb help")

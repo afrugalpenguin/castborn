@@ -18,6 +18,7 @@ local changelog = {
         features = {
             "Cooldown tracker now auto-merges new default spells when addon updates (no more missing spells after upgrades)",
             "Added \"What's New\" overlay that shows changelog when opening /cb after an addon update",
+            "Added \"Changelog\" menu item in options (under Profiles) with scrollable version history",
         },
         fixes = {},
     },
@@ -40,7 +41,161 @@ local changelog = {
             "Exclude self-casts from non-player castbars",
         },
     },
+    {
+        version = "2.6.10",
+        features = {},
+        fixes = { "Added Fear Ward to Priest cooldown tracking" },
+    },
+    {
+        version = "2.6.9",
+        features = {},
+        fixes = { "Added Holy Fire to Priest Multi-DoT tracking" },
+    },
+    {
+        version = "2.6.8",
+        features = {},
+        fixes = { "Added all ranks of Druid DoTs (Moonfire, Insect Swarm, Rake, Rip)" },
+    },
+    {
+        version = "2.6.7",
+        features = {},
+        fixes = {
+            "Added all ranks of Warlock DoTs (Corruption, Immolate, Curse of Agony, Curse of Doom, Unstable Affliction, Siphon Life)",
+            "Removed Sunfire (not in TBC)",
+        },
+    },
+    {
+        version = "2.6.6",
+        features = {},
+        fixes = { "Added Vampiric Touch to Priest Multi-DoT tracking" },
+    },
+    {
+        version = "2.6.5",
+        features = {},
+        fixes = { "Added all ranks of Shadow Word: Pain and Devouring Plague for Priest Multi-DoT tracking" },
+    },
+    {
+        version = "2.6.4",
+        features = {},
+        fixes = { "Fixed proc tracker icons showing as grey boxes (draw layer issue)" },
+    },
+    {
+        version = "2.6.3",
+        features = {},
+        fixes = { "Proc tracker duration now updates smoothly every 0.1s instead of only on buff changes" },
+    },
+    {
+        version = "2.6.2",
+        features = {},
+        fixes = { "Fixed CurseForge changelog display" },
+    },
+    {
+        version = "2.6.1",
+        features = { "Added Ice Barrier to Mage default cooldowns" },
+        fixes = {},
+    },
+    {
+        version = "2.6.0",
+        features = {
+            "Added default cooldown tracking for Druid, Shaman, Hunter, Rogue, and Warrior",
+            "All 9 classes now have default cooldowns configured",
+        },
+        fixes = {},
+    },
+    {
+        version = "2.5.1",
+        features = {},
+        fixes = {
+            "Added Ice Block to Mage default cooldowns",
+            "Fixed upgrade migration so existing users get new default cooldowns",
+        },
+    },
+    {
+        version = "2.5.0",
+        features = {
+            "Added default cooldown tracking for Mage, Priest, Warlock, and Paladin",
+            "Cooldown tracker now automatically shows class-relevant abilities (Cold Snap, Icy Veins, etc.)",
+        },
+        fixes = {},
+    },
+    {
+        version = "2.4.2",
+        features = {},
+        fixes = {},
+        changes = { "Profiles section now shows \"Coming Soon\" (not yet implemented)" },
+    },
+    {
+        version = "2.4.1",
+        features = {},
+        fixes = { "Updated Interface version for TBC Anniversary (2.5.5)" },
+    },
+    {
+        version = "2.4.0",
+        features = {},
+        fixes = {},
+        changes = {
+            "Removed duplicate \"Enabled\" checkboxes from individual module settings",
+            "Module enable/disable toggles now only on General screen to avoid confusion",
+        },
+    },
+    {
+        version = "2.3.1",
+        features = {},
+        fixes = { "Fixed CurseForge showing incorrect version number" },
+    },
+    {
+        version = "2.3.0",
+        features = {
+            "Player castbar now uses class colors by default",
+            "Added \"Look & Feel\" section in options with class colors toggle",
+            "Added divider in options menu to separate module settings from appearance/profiles",
+        },
+        fixes = {},
+    },
+    {
+        version = "2.2.0",
+        features = { "Added option to hide default Blizzard cast bar (under Player Castbar settings)" },
+        fixes = {},
+    },
+    {
+        version = "2.1.0",
+        features = {},
+        fixes = {
+            "Adjusted default positions for target-of-target and focus castbars to avoid overlap with action bars",
+            "Fixed release zip containing lowercase folder name causing addon to fail to load",
+        },
+    },
+    {
+        version = "2.0.0",
+        features = {
+            "Player, target, focus, and target-of-target castbars",
+            "GCD indicator",
+            "Five Second Rule tracker",
+            "Swing timers (mainhand, offhand, ranged)",
+            "DoT tracker",
+            "Multi-DoT tracker",
+            "Cooldown tracker",
+            "Proc tracker",
+            "Interrupt tracker",
+        },
+        fixes = {
+            "Fixed combat log API for TBC Anniversary (use CombatLogGetCurrentEventInfo)",
+            "Fixed options panel sliders not displaying",
+            "Multi-DoT tracker now shows with 1+ targets (was 2+)",
+            "Multi-DoT tracker hides current target (only shows other targets)",
+            "Multi-DoT bar no longer overflows container",
+            "Multi-DoT layout: icons first, then mob name",
+            "Multi-DoT name positioning is now dynamic based on number of dots",
+            "Added Frostbolt slow to tracked spells for Mage",
+            "Added C_Timer.After fallback for addon initialization",
+        },
+    },
 }
+
+-- Export changelog for use by Options panel
+function WhatsNew:GetChangelog()
+    return changelog
+end
 
 --------------------------------------------------------------------------------
 -- Version Comparison
