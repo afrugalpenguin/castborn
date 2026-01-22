@@ -24,7 +24,11 @@ local testModeActive = false
 
 -- Helper to find a unitId from a GUID by scanning nameplates
 local function GetUnitIdFromGUID(guid)
-    -- Check nameplates first (most common case for multi-dotting)
+    -- Check target first (most common case)
+    if UnitGUID("target") == guid then
+        return "target"
+    end
+    -- Check nameplates (common for multi-dotting)
     for i = 1, 40 do
         local unitId = "nameplate" .. i
         if UnitExists(unitId) and UnitGUID(unitId) == guid then
@@ -38,6 +42,19 @@ local function GetUnitIdFromGUID(guid)
     -- Check mouseover
     if UnitGUID("mouseover") == guid then
         return "mouseover"
+    end
+    return nil
+end
+
+-- Get actual debuff duration from a unit
+local function GetDebuffDuration(unitId, spellId)
+    if not unitId or not UnitExists(unitId) then return nil end
+    for i = 1, 40 do
+        local name, _, _, _, duration, expirationTime, source, _, _, debuffSpellId = UnitDebuff(unitId, i)
+        if not name then break end
+        if debuffSpellId == spellId and source == "player" then
+            return duration, expirationTime
+        end
     end
     return nil
 end
@@ -171,11 +188,22 @@ local function OnCombatLogEvent(self, event, ...)
             }
         end
 
-        -- Use duration from SpellData, fallback to 18 seconds
-        local duration = dotInfo.duration or 18
+        -- Try to get actual duration from the unit's debuffs
+        local unitId = GetUnitIdFromGUID(destGUID)
+        local actualDuration, actualExpiration = GetDebuffDuration(unitId, spellId)
+
+        local expirationTime
+        if actualExpiration then
+            -- Use actual expiration time from the game
+            expirationTime = actualExpiration
+        else
+            -- Fallback to SpellData duration, then 18 seconds
+            local duration = dotInfo.duration or 18
+            expirationTime = GetTime() + duration
+        end
 
         trackedTargets[destGUID].dots[spellId] = {
-            expirationTime = GetTime() + duration,
+            expirationTime = expirationTime,
             spellId = spellId,
             name = dotInfo.name,
         }
@@ -199,16 +227,30 @@ local function OnCombatLogEvent(self, event, ...)
     end
 end
 
-local function ScanTargetDebuffs()
-    local targetGUID = UnitGUID("target")
-    if not targetGUID or not trackedTargets[targetGUID] then return end
+local function ScanUnitDebuffs(unitId)
+    local guid = UnitGUID(unitId)
+    if not guid or not trackedTargets[guid] then return end
 
     for i = 1, 40 do
-        local name, _, _, _, duration, expirationTime, source, _, _, spellId = UnitDebuff("target", i)
+        local name, _, _, _, duration, expirationTime, source, _, _, spellId = UnitDebuff(unitId, i)
         if not name then break end
 
-        if source == "player" and trackedTargets[targetGUID].dots[spellId] then
-            trackedTargets[targetGUID].dots[spellId].expirationTime = expirationTime
+        if source == "player" and trackedTargets[guid].dots[spellId] then
+            trackedTargets[guid].dots[spellId].expirationTime = expirationTime
+        end
+    end
+end
+
+local function ScanAllDebuffs()
+    -- Scan current target
+    ScanUnitDebuffs("target")
+    -- Scan focus
+    ScanUnitDebuffs("focus")
+    -- Scan all visible nameplates
+    for i = 1, 40 do
+        local unitId = "nameplate" .. i
+        if UnitExists(unitId) then
+            ScanUnitDebuffs(unitId)
         end
     end
 end
@@ -282,7 +324,7 @@ local function UpdateDisplay()
         end
     end
 
-    ScanTargetDebuffs()
+    ScanAllDebuffs()
 
     local sorted = GetSortedTargets()
 
