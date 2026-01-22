@@ -527,6 +527,7 @@ end
 local mainFrame = CreateFrame("Frame", "CastbornMain", UIParent)
 mainFrame:RegisterEvent("ADDON_LOADED")
 mainFrame:RegisterEvent("PLAYER_LOGIN")
+mainFrame:RegisterEvent("PLAYER_REGEN_DISABLED") -- Entering combat
 
 mainFrame:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" and arg1 == "Castborn" then
@@ -575,6 +576,16 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
                     CB:FireCallback("READY")
                 end
             end)
+        end
+
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        -- Auto-lock frames when entering combat
+        if not CastbornDB.locked then
+            CastbornDB.locked = true
+            CB:EndTestMode()
+            if CB.HideTestFrames then CB:HideTestFrames() end
+            if CB.Anchoring then CB.Anchoring:HideDragIndicators(true) end
+            if CB.GridPosition then CB.GridPosition:HideGrid() end
         end
     end
 end)
