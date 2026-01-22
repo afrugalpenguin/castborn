@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.8.1
+
+### Fixes
+- Frames now auto-lock when entering combat (prevents getting stuck in test mode)
+
 ## v2.8.0
 
 ### Features

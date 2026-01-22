@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "2.8.1",
+        features = {},
+        fixes = {
+            "Frames now auto-lock when entering combat (prevents getting stuck in test mode)",
+        },
+    },
+    {
         version = "2.8.0",
         features = {
             "Added \"Changelog\" menu item in options (under Profiles) with scrollable version history",
