@@ -14,6 +14,15 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.0.0",
+        features = {
+            "Cooldown Tracker: per-spell enable/disable checkboxes in options (choose exactly which cooldowns to track)",
+        },
+        fixes = {
+            "Removed unused Min Duration slider from Cooldown Tracker options",
+        },
+    },
+    {
         version = "2.9.0",
         features = {
             "Cooldown icons now show a subtle golden glow when abilities become ready, drawing attention to available cooldowns",

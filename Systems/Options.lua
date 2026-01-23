@@ -810,17 +810,42 @@ function Options:BuildModule(parent, key)
         timersCB:SetPoint("TOPLEFT", 200, y)
 
     elseif key == "cooldowns" then
-        -- Per-spell enable/disable checkboxes
-        local spells = db.trackedSpells or {}
-        -- Build a sorted copy by name
-        local sorted = {}
-        for i, spell in ipairs(spells) do
-            table.insert(sorted, { index = i, spell = spell })
-        end
-        table.sort(sorted, function(a, b) return a.spell.name < b.spell.name end)
+        -- Divider
+        local divider = parent:CreateTexture(nil, "ARTWORK")
+        divider:SetHeight(1)
+        divider:SetPoint("TOPLEFT", 0, y - 4)
+        divider:SetPoint("TOPRIGHT", 0, y - 4)
+        divider:SetColorTexture(0.25, 0.25, 0.25, 1)
+        y = y - 14
 
-        for _, entry in ipairs(sorted) do
-            local spell = entry.spell
+        -- Build checkbox list from SpellData (ensures all class spells are always shown)
+        local _, class = UnitClass("player")
+        local classSpells = Castborn.SpellData and Castborn.SpellData:GetClassCooldowns(class) or {}
+        db.trackedSpells = db.trackedSpells or {}
+
+        -- Index existing tracked spells by spellId for quick lookup
+        local tracked = {}
+        for _, spell in ipairs(db.trackedSpells) do
+            tracked[spell.spellId] = spell
+        end
+
+        -- Ensure all class spells exist in trackedSpells
+        for _, def in ipairs(classSpells) do
+            if not tracked[def.spellId] then
+                local entry = { spellId = def.spellId, name = def.name, enabled = true }
+                table.insert(db.trackedSpells, entry)
+                tracked[def.spellId] = entry
+            end
+        end
+
+        -- Build sorted list by name
+        local sorted = {}
+        for _, spell in ipairs(db.trackedSpells) do
+            table.insert(sorted, spell)
+        end
+        table.sort(sorted, function(a, b) return a.name < b.name end)
+
+        for _, spell in ipairs(sorted) do
             if spell.enabled == nil then spell.enabled = true end
             local cb = CreateCheckbox(parent, spell.name, spell, "enabled")
             cb:SetPoint("TOPLEFT", 0, y)
