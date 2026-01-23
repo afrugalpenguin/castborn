@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.0.0
+
+### Features
+- Cooldown Tracker: per-spell enable/disable checkboxes (replaces unused Min Duration slider)
+
 ## v2.8.2
 
 ### Fixes
