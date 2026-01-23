@@ -499,9 +499,13 @@ end
 --------------------------------------------------------------------------------
 
 function CB:IsSpellKnown(spellId)
-    if IsSpellKnown then
-        return IsSpellKnown(spellId)
+    if IsSpellKnown and IsSpellKnown(spellId) then
+        return true
     end
+    if IsPlayerSpell and IsPlayerSpell(spellId) then
+        return true
+    end
+    -- Fallback: check by spell name (handles multi-rank talent spells)
     local name = GetSpellInfo(spellId)
     if not name then return false end
     return GetSpellInfo(name) ~= nil

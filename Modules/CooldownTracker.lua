@@ -150,8 +150,8 @@ local function UpdateCooldowns()
             local cdFrame = cdFrames[visibleIndex]
             if not cdFrame then break end
 
-            local start, duration, enabled = GetSpellCooldown(spell.spellId)
-            local icon = GetSpellTexture(spell.spellId)
+            local start, duration, enabled = GetSpellCooldown(spell.name)
+            local icon = GetSpellTexture(spell.name)
 
             -- Position the frame based on visible index (compact layout)
             local size = db.iconSize or 32
@@ -371,7 +371,7 @@ function Castborn:TestCooldowns()
     local testSpells = {}
     for _, spell in ipairs(db.trackedSpells or {}) do
         if spell.enabled ~= false then
-            local icon = GetSpellTexture(spell.spellId)
+            local icon = GetSpellTexture(spell.name)
             if icon then
                 table.insert(testSpells, icon)
             end
