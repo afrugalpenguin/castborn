@@ -138,8 +138,11 @@ local function UpdateCooldowns()
 
     local visibleIndex = 0
     for i, spell in ipairs(db.trackedSpells or {}) do
+        -- Skip disabled spells
+        if spell.enabled == false then
+            -- do nothing
         -- Skip spells the player doesn't know
-        if not Castborn:IsSpellKnown(spell.spellId) then
+        elseif not Castborn:IsSpellKnown(spell.spellId) then
             -- Hide this frame if it was previously shown
             if cdFrames[i] then cdFrames[i]:Hide() end
         else
@@ -195,7 +198,7 @@ local function UpdateCooldowns()
             else
                 cdFrame:Hide()
             end
-        end  -- end of Castborn:IsSpellKnown check
+        end  -- end of enabled/known check
     end
 
     -- Hide any remaining cooldown frames that aren't being used

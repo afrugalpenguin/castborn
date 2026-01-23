@@ -810,11 +810,22 @@ function Options:BuildModule(parent, key)
         timersCB:SetPoint("TOPLEFT", 200, y)
 
     elseif key == "cooldowns" then
-        db.minDuration = db.minDuration or 0
-        local minSlider = CreateSlider(parent, "Min Duration (sec)", db, "minDuration", 0, 30, 1)
-        minSlider:SetPoint("TOPLEFT", 0, y)
-        local iconsCB = CreateCheckbox(parent, "Show Icons", db, "showIcons")
-        iconsCB:SetPoint("TOPLEFT", 220, y + 15)
+        -- Per-spell enable/disable checkboxes
+        local spells = db.trackedSpells or {}
+        -- Build a sorted copy by name
+        local sorted = {}
+        for i, spell in ipairs(spells) do
+            table.insert(sorted, { index = i, spell = spell })
+        end
+        table.sort(sorted, function(a, b) return a.spell.name < b.spell.name end)
+
+        for _, entry in ipairs(sorted) do
+            local spell = entry.spell
+            if spell.enabled == nil then spell.enabled = true end
+            local cb = CreateCheckbox(parent, spell.name, spell, "enabled")
+            cb:SetPoint("TOPLEFT", 0, y)
+            y = y - 26
+        end
 
     elseif key == "interrupt" then
         local targetCB = CreateCheckbox(parent, "Track Target", db, "trackTarget")
