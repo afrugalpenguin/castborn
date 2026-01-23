@@ -362,24 +362,39 @@ end)
 -- Test mode function
 function Castborn:TestCooldowns()
     local db = CastbornDB.cooldowns
-    if not frame then return end  -- Show even if disabled for test mode
+    if not frame then return end
 
     testModeActive = true
     frame:Show()
 
-    -- Show some mock cooldown icons
-    local testIcons = {
-        "Interface\\Icons\\Spell_Frost_FrostShock",
-        "Interface\\Icons\\Spell_Fire_FlameBolt",
-        "Interface\\Icons\\Spell_Nature_Lightning",
-    }
+    -- Collect enabled spells
+    local testSpells = {}
+    for _, spell in ipairs(db.trackedSpells or {}) do
+        if spell.enabled ~= false then
+            local icon = GetSpellTexture(spell.spellId)
+            if icon then
+                table.insert(testSpells, icon)
+            end
+            if #testSpells >= MAX_COOLDOWNS then break end
+        end
+    end
 
-    for i = 1, math.min(3, MAX_COOLDOWNS) do
+    -- Fallback if no spells configured
+    if #testSpells == 0 then
+        testSpells = {
+            "Interface\\Icons\\Spell_Frost_FrostShock",
+            "Interface\\Icons\\Spell_Fire_FlameBolt",
+            "Interface\\Icons\\Spell_Nature_Lightning",
+        }
+    end
+
+    for i = 1, #testSpells do
         local cdFrame = cdFrames[i]
         if cdFrame then
             local size = db.iconSize or 36
             local spacing = db.spacing or 4
             cdFrame:ClearAllPoints()
+            cdFrame:SetSize(size, size)
 
             if db.growDirection == "LEFT" then
                 cdFrame:SetPoint("RIGHT", frame, "RIGHT", -((i - 1) * (size + spacing)), 0)
@@ -387,15 +402,13 @@ function Castborn:TestCooldowns()
                 cdFrame:SetPoint("LEFT", frame, "LEFT", (i - 1) * (size + spacing), 0)
             end
 
-            cdFrame.icon:SetTexture(testIcons[i])
-            cdFrame.icon:SetDesaturated(i == 2)  -- Show middle one as on cooldown
+            cdFrame.icon:SetTexture(testSpells[i])
+            cdFrame.icon:SetDesaturated(i == 2)
             cdFrame.cooldown:Clear()
             if i == 2 then
-                -- Simulate a cooldown on the second icon
                 cdFrame.cooldown:SetCooldown(GetTime() - 5, 30)
                 StopEdgePulse(cdFrame)
             else
-                -- Show edge glow on ready icons (1 and 3)
                 if db.showReadyGlow ~= false then
                     StartEdgePulse(cdFrame)
                 end
@@ -405,7 +418,7 @@ function Castborn:TestCooldowns()
     end
 
     -- Hide remaining frames
-    for i = 4, MAX_COOLDOWNS do
+    for i = #testSpells + 1, MAX_COOLDOWNS do
         if cdFrames[i] then cdFrames[i]:Hide() end
     end
 end

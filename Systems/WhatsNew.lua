@@ -14,6 +14,17 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.1.0",
+        features = {
+            "Cooldown Tracker: added Icon Size, Spacing, and Grow Left options",
+            "Cooldown Tracker: test mode now shows your actual configured spells",
+            "Module options pages now scroll when content overflows",
+        },
+        fixes = {
+            "Fixed missing cooldowns (Ice Barrier, Icy Veins) not appearing in options or tracker",
+        },
+    },
+    {
         version = "3.0.0",
         features = {
             "Cooldown Tracker: per-spell enable/disable checkboxes in options (choose exactly which cooldowns to track)",

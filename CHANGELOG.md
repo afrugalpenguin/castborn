@@ -1,9 +1,15 @@
 # Changelog
 
-## v3.0.1
+## v3.1.0
+
+### Features
+- Cooldown Tracker: added Icon Size, Spacing, and Grow Left options
+- Cooldown Tracker: test mode now shows your actual configured spells
+- Module options pages now scroll when content overflows
 
 ### Fixes
 - Fixed missing cooldowns (Ice Barrier, Icy Veins) not appearing in options or tracker
+- Removed dead "Show Icons" option that had no effect
 
 ## v3.0.0
 

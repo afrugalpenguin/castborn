@@ -408,7 +408,16 @@ function Options:CreateContent(catId)
     elseif catId == "changelog" then
         self:BuildChangelog(content)
     else
-        self:BuildModule(content, catId)
+        -- Module pages use a scroll frame for overflow
+        local scrollFrame = CreateFrame("ScrollFrame", nil, content, "UIPanelScrollFrameTemplate")
+        scrollFrame:SetPoint("TOPLEFT", 0, 0)
+        scrollFrame:SetPoint("BOTTOMRIGHT", -24, 0)
+
+        local scrollChild = CreateFrame("Frame", nil, scrollFrame)
+        scrollChild:SetWidth(scrollFrame:GetWidth() or 400)
+        scrollFrame:SetScrollChild(scrollChild)
+
+        self:BuildModule(scrollChild, catId)
     end
 
     return content
@@ -810,6 +819,25 @@ function Options:BuildModule(parent, key)
         timersCB:SetPoint("TOPLEFT", 200, y)
 
     elseif key == "cooldowns" then
+        -- Icon Size and Spacing sliders
+        db.iconSize = db.iconSize or 36
+        local iconSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 20, 56, 2)
+        iconSlider:SetPoint("TOPLEFT", 0, y)
+        db.spacing = db.spacing or 4
+        local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
+        spacingSlider:SetPoint("TOPLEFT", 220, y)
+        y = y - 50
+
+        -- Grow direction checkbox
+        local growCB = CreateCheckbox(parent, "Grow Left", db, "growLeft", function(v)
+            db.growDirection = v and "LEFT" or "RIGHT"
+        end)
+        -- Sync initial state from growDirection
+        db.growLeft = (db.growDirection == "LEFT")
+        growCB:SetChecked(db.growLeft)
+        growCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
         -- Divider
         local divider = parent:CreateTexture(nil, "ARTWORK")
         divider:SetHeight(1)
@@ -865,6 +893,9 @@ function Options:BuildModule(parent, key)
         local sortCB = CreateCheckbox(parent, "Sort by Time", db, "sortByTime")
         sortCB:SetPoint("TOPLEFT", 220, y + 15)
     end
+
+    -- Set parent height for scroll frame
+    parent:SetHeight(math.abs(y) + 20)
 end
 
 --------------------------------------------------------------------------------
