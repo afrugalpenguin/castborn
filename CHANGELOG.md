@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.0.1
+
+### Fixes
+- Fixed missing cooldowns (Ice Barrier, Icy Veins) not appearing in options or tracker
+
 ## v3.0.0
 
 ### Features
