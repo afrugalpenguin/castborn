@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1.1
+
+### Fixes
+- Fixed Ice Barrier (and other multi-rank talent spells) not being tracked by the Cooldown Tracker
+
 ## v3.1.0
 
 ### Features
