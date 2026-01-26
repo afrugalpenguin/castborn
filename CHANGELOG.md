@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1.3
+
+### Fixes
+- Improved castbar and GCD state handling during rapid casting/key presses
+
 ## v3.1.2
 
 ### Fixes

@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.1.3",
+        features = {},
+        fixes = {
+            "Improved castbar and GCD state handling during rapid casting/key presses",
+        },
+    },
+    {
         version = "3.1.2",
         features = {},
         fixes = {
