@@ -309,6 +309,7 @@ SpellData.cooldowns = {
         { spellId = 11426, name = "Ice Barrier" },
         { spellId = 11958, name = "Cold Snap" },
         { spellId = 12472, name = "Icy Veins" },
+        { spellId = 31687, name = "Summon Water Elemental" },
         { spellId = 12042, name = "Arcane Power" },
         { spellId = 12043, name = "Presence of Mind" },
         { spellId = 11129, name = "Combustion" },
