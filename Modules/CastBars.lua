@@ -385,13 +385,18 @@ local function CheckUnitCast(frame, unit)
 
     local name = UnitCastingInfo(unit)
     local channelName = UnitChannelInfo(unit)
-    
+
     if name and not frame.casting then
         StartCast(frame, unit)
     elseif channelName and not frame.channeling then
         StartChannel(frame, unit)
-    elseif not name and not channelName and (frame.casting or frame.channeling) then
-        StopCast(frame, true)
+    elseif not name and not channelName then
+        if frame.casting or frame.channeling then
+            StopCast(frame, true)
+        elseif frame.fadeOut <= 0 and frame:IsShown() then
+            -- Safety: bar is visible but no cast active and not fading out - hide it
+            frame:Hide()
+        end
     end
 end
 
@@ -423,7 +428,7 @@ function CB:InitCastBars()
     eventFrame:RegisterEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE")
     eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
     eventFrame:RegisterEvent("PLAYER_FOCUS_CHANGED")
-    
+
     eventFrame:SetScript("OnEvent", function(self, event, unit, ...)
         if event == "PLAYER_TARGET_CHANGED" then
             CB.castbars.target.casting = false
@@ -487,6 +492,7 @@ function CB:InitCastBars()
             if CB.castbars.target:IsShown() then UpdateCastBar(CB.castbars.target, timeSinceLastUpdate) end
             if CB.castbars.targettarget:IsShown() then UpdateCastBar(CB.castbars.targettarget, timeSinceLastUpdate) end
             if CB.castbars.focus:IsShown() then UpdateCastBar(CB.castbars.focus, timeSinceLastUpdate) end
+            CheckUnitCast(CB.castbars.player, "player")
             CheckUnitCast(CB.castbars.target, "target")
             CheckUnitCast(CB.castbars.targettarget, "targettarget")
             CheckUnitCast(CB.castbars.focus, "focus")
