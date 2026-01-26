@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.1.5",
+        features = {},
+        fixes = {
+            "Hide ToT castbar when target is self-targeting (prevents redundant castbar display)",
+        },
+    },
+    {
         version = "3.1.4",
         features = {
             "Added Summon Water Elemental to Mage cooldown options",

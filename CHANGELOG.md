@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1.5
+
+### Fixes
+- Hide ToT castbar when target is self-targeting (prevents redundant castbar display)
+
 ## v3.1.4
 
 ### Features
