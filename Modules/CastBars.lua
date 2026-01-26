@@ -229,8 +229,12 @@ local function UpdateCastBar(frame, elapsed)
             frame.casting = false
             frame.fadeOut = 0.3
             frame.spark:Hide()
+            frame.bar:SetValue(1)
+            frame.bar:SetStatusBarColor(0.3, 0.9, 0.3, 1)  -- Success color
+            if frame.latency then frame.latency:Hide() end
+            if frame.shield then frame.shield:Hide() end
         end
-        
+
     elseif frame.channeling then
         local progress = (frame.endTime - currentTime) / (frame.endTime - frame.startTime)
         progress = math.max(0, math.min(1, progress))
@@ -249,6 +253,9 @@ local function UpdateCastBar(frame, elapsed)
             frame.channeling = false
             frame.fadeOut = 0.3
             frame.spark:Hide()
+            frame.bar:SetStatusBarColor(0.3, 0.9, 0.3, 1)  -- Success color
+            if frame.latency then frame.latency:Hide() end
+            if frame.shield then frame.shield:Hide() end
         end
     end
 end

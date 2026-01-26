@@ -154,11 +154,15 @@ function CB:InitGCD()
         end
         local start, duration = DetectGCD()
         if start and start > 0 and duration and duration > 0 then
-            gcdStart = start
-            gcdDuration = duration
-            gcdActive = true
-            local cfg = CB.db.gcd
-            CB.gcdFrame.bar:SetVertexColor(cfg.barColor[1], cfg.barColor[2], cfg.barColor[3], cfg.barColor[4])
+            -- Only update if the GCD is actually still running (not already expired)
+            local remaining = (start + duration) - GetTime()
+            if remaining > 0 then
+                gcdStart = start
+                gcdDuration = duration
+                gcdActive = true
+                local cfg = CB.db.gcd
+                CB.gcdFrame.bar:SetVertexColor(cfg.barColor[1], cfg.barColor[2], cfg.barColor[3], cfg.barColor[4])
+            end
         end
     end)
     
