@@ -267,6 +267,9 @@ local function StartCast(frame, unit)
     -- Skip self-casts on non-player castbars (e.g., when target/focus is the player)
     if unit ~= "player" and UnitIsUnit(unit, "player") then return end
 
+    -- Skip ToT castbar when target is self-targeting (redundant with target castbar)
+    if unit == "targettarget" and UnitIsUnit("targettarget", "target") then return end
+
     local name, text, texture, startTime, endTime, isTradeSkill, castID, notInterruptible
     name, text, texture, startTime, endTime, isTradeSkill, castID, notInterruptible = UnitCastingInfo(unit)
     
@@ -313,6 +316,9 @@ local function StartChannel(frame, unit)
 
     -- Skip self-casts on non-player castbars (e.g., when target/focus is the player)
     if unit ~= "player" and UnitIsUnit(unit, "player") then return end
+
+    -- Skip ToT castbar when target is self-targeting (redundant with target castbar)
+    if unit == "targettarget" and UnitIsUnit("targettarget", "target") then return end
 
     local name, text, texture, startTime, endTime, isTradeSkill, notInterruptible
     name, text, texture, startTime, endTime, isTradeSkill, notInterruptible = UnitChannelInfo(unit)
@@ -384,6 +390,14 @@ local function CheckUnitCast(frame, unit)
 
     -- Skip self-casts on non-player castbars (e.g., when target/focus is the player)
     if unit ~= "player" and UnitIsUnit(unit, "player") then
+        frame:Hide()
+        frame.casting = false
+        frame.channeling = false
+        return
+    end
+
+    -- Skip ToT castbar when target is self-targeting (redundant with target castbar)
+    if unit == "targettarget" and UnitIsUnit("targettarget", "target") then
         frame:Hide()
         frame.casting = false
         frame.channeling = false
