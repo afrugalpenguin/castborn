@@ -14,6 +14,20 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.1.2",
+        features = {},
+        fixes = {
+            "Fixed castbar getting stuck on screen when opening the world map during a cast",
+        },
+    },
+    {
+        version = "3.1.1",
+        features = {},
+        fixes = {
+            "Fixed Ice Barrier (and other multi-rank talent spells) not being tracked by the Cooldown Tracker",
+        },
+    },
+    {
         version = "3.1.0",
         features = {
             "Cooldown Tracker: added Icon Size, Spacing, and Grow Left options",

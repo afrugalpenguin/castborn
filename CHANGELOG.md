@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1.2
+
+### Fixes
+- Fixed castbar getting stuck on screen when opening the world map during a cast
+
 ## v3.1.1
 
 ### Fixes
