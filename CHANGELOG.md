@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1.4
+
+### Features
+- Added Summon Water Elemental to Mage cooldown options
+
 ## v3.1.3
 
 ### Fixes

@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.1.4",
+        features = {
+            "Added Summon Water Elemental to Mage cooldown options",
+        },
+        fixes = {},
+    },
+    {
         version = "3.1.3",
         features = {},
         fixes = {
