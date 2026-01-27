@@ -139,9 +139,15 @@ function ClassDefaults:GetSuggestedCooldowns()
     return defaults.cooldowns or {}
 end
 
--- Apply class defaults on first run
+-- Apply class defaults on first run or when class changes
 function ClassDefaults:ApplyFirstRunDefaults()
-    if CastbornDB.firstRunComplete then return end
+    local info = Castborn:GetPlayerInfo()
+    local currentClass = info.class
+
+    -- Check if this is a different class than before
+    local classChanged = CastbornDB.firstRunClass and CastbornDB.firstRunClass ~= currentClass
+
+    if CastbornDB.firstRunComplete and not classChanged then return end
 
     local defaults = self:GetPlayerDefaults()
 
@@ -151,13 +157,17 @@ function ClassDefaults:ApplyFirstRunDefaults()
     CastbornDB.swing = CastbornDB.swing or {}
     CastbornDB.swing.enabled = self:ShouldShowSwingTimer()
 
-    CastbornDB.buffs = CastbornDB.buffs or {}
-    CastbornDB.buffs.trackedSpells = defaults.procs or {}
+    -- Reset class-specific tracked spells when class changes
+    CastbornDB.procs = CastbornDB.procs or {}
+    CastbornDB.procs.trackedSpells = nil  -- Clear to allow ProcTracker to reload
+    CastbornDB.procs.loadedForClass = nil
 
     CastbornDB.cooldowns = CastbornDB.cooldowns or {}
-    CastbornDB.cooldowns.trackedSpells = defaults.cooldowns or {}
+    CastbornDB.cooldowns.trackedSpells = nil  -- Clear to allow CooldownTracker to reload
+    CastbornDB.cooldowns.loadedForClass = nil
 
     CastbornDB.firstRunComplete = true
+    CastbornDB.firstRunClass = currentClass
 
     Castborn:FireCallback("DEFAULTS_APPLIED")
 end

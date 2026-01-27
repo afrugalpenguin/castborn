@@ -282,12 +282,20 @@ end
 Castborn:RegisterCallback("INIT", function()
     CastbornDB.procs = Castborn:MergeDefaults(CastbornDB.procs or {}, defaults)
 
-    -- Populate with class-specific procs if trackedSpells is empty
-    if #(CastbornDB.procs.trackedSpells or {}) == 0 then
-        local _, playerClass = UnitClass("player")
+    local _, playerClass = UnitClass("player")
+
+    -- Populate with class-specific procs if empty or loaded for a different class
+    local needsReload = #(CastbornDB.procs.trackedSpells or {}) == 0
+        or (CastbornDB.procs.loadedForClass and CastbornDB.procs.loadedForClass ~= playerClass)
+
+    if needsReload then
         if classProcs[playerClass] then
             CastbornDB.procs.trackedSpells = classProcs[playerClass]
+            CastbornDB.procs.loadedForClass = playerClass
         end
+    elseif not CastbornDB.procs.loadedForClass then
+        -- Migration: mark existing data with current class
+        CastbornDB.procs.loadedForClass = playerClass
     end
 end)
 

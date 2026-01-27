@@ -255,11 +255,15 @@ Castborn:RegisterCallback("READY", function()
     local _, class = UnitClass("player")
     local currentVersion = Castborn.version
 
-    if not db.trackedSpells or #db.trackedSpells == 0 then
-        -- First time setup: load all class defaults
+    -- Check if class changed (need to reload defaults)
+    local classChanged = db.loadedForClass and db.loadedForClass ~= class
+
+    if not db.trackedSpells or #db.trackedSpells == 0 or classChanged then
+        -- First time setup or class changed: load all class defaults
         if class and Castborn.SpellData then
             db.trackedSpells = Castborn.SpellData:GetClassCooldowns(class)
             db.defaultsLoaded = currentVersion
+            db.loadedForClass = class
         end
     elseif db.defaultsLoaded ~= currentVersion then
         -- Version changed: merge any new default spells
@@ -273,6 +277,10 @@ Castborn:RegisterCallback("READY", function()
             end
         end
         db.defaultsLoaded = currentVersion
+        db.loadedForClass = class
+    elseif not db.loadedForClass then
+        -- Migration: mark existing data with current class
+        db.loadedForClass = class
     end
 
     CreateContainer()
