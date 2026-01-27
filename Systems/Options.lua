@@ -45,7 +45,7 @@ local categories = {
     { id = "swing", name = "Swing Timer" },
     { id = "dots", name = "DoT Tracker" },
     { id = "multidot", name = "Multi-DoT" },
-    { id = "buffs", name = "Buff Tracker" },
+    { id = "buffs", name = "Proc Tracker" },
     { id = "cooldowns", name = "Cooldowns" },
     { id = "interrupt", name = "Interrupt" },
     { divider = true },
@@ -492,7 +492,7 @@ function Options:BuildGeneral(parent)
         { key = "fsr", label = "5 Second Rule" },
         { key = "swing", label = "Swing Timer" },
         { key = "dots", label = "DoT Tracker" },
-        { key = "buffs", label = "Buff Tracker" },
+        { key = "buffs", label = "Proc Tracker" },
         { key = "cooldowns", label = "Cooldowns" },
     }
 
@@ -521,15 +521,51 @@ function Options:BuildCastbars(parent)
 
     CastbornDB.player = CastbornDB.player or {}
 
-    local cb2 = CreateCheckbox(parent, "Show Icon", CastbornDB.player, "showIcon")
+    local cb2 = CreateCheckbox(parent, "Show Icon", CastbornDB.player, "showIcon", function(checked)
+        local playerBar = Castborn.castbars and Castborn.castbars.player
+        if playerBar and playerBar.iconFrame then
+            if checked then
+                playerBar.iconFrame:Show()
+            else
+                playerBar.iconFrame:Hide()
+            end
+        end
+    end)
     cb2:SetPoint("TOPLEFT", 0, y)
-    local cb3 = CreateCheckbox(parent, "Show Time", CastbornDB.player, "showTime")
+    local cb3 = CreateCheckbox(parent, "Show Time", CastbornDB.player, "showTime", function(checked)
+        local playerBar = Castborn.castbars and Castborn.castbars.player
+        if playerBar and playerBar.timeText then
+            if checked then
+                playerBar.timeText:Show()
+            else
+                playerBar.timeText:Hide()
+            end
+        end
+    end)
     cb3:SetPoint("TOPLEFT", 150, y)
     y = y - 26
 
-    local cb4 = CreateCheckbox(parent, "Show Spell Name", CastbornDB.player, "showSpellName")
+    local cb4 = CreateCheckbox(parent, "Show Spell Name", CastbornDB.player, "showSpellName", function(checked)
+        local playerBar = Castborn.castbars and Castborn.castbars.player
+        if playerBar and playerBar.spellText then
+            if checked then
+                playerBar.spellText:Show()
+            else
+                playerBar.spellText:Hide()
+            end
+        end
+    end)
     cb4:SetPoint("TOPLEFT", 0, y)
-    local cb5 = CreateCheckbox(parent, "Show Latency", CastbornDB.player, "showLatency")
+    local cb5 = CreateCheckbox(parent, "Show Latency", CastbornDB.player, "showLatency", function(checked)
+        local playerBar = Castborn.castbars and Castborn.castbars.player
+        if playerBar and playerBar.latency then
+            if checked then
+                playerBar.latency:Show()
+            else
+                playerBar.latency:Hide()
+            end
+        end
+    end)
     cb5:SetPoint("TOPLEFT", 150, y)
     y = y - 26
 
@@ -569,9 +605,27 @@ function Options:BuildCastbars(parent)
 
     CastbornDB.target = CastbornDB.target or {}
 
-    local tcb2 = CreateCheckbox(parent, "Show Icon", CastbornDB.target, "showIcon")
+    local tcb2 = CreateCheckbox(parent, "Show Icon", CastbornDB.target, "showIcon", function(checked)
+        local targetBar = Castborn.castbars and Castborn.castbars.target
+        if targetBar and targetBar.iconFrame then
+            if checked then
+                targetBar.iconFrame:Show()
+            else
+                targetBar.iconFrame:Hide()
+            end
+        end
+    end)
     tcb2:SetPoint("TOPLEFT", 0, y)
-    local tcb3 = CreateCheckbox(parent, "Show Time", CastbornDB.target, "showTime")
+    local tcb3 = CreateCheckbox(parent, "Show Time", CastbornDB.target, "showTime", function(checked)
+        local targetBar = Castborn.castbars and Castborn.castbars.target
+        if targetBar and targetBar.timeText then
+            if checked then
+                targetBar.timeText:Show()
+            else
+                targetBar.timeText:Hide()
+            end
+        end
+    end)
     tcb3:SetPoint("TOPLEFT", 150, y)
     y = y - 40
 end
@@ -730,7 +784,7 @@ function Options:BuildModule(parent, key)
         swing = "Swing Timer",
         dots = "DoT Tracker",
         multidot = "Multi-DoT Tracker",
-        buffs = "Buff Tracker",
+        buffs = "Proc Tracker",
         cooldowns = "Cooldown Tracker",
         interrupt = "Interrupt Tracker",
     }
@@ -813,10 +867,8 @@ function Options:BuildModule(parent, key)
         testBtn:SetPoint("TOPLEFT", 0, y)
 
     elseif key == "buffs" then
-        local mineCB = CreateCheckbox(parent, "Show Only My Buffs", db, "showOnlyMine")
-        mineCB:SetPoint("TOPLEFT", 0, y)
-        local timersCB = CreateCheckbox(parent, "Show Timers", db, "showTimers")
-        timersCB:SetPoint("TOPLEFT", 200, y)
+        local timersCB = CreateCheckbox(parent, "Show Timers", db, "showDuration")
+        timersCB:SetPoint("TOPLEFT", 0, y)
 
     elseif key == "cooldowns" then
         -- Icon Size and Spacing sliders

@@ -52,20 +52,19 @@ local function CreateCastBar(unit, dbKey)
     -- Create backdrop
     CB:CreateBackdrop(frame, cfg.bgColor, cfg.borderColor)
     
-    -- Icon frame (left side)
-    if cfg.showIcon then
-        local iconFrame = CreateFrame("Frame", nil, frame)
-        iconFrame:SetSize(cfg.height + 4, cfg.height + 4)
-        iconFrame:SetPoint("RIGHT", frame, "LEFT", -4, 0)
-        CB:CreateBackdrop(iconFrame, cfg.bgColor, cfg.borderColor)
-        
-        local icon = iconFrame:CreateTexture(nil, "ARTWORK")
-        icon:SetPoint("TOPLEFT", 2, -2)
-        icon:SetPoint("BOTTOMRIGHT", -2, 2)
-        icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-        frame.icon = icon
-        frame.iconFrame = iconFrame
-    end
+    -- Icon frame (left side) - always create, show/hide based on setting
+    local iconFrame = CreateFrame("Frame", nil, frame)
+    iconFrame:SetSize(cfg.height + 4, cfg.height + 4)
+    iconFrame:SetPoint("RIGHT", frame, "LEFT", -4, 0)
+    CB:CreateBackdrop(iconFrame, cfg.bgColor, cfg.borderColor)
+
+    local icon = iconFrame:CreateTexture(nil, "ARTWORK")
+    icon:SetPoint("TOPLEFT", 2, -2)
+    icon:SetPoint("BOTTOMRIGHT", -2, 2)
+    icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    frame.icon = icon
+    frame.iconFrame = iconFrame
+    if not cfg.showIcon then iconFrame:Hide() end
     
     -- Status bar
     local bar = CreateFrame("StatusBar", nil, frame)
@@ -93,8 +92,8 @@ local function CreateCastBar(unit, dbKey)
     spark:Hide()
     frame.spark = spark
     
-    -- Latency indicator (player only)
-    if unit == "player" and cfg.showLatency then
+    -- Latency indicator (player only) - always create, show/hide based on setting
+    if unit == "player" then
         local latency = bar:CreateTexture(nil, "ARTWORK", nil, 1)
         latency:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
         latency:SetVertexColor(1, 0.2, 0.2, 0.6)
@@ -105,25 +104,23 @@ local function CreateCastBar(unit, dbKey)
         frame.latency = latency
     end
     
-    -- Spell name text
-    if cfg.showSpellName then
-        local spellText = bar:CreateFontString(nil, "OVERLAY")
-        spellText:SetFont("Fonts\\ARIALN.TTF", math.max(10, cfg.height - 6), "OUTLINE")
-        spellText:SetPoint("LEFT", bar, "LEFT", 4, 0)
-        spellText:SetJustifyH("LEFT")
-        spellText:SetTextColor(cfg.textColor[1], cfg.textColor[2], cfg.textColor[3], cfg.textColor[4])
-        frame.spellText = spellText
-    end
+    -- Spell name text (always create, show/hide based on setting)
+    local spellText = bar:CreateFontString(nil, "OVERLAY")
+    spellText:SetFont("Fonts\\ARIALN.TTF", math.max(10, cfg.height - 6), "OUTLINE")
+    spellText:SetPoint("LEFT", bar, "LEFT", 4, 0)
+    spellText:SetJustifyH("LEFT")
+    spellText:SetTextColor(cfg.textColor[1], cfg.textColor[2], cfg.textColor[3], cfg.textColor[4])
+    if not cfg.showSpellName then spellText:Hide() end
+    frame.spellText = spellText
     
-    -- Time text
-    if cfg.showTime then
-        local timeText = bar:CreateFontString(nil, "OVERLAY")
-        timeText:SetFont("Fonts\\ARIALN.TTF", math.max(10, cfg.height - 6), "OUTLINE")
-        timeText:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
-        timeText:SetJustifyH("RIGHT")
-        timeText:SetTextColor(cfg.textColor[1], cfg.textColor[2], cfg.textColor[3], cfg.textColor[4])
-        frame.timeText = timeText
-    end
+    -- Time text - always create, show/hide based on setting
+    local timeText = bar:CreateFontString(nil, "OVERLAY")
+    timeText:SetFont("Fonts\\ARIALN.TTF", math.max(10, cfg.height - 6), "OUTLINE")
+    timeText:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
+    timeText:SetJustifyH("RIGHT")
+    timeText:SetTextColor(cfg.textColor[1], cfg.textColor[2], cfg.textColor[3], cfg.textColor[4])
+    if not cfg.showTime then timeText:Hide() end
+    frame.timeText = timeText
     
     -- Interruptible indicator (for enemy casts)
     if unit ~= "player" then
@@ -221,10 +218,15 @@ local function UpdateCastBar(frame, elapsed)
         frame.spark:Show()
         
         if frame.timeText then
-            local remaining = frame.endTime - currentTime
-            frame.timeText:SetText(CB:FormatTime(math.max(0, remaining)))
+            if cfg.showTime then
+                local remaining = frame.endTime - currentTime
+                frame.timeText:SetText(CB:FormatTime(math.max(0, remaining)))
+                frame.timeText:Show()
+            else
+                frame.timeText:Hide()
+            end
         end
-        
+
         if currentTime >= frame.endTime then
             frame.casting = false
             frame.fadeOut = 0.3
@@ -245,10 +247,15 @@ local function UpdateCastBar(frame, elapsed)
         frame.spark:Show()
         
         if frame.timeText then
-            local remaining = frame.endTime - currentTime
-            frame.timeText:SetText(CB:FormatTime(math.max(0, remaining)))
+            if cfg.showTime then
+                local remaining = frame.endTime - currentTime
+                frame.timeText:SetText(CB:FormatTime(math.max(0, remaining)))
+                frame.timeText:Show()
+            else
+                frame.timeText:Hide()
+            end
         end
-        
+
         if currentTime >= frame.endTime then
             frame.channeling = false
             frame.fadeOut = 0.3
@@ -283,16 +290,39 @@ local function StartCast(frame, unit)
     
     local barColor = GetBarColor(frame.dbKey)
     frame.bar:SetStatusBarColor(barColor[1], barColor[2], barColor[3], barColor[4])
-    if frame.icon then frame.icon:SetTexture(texture) end
-    if frame.spellText then frame.spellText:SetText(text or name) end
 
+    -- Show/hide icon based on setting
+    if frame.iconFrame then
+        if cfg.showIcon then
+            frame.icon:SetTexture(texture)
+            frame.iconFrame:Show()
+        else
+            frame.iconFrame:Hide()
+        end
+    end
+
+    -- Show/hide spell name based on setting
+    if frame.spellText then
+        if cfg.showSpellName then
+            frame.spellText:SetText(text or name)
+            frame.spellText:Show()
+        else
+            frame.spellText:Hide()
+        end
+    end
+
+    -- Show/hide latency based on setting
     if frame.latency and unit == "player" then
-        local _, _, lagHome, lagWorld = GetNetStats()
-        local lag = (lagHome + lagWorld) / 1000
-        local barWidth = frame.bar:GetWidth()
-        local lagWidth = math.min(lag / (frame.endTime - frame.startTime) * barWidth, barWidth * 0.5)
-        frame.latency:SetWidth(lagWidth)
-        frame.latency:Show()
+        if cfg.showLatency then
+            local _, _, lagHome, lagWorld = GetNetStats()
+            local lag = (lagHome + lagWorld) / 1000
+            local barWidth = frame.bar:GetWidth()
+            local lagWidth = math.min(lag / (frame.endTime - frame.startTime) * barWidth, barWidth * 0.5)
+            frame.latency:SetWidth(lagWidth)
+            frame.latency:Show()
+        else
+            frame.latency:Hide()
+        end
     end
 
     if frame.shield then
@@ -333,8 +363,28 @@ local function StartChannel(frame, unit)
     
     local barColor = GetBarColor(frame.dbKey)
     frame.bar:SetStatusBarColor(barColor[1], barColor[2], barColor[3], barColor[4])
-    if frame.icon then frame.icon:SetTexture(texture) end
-    if frame.spellText then frame.spellText:SetText(text or name) end
+
+    -- Show/hide icon based on setting
+    if frame.iconFrame then
+        if cfg.showIcon then
+            frame.icon:SetTexture(texture)
+            frame.iconFrame:Show()
+        else
+            frame.iconFrame:Hide()
+        end
+    end
+
+    -- Show/hide spell name based on setting
+    if frame.spellText then
+        if cfg.showSpellName then
+            frame.spellText:SetText(text or name)
+            frame.spellText:Show()
+        else
+            frame.spellText:Hide()
+        end
+    end
+
+    -- Hide latency for channels
     if frame.latency then frame.latency:Hide() end
 
     if frame.shield then

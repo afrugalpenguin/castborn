@@ -17,6 +17,7 @@ local defaults = {
     xPct = 0.345,
     yPct = -0.278,
     showCyclingIndicator = true,
+    sortByTime = true,
     -- Nameplate indicators
     nameplateIndicators = true,
     nameplateIndicatorSize = 20,
@@ -450,9 +451,17 @@ local function GetSortedTargets()
         end
     end
 
-    table.sort(sorted, function(a, b)
-        return a.urgency < b.urgency
-    end)
+    -- Sort by time remaining if enabled, otherwise by name
+    local db = CastbornDB.multidot
+    if db.sortByTime ~= false then
+        table.sort(sorted, function(a, b)
+            return a.urgency < b.urgency
+        end)
+    else
+        table.sort(sorted, function(a, b)
+            return a.name < b.name
+        end)
+    end
 
     return sorted
 end

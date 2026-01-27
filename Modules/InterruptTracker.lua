@@ -16,6 +16,8 @@ local defaults = {
     xPct = 0,
     yPct = -0.199,
     showLockout = true,
+    trackTarget = true,
+    trackFocus = true,
 }
 
 local function CreateInterruptBar()
@@ -121,6 +123,16 @@ local function OnCombatLogEvent(self, event, ...)
     end
 end
 
+-- Check if a unit is casting something interruptible
+local function IsUnitCastingInterruptible(unit)
+    if not UnitExists(unit) then return false end
+    local name, _, _, _, _, _, _, notInterruptible = UnitCastingInfo(unit)
+    if name and not notInterruptible then return true end
+    name, _, _, _, _, _, notInterruptible = UnitChannelInfo(unit)
+    if name and not notInterruptible then return true end
+    return false
+end
+
 local function UpdateInterruptCooldown()
     -- Don't override test mode display
     if testModeActive then return end
@@ -133,12 +145,17 @@ local function UpdateInterruptCooldown()
         return
     end
 
+    -- Check for interruptible casts on target/focus
+    local targetInterruptible = db.trackTarget ~= false and IsUnitCastingInterruptible("target")
+    local focusInterruptible = db.trackFocus ~= false and IsUnitCastingInterruptible("focus")
+    local hasInterruptOpportunity = targetInterruptible or focusInterruptible
+
     -- Only show when in combat or when interrupt is on cooldown
     local start, duration = GetSpellCooldown(frame.interruptInfo.spellId)
     local onCooldown = duration and duration > 1.5
     local inCombat = UnitAffectingCombat("player")
 
-    if not onCooldown and not inCombat then
+    if not onCooldown and not inCombat and not hasInterruptOpportunity then
         frame:Hide()
         return
     end
@@ -160,7 +177,12 @@ local function UpdateInterruptCooldown()
         if frame.bar then
             frame.bar:SetMinMaxValues(0, 1)
             frame.bar:SetValue(1)
-            frame.bar:SetStatusBarColor(0.2, 0.8, 0.2, 1)
+            -- Highlight yellow when there's an interrupt opportunity
+            if hasInterruptOpportunity then
+                frame.bar:SetStatusBarColor(1, 0.8, 0.2, 1)
+            else
+                frame.bar:SetStatusBarColor(0.2, 0.8, 0.2, 1)
+            end
         end
         frame.time:Hide()
         frame.ready:Show()
