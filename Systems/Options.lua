@@ -892,6 +892,31 @@ function Options:BuildModule(parent, key)
         maxSlider:SetPoint("TOPLEFT", 0, y)
         local sortCB = CreateCheckbox(parent, "Sort by Time", db, "sortByTime")
         sortCB:SetPoint("TOPLEFT", 220, y + 15)
+
+        y = y - 50
+
+        -- Nameplate Indicators section
+        local npHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        npHeader:SetPoint("TOPLEFT", 0, y)
+        npHeader:SetText("|cff88ddffNameplate Indicators|r")
+        y = y - 20
+
+        local npDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        npDesc:SetPoint("TOPLEFT", 0, y)
+        npDesc:SetWidth(350)
+        npDesc:SetJustifyH("LEFT")
+        npDesc:SetText("Show DoT timer badges on enemy nameplates. Helps identify which mob needs attention when multiple mobs have the same name.")
+        npDesc:SetTextColor(0.7, 0.7, 0.7, 1)
+        y = y - 30
+
+        local npEnableCB = CreateCheckbox(parent, "Show Nameplate Indicators", db, "nameplateIndicators")
+        npEnableCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
+        db.nameplateIndicatorSize = db.nameplateIndicatorSize or 20
+        local npSizeSlider = CreateSlider(parent, "Indicator Size", db, "nameplateIndicatorSize", 14, 32, 1)
+        npSizeSlider:SetPoint("TOPLEFT", 0, y)
+        y = y - 10
     end
 
     -- Set parent height for scroll frame

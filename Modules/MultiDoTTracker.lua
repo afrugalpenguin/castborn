@@ -17,10 +17,211 @@ local defaults = {
     xPct = 0.345,
     yPct = -0.278,
     showCyclingIndicator = true,
+    -- Nameplate indicators
+    nameplateIndicators = true,
+    nameplateIndicatorSize = 20,
+    nameplateIndicatorPosition = "TOP",  -- TOP, BOTTOM, LEFT, RIGHT
 }
 
 local trackedTargets = {}
 local testModeActive = false
+
+--------------------------------------------------------------------------------
+-- Nameplate Indicator System
+--------------------------------------------------------------------------------
+
+local nameplateIndicators = {}  -- Pool of indicator frames, keyed by GUID
+local MAX_NAMEPLATE_INDICATORS = 10
+
+-- Create a single nameplate indicator frame
+local function CreateNameplateIndicator()
+    local indicator = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    indicator:SetSize(20, 20)
+    indicator:SetFrameStrata("HIGH")
+
+    -- Background with border
+    indicator:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    indicator:SetBackdropColor(0, 0, 0, 0.7)
+    indicator:SetBackdropBorderColor(0.2, 0.8, 0.2, 1)
+
+    -- Glow texture (pulsing border effect)
+    indicator.glow = indicator:CreateTexture(nil, "BACKGROUND", nil, -1)
+    indicator.glow:SetTexture("Interface\\Buttons\\WHITE8x8")
+    indicator.glow:SetPoint("TOPLEFT", -2, 2)
+    indicator.glow:SetPoint("BOTTOMRIGHT", 2, -2)
+    indicator.glow:SetVertexColor(0.2, 0.8, 0.2, 0.5)
+
+    -- Timer text
+    indicator.timer = indicator:CreateFontString(nil, "OVERLAY")
+    indicator.timer:SetFont("Fonts\\ARIALN.TTF", 11, "OUTLINE")
+    indicator.timer:SetPoint("CENTER", 0, 0)
+    indicator.timer:SetTextColor(1, 1, 1, 1)
+
+    indicator:Hide()
+    return indicator
+end
+
+-- Get or create an indicator for a specific GUID
+local function GetIndicatorForGUID(guid)
+    if nameplateIndicators[guid] then
+        return nameplateIndicators[guid]
+    end
+
+    -- Count existing indicators
+    local count = 0
+    for _ in pairs(nameplateIndicators) do
+        count = count + 1
+    end
+
+    if count >= MAX_NAMEPLATE_INDICATORS then
+        return nil  -- Pool exhausted
+    end
+
+    local indicator = CreateNameplateIndicator()
+    nameplateIndicators[guid] = indicator
+    indicator.guid = guid
+    return indicator
+end
+
+-- Release an indicator back to the pool
+local function ReleaseIndicator(guid)
+    local indicator = nameplateIndicators[guid]
+    if indicator then
+        indicator:Hide()
+        indicator:ClearAllPoints()
+        indicator.attachedTo = nil
+    end
+end
+
+-- Update indicator appearance based on urgency
+local function UpdateIndicatorUrgency(indicator, remaining)
+    local r, g, b
+    if remaining <= 3 then
+        r, g, b = 1, 0.2, 0.2
+    elseif remaining <= 5 then
+        r, g, b = 1, 0.8, 0.2
+    else
+        r, g, b = 0.2, 0.8, 0.2
+    end
+
+    indicator:SetBackdropBorderColor(r, g, b, 1)
+    indicator.glow:SetVertexColor(r, g, b, 0.5)
+    indicator.timer:SetText(string.format("%.0f", remaining))
+end
+
+-- Attach indicator to a nameplate
+local function AttachIndicatorToNameplate(indicator, nameplate)
+    local db = CastbornDB.multidot
+    local size = db.nameplateIndicatorSize or 20
+    local position = db.nameplateIndicatorPosition or "TOP"
+
+    indicator:SetSize(size, size)
+    indicator:ClearAllPoints()
+
+    -- Try to find the health bar within the nameplate
+    -- This works with both default nameplates and most addons (including Plater)
+    local anchorFrame = nameplate
+
+    -- For Plater and similar addons, try to find the health bar
+    if nameplate.UnitFrame then
+        anchorFrame = nameplate.UnitFrame.healthBar or nameplate.UnitFrame or nameplate
+    elseif nameplate.unitFrame then
+        anchorFrame = nameplate.unitFrame.healthBar or nameplate.unitFrame or nameplate
+    end
+
+    if position == "TOP" then
+        indicator:SetPoint("BOTTOM", anchorFrame, "TOP", 0, 2)
+    elseif position == "BOTTOM" then
+        indicator:SetPoint("TOP", anchorFrame, "BOTTOM", 0, -2)
+    elseif position == "LEFT" then
+        indicator:SetPoint("RIGHT", anchorFrame, "LEFT", -2, 0)
+    elseif position == "RIGHT" then
+        indicator:SetPoint("LEFT", anchorFrame, "RIGHT", 2, 0)
+    end
+
+    indicator.attachedTo = nameplate
+    indicator:Show()
+end
+
+-- Update all nameplate indicators
+local function UpdateNameplateIndicators()
+    local db = CastbornDB.multidot
+    if not db.nameplateIndicators then
+        -- Hide all indicators if disabled
+        for guid, indicator in pairs(nameplateIndicators) do
+            indicator:Hide()
+        end
+        return
+    end
+
+    -- Track which GUIDs we've processed
+    local processedGUIDs = {}
+
+    -- Update indicators for all tracked targets
+    for guid, data in pairs(trackedTargets) do
+        -- Find the minimum remaining time across all DoTs
+        local minRemaining = 999
+        for spellId, dot in pairs(data.dots) do
+            local remaining = dot.expirationTime - GetTime()
+            if remaining > 0 and remaining < minRemaining then
+                minRemaining = remaining
+            end
+        end
+
+        -- Skip if no valid DoTs
+        if minRemaining >= 999 then
+            ReleaseIndicator(guid)
+        else
+            processedGUIDs[guid] = true
+
+            -- Try to find the nameplate for this GUID
+            local unitId = GetUnitIdFromGUID(guid)
+            if unitId then
+                local nameplate = C_NamePlate and C_NamePlate.GetNamePlateForUnit(unitId)
+                if nameplate then
+                    local indicator = GetIndicatorForGUID(guid)
+                    if indicator then
+                        -- Reattach if nameplate changed or not attached
+                        if indicator.attachedTo ~= nameplate then
+                            AttachIndicatorToNameplate(indicator, nameplate)
+                        end
+                        UpdateIndicatorUrgency(indicator, minRemaining)
+                    end
+                else
+                    -- No nameplate visible, hide indicator
+                    ReleaseIndicator(guid)
+                end
+            else
+                -- Can't find unit, hide indicator
+                ReleaseIndicator(guid)
+            end
+        end
+    end
+
+    -- Hide indicators for GUIDs no longer tracked
+    for guid, indicator in pairs(nameplateIndicators) do
+        if not processedGUIDs[guid] then
+            indicator:Hide()
+        end
+    end
+end
+
+-- Clean up indicators when entering/leaving combat or on zone change
+local function CleanupAllIndicators()
+    for guid, indicator in pairs(nameplateIndicators) do
+        indicator:Hide()
+        indicator:ClearAllPoints()
+        indicator.attachedTo = nil
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Original Helper Functions
+--------------------------------------------------------------------------------
 
 -- Helper to find a unitId from a GUID by scanning nameplates
 local function GetUnitIdFromGUID(guid)
@@ -189,6 +390,7 @@ local function OnCombatLogEvent(self, event, ...)
 
     elseif subEvent == "UNIT_DIED" then
         trackedTargets[destGUID] = nil
+        ReleaseIndicator(destGUID)
     end
 end
 
@@ -286,6 +488,7 @@ local function UpdateDisplay()
 
         if not hasDoTs then
             trackedTargets[guid] = nil
+            ReleaseIndicator(guid)
         end
     end
 
@@ -363,7 +566,25 @@ Castborn:RegisterCallback("READY", function()
         elapsed = elapsed + delta
         if elapsed >= 0.1 then
             UpdateDisplay()
+            UpdateNameplateIndicators()
             elapsed = 0
+        end
+    end)
+
+    -- Register for nameplate events to handle cleanup
+    local nameplateEventFrame = CreateFrame("Frame")
+    nameplateEventFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+    nameplateEventFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
+    nameplateEventFrame:SetScript("OnEvent", function(self, event, unit)
+        if event == "NAME_PLATE_UNIT_REMOVED" then
+            -- Find and hide indicator for this unit
+            local guid = UnitGUID(unit)
+            if guid and nameplateIndicators[guid] then
+                nameplateIndicators[guid]:Hide()
+                nameplateIndicators[guid].attachedTo = nil
+            end
+        elseif event == "PLAYER_LEAVING_WORLD" then
+            CleanupAllIndicators()
         end
     end)
 end)
