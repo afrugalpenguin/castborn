@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.2.0
+
+### Features
+- Multi-DoT Tracker: Added nameplate indicators showing DoT timers directly on enemy nameplates
+- Helps identify which mob needs attention when multiple mobs share the same name
+- Works with Plater and default nameplates
+
 ## v3.1.6
 
 ### Fixes

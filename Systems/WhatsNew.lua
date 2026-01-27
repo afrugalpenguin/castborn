@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.2.0",
+        features = {
+            "Multi-DoT Tracker: Added nameplate indicators showing DoT timers directly on enemy nameplates",
+            "Helps identify which mob needs attention when multiple mobs share the same name",
+        },
+        fixes = {},
+    },
+    {
         version = "3.1.6",
         features = {},
         fixes = {
