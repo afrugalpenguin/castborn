@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1.6
+
+### Fixes
+- Fixed procs and cooldowns not loading correctly when switching between characters of different classes
+
 ## v3.1.5
 
 ### Fixes

@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.1.6",
+        features = {},
+        fixes = {
+            "Fixed procs and cooldowns not loading correctly when switching between characters of different classes",
+        },
+    },
+    {
         version = "3.1.5",
         features = {},
         fixes = {
