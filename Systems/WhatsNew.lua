@@ -14,6 +14,15 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.2.2",
+        features = {
+            "Multi-DoT nameplate indicator now only shows on the most urgent target (lowest DoT timer)",
+        },
+        fixes = {
+            "Fixed Warlock Shadow Trance (Nightfall) proc not being tracked correctly",
+        },
+    },
+    {
         version = "3.2.1",
         features = {},
         fixes = {

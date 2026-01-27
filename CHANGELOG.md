@@ -1,5 +1,13 @@
 # Changelog
 
+## v3.2.2
+
+### Features
+- Multi-DoT nameplate indicator now only shows on the most urgent target (lowest DoT timer)
+
+### Fixes
+- Fixed Warlock Shadow Trance (Nightfall) proc not being tracked correctly
+
 ## v3.2.1
 
 ### Fixes
