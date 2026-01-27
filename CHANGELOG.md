@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.3.0
+
+### Features
+- Interrupt Tracker: Track Target/Focus now highlights bar yellow when interrupt opportunity available
+- Multi-DoT Tracker: Sort by Time option (enabled by default, sorts by urgency)
+
+### Fixes
+- Renamed "Buff Tracker" to "Proc Tracker" in options
+- Fixed Proc Tracker "Show Timers" checkbox not working (was saving to wrong key)
+- Fixed castbar Show Icon/Time/Spell Name/Latency toggles requiring reload
+- All castbar display options now apply immediately when changed
+
 ## v3.2.2
 
 ### Features

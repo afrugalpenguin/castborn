@@ -14,6 +14,18 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.3.0",
+        features = {
+            "Interrupt Tracker: Track Target/Focus highlights bar yellow when interrupt opportunity available",
+            "Multi-DoT Tracker: Sort by Time option (sorts targets by urgency)",
+        },
+        fixes = {
+            "Renamed Buff Tracker to Proc Tracker in options",
+            "Fixed Proc Tracker Show Timers checkbox not working",
+            "Fixed castbar Show Icon/Time/Spell Name/Latency toggles requiring reload",
+        },
+    },
+    {
         version = "3.2.2",
         features = {
             "Multi-DoT nameplate indicator now only shows on the most urgent target (lowest DoT timer)",
