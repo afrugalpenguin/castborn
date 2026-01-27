@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.2.1
+
+### Fixes
+- Fixed Lua error in Multi-DoT nameplate indicators
+
 ## v3.2.0
 
 ### Features

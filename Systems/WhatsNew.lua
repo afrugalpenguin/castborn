@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.2.1",
+        features = {},
+        fixes = {
+            "Fixed Lua error in Multi-DoT nameplate indicators",
+        },
+    },
+    {
         version = "3.2.0",
         features = {
             "Multi-DoT Tracker: Added nameplate indicators showing DoT timers directly on enemy nameplates",
