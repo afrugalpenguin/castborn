@@ -27,6 +27,34 @@ local trackedTargets = {}
 local testModeActive = false
 
 --------------------------------------------------------------------------------
+-- Helper Functions
+--------------------------------------------------------------------------------
+
+-- Helper to find a unitId from a GUID by scanning nameplates
+local function GetUnitIdFromGUID(guid)
+    -- Check target first (most common case)
+    if UnitGUID("target") == guid then
+        return "target"
+    end
+    -- Check nameplates (common for multi-dotting)
+    for i = 1, 40 do
+        local unitId = "nameplate" .. i
+        if UnitExists(unitId) and UnitGUID(unitId) == guid then
+            return unitId
+        end
+    end
+    -- Check focus
+    if UnitGUID("focus") == guid then
+        return "focus"
+    end
+    -- Check mouseover
+    if UnitGUID("mouseover") == guid then
+        return "mouseover"
+    end
+    return nil
+end
+
+--------------------------------------------------------------------------------
 -- Nameplate Indicator System
 --------------------------------------------------------------------------------
 
@@ -217,34 +245,6 @@ local function CleanupAllIndicators()
         indicator:ClearAllPoints()
         indicator.attachedTo = nil
     end
-end
-
---------------------------------------------------------------------------------
--- Original Helper Functions
---------------------------------------------------------------------------------
-
--- Helper to find a unitId from a GUID by scanning nameplates
-local function GetUnitIdFromGUID(guid)
-    -- Check target first (most common case)
-    if UnitGUID("target") == guid then
-        return "target"
-    end
-    -- Check nameplates (common for multi-dotting)
-    for i = 1, 40 do
-        local unitId = "nameplate" .. i
-        if UnitExists(unitId) and UnitGUID(unitId) == guid then
-            return unitId
-        end
-    end
-    -- Check focus
-    if UnitGUID("focus") == guid then
-        return "focus"
-    end
-    -- Check mouseover
-    if UnitGUID("mouseover") == guid then
-        return "mouseover"
-    end
-    return nil
 end
 
 -- Get actual debuff duration from a unit
