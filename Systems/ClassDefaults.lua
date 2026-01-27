@@ -145,7 +145,8 @@ function ClassDefaults:ApplyFirstRunDefaults()
     local currentClass = info.class
 
     -- Check if this is a different class than before
-    local classChanged = CastbornDB.firstRunClass and CastbornDB.firstRunClass ~= currentClass
+    -- Also triggers if firstRunClass was never set (existing users before this feature)
+    local classChanged = CastbornDB.firstRunClass ~= currentClass
 
     if CastbornDB.firstRunComplete and not classChanged then return end
 

@@ -256,7 +256,8 @@ Castborn:RegisterCallback("READY", function()
     local currentVersion = Castborn.version
 
     -- Check if class changed (need to reload defaults)
-    local classChanged = db.loadedForClass and db.loadedForClass ~= class
+    -- Note: if loadedForClass is nil but trackedSpells exists, reload anyway (migration case)
+    local classChanged = db.loadedForClass ~= class
 
     if not db.trackedSpells or #db.trackedSpells == 0 or classChanged then
         -- First time setup or class changed: load all class defaults
@@ -277,9 +278,6 @@ Castborn:RegisterCallback("READY", function()
             end
         end
         db.defaultsLoaded = currentVersion
-        db.loadedForClass = class
-    elseif not db.loadedForClass then
-        -- Migration: mark existing data with current class
         db.loadedForClass = class
     end
 
