@@ -20,8 +20,8 @@ ClassDefaults.definitions = {
         fiveSecondRule = true,
         swingTimer = false,
         procs = {
-            { spellId = 17941, name = "Nightfall" },
-            { spellId = 34936, name = "Backlash" },
+            { spellId = 17941, name = "Shadow Trance" },  -- Nightfall proc
+            { spellId = 34939, name = "Backlash" },
         },
         cooldowns = {},
     },

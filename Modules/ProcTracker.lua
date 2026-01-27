@@ -19,7 +19,6 @@ local classProcs = {
     WARLOCK = {
         { spellId = 17941, name = "Shadow Trance" },     -- Nightfall proc
         { spellId = 34939, name = "Backlash" },
-        { spellId = 18095, name = "Nightfall" },
     },
     PRIEST = {
         { spellId = 14751, name = "Inner Focus" },

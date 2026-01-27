@@ -175,7 +175,7 @@ local function AttachIndicatorToNameplate(indicator, nameplate)
     indicator:Show()
 end
 
--- Update all nameplate indicators
+-- Update all nameplate indicators (only shows on MOST URGENT target)
 local function UpdateNameplateIndicators()
     local db = CastbornDB.multidot
     if not db.nameplateIndicators then
@@ -186,12 +186,13 @@ local function UpdateNameplateIndicators()
         return
     end
 
-    -- Track which GUIDs we've processed
-    local processedGUIDs = {}
+    -- First pass: find the most urgent target (lowest DoT timer)
+    local mostUrgentGUID = nil
+    local mostUrgentRemaining = 999
+    local mostUrgentUnitId = nil
 
-    -- Update indicators for all tracked targets
     for guid, data in pairs(trackedTargets) do
-        -- Find the minimum remaining time across all DoTs
+        -- Find the minimum remaining time across all DoTs for this target
         local minRemaining = 999
         for spellId, dot in pairs(data.dots) do
             local remaining = dot.expirationTime - GetTime()
@@ -200,40 +201,33 @@ local function UpdateNameplateIndicators()
             end
         end
 
-        -- Skip if no valid DoTs
-        if minRemaining >= 999 then
-            ReleaseIndicator(guid)
-        else
-            processedGUIDs[guid] = true
-
-            -- Try to find the nameplate for this GUID
+        -- Check if this is the most urgent target
+        if minRemaining < mostUrgentRemaining then
             local unitId = GetUnitIdFromGUID(guid)
             if unitId then
-                local nameplate = C_NamePlate and C_NamePlate.GetNamePlateForUnit(unitId)
-                if nameplate then
-                    local indicator = GetIndicatorForGUID(guid)
-                    if indicator then
-                        -- Reattach if nameplate changed or not attached
-                        if indicator.attachedTo ~= nameplate then
-                            AttachIndicatorToNameplate(indicator, nameplate)
-                        end
-                        UpdateIndicatorUrgency(indicator, minRemaining)
-                    end
-                else
-                    -- No nameplate visible, hide indicator
-                    ReleaseIndicator(guid)
-                end
-            else
-                -- Can't find unit, hide indicator
-                ReleaseIndicator(guid)
+                mostUrgentGUID = guid
+                mostUrgentRemaining = minRemaining
+                mostUrgentUnitId = unitId
             end
         end
     end
 
-    -- Hide indicators for GUIDs no longer tracked
+    -- Hide all indicators first
     for guid, indicator in pairs(nameplateIndicators) do
-        if not processedGUIDs[guid] then
-            indicator:Hide()
+        indicator:Hide()
+    end
+
+    -- Only show indicator on the most urgent target
+    if mostUrgentGUID and mostUrgentRemaining < 999 then
+        local nameplate = C_NamePlate and C_NamePlate.GetNamePlateForUnit(mostUrgentUnitId)
+        if nameplate then
+            local indicator = GetIndicatorForGUID(mostUrgentGUID)
+            if indicator then
+                if indicator.attachedTo ~= nameplate then
+                    AttachIndicatorToNameplate(indicator, nameplate)
+                end
+                UpdateIndicatorUrgency(indicator, mostUrgentRemaining)
+            end
         end
     end
 end
