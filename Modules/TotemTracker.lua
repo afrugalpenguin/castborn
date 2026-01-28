@@ -266,45 +266,60 @@ local function ScanTotems()
         return
     end
 
-    local visibleIndex = 0
-
+    -- Collect active totems
+    local activeTotems = {}
     for slot = 1, MAX_TOTEMS do
         local haveTotem, totemName, startTime, duration, icon = GetTotemInfo(slot)
-
         if haveTotem and duration > 0 then
-            visibleIndex = visibleIndex + 1
-
-            if not totemBars[visibleIndex] then
-                totemBars[visibleIndex] = CreateTotemBar(CB.totemTracker, visibleIndex)
-            end
-
-            local totemBar = totemBars[visibleIndex]
-            totemBar.totemSlot = slot  -- Store actual slot for tooltip
-
-            local yOffset = -4 - (visibleIndex - 1) * (cfg.barHeight + cfg.spacing)
-            totemBar:ClearAllPoints()
-            totemBar:SetPoint("TOPLEFT", CB.totemTracker, "TOPLEFT", 4, yOffset)
-            totemBar:SetSize(cfg.width - 8, cfg.barHeight)
-
-            -- Update bar positions
-            totemBar.bar:ClearAllPoints()
-            totemBar.bar:SetPoint("TOPLEFT", 2 + cfg.barHeight, -2)
-            totemBar.bar:SetPoint("BOTTOMRIGHT", -2, 2)
-
-            UpdateTotemBar(totemBar, slot, totemName, icon, startTime, duration)
+            local remaining = (startTime + duration) - GetTime()
+            table.insert(activeTotems, {
+                slot = slot,
+                name = totemName,
+                startTime = startTime,
+                duration = duration,
+                icon = icon,
+                remaining = remaining,
+            })
         end
     end
 
+    -- Sort by remaining time (soonest to expire first)
+    table.sort(activeTotems, function(a, b)
+        return a.remaining < b.remaining
+    end)
+
+    -- Display sorted totems
+    for i, totem in ipairs(activeTotems) do
+        if not totemBars[i] then
+            totemBars[i] = CreateTotemBar(CB.totemTracker, i)
+        end
+
+        local totemBar = totemBars[i]
+        totemBar.totemSlot = totem.slot  -- Store actual slot for tooltip
+
+        local yOffset = -4 - (i - 1) * (cfg.barHeight + cfg.spacing)
+        totemBar:ClearAllPoints()
+        totemBar:SetPoint("TOPLEFT", CB.totemTracker, "TOPLEFT", 4, yOffset)
+        totemBar:SetSize(cfg.width - 8, cfg.barHeight)
+
+        -- Update bar positions
+        totemBar.bar:ClearAllPoints()
+        totemBar.bar:SetPoint("TOPLEFT", 2 + cfg.barHeight, -2)
+        totemBar.bar:SetPoint("BOTTOMRIGHT", -2, 2)
+
+        UpdateTotemBar(totemBar, totem.slot, totem.name, totem.icon, totem.startTime, totem.duration)
+    end
+
     -- Hide unused bars
-    for i = visibleIndex + 1, MAX_TOTEMS do
+    for i = #activeTotems + 1, MAX_TOTEMS do
         if totemBars[i] then totemBars[i]:Hide() end
     end
 
     -- Adjust container height and visibility
-    local totalHeight = math.max(30, visibleIndex * (cfg.barHeight + cfg.spacing) + 8)
+    local totalHeight = math.max(30, #activeTotems * (cfg.barHeight + cfg.spacing) + 8)
     CB.totemTracker:SetHeight(totalHeight)
 
-    if visibleIndex > 0 then
+    if #activeTotems > 0 then
         CB.totemTracker:Show()
     else
         CB.totemTracker:Hide()
@@ -487,6 +502,11 @@ function CB:TestTotemTracker()
         { slot = WATER_TOTEM_SLOT, name = "Mana Spring Totem", icon = "Interface\\Icons\\Spell_Nature_ManaRegenTotem", duration = 120, remaining = 4.1 },
         { slot = AIR_TOTEM_SLOT, name = "Windfury Totem", icon = "Interface\\Icons\\Spell_Nature_Windfury", duration = 120, remaining = 71.8 },
     }
+
+    -- Sort by remaining time (soonest to expire first)
+    table.sort(testTotems, function(a, b)
+        return a.remaining < b.remaining
+    end)
 
     for i, totem in ipairs(testTotems) do
         if not totemBars[i] then

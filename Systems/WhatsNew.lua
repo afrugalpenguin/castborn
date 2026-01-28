@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.1.1",
+        features = {},
+        fixes = {
+            "Totem Tracker now sorts by soonest to expire (most urgent at top)",
+        },
+    },
+    {
         version = "4.1.0",
         features = {
             "Totem Tracker (Shaman): Track active totems with duration bars",

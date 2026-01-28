@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.1.1
+
+### Improvements
+- Totem Tracker now sorts by soonest to expire (most urgent at top)
+
 ## v4.1.0
 
 ### Features
