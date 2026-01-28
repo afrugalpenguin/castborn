@@ -120,6 +120,15 @@ local steps = {
         configKey = "interrupt",
     },
     {
+        id = "totems",
+        title = "Totem Tracker",
+        description = "Track your active totems with duration bars. Shows Fire, Earth, Water, and Air totems with remaining time.",
+        tip = "Mouseover a totem bar to see which party members are NOT in range.",
+        getFrame = function() return _G["Castborn_TotemTracker"] end,
+        configKey = "totems",
+        class = "SHAMAN",
+    },
+    {
         id = "moving",
         title = "Moving & Positioning",
         description = "All Castborn frames can be repositioned!\n\nType |cff88ddff/cb unlock|r to enable dragging, then drag any frame to your preferred position.",
@@ -642,6 +651,12 @@ local function ShowTestFrame(frameId)
             -- Create a mockup interrupt tracker for the tutorial
             return CreateMockupInterruptTracker()
         end
+    elseif frameId == "totems" then
+        if CB.TestTotemTracker then CB:TestTotemTracker() end
+        local frame = _G["Castborn_TotemTracker"]
+        if frame then
+            return frame
+        end
     end
 
     return nil
@@ -777,17 +792,36 @@ function Tutorial:Start()
     Castborn:Print("Tutorial started. Follow the steps to learn about Castborn!")
 end
 
+-- Check if a step should be shown for the current player class
+local function ShouldShowStep(stepNum)
+    local step = steps[stepNum]
+    if not step then return false end
+    if not step.class then return true end
+    local _, playerClass = UnitClass("player")
+    return step.class == playerClass
+end
+
 function Tutorial:NextStep()
-    if currentStep >= #steps then
+    local nextStep = currentStep + 1
+    -- Skip steps that don't match the player's class
+    while nextStep <= #steps and not ShouldShowStep(nextStep) do
+        nextStep = nextStep + 1
+    end
+    if nextStep > #steps then
         self:End()
         return
     end
-    ShowStep(currentStep + 1)
+    ShowStep(nextStep)
 end
 
 function Tutorial:PreviousStep()
-    if currentStep <= 1 then return end
-    ShowStep(currentStep - 1)
+    local prevStep = currentStep - 1
+    -- Skip steps that don't match the player's class
+    while prevStep >= 1 and not ShouldShowStep(prevStep) do
+        prevStep = prevStep - 1
+    end
+    if prevStep < 1 then return end
+    ShowStep(prevStep)
 end
 
 function Tutorial:End()
@@ -808,6 +842,7 @@ function Tutorial:End()
     if CB.EndTestInterrupt then CB:EndTestInterrupt() end
     if CB.EndTestDoTTracker then CB:EndTestDoTTracker() end
     if CB.EndTestMultiDoT then CB:EndTestMultiDoT() end
+    if CB.EndTestTotemTracker then CB:EndTestTotemTracker() end
 
     if tutorialFrame then
         tutorialFrame:Hide()

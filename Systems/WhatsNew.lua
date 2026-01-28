@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.1.3",
+        features = {
+            "Added Totem Tracker to onboarding tutorial (Shaman only)",
+        },
+        fixes = {},
+    },
+    {
         version = "4.1.2",
         features = {},
         fixes = {

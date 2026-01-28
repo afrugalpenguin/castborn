@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.1.3
+
+### Features
+- Added Totem Tracker to onboarding tutorial (Shaman only)
+
 ## v4.1.2
 
 ### Fixes
