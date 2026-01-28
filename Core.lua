@@ -133,6 +133,7 @@ CB.defaults = {
         showIcon = true,
         showTime = true,
         showSpellName = true,
+        showSpellRank = false,
         showLatency = true,
         hideBlizzardCastBar = true,
         hideTradeSkills = false,

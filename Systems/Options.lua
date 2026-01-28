@@ -582,6 +582,10 @@ function Options:BuildCastbars(parent)
     cb5:SetPoint("TOPLEFT", 150, y)
     y = y - 26
 
+    local cbRank = CreateCheckbox(parent, "Show Spell Rank", CastbornDB.player, "showSpellRank")
+    cbRank:SetPoint("TOPLEFT", 0, y)
+    y = y - 26
+
     local cb6 = CreateCheckbox(parent, "Hide Blizzard Castbar", CastbornDB.player, "hideBlizzardCastBar", function(checked)
         if checked then
             Castborn:HideBlizzardCastBar()

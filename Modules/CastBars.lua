@@ -2,7 +2,6 @@
     Castborn - CastBars Module
     Player, Target, Target-of-Target, and Focus castbars
 ]]
-
 local CastBars = {}
 Castborn.CastBars = CastBars
 
@@ -280,19 +279,19 @@ local function StartCast(frame, unit)
     -- Skip ToT castbar when target is self-targeting (redundant with target castbar)
     if unit == "targettarget" and UnitIsUnit("targettarget", "target") then return end
 
-    local name, text, texture, startTime, endTime, isTradeSkill, _, notInterruptible = UnitCastingInfo(unit)
+    local name, text, texture, startTime, endTime, isTradeSkill, _, notInterruptible, spellID = UnitCastingInfo(unit)
 
     if not name then return end
 
     -- Skip tradeskill casts (crafting) if option is enabled
     if isTradeSkill and cfg.hideTradeSkills then return end
-    
+
     frame.casting = true
     frame.channeling = false
     frame.startTime = startTime / 1000
     frame.endTime = endTime / 1000
     frame.fadeOut = 0
-    
+
     local barColor = GetBarColor(frame.dbKey)
     frame.bar:SetStatusBarColor(barColor[1], barColor[2], barColor[3], barColor[4])
 
@@ -309,7 +308,27 @@ local function StartCast(frame, unit)
     -- Show/hide spell name based on setting
     if frame.spellText then
         if cfg.showSpellName then
-            frame.spellText:SetText(text or name)
+            local displayName = text or name
+            -- Add rank if enabled and spellID available
+            if cfg.showSpellRank and spellID then
+                -- Try GetSpellSubtext first (TBC), fall back to GetSpellInfo
+                local rank
+                if GetSpellSubtext then
+                    rank = GetSpellSubtext(spellID)
+                end
+                if not rank or rank == "" then
+                    local _, r = GetSpellInfo(spellID)
+                    rank = r
+                end
+                if rank and rank ~= "" then
+                    -- Format as "Rank X" if it's just a number
+                    if tonumber(rank) then
+                        rank = "Rank " .. rank
+                    end
+                    displayName = displayName .. " (" .. rank .. ")"
+                end
+            end
+            frame.spellText:SetText(displayName)
             frame.spellText:Show()
         else
             frame.spellText:Hide()
@@ -355,19 +374,19 @@ local function StartChannel(frame, unit)
     -- Skip ToT castbar when target is self-targeting (redundant with target castbar)
     if unit == "targettarget" and UnitIsUnit("targettarget", "target") then return end
 
-    local name, text, texture, startTime, endTime, isTradeSkill, notInterruptible = UnitChannelInfo(unit)
+    local name, text, texture, startTime, endTime, isTradeSkill, notInterruptible, spellID = UnitChannelInfo(unit)
 
     if not name then return end
 
     -- Skip tradeskill channels (crafting) if option is enabled
     if isTradeSkill and cfg.hideTradeSkills then return end
-    
+
     frame.casting = false
     frame.channeling = true
     frame.startTime = startTime / 1000
     frame.endTime = endTime / 1000
     frame.fadeOut = 0
-    
+
     local barColor = GetBarColor(frame.dbKey)
     frame.bar:SetStatusBarColor(barColor[1], barColor[2], barColor[3], barColor[4])
 
@@ -384,7 +403,27 @@ local function StartChannel(frame, unit)
     -- Show/hide spell name based on setting
     if frame.spellText then
         if cfg.showSpellName then
-            frame.spellText:SetText(text or name)
+            local displayName = text or name
+            -- Add rank if enabled and spellID available
+            if cfg.showSpellRank and spellID then
+                -- Try GetSpellSubtext first (TBC), fall back to GetSpellInfo
+                local rank
+                if GetSpellSubtext then
+                    rank = GetSpellSubtext(spellID)
+                end
+                if not rank or rank == "" then
+                    local _, r = GetSpellInfo(spellID)
+                    rank = r
+                end
+                if rank and rank ~= "" then
+                    -- Format as "Rank X" if it's just a number
+                    if tonumber(rank) then
+                        rank = "Rank " .. rank
+                    end
+                    displayName = displayName .. " (" .. rank .. ")"
+                end
+            end
+            frame.spellText:SetText(displayName)
             frame.spellText:Show()
         else
             frame.spellText:Hide()
@@ -532,8 +571,9 @@ function CB:InitCastBars()
         elseif unit == "targettarget" then frame = CB.castbars.targettarget
         elseif unit == "focus" then frame = CB.castbars.focus
         else return end
-        
-        if event == "UNIT_SPELLCAST_START" then StartCast(frame, unit)
+
+        if event == "UNIT_SPELLCAST_START" then
+            StartCast(frame, unit)
         elseif event == "UNIT_SPELLCAST_CHANNEL_START" then StartChannel(frame, unit)
         elseif event == "UNIT_SPELLCAST_STOP" or event == "UNIT_SPELLCAST_CHANNEL_STOP" then StopCast(frame, true)
         elseif event == "UNIT_SPELLCAST_FAILED" or event == "UNIT_SPELLCAST_INTERRUPTED" then StopCast(frame, false)

@@ -56,6 +56,7 @@ read_globals = {
     "GetScreenWidth",
     "GetScreenHeight",
     "GetSpellInfo",
+    "GetSpellSubtext",
     "GetSpellTexture",
     "GetSpellCooldown",
     "GetSpellBonusDamage",
