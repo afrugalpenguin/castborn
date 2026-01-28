@@ -663,15 +663,275 @@ end
 
 function Options:BuildProfiles(parent)
     local y = 0
+    local Profiles = Castborn.Profiles
 
+    -- Profile Management header
     local header1 = CreateHeader(parent, "Profile Management")
     header1:SetPoint("TOPLEFT", 0, y)
     header1:SetPoint("TOPRIGHT", 0, y)
-    y = y - 40
+    y = y - 30
 
-    local note = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    note:SetPoint("TOPLEFT", 0, y)
-    note:SetText("|cffFFCC00Coming Soon|r")
+    -- Character label
+    local charKey = UnitName("player") .. "-" .. GetRealmName()
+    local charLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    charLabel:SetPoint("TOPLEFT", 0, y)
+    charLabel:SetText("Character: |cffFFCC00" .. charKey .. "|r")
+    y = y - 26
+
+    -- Current Profile dropdown
+    local dropdownLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    dropdownLabel:SetPoint("TOPLEFT", 0, y)
+    dropdownLabel:SetText("Current Profile:")
+    dropdownLabel:SetTextColor(unpack(C.grey))
+
+    local dropdown = CreateFrame("Frame", "CastbornProfileDropdown", parent, "UIDropDownMenuTemplate")
+    dropdown:SetPoint("TOPLEFT", 90, y + 6)
+    UIDropDownMenu_SetWidth(dropdown, 150)
+
+    local function RefreshDropdown()
+        local profiles = Profiles:GetProfileList()
+        local currentProfile = Profiles:GetCurrentProfileName()
+
+        UIDropDownMenu_Initialize(dropdown, function(self, level)
+            for _, profileName in ipairs(profiles) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = profileName
+                info.value = profileName
+                info.checked = (profileName == currentProfile)
+                info.func = function()
+                    Profiles:SetCurrentProfile(profileName)
+                    UIDropDownMenu_SetText(dropdown, profileName)
+                    CloseDropDownMenus()
+                end
+                UIDropDownMenu_AddButton(info)
+            end
+        end)
+        UIDropDownMenu_SetText(dropdown, currentProfile)
+    end
+    RefreshDropdown()
+
+    y = y - 36
+
+    -- Profile action buttons
+    local newBtn = CreateButton(parent, "New", 70, function()
+        StaticPopup_Show("CASTBORN_NEW_PROFILE")
+    end)
+    newBtn:SetPoint("TOPLEFT", 0, y)
+
+    local copyBtn = CreateButton(parent, "Copy", 70, function()
+        StaticPopup_Show("CASTBORN_COPY_PROFILE")
+    end)
+    copyBtn:SetPoint("LEFT", newBtn, "RIGHT", 6, 0)
+
+    local deleteBtn = CreateButton(parent, "Delete", 70, function()
+        local currentProfile = Profiles:GetCurrentProfileName()
+        if currentProfile == "Default" then
+            Castborn:Print("Cannot delete the Default profile")
+            return
+        end
+        StaticPopup_Show("CASTBORN_DELETE_PROFILE", currentProfile)
+    end)
+    deleteBtn:SetPoint("LEFT", copyBtn, "RIGHT", 6, 0)
+
+    local saveBtn = CreateButton(parent, "Save", 70, function()
+        local currentProfile = Profiles:GetCurrentProfileName()
+        Profiles:SaveCurrentToProfile(currentProfile)
+        Castborn:Print("Saved current settings to profile: " .. currentProfile)
+    end)
+    saveBtn:SetPoint("LEFT", deleteBtn, "RIGHT", 6, 0)
+
+    y = y - 50
+
+    -- Import/Export header
+    local header2 = CreateHeader(parent, "Import / Export")
+    header2:SetPoint("TOPLEFT", 0, y)
+    header2:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    -- Export/Import buttons
+    local exportBtn = CreateButton(parent, "Export", 100, function()
+        local currentProfile = Profiles:GetCurrentProfileName()
+        local data, err = Profiles:ExportProfile(currentProfile)
+        if data then
+            parent.exportEditBox:SetText(data)
+            parent.exportEditBox:HighlightText()
+            parent.exportEditBox:SetFocus()
+            Castborn:Print("Profile exported. Press Ctrl+C to copy.")
+        else
+            Castborn:Print("Export failed: " .. (err or "unknown error"))
+        end
+    end)
+    exportBtn:SetPoint("TOPLEFT", 0, y)
+
+    local importBtn = CreateButton(parent, "Import", 100, function()
+        local data = parent.exportEditBox:GetText()
+        if not data or data == "" then
+            Castborn:Print("Paste profile data into the text box first")
+            return
+        end
+        StaticPopup_Show("CASTBORN_IMPORT_PROFILE", nil, nil, data)
+    end)
+    importBtn:SetPoint("LEFT", exportBtn, "RIGHT", 6, 0)
+
+    y = y - 32
+
+    -- Multi-line edit box for import/export data
+    local editBoxContainer = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    editBoxContainer:SetPoint("TOPLEFT", 0, y)
+    editBoxContainer:SetPoint("TOPRIGHT", 0, y)
+    editBoxContainer:SetHeight(100)
+    editBoxContainer:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    editBoxContainer:SetBackdropColor(unpack(C.bgInput))
+    editBoxContainer:SetBackdropBorderColor(unpack(C.borderDark))
+
+    local scrollFrame = CreateFrame("ScrollFrame", "CastbornProfileExportScroll", editBoxContainer, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 6, -6)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -26, 6)
+
+    local editBox = CreateFrame("EditBox", "CastbornProfileExportEditBox", scrollFrame)
+    editBox:SetMultiLine(true)
+    editBox:SetAutoFocus(false)
+    editBox:SetFontObject(GameFontHighlightSmall)
+    editBox:SetWidth(scrollFrame:GetWidth() or 350)
+    editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    scrollFrame:SetScrollChild(editBox)
+    parent.exportEditBox = editBox
+
+    -- Register StaticPopup dialogs
+    if not StaticPopupDialogs["CASTBORN_NEW_PROFILE"] then
+        StaticPopupDialogs["CASTBORN_NEW_PROFILE"] = {
+            text = "Enter new profile name:",
+            button1 = "Create",
+            button2 = "Cancel",
+            hasEditBox = true,
+            editBoxWidth = 200,
+            OnAccept = function(self)
+                local name = self.editBox:GetText()
+                if name and name ~= "" then
+                    Profiles:CreateProfile(name)
+                    Profiles:SetCurrentProfile(name)
+                    RefreshDropdown()
+                    Castborn:Print("Created and switched to profile: " .. name)
+                end
+            end,
+            OnShow = function(self)
+                self.editBox:SetText("")
+                self.editBox:SetFocus()
+            end,
+            EditBoxOnEnterPressed = function(self)
+                local parent = self:GetParent()
+                local name = self:GetText()
+                if name and name ~= "" then
+                    Profiles:CreateProfile(name)
+                    Profiles:SetCurrentProfile(name)
+                    RefreshDropdown()
+                    Castborn:Print("Created and switched to profile: " .. name)
+                end
+                parent:Hide()
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+        }
+
+        StaticPopupDialogs["CASTBORN_COPY_PROFILE"] = {
+            text = "Enter name for the copy:",
+            button1 = "Copy",
+            button2 = "Cancel",
+            hasEditBox = true,
+            editBoxWidth = 200,
+            OnAccept = function(self)
+                local name = self.editBox:GetText()
+                if name and name ~= "" then
+                    local current = Profiles:GetCurrentProfileName()
+                    Profiles:CopyProfile(current, name)
+                    RefreshDropdown()
+                    Castborn:Print("Copied profile '" .. current .. "' to '" .. name .. "'")
+                end
+            end,
+            OnShow = function(self)
+                self.editBox:SetText("")
+                self.editBox:SetFocus()
+            end,
+            EditBoxOnEnterPressed = function(self)
+                local parent = self:GetParent()
+                local name = self:GetText()
+                if name and name ~= "" then
+                    local current = Profiles:GetCurrentProfileName()
+                    Profiles:CopyProfile(current, name)
+                    RefreshDropdown()
+                    Castborn:Print("Copied profile '" .. current .. "' to '" .. name .. "'")
+                end
+                parent:Hide()
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+        }
+
+        StaticPopupDialogs["CASTBORN_DELETE_PROFILE"] = {
+            text = "Delete profile '%s'?",
+            button1 = "Delete",
+            button2 = "Cancel",
+            OnAccept = function(self, data)
+                local profileName = Profiles:GetCurrentProfileName()
+                Profiles:DeleteProfile(profileName)
+                Profiles:SetCurrentProfile("Default")
+                RefreshDropdown()
+                Castborn:Print("Deleted profile: " .. profileName)
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            showAlert = true,
+        }
+
+        StaticPopupDialogs["CASTBORN_IMPORT_PROFILE"] = {
+            text = "Enter name for imported profile:",
+            button1 = "Import",
+            button2 = "Cancel",
+            hasEditBox = true,
+            editBoxWidth = 200,
+            OnAccept = function(self, data)
+                local name = self.editBox:GetText()
+                if name and name ~= "" and data then
+                    local success, err = Profiles:ImportProfile(name, data)
+                    if success then
+                        RefreshDropdown()
+                        Castborn:Print("Imported profile: " .. name)
+                    else
+                        Castborn:Print("Import failed: " .. (err or "unknown error"))
+                    end
+                end
+            end,
+            OnShow = function(self)
+                self.editBox:SetText("")
+                self.editBox:SetFocus()
+            end,
+            EditBoxOnEnterPressed = function(self)
+                local parent = self:GetParent()
+                local name = self:GetText()
+                local data = parent.data
+                if name and name ~= "" and data then
+                    local success, err = Profiles:ImportProfile(name, data)
+                    if success then
+                        RefreshDropdown()
+                        Castborn:Print("Imported profile: " .. name)
+                    else
+                        Castborn:Print("Import failed: " .. (err or "unknown error"))
+                    end
+                end
+                parent:Hide()
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+        }
+    end
 end
 
 function Options:BuildChangelog(parent)
