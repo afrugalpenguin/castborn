@@ -223,33 +223,24 @@ CB:RegisterCallback("PLAYER_CASTBAR_MOVED", function()
     -- Nothing needed - anchored frames move automatically
 end)
 
--- Detach GCD indicator from castbar for independent positioning
-function Castborn_GCD_Detach()
+-- Detach GCD from castbar
+CB:RegisterCallback("DETACH_GCD", function()
     if not CB.gcdFrame then return end
     CastbornDB.gcd = CastbornDB.gcd or {}
     if Castborn.Anchoring then
         Castborn.Anchoring:DetachFromCastbar(CB.gcdFrame, CastbornDB.gcd)
     end
-end
+    CB:Print("GCD detached from castbar")
+end)
 
--- Reattach GCD indicator to player castbar
-function Castborn_GCD_Reattach()
+-- Reattach GCD to castbar
+CB:RegisterCallback("REATTACH_GCD", function()
     if not CB.gcdFrame then return end
     CastbornDB.gcd = CastbornDB.gcd or {}
     if Castborn.Anchoring then
         Castborn.Anchoring:ReattachToCastbar(CB.gcdFrame, CastbornDB.gcd, "BOTTOM", -2, SyncGCDWidth)
     end
     CB:Print("GCD anchored to castbar")
-end
-
--- Register callbacks for Options panel
-CB:RegisterCallback("DETACH_GCD", function()
-    Castborn_GCD_Detach()
-    CB:Print("GCD detached from castbar")
-end)
-
-CB:RegisterCallback("REATTACH_GCD", function()
-    Castborn_GCD_Reattach()
 end)
 
 --------------------------------------------------------------------------------

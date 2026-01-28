@@ -184,38 +184,25 @@ local function SyncFSRWidth()
     end
 end
 
--- Make SyncFSRWidth available globally for callbacks
-Castborn_FSR_SyncWidth = SyncFSRWidth
-
--- Detach the FSR from the player castbar
-function Castborn_FSR_Detach()
+-- Detach FSR from castbar
+CB:RegisterCallback("DETACH_FSR", function()
     if not CB.fsrFrame then return end
     CastbornDB.fsr = CastbornDB.fsr or {}
     if Castborn.Anchoring then
         Castborn.Anchoring:DetachFromCastbar(CB.fsrFrame, CastbornDB.fsr)
     end
-    -- Reset to default width when detached
     SyncFSRWidth()
-end
+    CB:Print("5 Second Rule detached from castbar")
+end)
 
--- Reattach the FSR to the player castbar
-function Castborn_FSR_Reattach()
+-- Reattach FSR to castbar
+CB:RegisterCallback("REATTACH_FSR", function()
     if not CB.fsrFrame then return end
     CastbornDB.fsr = CastbornDB.fsr or {}
     if Castborn.Anchoring then
         Castborn.Anchoring:ReattachToCastbar(CB.fsrFrame, CastbornDB.fsr, "TOP", 2, SyncFSRWidth)
     end
     CB:Print("5 Second Rule anchored to castbar")
-end
-
--- Register callbacks for Options panel
-CB:RegisterCallback("DETACH_FSR", function()
-    Castborn_FSR_Detach()
-    CB:Print("5 Second Rule detached from castbar")
-end)
-
-CB:RegisterCallback("REATTACH_FSR", function()
-    Castborn_FSR_Reattach()
 end)
 
 -- Listen for player castbar creation
