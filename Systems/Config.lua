@@ -277,6 +277,11 @@ function CB:HideTestModePanel()
     if testModePanel then
         testModePanel:Hide()
     end
+    -- Fallback: hide by global name if local reference failed
+    local globalPanel = _G["CastbornTestModePanel"]
+    if globalPanel then
+        globalPanel:Hide()
+    end
 end
 
 function CB:InitConfig()

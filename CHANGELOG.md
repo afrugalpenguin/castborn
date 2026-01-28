@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.1.2
+
+### Fixes
+- Fixed `/cb lock` not dismissing the test mode panel
+
 ## v4.1.1
 
 ### Improvements

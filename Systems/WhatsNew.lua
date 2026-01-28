@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.1.2",
+        features = {},
+        fixes = {
+            "Fixed /cb lock not dismissing test mode panel",
+        },
+    },
+    {
         version = "4.1.1",
         features = {},
         fixes = {
