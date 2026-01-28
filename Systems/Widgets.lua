@@ -174,28 +174,3 @@ function Widgets:CreateScrollFrame(parent, width, height)
 
     return scrollFrame, content
 end
-
--- Create an edit box
-function Widgets:CreateEditBox(parent, label, db, key, width, onChange)
-    local frame = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
-    frame:SetSize(width or 150, 20)
-    frame:SetAutoFocus(false)
-    frame:SetText(db[key] or "")
-
-    frame.label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    frame.label:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, 2)
-    frame.label:SetText(label)
-
-    frame:SetScript("OnEnterPressed", function(self)
-        db[key] = self:GetText()
-        self:ClearFocus()
-        if onChange then onChange(db[key]) end
-    end)
-
-    frame:SetScript("OnEscapePressed", function(self)
-        self:SetText(db[key] or "")
-        self:ClearFocus()
-    end)
-
-    return frame
-end
