@@ -127,6 +127,14 @@ local function CreateTotemBar(parent, index)
     timeText:SetJustifyH("RIGHT")
     frame.timeText = timeText
 
+    -- Buff count indicator (shows party members in range)
+    local countText = bar:CreateFontString(nil, "OVERLAY")
+    countText:SetFont("Fonts\\ARIALN.TTF", cfg.barHeight - 7, "OUTLINE")
+    countText:SetPoint("RIGHT", timeText, "LEFT", -6, 0)
+    countText:SetJustifyH("RIGHT")
+    countText:SetAlpha(0.9)
+    frame.countText = countText
+
     -- Store the slot for tooltip
     frame.totemSlot = index
 
@@ -143,6 +151,33 @@ local function CreateTotemBar(parent, index)
 
     frame:Hide()
     return frame
+end
+
+-- Get party size (excluding player)
+local function GetPartySize()
+    if testModeActive then
+        return #testPartyMembers
+    end
+    return GetNumPartyMembers and GetNumPartyMembers() or math.max(0, GetNumGroupMembers() - 1)
+end
+
+-- Get buffed count for a totem slot (returns buffed, total)
+function TotemTracker:GetBuffedCount(totemSlot, totemName)
+    local partySize = GetPartySize()
+    if partySize == 0 then return 0, 0 end
+
+    -- Offensive totems don't buff party
+    if offensiveTotems[totemName] then return 0, 0 end
+
+    local notAffected
+    if testModeActive then
+        notAffected = testNotInRange[totemSlot] or {}
+    else
+        notAffected = self:GetMembersNotAffected(totemSlot)
+    end
+
+    local buffedCount = partySize - #notAffected
+    return buffedCount, partySize
 end
 
 -- Get party/raid members not in range of the totem
@@ -247,6 +282,27 @@ local function UpdateTotemBar(totemBar, slot, name, icon, startTime, duration)
         totemBar.timeText:SetTextColor(1, 0.8, 0.3, 1)
     else
         totemBar.timeText:SetTextColor(1, 1, 1, 1)
+    end
+
+    -- Update buff count indicator (player pips)
+    if totemBar.countText then
+        local buffed, total = TotemTracker:GetBuffedCount(slot, name)
+        if total > 0 then
+            -- Build pip string: ● for buffed, ○ for not buffed
+            local pips = string.rep("●", buffed) .. string.rep("○", total - buffed)
+            totemBar.countText:SetText(pips)
+            -- Color based on coverage
+            if buffed == total then
+                totemBar.countText:SetTextColor(0.3, 0.9, 0.3, 0.9)  -- Green - all buffed
+            elseif buffed == 0 then
+                totemBar.countText:SetTextColor(0.9, 0.3, 0.3, 0.9)  -- Red - none buffed
+            else
+                totemBar.countText:SetTextColor(1, 0.8, 0.3, 0.9)    -- Yellow - partial
+            end
+            totemBar.countText:Show()
+        else
+            totemBar.countText:Hide()
+        end
     end
 
     totemBar:Show()
@@ -544,6 +600,25 @@ function CB:TestTotemTracker()
             totemBar.timeText:SetTextColor(1, 0.8, 0.3, 1)
         else
             totemBar.timeText:SetTextColor(1, 1, 1, 1)
+        end
+
+        -- Update buff count indicator (player pips)
+        if totemBar.countText then
+            local buffed, total = TotemTracker:GetBuffedCount(totem.slot, totem.name)
+            if total > 0 then
+                local pips = string.rep("●", buffed) .. string.rep("○", total - buffed)
+                totemBar.countText:SetText(pips)
+                if buffed == total then
+                    totemBar.countText:SetTextColor(0.3, 0.9, 0.3, 0.9)
+                elseif buffed == 0 then
+                    totemBar.countText:SetTextColor(0.9, 0.3, 0.3, 0.9)
+                else
+                    totemBar.countText:SetTextColor(1, 0.8, 0.3, 0.9)
+                end
+                totemBar.countText:Show()
+            else
+                totemBar.countText:Hide()
+            end
         end
 
         totemBar:Show()
