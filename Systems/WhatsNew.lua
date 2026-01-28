@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "3.3.1",
+        features = {},
+        fixes = {
+            "DoT Tracker now uses SpellData for colors (internal cleanup)",
+            "Fixed modules listening for non-existent PLAYER_CASTBAR_READY event",
+        },
+    },
+    {
         version = "3.3.0",
         features = {
             "Interrupt Tracker: Track Target/Focus highlights bar yellow when interrupt opportunity available",

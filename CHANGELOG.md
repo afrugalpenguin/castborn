@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.3.1
+
+### Fixes
+- DoT Tracker now uses SpellData for colors instead of duplicated local tables
+- Fixed modules listening for non-existent PLAYER_CASTBAR_READY event (now uses PLAYER_CASTBAR_CREATED)
+
+### Internal
+- All modules now use consistent RegisterModule() pattern
+- Removed unused global functions from FiveSecondRule and GCDIndicator
+
 ## v3.3.0
 
 ### Features
