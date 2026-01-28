@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.0.0
+
+### Features
+- Profile Management UI: Create, copy, delete, and switch between profiles
+- Import/Export: Share profiles with other players via encoded strings
+- Per-character profile selection with shared profile storage
+
 ## v3.3.1
 
 ### Fixes

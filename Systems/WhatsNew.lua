@@ -14,6 +14,15 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.0.0",
+        features = {
+            "Profile Management UI: Create, copy, delete, and switch between profiles",
+            "Import/Export: Share profiles with other players via encoded strings",
+            "Per-character profile selection with shared profile storage",
+        },
+        fixes = {},
+    },
+    {
         version = "3.3.1",
         features = {},
         fixes = {
