@@ -454,7 +454,7 @@ Castborn:RegisterCallback("READY", function()
 end)
 
 -- Listen for player castbar creation
-Castborn:RegisterCallback("PLAYER_CASTBAR_READY", function(castbar)
+Castborn:RegisterCallback("PLAYER_CASTBAR_CREATED", function(castbar)
     -- Anchor BELOW the player castbar if configured
     if frame and CastbornDB.procs and CastbornDB.procs.anchored ~= false and Castborn.Anchoring then
         Castborn.Anchoring:ReattachToCastbar(frame, CastbornDB.procs, "BOTTOM", -2)

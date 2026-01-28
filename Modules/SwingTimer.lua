@@ -286,7 +286,7 @@ CB:RegisterCallback("READY", function()
 end)
 
 -- Listen for player castbar creation
-CB:RegisterCallback("PLAYER_CASTBAR_READY", function(frame)
+CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function(frame)
     -- Anchor BELOW the player castbar if configured
     if CB.swingTimers.container and CastbornDB.swing and CastbornDB.swing.anchored ~= false and Castborn.Anchoring then
         Castborn.Anchoring:ReattachToCastbar(CB.swingTimers.container, CastbornDB.swing, "BOTTOM", -2)
