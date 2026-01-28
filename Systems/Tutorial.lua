@@ -27,7 +27,7 @@ local steps = {
         id = "player_castbar",
         title = "Player Castbar",
         description = "This is your main casting bar. It shows your spell casts and channels with a progress bar, spell name, and remaining time.",
-        tip = "The red section on the right shows your latency - finish casting when the bar reaches it for optimal timing.",
+        tip = "When your cast bar reaches the red part, press your next spell. You'll cast faster.",
         getFrame = function() return Castborn.castbars and Castborn.castbars.player end,
         -- No configKey - player castbar is always enabled
     },
