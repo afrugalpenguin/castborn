@@ -257,23 +257,26 @@ function CB:ShowTestModePanel()
     doneBtn:SetPoint("TOP", gridBtn, "BOTTOM", 0, -4)
     doneBtn:SetText("Done")
     doneBtn:SetScript("OnClick", function()
-        -- Lock frames
-        CastbornDB.locked = true
-        if Castborn.Anchoring then
-            Castborn.Anchoring:HideDragIndicators()
-        end
-        -- Hide grid if active (without changing lock state since we already locked)
+        -- End test mode properly (this handles locking, hiding indicators, etc.)
+        CB:EndTestMode()
+        -- Hide grid if active
         if Castborn.GridPosition and Castborn.GridPosition.isActive then
             Castborn.GridPosition:HideGrid()
         end
         -- Hide test frames
-        CB:HideTestFrames()
+        if CB.HideTestFrames then CB:HideTestFrames() end
         panel:Hide()
         CB:Print("Test mode ended. Frames locked.")
     end)
 
     testModePanel = panel
     panel:Show()
+end
+
+function CB:HideTestModePanel()
+    if testModePanel then
+        testModePanel:Hide()
+    end
 end
 
 function CB:InitConfig()

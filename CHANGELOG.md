@@ -1,5 +1,19 @@
 # Changelog
 
+## v4.1.0
+
+### Features
+- Totem Tracker (Shaman): Track active totems with duration bars
+- Bar-based UI showing remaining time for each totem element (Fire, Earth, Water, Air)
+- Mouseover tooltip shows party members NOT in range of beneficial totems
+- Offensive totems (Searing, Magma, etc.) skip party coverage display
+- Test mode available for all classes to preview the feature
+
+### Improvements
+- Drag indicators now use a compact handle at the top of frames
+- Allows tooltips to work while frames are unlocked
+- Test mode automatically unlocks frames for positioning
+
 ## v4.0.0
 
 ### Features

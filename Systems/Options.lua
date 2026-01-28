@@ -48,6 +48,7 @@ local categories = {
     { id = "buffs", name = "Proc Tracker" },
     { id = "cooldowns", name = "Cooldowns" },
     { id = "interrupt", name = "Interrupt" },
+    { id = "totems", name = "Totems", class = "SHAMAN" },
     { divider = true },
     { id = "lookfeel", name = "Look & Feel" },
     { id = "profiles", name = "Profiles" },
@@ -294,8 +295,12 @@ local function CreateOptionsFrame()
 
     -- Category buttons
     local y = -8
+    local _, playerClass = UnitClass("player")
     for i, cat in ipairs(categories) do
-        if cat.divider then
+        -- Skip class-restricted categories for other classes
+        if cat.class and cat.class ~= playerClass then
+            -- Skip this category
+        elseif cat.divider then
             -- Create a horizontal divider line
             local divider = sidebar:CreateTexture(nil, "ARTWORK")
             divider:SetHeight(1)
@@ -445,6 +450,7 @@ function Options:BuildGeneral(parent)
             if Castborn.Anchoring then Castborn.Anchoring:HideDragIndicators(true) end
             Castborn:EndTestMode()
             if Castborn.HideTestFrames then Castborn:HideTestFrames() end
+            if Castborn.HideTestModePanel then Castborn:HideTestModePanel() end
         else
             Castborn:Print("Frames unlocked - drag to reposition")
             if Castborn.ShowTest then Castborn:ShowTest() end
@@ -483,6 +489,7 @@ function Options:BuildGeneral(parent)
     y = y - 30
 
     -- Module checkboxes in two columns
+    local _, playerClass = UnitClass("player")
     local modules = {
         { key = "player", label = "Player Castbar" },
         { key = "target", label = "Target Castbar" },
@@ -494,18 +501,24 @@ function Options:BuildGeneral(parent)
         { key = "dots", label = "DoT Tracker" },
         { key = "buffs", label = "Proc Tracker" },
         { key = "cooldowns", label = "Cooldowns" },
+        { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
     }
 
     local col = 0
     local startY = y
+    local count = 0
     for i, mod in ipairs(modules) do
-        CastbornDB[mod.key] = CastbornDB[mod.key] or {}
-        local cb = CreateCheckbox(parent, mod.label, CastbornDB[mod.key], "enabled")
-        cb:SetPoint("TOPLEFT", col * 200, y)
-        y = y - 26
-        if i == 5 then
-            col = 1
-            y = startY
+        -- Skip class-restricted modules for other classes
+        if not mod.class or mod.class == playerClass then
+            count = count + 1
+            CastbornDB[mod.key] = CastbornDB[mod.key] or {}
+            local cb = CreateCheckbox(parent, mod.label, CastbornDB[mod.key], "enabled")
+            cb:SetPoint("TOPLEFT", col * 200, y)
+            y = y - 26
+            if count == 5 then
+                col = 1
+                y = startY
+            end
         end
     end
 end
@@ -1047,6 +1060,7 @@ function Options:BuildModule(parent, key)
         buffs = "Proc Tracker",
         cooldowns = "Cooldown Tracker",
         interrupt = "Interrupt Tracker",
+        totems = "Totem Tracker",
     }
 
     local y = 0
@@ -1060,7 +1074,7 @@ function Options:BuildModule(parent, key)
     local db = CastbornDB[key]
 
     -- Width/Height sliders for applicable modules
-    if key == "gcd" or key == "fsr" or key == "dots" or key == "swing" then
+    if key == "gcd" or key == "fsr" or key == "dots" or key == "swing" or key == "totems" then
         db.width = db.width or 200
         local widthSlider = CreateSlider(parent, "Width", db, "width", 50, 400, 10, function(v)
             if key == "gcd" and Castborn.gcdFrame then Castborn.gcdFrame:SetWidth(v)
@@ -1070,6 +1084,7 @@ function Options:BuildModule(parent, key)
                 if Castborn.swingTimers.mainhand then Castborn.swingTimers.mainhand:SetWidth(v) end
                 if Castborn.swingTimers.offhand then Castborn.swingTimers.offhand:SetWidth(v) end
                 if Castborn.swingTimers.ranged then Castborn.swingTimers.ranged:SetWidth(v) end
+            elseif key == "totems" and Castborn.totemTracker then Castborn.totemTracker:SetWidth(v)
             end
         end)
         widthSlider:SetPoint("TOPLEFT", 0, y)
@@ -1198,6 +1213,24 @@ function Options:BuildModule(parent, key)
         local focusCB = CreateCheckbox(parent, "Track Focus", db, "trackFocus")
         focusCB:SetPoint("TOPLEFT", 150, y)
 
+    elseif key == "totems" then
+        db.barHeight = db.barHeight or 16
+        local barHeightSlider = CreateSlider(parent, "Bar Height", db, "barHeight", 10, 30, 1)
+        barHeightSlider:SetPoint("TOPLEFT", 0, y)
+        db.spacing = db.spacing or 2
+        local spacingSlider = CreateSlider(parent, "Bar Spacing", db, "spacing", 0, 10, 1)
+        spacingSlider:SetPoint("TOPLEFT", 220, y)
+        y = y - 60
+
+        local tooltipCB = CreateCheckbox(parent, "Show Tooltip (party members not in range)", db, "showTooltip")
+        tooltipCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
+        local testBtn = CreateButton(parent, "Test Totems", 100, function()
+            if Castborn.TestTotemTracker then Castborn:TestTotemTracker() end
+        end)
+        testBtn:SetPoint("TOPLEFT", 0, y)
+
     elseif key == "multidot" then
         db.maxTargets = db.maxTargets or 5
         local maxSlider = CreateSlider(parent, "Max Targets", db, "maxTargets", 1, 10, 1)
@@ -1315,6 +1348,7 @@ SlashCmdList["CASTBORN"] = function(msg)
         if Castborn.Anchoring then Castborn.Anchoring:HideDragIndicators(true) end
         Castborn:EndTestMode()
         if Castborn.HideTestFrames then Castborn:HideTestFrames() end
+        if Castborn.HideTestModePanel then Castborn:HideTestModePanel() end
     elseif cmd == "unlock" then
         CastbornDB.locked = false
         Castborn:Print("Frames unlocked - drag to reposition")

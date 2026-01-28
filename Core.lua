@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "4.0.0"
+CB.version = "4.1.0"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -314,6 +314,22 @@ CB.defaults = {
         xPct = 0.345,
         yPct = -0.278,
     },
+
+    totems = {
+        enabled = true,
+        width = 180,
+        barHeight = 16,
+        spacing = 2,
+        point = "CENTER",
+        x = -300,
+        y = -200,
+        xPct = -0.156,
+        yPct = -0.185,
+        bgColor = { 0.05, 0.05, 0.05, 0.85 },
+        borderColor = { 0.3, 0.3, 0.3, 1 },
+        showTooltip = true,
+        anchored = false,
+    },
 }
 
 -- Initialize saved variables
@@ -470,6 +486,13 @@ end
 
 function CB.TestManager:StartAll()
     self.active = true
+
+    -- Unlock frames and show drag indicators
+    CastbornDB.locked = false
+    if CB.Anchoring then
+        CB.Anchoring:ShowDragIndicators(true)
+    end
+
     for _, module in pairs(self.modules) do
         if module.start then module.start() end
     end
@@ -477,6 +500,13 @@ end
 
 function CB.TestManager:EndAll()
     self.active = false
+
+    -- Lock frames and hide drag indicators
+    CastbornDB.locked = true
+    if CB.Anchoring then
+        CB.Anchoring:HideDragIndicators(true)
+    end
+
     for _, module in pairs(self.modules) do
         if module.stop then module.stop() end
     end
@@ -542,7 +572,7 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         -- Migrate legacy pixel positions to percentages
         if Castborn.Anchoring then
             local positionKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd",
-                                  "interrupt", "cooldowns", "multidot", "procs"}
+                                  "interrupt", "cooldowns", "multidot", "procs", "totems"}
             for _, key in ipairs(positionKeys) do
                 if CB.db[key] then
                     Castborn.Anchoring:MigratePosition(CB.db[key])

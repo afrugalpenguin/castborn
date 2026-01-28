@@ -26,6 +26,7 @@ Modules/MultiDoTTracker.lua
 Modules/ProcTracker.lua
 Modules/CooldownTracker.lua
 Modules/InterruptTracker.lua
+Modules/TotemTracker.lua
 
 Systems/WhatsNew.lua
 Systems/Options.lua

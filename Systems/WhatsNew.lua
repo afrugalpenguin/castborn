@@ -14,6 +14,18 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.1.0",
+        features = {
+            "Totem Tracker (Shaman): Track active totems with duration bars",
+            "Mouseover shows party members NOT in range of beneficial totems",
+            "Test mode available for all classes to preview",
+        },
+        fixes = {
+            "Drag indicators now use compact handle (tooltips work while unlocked)",
+            "Test mode automatically unlocks frames for positioning",
+        },
+    },
+    {
         version = "4.0.0",
         features = {
             "Profile Management UI: Create, copy, delete, and switch between profiles",

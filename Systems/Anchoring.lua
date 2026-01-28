@@ -155,23 +155,43 @@ function Anchoring:GetCastbarBarWidth()
 end
 
 -- Create a drag indicator overlay for a frame
+-- The indicator is a small handle at the top so it doesn't block child frame tooltips
 local function CreateDragIndicator(frame, label)
     local indicator = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    indicator:SetAllPoints()
+    -- Only cover the top portion as a drag handle, not the whole frame
+    indicator:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    indicator:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+    indicator:SetHeight(16)
     indicator:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 2,
+        edgeSize = 1,
     })
-    indicator:SetBackdropColor(0.2, 0.6, 1.0, 0.3)
-    indicator:SetBackdropBorderColor(0.2, 0.6, 1.0, 0.8)
+    indicator:SetBackdropColor(0.2, 0.6, 1.0, 0.7)
+    indicator:SetBackdropBorderColor(0.2, 0.6, 1.0, 1)
     indicator:SetFrameStrata("DIALOG")
 
     local text = indicator:CreateFontString(nil, "OVERLAY")
     text:SetFont("Fonts\\FRIZQT__.TTF", 9, "OUTLINE")
     text:SetPoint("CENTER")
-    text:SetText(label or "Drag Me")
-    text:SetTextColor(1, 1, 1, 0.9)
+    text:SetText(label or "Drag")
+    text:SetTextColor(1, 1, 1, 1)
+
+    -- Make the indicator handle dragging (so it works over child frames with EnableMouse)
+    indicator:EnableMouse(true)
+    indicator:RegisterForDrag("LeftButton")
+    indicator:SetScript("OnDragStart", function(self)
+        if not CastbornDB.locked then
+            frame:StartMoving()
+        end
+    end)
+    indicator:SetScript("OnDragStop", function(self)
+        frame:StopMovingOrSizing()
+        -- Trigger the parent's OnDragStop to save position
+        if frame:GetScript("OnDragStop") then
+            frame:GetScript("OnDragStop")(frame)
+        end
+    end)
 
     indicator:Hide()
     frame.dragIndicator = indicator
