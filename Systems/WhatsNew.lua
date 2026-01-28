@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.3.0",
+        features = {
+            "Totem Tracker: Party coverage indicator shows who's in range",
+        },
+        fixes = {},
+    },
+    {
         version = "4.2.0",
         features = {
             "Added 'Hide Tradeskill Casts' option for player castbar",

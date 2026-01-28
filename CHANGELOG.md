@@ -1,5 +1,11 @@
 # Changelog
 
+## v4.3.0
+
+### Features
+- Totem Tracker: Added party coverage indicator showing who's in range (●●●○○)
+- Green when all party members buffed, yellow for partial, hidden for offensive totems
+
 ## v4.2.0
 
 ### Features
