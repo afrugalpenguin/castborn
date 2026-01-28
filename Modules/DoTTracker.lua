@@ -9,24 +9,6 @@ CB.dotTracker = nil
 local dotBars = {}
 local MAX_DOTS = 10
 
-local schoolColors = {
-    ["Physical"] = {0.7, 0.7, 0.7}, ["Holy"] = {1.0, 0.9, 0.5}, ["Fire"] = {1.0, 0.4, 0.1},
-    ["Nature"] = {0.3, 0.9, 0.3}, ["Frost"] = {0.4, 0.7, 1.0}, ["Shadow"] = {0.6, 0.3, 0.8}, ["Arcane"] = {0.9, 0.6, 1.0},
-}
-
-local dotSpellColors = {
-    ["Corruption"] = schoolColors["Shadow"], ["Curse of Agony"] = schoolColors["Shadow"],
-    ["Curse of Doom"] = schoolColors["Shadow"], ["Immolate"] = schoolColors["Fire"],
-    ["Siphon Life"] = schoolColors["Shadow"], ["Unstable Affliction"] = schoolColors["Shadow"],
-    ["Shadow Word: Pain"] = schoolColors["Shadow"], ["Devouring Plague"] = schoolColors["Shadow"],
-    ["Vampiric Touch"] = schoolColors["Shadow"], ["Moonfire"] = schoolColors["Arcane"],
-    ["Insect Swarm"] = schoolColors["Nature"], ["Rake"] = {0.9, 0.7, 0.3}, ["Rip"] = {0.9, 0.7, 0.3},
-    ["Serpent Sting"] = schoolColors["Nature"], ["Rupture"] = {0.9, 0.7, 0.3},
-    -- Mage CC
-    ["Polymorph"] = schoolColors["Arcane"], ["Polymorph: Turtle"] = schoolColors["Arcane"],
-    ["Polymorph: Pig"] = schoolColors["Arcane"],
-}
-
 local function CreateDotBar(parent, index)
     local cfg = CB.db.dots
     local frame = CreateFrame("Frame", nil, parent)
@@ -80,8 +62,15 @@ local function CreateDotBar(parent, index)
     return frame
 end
 
-local function GetDotColor(name, debuffType)
-    if dotSpellColors[name] then return unpack(dotSpellColors[name]) end
+local function GetDotColor(spellId, debuffType)
+    -- Try SpellData first (single source of truth)
+    if spellId and Castborn.SpellData then
+        local color = Castborn.SpellData:GetDoTColor(spellId)
+        if color and color[1] ~= 0.7 then  -- 0.7 is the default gray fallback
+            return color[1], color[2], color[3]
+        end
+    end
+    -- Fall back to debuff type colors
     if debuffType == "Magic" then return 0.2, 0.6, 1.0
     elseif debuffType == "Curse" then return 0.6, 0.0, 1.0
     elseif debuffType == "Disease" then return 0.6, 0.4, 0.0
@@ -89,18 +78,18 @@ local function GetDotColor(name, debuffType)
     return 0.8, 0.3, 0.3
 end
 
-local function UpdateDotBar(dotBar, name, icon, count, debuffType, duration, expirationTime)
+local function UpdateDotBar(dotBar, name, icon, count, debuffType, duration, expirationTime, spellId)
     local remaining = expirationTime - GetTime()
     local progress = duration > 0 and (remaining / duration) or 1
     progress = math.max(0, math.min(1, progress))
-    
+
     dotBar.bar:SetValue(progress)
     dotBar.icon:SetTexture(icon)
     dotBar.nameText:SetText(name)
     dotBar.timeText:SetText(CB:FormatTime(remaining))
     dotBar.stackText:SetText(count and count > 1 and count or "")
-    
-    local r, g, b = GetDotColor(name, debuffType)
+
+    local r, g, b = GetDotColor(spellId, debuffType)
     dotBar.bar:SetStatusBarColor(r, g, b, 1)
     
     if remaining < 3 then dotBar.timeText:SetTextColor(1, 0.3, 0.3, 1)
@@ -131,19 +120,19 @@ local function ScanDebuffs()
     
     local dotIndex = 1
     for i = 1, 40 do
-        local name, icon, count, debuffType, duration, expirationTime, source = UnitDebuff("target", i)
+        local name, icon, count, debuffType, duration, expirationTime, source, _, _, spellId = UnitDebuff("target", i)
         if not name then break end
-        
+
         local isOurs = source == "player"
         if (not cfg.showOnlyMine or isOurs) and duration and duration > 0 then
             if not dotBars[dotIndex] then dotBars[dotIndex] = CreateDotBar(CB.dotTracker, dotIndex) end
-            
+
             local yOffset = -4 - (dotIndex - 1) * (cfg.barHeight + cfg.spacing)
             dotBars[dotIndex]:ClearAllPoints()
             dotBars[dotIndex]:SetPoint("TOPLEFT", CB.dotTracker, "TOPLEFT", 4, yOffset)
             dotBars[dotIndex]:SetSize(cfg.width - 8, cfg.barHeight)
-            
-            UpdateDotBar(dotBars[dotIndex], name, icon, count, debuffType, duration, expirationTime)
+
+            UpdateDotBar(dotBars[dotIndex], name, icon, count, debuffType, duration, expirationTime, spellId)
             dotIndex = dotIndex + 1
             if dotIndex > MAX_DOTS then break end
         end
