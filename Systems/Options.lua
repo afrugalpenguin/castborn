@@ -590,6 +590,8 @@ function Options:BuildCastbars(parent)
         end
     end)
     cb6:SetPoint("TOPLEFT", 0, y)
+    local cb7 = CreateCheckbox(parent, "Hide Tradeskill Casts", CastbornDB.player, "hideTradeSkills")
+    cb7:SetPoint("TOPLEFT", 150, y)
     y = y - 36
 
     local slider1 = CreateSlider(parent, "Width", CastbornDB.player, "width", 100, 400, 10, function(v)

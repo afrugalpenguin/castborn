@@ -373,12 +373,7 @@ local function OnCombatLogEvent(self, event, ...)
         if trackedTargets[destGUID] then
             trackedTargets[destGUID].dots[spellId] = nil
 
-            local hasDoTs = false
-            for _ in pairs(trackedTargets[destGUID].dots) do
-                hasDoTs = true
-                break
-            end
-            if not hasDoTs then
+            if not next(trackedTargets[destGUID].dots) then
                 trackedTargets[destGUID] = nil
             end
         end
@@ -483,13 +478,7 @@ local function UpdateDisplay()
             end
         end
 
-        local hasDoTs = false
-        for _ in pairs(data.dots) do
-            hasDoTs = true
-            break
-        end
-
-        if not hasDoTs then
+        if not next(data.dots) then
             trackedTargets[guid] = nil
             ReleaseIndicator(guid)
         end

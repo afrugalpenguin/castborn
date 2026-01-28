@@ -280,10 +280,12 @@ local function StartCast(frame, unit)
     -- Skip ToT castbar when target is self-targeting (redundant with target castbar)
     if unit == "targettarget" and UnitIsUnit("targettarget", "target") then return end
 
-    local name, text, texture, startTime, endTime, isTradeSkill, castID, notInterruptible
-    name, text, texture, startTime, endTime, isTradeSkill, castID, notInterruptible = UnitCastingInfo(unit)
-    
+    local name, text, texture, startTime, endTime, isTradeSkill, _, notInterruptible = UnitCastingInfo(unit)
+
     if not name then return end
+
+    -- Skip tradeskill casts (crafting) if option is enabled
+    if isTradeSkill and cfg.hideTradeSkills then return end
     
     frame.casting = true
     frame.channeling = false
@@ -353,10 +355,12 @@ local function StartChannel(frame, unit)
     -- Skip ToT castbar when target is self-targeting (redundant with target castbar)
     if unit == "targettarget" and UnitIsUnit("targettarget", "target") then return end
 
-    local name, text, texture, startTime, endTime, isTradeSkill, notInterruptible
-    name, text, texture, startTime, endTime, isTradeSkill, notInterruptible = UnitChannelInfo(unit)
-    
+    local name, text, texture, startTime, endTime, isTradeSkill, notInterruptible = UnitChannelInfo(unit)
+
     if not name then return end
+
+    -- Skip tradeskill channels (crafting) if option is enabled
+    if isTradeSkill and cfg.hideTradeSkills then return end
     
     frame.casting = false
     frame.channeling = true

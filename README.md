@@ -5,6 +5,14 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/afrugalpenguin/Castborn/releases"><img src="https://img.shields.io/github/v/release/afrugalpenguin/Castborn?label=version" alt="Version"></a>
+  <a href="https://github.com/afrugalpenguin/Castborn/actions/workflows/luacheck.yml"><img src="https://github.com/afrugalpenguin/Castborn/actions/workflows/luacheck.yml/badge.svg" alt="Luacheck"></a>
+  <img src="https://img.shields.io/badge/WoW-TBC%20Classic-blue" alt="WoW TBC Classic">
+  <a href="https://www.curseforge.com/wow/addons/castborn"><img src="https://img.shields.io/curseforge/dt/1437587?label=downloads&color=orange" alt="CurseForge Downloads"></a>
+  <a href="https://github.com/afrugalpenguin/Castborn/issues"><img src="https://img.shields.io/github/issues/afrugalpenguin/Castborn" alt="Issues"></a>
+</p>
+
+<p align="center">
   <b>A lightweight combat HUD for TBC Classic</b><br>
   Clean, minimalist, essential.
 </p>

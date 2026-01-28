@@ -1,0 +1,8 @@
+return {
+    _all = {
+        lpath = "?.lua;tests/mocks/?.lua",
+    },
+    default = {
+        verbose = true,
+    },
+}

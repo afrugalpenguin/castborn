@@ -135,6 +135,7 @@ CB.defaults = {
         showSpellName = true,
         showLatency = true,
         hideBlizzardCastBar = true,
+        hideTradeSkills = false,
         barColor = {0.4, 0.6, 0.9, 1},
         channelColor = {0.3, 0.8, 0.3, 1},
         bgColor = {0.1, 0.1, 0.1, 0.8},

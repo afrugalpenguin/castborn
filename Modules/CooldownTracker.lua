@@ -122,7 +122,6 @@ local function UpdateLayout()
     end
 end
 
-local wasReady = {}
 local lastCooldownDuration = {}
 local testModeActive = false
 
@@ -174,7 +173,6 @@ local function UpdateCooldowns()
                     cdFrame.cooldown:SetCooldown(start, duration)
                     cdFrame.icon:SetDesaturated(true)
                     cdFrame.glow:SetAlpha(0)
-                    wasReady[spell.spellId] = false
                     -- Track the actual cooldown duration (only if significant)
                     if duration > 3 then
                         lastCooldownDuration[spell.spellId] = duration
@@ -191,7 +189,6 @@ local function UpdateCooldowns()
                             StartEdgePulse(cdFrame)
                         end
                     end
-                    wasReady[spell.spellId] = true
                 end
 
                 cdFrame:Show()
@@ -295,7 +292,6 @@ Castborn:RegisterCallback("READY", function()
     end)
 
     -- Apply initial anchoring if enabled and castbar exists
-    local db = CastbornDB.cooldowns
     if db.anchored ~= false then
         local castbar = Castborn.castbars and Castborn.castbars.player
         if castbar then
