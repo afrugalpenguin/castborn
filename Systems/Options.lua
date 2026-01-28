@@ -810,7 +810,7 @@ function Options:BuildProfiles(parent)
             hasEditBox = true,
             editBoxWidth = 200,
             OnAccept = function(self)
-                local name = self.editBox:GetText()
+                local name = self.EditBox:GetText()
                 if name and name ~= "" then
                     Profiles:CreateProfile(name)
                     Profiles:SetCurrentProfile(name)
@@ -819,8 +819,8 @@ function Options:BuildProfiles(parent)
                 end
             end,
             OnShow = function(self)
-                self.editBox:SetText("")
-                self.editBox:SetFocus()
+                self.EditBox:SetText("")
+                self.EditBox:SetFocus()
             end,
             EditBoxOnEnterPressed = function(self)
                 local parent = self:GetParent()
@@ -845,7 +845,7 @@ function Options:BuildProfiles(parent)
             hasEditBox = true,
             editBoxWidth = 200,
             OnAccept = function(self)
-                local name = self.editBox:GetText()
+                local name = self.EditBox:GetText()
                 if name and name ~= "" then
                     local current = Profiles:GetCurrentProfileName()
                     Profiles:CopyProfile(current, name)
@@ -854,8 +854,8 @@ function Options:BuildProfiles(parent)
                 end
             end,
             OnShow = function(self)
-                self.editBox:SetText("")
-                self.editBox:SetFocus()
+                self.EditBox:SetText("")
+                self.EditBox:SetFocus()
             end,
             EditBoxOnEnterPressed = function(self)
                 local parent = self:GetParent()
@@ -897,7 +897,7 @@ function Options:BuildProfiles(parent)
             hasEditBox = true,
             editBoxWidth = 200,
             OnAccept = function(self, data)
-                local name = self.editBox:GetText()
+                local name = self.EditBox:GetText()
                 if name and name ~= "" and data then
                     local success, err = Profiles:ImportProfile(name, data)
                     if success then
@@ -909,8 +909,8 @@ function Options:BuildProfiles(parent)
                 end
             end,
             OnShow = function(self)
-                self.editBox:SetText("")
-                self.editBox:SetFocus()
+                self.EditBox:SetText("")
+                self.EditBox:SetFocus()
             end,
             EditBoxOnEnterPressed = function(self)
                 local parent = self:GetParent()
