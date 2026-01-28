@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.4.0",
+        features = {
+            "Added 'Show Spell Rank' option for player castbar",
+        },
+        fixes = {},
+    },
+    {
         version = "4.3.0",
         features = {
             "Totem Tracker: Party coverage indicator shows who's in range",

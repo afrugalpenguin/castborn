@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.4.0
+
+### Features
+- Added "Show Spell Rank" option for player castbar (displays rank like "Frostbolt (Rank 7)")
+
 ## v4.3.0
 
 ### Features
