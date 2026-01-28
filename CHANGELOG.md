@@ -1,5 +1,15 @@
 # Changelog
 
+## v4.2.0
+
+### Features
+- Added "Hide Tradeskill Casts" option for player castbar (hides crafting progress)
+
+### Internal
+- Added luacheck static analysis with GitHub Actions CI
+- Added unit test framework (busted) with tests for Core, Anchoring, and Profiles
+- Fixed code quality issues (removed dead code, improved table-empty checks)
+
 ## v4.1.3
 
 ### Features
