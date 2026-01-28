@@ -3,6 +3,9 @@
     Player, Target, Target-of-Target, and Focus castbars
 ]]
 
+local CastBars = {}
+Castborn.CastBars = CastBars
+
 local CB = Castborn
 
 -- Castbar frames storage
@@ -644,3 +647,5 @@ end
 CB:RegisterCallback("READY", function()
     CB.TestManager:Register("CastBars", function() CB:TestCastbars() end, function() CB:EndTestCastbars() end)
 end)
+
+Castborn:RegisterModule("CastBars", CastBars)

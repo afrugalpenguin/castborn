@@ -3,6 +3,9 @@
     Tracks debuffs/DoTs on target
 ]]
 
+local DoTTracker = {}
+Castborn.DoTTracker = DoTTracker
+
 local CB = Castborn
 CB.dotTracker = nil
 
@@ -398,3 +401,5 @@ CB:RegisterCallback("REATTACH_DOTS", function()
     end
     CB:Print("DoT Tracker anchored to castbar")
 end)
+
+Castborn:RegisterModule("DoTTracker", DoTTracker)

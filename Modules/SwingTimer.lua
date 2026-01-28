@@ -3,6 +3,9 @@
     Tracks melee and ranged auto-attack swings
 ]]
 
+local SwingTimer = {}
+Castborn.SwingTimer = SwingTimer
+
 local CB = Castborn
 CB.swingTimers = {}
 
@@ -307,3 +310,5 @@ CB:RegisterCallback("REATTACH_SWING", function()
     end
     CB:Print("Swing Timer anchored to castbar")
 end)
+
+Castborn:RegisterModule("SwingTimer", SwingTimer)

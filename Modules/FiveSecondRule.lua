@@ -4,6 +4,9 @@
     Displays as a thin pulse line ABOVE the player castbar
 ]]
 
+local FiveSecondRule = {}
+Castborn.FiveSecondRule = FiveSecondRule
+
 local CB = Castborn
 CB.fsrFrame = nil
 
@@ -326,3 +329,5 @@ end
 CB:RegisterCallback("READY", function()
     CB.TestManager:Register("FSR", function() CB:TestFSR() end, function() CB:EndTestFSR() end)
 end)
+
+Castborn:RegisterModule("FiveSecondRule", FiveSecondRule)

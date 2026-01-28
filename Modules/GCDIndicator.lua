@@ -3,6 +3,9 @@
     Shows Global Cooldown as a pulse/sweep indicator
 ]]
 
+local GCDIndicator = {}
+Castborn.GCDIndicator = GCDIndicator
+
 local CB = Castborn
 CB.gcdFrame = nil
 
@@ -270,3 +273,5 @@ CB:RegisterCallback("READY", function()
     -- Register with TestManager
     CB.TestManager:Register("GCD", function() CB:TestGCD() end, function() CB:EndTestGCD() end)
 end)
+
+Castborn:RegisterModule("GCDIndicator", GCDIndicator)
