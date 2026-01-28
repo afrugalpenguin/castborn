@@ -1,58 +1,73 @@
 # Castborn
 
-<p>
+<p align="center">
   <img src="images/logo.png" width="200">
 </p>
 
-**Castborn** is a lightweight, all-in-one casting and combat tracker for TBC Classic. It provides clean, customisable castbars alongside essential tracking tools for DoTs, procs, cooldowns, and swing timers.
+<p align="center">
+  <b>A lightweight combat HUD for TBC Classic</b><br>
+  Clean, minimalist, essential.
+</p>
 
-## Screenshots
+---
 
-<img src="images/combat.png" width="250"> <img src="images/testmode.png" width="250"> <img src="images/options.png" width="250">
+Castborn gives you everything you need to track casts, cooldowns, DoTs, and procs — all in one addon. No dependencies and no bloat.
 
-## Castbars
+## Why Castborn?
 
-- Player, Target, Focus, Target-of-Target
-- Class-coloured bars (optional)
-- Latency indicator for player casts
-- Option to hide Blizzard's default castbar
+- **All-in-one** — Replace 5+ addons with a single, cohesive package
+- **Lightweight** — Minimal memory footprint, no performance impact
+- **Just works** — Smart defaults for every class, guided setup for new users
+- **Fully customisable** — Move anything, resize anything, toggle anything
 
-## Tracking Modules
+## What's Included
 
-- **GCD Indicator** – visualise global cooldown
-- **Five Second Rule** – track mana regeneration timing
-- **Swing Timer** – mainhand, offhand, and ranged auto-attacks
-- **DoT Tracker** – debuffs on your current target
-- **Multi-DoT Tracker** – DoTs across multiple targets simultaneously
-- **Proc Tracker** – important buffs and procs (Clearcasting, Shadow Trance, etc.)
-- **Cooldown Tracker** – class abilities with configurable defaults
-- **Interrupt Tracker** – monitor kick/counterspell availability
+### Castbars
 
-## Features
+Player, Target, Focus, and Target-of-Target castbars with latency indicators, class colours, and shield icons for uninterruptible spells.
 
-- **Onboarding tour** – guided introduction for new users
-- **Layout grid** – snap frames to a customisable grid for pixel-perfect alignment
-- Drag-and-drop positioning
-- Anchor modules to follow your player castbar
-- Test mode to preview and arrange all elements
-- Masque support for proc icons
-- Per-class defaults for procs and cooldowns
+### Tracking Modules
 
-## Installation
+- **GCD Indicator** — See your global cooldown at a glance
+- **Five Second Rule** — Know exactly when your mana regen kicks in
+- **Swing Timer** — Track mainhand, offhand, and ranged auto-attacks
+- **DoT Tracker** — Monitor debuffs on your current target
+- **Multi-DoT Tracker** — Keep DoTs up on multiple mobs simultaneously
+- **Proc Tracker** — Never miss Clearcasting, Nightfall, or trinket procs
+- **Cooldown Tracker** — Track important abilities with per-spell toggles
+- **Interrupt Tracker** — Know when your kick is ready
+- **Totem Tracker** — Shaman-only: track active totems and party coverage
 
-1. Download and extract to `Interface/AddOns/Castborn`
-2. Restart WoW or `/reload`
+## Getting Started
+
+1. Install from CurseForge or extract to `Interface/AddOns/Castborn`
+2. Log in — the guided tour starts automatically
+3. Type `/cb` to open options anytime
+
+That's it. Castborn comes pre-configured with sensible defaults for your class.
 
 ## Commands
 
-- `/cb` – Open options
-- `/cb unlock` – Unlock frames for repositioning
-- `/cb lock` – Lock frames
-- `/cb test` – Enter test mode
-- `/cb grid` – Toggle layout grid
-- `/cb reset` – Reset all positions to defaults
-- `/cb tutorial` – Restart the onboarding tour
+- `/cb` — Open options panel
+- `/cb test` — Preview all modules
+- `/cb unlock` — Drag frames to reposition
+- `/cb lock` — Lock frames in place
+- `/cb grid` — Toggle alignment grid
+- `/cb reset` — Reset to default positions
+- `/cb tutorial` — Replay the guided tour
 
-## Feedback
+## Features
 
-Found a bug or have a suggestion? Create a ticket on [CurseForge](https://legacy.curseforge.com/wow/addons/castborn/settings/issues) or [GitHub](https://github.com/afrugalpenguin/castborn/issues)
+- **Guided onboarding** — Step-by-step tour introduces each feature
+- **Test mode** — See and position everything without being in combat
+- **Layout grid** — Snap frames for pixel-perfect alignment
+- **Anchor system** — Modules can follow your player castbar
+- **Profile system** — Save, copy, and share configurations
+- **Masque support** — Skin proc icons with your favourite theme
+
+## Feedback & Support
+
+Found a bug? Have a suggestion?
+
+- [CurseForge Issues](https://www.curseforge.com/wow/addons/castborn/issues)
+- [GitHub Issues](https://github.com/afrugalpenguin/castborn/issues)
