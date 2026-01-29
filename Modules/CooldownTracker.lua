@@ -54,6 +54,13 @@ local function CreateCooldownFrame(parent, index)
     f.time:SetFont("Fonts\\ARIALN.TTF", 11, "OUTLINE")
     f.time:SetPoint("CENTER")
 
+    -- Charge counter (displayed above icon for Earth Shield, Water Shield)
+    f.charges = f:CreateFontString(nil, "OVERLAY")
+    f.charges:SetFont("Fonts\\FRIZQT__.TTF", 18, "OUTLINE")
+    f.charges:SetPoint("BOTTOM", f, "TOP", 0, 2)
+    f.charges:SetTextColor(1, 1, 1, 0.8)
+    f.charges:Hide()
+
     -- Glow effect using layered textures for soft glow look
     f.glowOuter = f:CreateTexture(nil, "BACKGROUND", nil, -1)
     f.glowOuter:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
@@ -210,6 +217,28 @@ local function UpdateCooldowns()
 
             if icon then
                 cdFrame.icon:SetTexture(icon)
+
+                -- Check for charge-based buffs (Earth Shield, Water Shield)
+                local charges = nil
+                if spell.spellId == 974 or spell.spellId == 24398 then
+                    -- Check if buff is active on player
+                    for j = 1, 40 do
+                        local name, _, _, count = UnitBuff("player", j)
+                        if not name then break end
+                        if name == spell.name then
+                            charges = count
+                            break
+                        end
+                    end
+                end
+
+                -- Display charges if available
+                if charges and charges > 0 and cdFrame.charges then
+                    cdFrame.charges:SetText(charges)
+                    cdFrame.charges:Show()
+                elseif cdFrame.charges then
+                    cdFrame.charges:Hide()
+                end
 
                 if duration and duration > 1.5 then
                     cdFrame.cooldown:SetCooldown(start, duration)
@@ -522,6 +551,21 @@ local function RefreshTestIcons()
             cdFrame.icon:SetTexture(testSpells[i].icon)
             cdFrame.icon:SetDesaturated(i == 2)
             cdFrame.cooldown:Clear()
+
+            -- Show example charges for Earth Shield (974) and Water Shield (24398)
+            if testSpells[i].trackIdx then
+                local spell = db.trackedSpells[testSpells[i].trackIdx]
+                if spell and (spell.spellId == 974 or spell.spellId == 24398) and cdFrame.charges then
+                    local exampleCharges = spell.spellId == 974 and 6 or 3
+                    cdFrame.charges:SetText(exampleCharges)
+                    cdFrame.charges:Show()
+                elseif cdFrame.charges then
+                    cdFrame.charges:Hide()
+                end
+            elseif cdFrame.charges then
+                cdFrame.charges:Hide()
+            end
+
             if i == 2 then
                 cdFrame.cooldown:SetCooldown(GetTime() - 5, 30)
                 StopEdgePulse(cdFrame)
@@ -825,6 +869,7 @@ function Castborn:EndTestCooldowns()
                 if cdFrames[i].dragShadow then cdFrames[i].dragShadow:Hide() end
                 if cdFrames[i].dragGlow then cdFrames[i].dragGlow:Hide() end
                 if cdFrames[i].dragCursor then cdFrames[i].dragCursor:Hide() end
+                if cdFrames[i].charges then cdFrames[i].charges:Hide() end
                 if cdFrames[i].animFrame then
                     cdFrames[i].animFrame:SetScript("OnUpdate", nil)
                     cdFrames[i].isAnimating = false
