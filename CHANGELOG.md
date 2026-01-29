@@ -1,5 +1,24 @@
 # Changelog
 
+## v4.6.0
+
+### Features
+- **Cooldown Drag-and-Drop UX**: Massively improved visual feedback when reordering cooldowns
+  - Dragged icon now follows cursor instead of being constrained in place
+  - Other icons smoothly shift positions in real-time to show where icon will fit
+  - Golden glow effect and move cursor overlay on dragged icon for clarity
+  - Other icons dim to 40% and desaturate during drag to create clear contrast
+  - Enhanced insertion markers: thicker blue line (4px) with glow, plus slot highlight box
+- **Shaman Cooldowns**: Added missing spells to default tracker
+  - Earth Shield
+  - Water Shield
+  - Heroism (Alliance)
+  - Bloodlust (Horde)
+
+### Improvements
+- Drag headers now positioned above frames instead of overlaying content
+- Reduced drag header size for less intrusion when unlocked/in test mode
+
 ## v4.5.0
 
 ### Features

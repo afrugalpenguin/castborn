@@ -14,6 +14,15 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.6.0",
+        features = {
+            "Enhanced cooldown drag-and-drop: icons follow cursor, smooth real-time repositioning, golden glow on dragged icon",
+            "Added missing Shaman cooldowns: Earth Shield, Water Shield, Heroism, Bloodlust",
+            "Drag headers now positioned above frames for better visibility",
+        },
+        fixes = {},
+    },
+    {
         version = "4.5.0",
         features = {
             "Cooldown icon order is now customizable: drag icons in test mode or use up/down arrows in options",
