@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.5.0
+
+### Features
+- Cooldown icon order is now customizable: drag icons to reorder in test mode
+- Options panel: up/down arrows to reorder cooldowns (replaces alphabetical sorting)
+- What's New: animated swap demo for the cooldown reorder feature
+- Tutorial: updated Cooldown Tracker step with reorder instructions
+
 ## v4.4.0
 
 ### Features

@@ -1179,7 +1179,7 @@ function Options:BuildModule(parent, key)
         divider:SetColorTexture(0.25, 0.25, 0.25, 1)
         y = y - 14
 
-        -- Build checkbox list from SpellData (ensures all class spells are always shown)
+        -- Build ordered list from SpellData (ensures all class spells are always shown)
         local _, class = UnitClass("player")
         local classSpells = Castborn.SpellData and Castborn.SpellData:GetClassCooldowns(class) or {}
         db.trackedSpells = db.trackedSpells or {}
@@ -1199,19 +1199,80 @@ function Options:BuildModule(parent, key)
             end
         end
 
-        -- Build sorted list by name
-        local sorted = {}
-        for _, spell in ipairs(db.trackedSpells) do
-            table.insert(sorted, spell)
-        end
-        table.sort(sorted, function(a, b) return a.name < b.name end)
+        -- Container for spell rows (so we can rebuild on reorder)
+        local spellListContainer = CreateFrame("Frame", nil, parent)
+        spellListContainer:SetPoint("TOPLEFT", 0, y)
+        spellListContainer:SetPoint("TOPRIGHT", 0, y)
+        spellListContainer:SetHeight(1)  -- Will be resized
 
-        for _, spell in ipairs(sorted) do
-            if spell.enabled == nil then spell.enabled = true end
-            local cb = CreateCheckbox(parent, spell.name, spell, "enabled")
-            cb:SetPoint("TOPLEFT", 0, y)
-            y = y - 26
+        local function BuildSpellList()
+            -- Clear existing children
+            for _, child in ipairs({spellListContainer:GetChildren()}) do
+                child:Hide()
+                child:SetParent(nil)
+            end
+
+            local listY = 0
+            local total = #db.trackedSpells
+
+            for i, spell in ipairs(db.trackedSpells) do
+                if spell.enabled == nil then spell.enabled = true end
+
+                local row = CreateFrame("Frame", nil, spellListContainer)
+                row:SetHeight(26)
+                row:SetPoint("TOPLEFT", 0, listY)
+                row:SetPoint("TOPRIGHT", 0, listY)
+
+                -- Checkbox
+                local cb = CreateCheckbox(row, spell.name, spell, "enabled")
+                cb:SetPoint("LEFT", 0, 0)
+
+                -- Down arrow
+                local downBtn = CreateFrame("Button", nil, row)
+                downBtn:SetSize(14, 14)
+                downBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+                downBtn:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up")
+                downBtn:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Highlight")
+                downBtn:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Down")
+                if i == total then
+                    downBtn:SetAlpha(0.3)
+                    downBtn:Disable()
+                end
+                downBtn:SetScript("OnClick", function()
+                    if i < total then
+                        db.trackedSpells[i], db.trackedSpells[i + 1] = db.trackedSpells[i + 1], db.trackedSpells[i]
+                        BuildSpellList()
+                        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                    end
+                end)
+
+                -- Up arrow
+                local upBtn = CreateFrame("Button", nil, row)
+                upBtn:SetSize(14, 14)
+                upBtn:SetPoint("RIGHT", downBtn, "LEFT", -2, 0)
+                upBtn:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Up")
+                upBtn:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Highlight")
+                upBtn:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Down")
+                if i == 1 then
+                    upBtn:SetAlpha(0.3)
+                    upBtn:Disable()
+                end
+                upBtn:SetScript("OnClick", function()
+                    if i > 1 then
+                        db.trackedSpells[i], db.trackedSpells[i - 1] = db.trackedSpells[i - 1], db.trackedSpells[i]
+                        BuildSpellList()
+                        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                    end
+                end)
+
+                listY = listY - 26
+            end
+
+            spellListContainer:SetHeight(math.abs(listY) + 4)
         end
+
+        BuildSpellList()
+        y = y - (26 * #db.trackedSpells) - 4
 
     elseif key == "interrupt" then
         local targetCB = CreateCheckbox(parent, "Track Target", db, "trackTarget")

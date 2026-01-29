@@ -50,8 +50,8 @@ local steps = {
     {
         id = "cooldowns",
         title = "Cooldown Tracker",
-        description = "Track your important cooldowns like Icy Veins, trinkets, and major abilities. Icons show remaining cooldown and glow when ready.",
-        tip = "Cooldowns appear to the left of your castbar icon and grow leftward as you track more.",
+        description = "Track your important cooldowns like Icy Veins, trinkets, and major abilities. Icons show remaining cooldown and glow when ready.\n\nYou can reorder icons by dragging them in test mode.",
+        tip = "Use the up/down arrows in Options > Cooldowns to reorder, or drag icons while in test mode.",
         getFrame = function() return _G["Castborn_CooldownTracker"] end,
         configKey = "cooldowns",
     },

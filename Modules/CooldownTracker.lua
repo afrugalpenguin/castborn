@@ -361,21 +361,35 @@ Castborn:RegisterCallback("REATTACH_COOLDOWNS", function()
     Castborn:Print("Cooldowns anchored to castbar")
 end)
 
--- Test mode function
-function Castborn:TestCooldowns()
+-- Drag-reorder support for test mode
+local visibleToTrackIndex = {}  -- maps visible icon index -> trackedSpells array index
+local testSpellCount = 0        -- number of visible test spells
+
+local function PositionTestIcon(cdFrame, visibleIndex, db)
+    local size = db.iconSize or 36
+    local spacing = db.spacing or 4
+    cdFrame:ClearAllPoints()
+    cdFrame:SetSize(size, size)
+
+    if db.growDirection == "LEFT" then
+        cdFrame:SetPoint("RIGHT", frame, "RIGHT", -((visibleIndex - 1) * (size + spacing)), 0)
+    else
+        cdFrame:SetPoint("LEFT", frame, "LEFT", (visibleIndex - 1) * (size + spacing), 0)
+    end
+end
+
+local function RefreshTestIcons()
     local db = CastbornDB.cooldowns
-    if not frame then return end
 
-    testModeActive = true
-    frame:Show()
-
-    -- Collect enabled spells
+    -- Rebuild visible spell list from current trackedSpells order
     local testSpells = {}
-    for _, spell in ipairs(db.trackedSpells or {}) do
+    visibleToTrackIndex = {}
+    for trackIdx, spell in ipairs(db.trackedSpells or {}) do
         if spell.enabled ~= false then
             local icon = GetSpellTexture(spell.name)
             if icon then
-                table.insert(testSpells, icon)
+                table.insert(testSpells, { icon = icon, trackIdx = trackIdx })
+                visibleToTrackIndex[#testSpells] = trackIdx
             end
             if #testSpells >= MAX_COOLDOWNS then break end
         end
@@ -383,28 +397,23 @@ function Castborn:TestCooldowns()
 
     -- Fallback if no spells configured
     if #testSpells == 0 then
-        testSpells = {
+        local fallbacks = {
             "Interface\\Icons\\Spell_Frost_FrostShock",
             "Interface\\Icons\\Spell_Fire_FlameBolt",
             "Interface\\Icons\\Spell_Nature_Lightning",
         }
+        for i, icon in ipairs(fallbacks) do
+            table.insert(testSpells, { icon = icon, trackIdx = nil })
+        end
     end
+
+    testSpellCount = #testSpells
 
     for i = 1, #testSpells do
         local cdFrame = cdFrames[i]
         if cdFrame then
-            local size = db.iconSize or 36
-            local spacing = db.spacing or 4
-            cdFrame:ClearAllPoints()
-            cdFrame:SetSize(size, size)
-
-            if db.growDirection == "LEFT" then
-                cdFrame:SetPoint("RIGHT", frame, "RIGHT", -((i - 1) * (size + spacing)), 0)
-            else
-                cdFrame:SetPoint("LEFT", frame, "LEFT", (i - 1) * (size + spacing), 0)
-            end
-
-            cdFrame.icon:SetTexture(testSpells[i])
+            PositionTestIcon(cdFrame, i, db)
+            cdFrame.icon:SetTexture(testSpells[i].icon)
             cdFrame.icon:SetDesaturated(i == 2)
             cdFrame.cooldown:Clear()
             if i == 2 then
@@ -415,6 +424,7 @@ function Castborn:TestCooldowns()
                     StartEdgePulse(cdFrame)
                 end
             end
+            cdFrame.visibleIndex = i
             cdFrame:Show()
         end
     end
@@ -425,18 +435,184 @@ function Castborn:TestCooldowns()
     end
 end
 
+local function SetupDragReorder(cdFrame, visibleIndex)
+    local db = CastbornDB.cooldowns
+    cdFrame.visibleIndex = visibleIndex
+
+    cdFrame:SetMovable(true)
+    cdFrame:EnableMouse(true)
+    cdFrame:RegisterForDrag("LeftButton")
+
+    -- Ghost frame (translucent copy at original position)
+    if not cdFrame.ghost then
+        cdFrame.ghost = frame:CreateTexture(nil, "ARTWORK", nil, -1)
+        cdFrame.ghost:SetSize(db.iconSize or 36, db.iconSize or 36)
+        cdFrame.ghost:SetAlpha(0.3)
+        cdFrame.ghost:SetDesaturated(true)
+    end
+
+    -- Insertion marker
+    if not frame.insertMarker then
+        frame.insertMarker = frame:CreateTexture(nil, "OVERLAY")
+        frame.insertMarker:SetColorTexture(0.3, 0.6, 1, 0.8)
+        frame.insertMarker:SetSize(2, db.iconSize or 36)
+        frame.insertMarker:Hide()
+    end
+
+    cdFrame:SetScript("OnDragStart", function(self)
+        if not testModeActive then return end
+
+        local size = db.iconSize or 36
+        self.ghost:SetTexture(self.icon:GetTexture())
+        self.ghost:ClearAllPoints()
+
+        -- Position ghost at current slot
+        local spacing = db.spacing or 4
+        if db.growDirection == "LEFT" then
+            self.ghost:SetPoint("RIGHT", frame, "RIGHT", -((self.visibleIndex - 1) * (size + spacing)), 0)
+        else
+            self.ghost:SetPoint("LEFT", frame, "LEFT", (self.visibleIndex - 1) * (size + spacing), 0)
+        end
+        self.ghost:SetSize(size, size)
+        self.ghost:Show()
+
+        self:SetFrameStrata("TOOLTIP")
+        self:StartMoving()
+        self.isDragging = true
+    end)
+
+    cdFrame:SetScript("OnDragStop", function(self)
+        if not self.isDragging then return end
+        self.isDragging = false
+        self:StopMovingOrSizing()
+        self:SetFrameStrata("MEDIUM")
+
+        -- Hide visual feedback
+        if self.ghost then self.ghost:Hide() end
+        if frame.insertMarker then frame.insertMarker:Hide() end
+
+        -- Calculate target slot from cursor position
+        local size = db.iconSize or 36
+        local spacing = db.spacing or 4
+        local step = size + spacing
+
+        local selfCenterX = self:GetCenter()
+        local frameLeft = frame:GetLeft()
+        local frameRight = frame:GetRight()
+
+        local targetSlot
+        if db.growDirection == "LEFT" then
+            local offset = frameRight - selfCenterX
+            targetSlot = math.floor(offset / step + 0.5) + 1
+        else
+            local offset = selfCenterX - frameLeft
+            targetSlot = math.floor(offset / step + 0.5) + 1
+        end
+        targetSlot = math.max(1, math.min(targetSlot, testSpellCount))
+
+        local fromSlot = self.visibleIndex
+        if fromSlot ~= targetSlot and visibleToTrackIndex[fromSlot] and visibleToTrackIndex[targetSlot] then
+            -- Move the spell in trackedSpells array
+            local fromTrack = visibleToTrackIndex[fromSlot]
+            local toTrack = visibleToTrackIndex[targetSlot]
+            local spell = table.remove(db.trackedSpells, fromTrack)
+
+            -- Recalculate target index after removal
+            if toTrack > fromTrack then
+                toTrack = toTrack - 1
+            end
+            table.insert(db.trackedSpells, toTrack, spell)
+        end
+
+        -- Refresh all icons to reflect new order
+        RefreshTestIcons()
+
+        -- Re-setup drag handlers with updated indices
+        for i = 1, testSpellCount do
+            if cdFrames[i] and cdFrames[i]:IsShown() then
+                SetupDragReorder(cdFrames[i], i)
+            end
+        end
+    end)
+
+    cdFrame:SetScript("OnUpdate", function(self)
+        if not self.isDragging then return end
+
+        -- Show insertion marker at target slot
+        local size = db.iconSize or 36
+        local spacing = db.spacing or 4
+        local step = size + spacing
+
+        local selfCenterX = self:GetCenter()
+        local frameLeft = frame:GetLeft()
+        local frameRight = frame:GetRight()
+        if not selfCenterX or not frameLeft then return end
+
+        local targetSlot
+        if db.growDirection == "LEFT" then
+            local offset = frameRight - selfCenterX
+            targetSlot = math.floor(offset / step + 0.5) + 1
+        else
+            local offset = selfCenterX - frameLeft
+            targetSlot = math.floor(offset / step + 0.5) + 1
+        end
+        targetSlot = math.max(1, math.min(targetSlot, testSpellCount))
+
+        if frame.insertMarker then
+            frame.insertMarker:ClearAllPoints()
+            frame.insertMarker:SetSize(2, size)
+            if db.growDirection == "LEFT" then
+                local xOff = -((targetSlot - 1) * step) + size / 2 + 1
+                frame.insertMarker:SetPoint("RIGHT", frame, "RIGHT", xOff, 0)
+            else
+                local xOff = (targetSlot - 1) * step - 1
+                frame.insertMarker:SetPoint("LEFT", frame, "LEFT", xOff, 0)
+            end
+            frame.insertMarker:Show()
+        end
+    end)
+end
+
+-- Test mode function
+function Castborn:TestCooldowns()
+    local db = CastbornDB.cooldowns
+    if not frame then return end
+
+    testModeActive = true
+    frame:Show()
+
+    -- Refresh icons from current trackedSpells order
+    RefreshTestIcons()
+
+    -- Setup drag reorder on each visible icon
+    for i = 1, testSpellCount do
+        if cdFrames[i] and cdFrames[i]:IsShown() then
+            SetupDragReorder(cdFrames[i], i)
+        end
+    end
+end
+
 -- End test mode
 function Castborn:EndTestCooldowns()
     testModeActive = false
     if frame then
-        frame:Hide()
+        -- Clean up drag state
+        if frame.insertMarker then frame.insertMarker:Hide() end
         for i = 1, MAX_COOLDOWNS do
             if cdFrames[i] then
                 StopEdgePulse(cdFrames[i])
+                cdFrames[i]:SetScript("OnDragStart", nil)
+                cdFrames[i]:SetScript("OnDragStop", nil)
+                cdFrames[i]:SetScript("OnUpdate", nil)
+                cdFrames[i].isDragging = false
+                if cdFrames[i].ghost then cdFrames[i].ghost:Hide() end
                 cdFrames[i]:Hide()
             end
         end
+        frame:Hide()
     end
+    visibleToTrackIndex = {}
+    testSpellCount = 0
 end
 
 -- Register with TestManager

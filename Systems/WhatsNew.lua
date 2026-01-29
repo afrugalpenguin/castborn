@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.5.0",
+        features = {
+            "Cooldown icon order is now customizable: drag icons in test mode or use up/down arrows in options",
+        },
+        fixes = {},
+        widget = "cooldown_reorder_demo",
+    },
+    {
         version = "4.4.0",
         features = {
             "Added 'Show Spell Rank' option for player castbar",
@@ -490,6 +498,108 @@ local function CreateWhatsNewFrame()
     return frame
 end
 
+-- Widget: Animated cooldown reorder demo
+local function CreateCooldownReorderDemo(parent, yOffset)
+    local demoFrame = CreateFrame("Frame", nil, parent)
+    demoFrame:SetSize(140, 44)
+    demoFrame:SetPoint("TOPLEFT", 16, yOffset)
+
+    local iconSize = 36
+    local spacing = 6
+    local iconTextures = {
+        "Interface\\Icons\\Spell_Frost_FrostShock",
+        "Interface\\Icons\\Spell_Fire_FlameBolt",
+        "Interface\\Icons\\Spell_Nature_Lightning",
+    }
+
+    local icons = {}
+    for i = 1, 3 do
+        local icon = CreateFrame("Frame", nil, demoFrame)
+        icon:SetSize(iconSize, iconSize)
+        icon:SetPoint("LEFT", (i - 1) * (iconSize + spacing), 0)
+
+        icon.tex = icon:CreateTexture(nil, "ARTWORK")
+        icon.tex:SetAllPoints()
+        icon.tex:SetTexture(iconTextures[i])
+        icon.tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+
+        icon.border = icon:CreateTexture(nil, "BORDER")
+        icon.border:SetPoint("TOPLEFT", -1, 1)
+        icon.border:SetPoint("BOTTOMRIGHT", 1, -1)
+        icon.border:SetColorTexture(0.3, 0.3, 0.3, 1)
+
+        -- Store home positions (offsets from left)
+        icon.homeX = (i - 1) * (iconSize + spacing)
+        icons[i] = icon
+    end
+
+    -- Animation state
+    local animElapsed = 0
+    local animPhase = "pause"  -- "animate" or "pause"
+    local animDuration = 0.5
+    local pauseDuration = 2.5
+
+    -- Target positions during animation: icon 3 -> slot 1, icons 1,2 -> shift right
+    local function UpdateAnimation(elapsed)
+        animElapsed = animElapsed + elapsed
+
+        if animPhase == "pause" then
+            if animElapsed >= pauseDuration then
+                animElapsed = 0
+                animPhase = "animate"
+            end
+        elseif animPhase == "animate" then
+            local t = math.min(animElapsed / animDuration, 1)
+            -- Ease in-out
+            t = t * t * (3 - 2 * t)
+
+            local step = iconSize + spacing
+            -- Icon 3 moves from slot 3 to slot 1
+            local icon3TargetX = 0
+            local icon3StartX = 2 * step
+            icons[3]:ClearAllPoints()
+            icons[3]:SetPoint("LEFT", icon3StartX + (icon3TargetX - icon3StartX) * t, 0)
+
+            -- Icon 1 moves from slot 1 to slot 2
+            local icon1TargetX = step
+            local icon1StartX = 0
+            icons[1]:ClearAllPoints()
+            icons[1]:SetPoint("LEFT", icon1StartX + (icon1TargetX - icon1StartX) * t, 0)
+
+            -- Icon 2 moves from slot 2 to slot 3
+            local icon2TargetX = 2 * step
+            local icon2StartX = step
+            icons[2]:ClearAllPoints()
+            icons[2]:SetPoint("LEFT", icon2StartX + (icon2TargetX - icon2StartX) * t, 0)
+
+            if animElapsed >= animDuration then
+                animElapsed = 0
+                animPhase = "reset"
+            end
+        elseif animPhase == "reset" then
+            if animElapsed >= 1.0 then
+                -- Reset to original positions
+                for i = 1, 3 do
+                    icons[i]:ClearAllPoints()
+                    icons[i]:SetPoint("LEFT", icons[i].homeX, 0)
+                end
+                animElapsed = 0
+                animPhase = "pause"
+            end
+        end
+    end
+
+    demoFrame:SetScript("OnUpdate", function(self, elapsed)
+        UpdateAnimation(elapsed)
+    end)
+
+    return demoFrame, 52  -- frame and height consumed
+end
+
+local widgetBuilders = {
+    cooldown_reorder_demo = CreateCooldownReorderDemo,
+}
+
 local function PopulateChangelog(scrollChild)
     -- Clear existing content
     for _, child in ipairs({scrollChild:GetChildren()}) do
@@ -534,6 +644,13 @@ local function PopulateChangelog(scrollChild)
                 local textHeight = bullet:GetStringHeight()
                 y = y - textHeight - 4
             end
+        end
+
+        -- Widget (animated demo)
+        if entry.widget and widgetBuilders[entry.widget] then
+            y = y - 4
+            local widgetFrame, widgetHeight = widgetBuilders[entry.widget](scrollChild, y)
+            y = y - widgetHeight - 4
         end
 
         -- Fixes section
