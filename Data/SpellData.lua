@@ -349,6 +349,10 @@ SpellData.cooldowns = {
         { spellId = 30823, name = "Shamanistic Rage" },
         { spellId = 2894, name = "Fire Elemental Totem" },
         { spellId = 2062, name = "Earth Elemental Totem" },
+        { spellId = 974, name = "Earth Shield" },
+        { spellId = 24398, name = "Water Shield" },
+        { spellId = 32182, name = "Heroism" },
+        { spellId = 2825, name = "Bloodlust" },
     },
     HUNTER = {
         { spellId = 19574, name = "Bestial Wrath" },

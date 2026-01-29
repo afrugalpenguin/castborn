@@ -155,19 +155,19 @@ function Anchoring:GetCastbarBarWidth()
 end
 
 -- Create a drag indicator overlay for a frame
--- The indicator is a small handle at the top so it doesn't block child frame tooltips
+-- The indicator is positioned above the frame so it doesn't cover content
 local function CreateDragIndicator(frame, label)
     local indicator = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    -- Only cover the top portion as a drag handle, not the whole frame
-    indicator:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-    indicator:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
-    indicator:SetHeight(16)
+    -- Position above the frame instead of overlaying it
+    indicator:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, 2)
+    indicator:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, 2)
+    indicator:SetHeight(14)
     indicator:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
         edgeSize = 1,
     })
-    indicator:SetBackdropColor(0.2, 0.6, 1.0, 0.7)
+    indicator:SetBackdropColor(0.2, 0.6, 1.0, 0.8)
     indicator:SetBackdropBorderColor(0.2, 0.6, 1.0, 1)
     indicator:SetFrameStrata("DIALOG")
 

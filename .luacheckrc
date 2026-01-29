@@ -55,6 +55,7 @@ read_globals = {
     "GetRealmName",
     "GetScreenWidth",
     "GetScreenHeight",
+    "GetCursorPosition",
     "GetSpellInfo",
     "GetSpellSubtext",
     "GetSpellTexture",

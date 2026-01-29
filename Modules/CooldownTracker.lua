@@ -64,6 +64,31 @@ local function CreateCooldownFrame(parent, index)
     f.glowOuter:SetVertexColor(1, 0.8, 0.3, 0)
     f.glow = f.glowOuter  -- Keep reference for existing code
 
+    -- Drag shadow effect (hidden by default)
+    f.dragShadow = f:CreateTexture(nil, "BACKGROUND", nil, -2)
+    f.dragShadow:SetColorTexture(0, 0, 0, 0.5)
+    f.dragShadow:SetPoint("TOPLEFT", 3, -3)
+    f.dragShadow:SetPoint("BOTTOMRIGHT", 3, -3)
+    f.dragShadow:Hide()
+
+    -- Bright drag glow effect (hidden by default)
+    f.dragGlow = f:CreateTexture(nil, "OVERLAY")
+    f.dragGlow:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
+    f.dragGlow:SetTexCoord(0.00781250, 0.50781250, 0.27734375, 0.52734375)
+    f.dragGlow:SetBlendMode("ADD")
+    f.dragGlow:SetPoint("TOPLEFT", -10, 10)
+    f.dragGlow:SetPoint("BOTTOMRIGHT", 10, -10)
+    f.dragGlow:SetVertexColor(1, 0.8, 0.2, 1)  -- Bright gold
+    f.dragGlow:Hide()
+
+    -- Drag cursor overlay icon
+    f.dragCursor = f:CreateTexture(nil, "OVERLAY")
+    f.dragCursor:SetTexture("Interface\\CURSOR\\Move")
+    f.dragCursor:SetSize(20, 20)
+    f.dragCursor:SetPoint("TOPLEFT", -4, 4)
+    f.dragCursor:SetAlpha(0.9)
+    f.dragCursor:Hide()
+
 
     -- Register with Masque if available
     if Castborn.Masque and Castborn.Masque.enabled then
@@ -88,6 +113,23 @@ local function CreateContainer()
     for i = 1, MAX_COOLDOWNS do
         cdFrames[i] = CreateCooldownFrame(frame, i)
     end
+
+    -- Enhanced insertion marker (4px thick with glow)
+    frame.insertMarker = frame:CreateTexture(nil, "OVERLAY")
+    frame.insertMarker:SetColorTexture(0.3, 0.8, 1, 0.9)
+    frame.insertMarker:SetSize(4, db.iconSize or 36)
+    frame.insertMarker:Hide()
+
+    frame.insertMarkerGlow = frame:CreateTexture(nil, "OVERLAY", nil, -1)
+    frame.insertMarkerGlow:SetColorTexture(0.3, 0.8, 1, 0.3)
+    frame.insertMarkerGlow:SetSize(8, db.iconSize or 36)
+    frame.insertMarkerGlow:Hide()
+
+    -- Slot highlight box
+    frame.slotHighlight = frame:CreateTexture(nil, "BACKGROUND")
+    frame.slotHighlight:SetColorTexture(0.3, 0.8, 1, 0.2)
+    frame.slotHighlight:SetSize(db.iconSize or 36, db.iconSize or 36)
+    frame.slotHighlight:Hide()
 
     if Castborn.Anchoring then
         Castborn.Anchoring:MakeDraggable(frame, db, nil, "Cooldowns")
@@ -365,6 +407,70 @@ end)
 local visibleToTrackIndex = {}  -- maps visible icon index -> trackedSpells array index
 local testSpellCount = 0        -- number of visible test spells
 
+-- Drag state tracking
+local dragState = {
+    draggingIndex = nil,
+    currentTargetSlot = nil,
+}
+
+-- Smooth animation for icon repositioning
+local function SmoothRepositionIcon(icon, targetSlot, db)
+    if not icon or not db then return end
+
+    local size = db.iconSize or 36
+    local spacing = db.spacing or 4
+    local targetX, targetY
+
+    if db.growDirection == "LEFT" then
+        targetX = -((targetSlot - 1) * (size + spacing))
+        targetY = 0
+    else
+        targetX = (targetSlot - 1) * (size + spacing)
+        targetY = 0
+    end
+
+    icon.targetX = targetX
+    icon.targetY = targetY
+
+    if not icon.isAnimating then
+        icon.isAnimating = true
+
+        local animFrame = icon.animFrame or CreateFrame("Frame")
+        icon.animFrame = animFrame
+
+        animFrame:SetScript("OnUpdate", function(self, elapsed)
+            if not icon or not icon:IsShown() then
+                icon.isAnimating = false
+                animFrame:SetScript("OnUpdate", nil)
+                return
+            end
+
+            local currentX = select(4, icon:GetPoint()) or 0
+            local currentY = select(5, icon:GetPoint()) or 0
+
+            -- Lerp towards target (30% per frame)
+            local newX = currentX + (icon.targetX - currentX) * 0.3
+            local newY = currentY + (icon.targetY - currentY) * 0.3
+
+            -- Snap if very close
+            if math.abs(newX - icon.targetX) < 0.5 then
+                newX = icon.targetX
+                newY = icon.targetY
+                icon.isAnimating = false
+                animFrame:SetScript("OnUpdate", nil)
+            end
+
+            -- Apply position
+            icon:ClearAllPoints()
+            if db.growDirection == "LEFT" then
+                icon:SetPoint("RIGHT", frame, "RIGHT", newX, newY)
+            else
+                icon:SetPoint("LEFT", frame, "LEFT", newX, newY)
+            end
+        end)
+    end
+end
+
 local function PositionTestIcon(cdFrame, visibleIndex, db)
     local size = db.iconSize or 36
     local spacing = db.spacing or 4
@@ -451,22 +557,25 @@ local function SetupDragReorder(cdFrame, visibleIndex)
         cdFrame.ghost:SetDesaturated(true)
     end
 
-    -- Insertion marker
-    if not frame.insertMarker then
-        frame.insertMarker = frame:CreateTexture(nil, "OVERLAY")
-        frame.insertMarker:SetColorTexture(0.3, 0.6, 1, 0.8)
-        frame.insertMarker:SetSize(2, db.iconSize or 36)
-        frame.insertMarker:Hide()
-    end
-
     cdFrame:SetScript("OnDragStart", function(self)
         if not testModeActive then return end
 
+        -- Store initial cursor and frame positions
+        local scale = UIParent:GetEffectiveScale()
+        local cursorX, cursorY = GetCursorPosition()
+        self.dragStartCursorX = cursorX / scale
+        self.dragStartCursorY = cursorY / scale
+
+        -- Store offset from icon center to cursor
+        local centerX, centerY = self:GetCenter()
+        self.dragOffsetX = centerX - self.dragStartCursorX
+        self.dragOffsetY = centerY - self.dragStartCursorY
+
+        -- Setup ghost at original position
         local size = db.iconSize or 36
         self.ghost:SetTexture(self.icon:GetTexture())
         self.ghost:ClearAllPoints()
 
-        -- Position ghost at current slot
         local spacing = db.spacing or 4
         if db.growDirection == "LEFT" then
             self.ghost:SetPoint("RIGHT", frame, "RIGHT", -((self.visibleIndex - 1) * (size + spacing)), 0)
@@ -476,38 +585,70 @@ local function SetupDragReorder(cdFrame, visibleIndex)
         self.ghost:SetSize(size, size)
         self.ghost:Show()
 
-        self:SetFrameStrata("TOOLTIP")
-        self:StartMoving()
+        -- Visual enhancements for dragged icon
+        self:SetFrameLevel(self:GetFrameLevel() + 10)
+        self:SetScale(1.1)
+        self:SetAlpha(1.0)  -- Keep fully opaque
+        if self.dragShadow then
+            self.dragShadow:Show()
+        end
+        if self.dragGlow then
+            self.dragGlow:Show()
+        end
+        if self.dragCursor then
+            self.dragCursor:Show()
+        end
+
+        -- Dim all other cooldown icons
+        for i = 1, testSpellCount do
+            if cdFrames[i] and cdFrames[i] ~= self and cdFrames[i]:IsShown() then
+                cdFrames[i]:SetAlpha(0.4)
+                cdFrames[i].icon:SetDesaturated(true)
+            end
+        end
+
         self.isDragging = true
+        dragState.draggingIndex = self.visibleIndex
+        dragState.currentTargetSlot = nil
     end)
 
     cdFrame:SetScript("OnDragStop", function(self)
         if not self.isDragging then return end
         self.isDragging = false
-        self:StopMovingOrSizing()
-        self:SetFrameStrata("MEDIUM")
 
-        -- Hide visual feedback
+        -- Reset dragged icon appearance
+        self:SetScale(1.0)
+        self:SetAlpha(1.0)
+        self:SetFrameLevel(self:GetFrameLevel() - 10)
+        if self.dragShadow then
+            self.dragShadow:Hide()
+        end
+        if self.dragGlow then
+            self.dragGlow:Hide()
+        end
+        if self.dragCursor then
+            self.dragCursor:Hide()
+        end
+
+        -- Restore all other cooldown icons
+        for i = 1, testSpellCount do
+            if cdFrames[i] and cdFrames[i] ~= self and cdFrames[i]:IsShown() then
+                cdFrames[i]:SetAlpha(1.0)
+                -- Only restore saturation if it was ready (not on cooldown)
+                if i ~= 2 then  -- Frame 2 is the test cooldown frame
+                    cdFrames[i].icon:SetDesaturated(false)
+                end
+            end
+        end
+
+        -- Hide all visual feedback
         if self.ghost then self.ghost:Hide() end
         if frame.insertMarker then frame.insertMarker:Hide() end
+        if frame.insertMarkerGlow then frame.insertMarkerGlow:Hide() end
+        if frame.slotHighlight then frame.slotHighlight:Hide() end
 
-        -- Calculate target slot from cursor position
-        local size = db.iconSize or 36
-        local spacing = db.spacing or 4
-        local step = size + spacing
-
-        local selfCenterX = self:GetCenter()
-        local frameLeft = frame:GetLeft()
-        local frameRight = frame:GetRight()
-
-        local targetSlot
-        if db.growDirection == "LEFT" then
-            local offset = frameRight - selfCenterX
-            targetSlot = math.floor(offset / step + 0.5) + 1
-        else
-            local offset = selfCenterX - frameLeft
-            targetSlot = math.floor(offset / step + 0.5) + 1
-        end
+        -- Stop all animations and calculate final target slot
+        local targetSlot = dragState.currentTargetSlot or self.visibleIndex
         targetSlot = math.max(1, math.min(targetSlot, testSpellCount))
 
         local fromSlot = self.visibleIndex
@@ -524,6 +665,18 @@ local function SetupDragReorder(cdFrame, visibleIndex)
             table.insert(db.trackedSpells, toTrack, spell)
         end
 
+        -- Reset drag state
+        dragState.draggingIndex = nil
+        dragState.currentTargetSlot = nil
+
+        -- Stop all animations
+        for i = 1, testSpellCount do
+            if cdFrames[i] and cdFrames[i].animFrame then
+                cdFrames[i].animFrame:SetScript("OnUpdate", nil)
+                cdFrames[i].isAnimating = false
+            end
+        end
+
         -- Refresh all icons to reflect new order
         RefreshTestIcons()
 
@@ -535,40 +688,98 @@ local function SetupDragReorder(cdFrame, visibleIndex)
         end
     end)
 
-    cdFrame:SetScript("OnUpdate", function(self)
+    cdFrame:SetScript("OnUpdate", function(self, elapsed)
         if not self.isDragging then return end
 
-        -- Show insertion marker at target slot
+        -- Update icon position to follow cursor
+        local scale = UIParent:GetEffectiveScale()
+        local cursorX, cursorY = GetCursorPosition()
+        cursorX = cursorX / scale
+        cursorY = cursorY / scale
+
+        self:ClearAllPoints()
+        self:SetPoint("CENTER", UIParent, "BOTTOMLEFT",
+            cursorX + self.dragOffsetX,
+            cursorY + self.dragOffsetY)
+
+        -- Calculate target slot from cursor position
         local size = db.iconSize or 36
         local spacing = db.spacing or 4
         local step = size + spacing
 
-        local selfCenterX = self:GetCenter()
         local frameLeft = frame:GetLeft()
         local frameRight = frame:GetRight()
-        if not selfCenterX or not frameLeft then return end
+        if not frameLeft or not frameRight then return end
 
         local targetSlot
         if db.growDirection == "LEFT" then
-            local offset = frameRight - selfCenterX
+            local offset = frameRight - cursorX
             targetSlot = math.floor(offset / step + 0.5) + 1
         else
-            local offset = selfCenterX - frameLeft
+            local offset = cursorX - frameLeft
             targetSlot = math.floor(offset / step + 0.5) + 1
         end
         targetSlot = math.max(1, math.min(targetSlot, testSpellCount))
 
-        if frame.insertMarker then
-            frame.insertMarker:ClearAllPoints()
-            frame.insertMarker:SetSize(2, size)
-            if db.growDirection == "LEFT" then
-                local xOff = -((targetSlot - 1) * step) + size / 2 + 1
-                frame.insertMarker:SetPoint("RIGHT", frame, "RIGHT", xOff, 0)
-            else
-                local xOff = (targetSlot - 1) * step - 1
-                frame.insertMarker:SetPoint("LEFT", frame, "LEFT", xOff, 0)
+        -- Only update if target slot changed
+        if targetSlot ~= dragState.currentTargetSlot then
+            dragState.currentTargetSlot = targetSlot
+
+            -- Reposition other icons to show where dragged icon will fit
+            for i = 1, testSpellCount do
+                local icon = cdFrames[i]
+                if i ~= self.visibleIndex and icon and icon:IsShown() then
+                    local displaySlot = i
+
+                    -- Calculate where this icon should be in the new layout
+                    if self.visibleIndex < i and i <= targetSlot then
+                        displaySlot = i - 1
+                    elseif self.visibleIndex > i and i >= targetSlot then
+                        displaySlot = i + 1
+                    end
+
+                    -- Smoothly move to new position
+                    SmoothRepositionIcon(icon, displaySlot, db)
+                end
             end
-            frame.insertMarker:Show()
+
+            -- Update insertion marker
+            if frame.insertMarker then
+                frame.insertMarker:ClearAllPoints()
+                frame.insertMarker:SetSize(4, size)
+
+                if db.growDirection == "LEFT" then
+                    local xOff = -((targetSlot - 1) * step) + size / 2 + 2
+                    frame.insertMarker:SetPoint("RIGHT", frame, "RIGHT", xOff, 0)
+                else
+                    local xOff = (targetSlot - 1) * step - 2
+                    frame.insertMarker:SetPoint("LEFT", frame, "LEFT", xOff, 0)
+                end
+                frame.insertMarker:Show()
+
+                -- Position glow with marker
+                if frame.insertMarkerGlow then
+                    frame.insertMarkerGlow:ClearAllPoints()
+                    frame.insertMarkerGlow:SetSize(8, size)
+                    frame.insertMarkerGlow:SetPoint("CENTER", frame.insertMarker, "CENTER", 0, 0)
+                    frame.insertMarkerGlow:Show()
+                end
+            end
+
+            -- Update slot highlight
+            if frame.slotHighlight then
+                frame.slotHighlight:ClearAllPoints()
+                frame.slotHighlight:SetSize(size, size)
+
+                if db.growDirection == "LEFT" then
+                    local xOff = -((targetSlot - 1) * step)
+                    frame.slotHighlight:SetPoint("RIGHT", frame, "RIGHT", xOff, 0)
+                else
+                    local xOff = (targetSlot - 1) * step
+                    frame.slotHighlight:SetPoint("LEFT", frame, "LEFT", xOff, 0)
+                end
+                frame.slotHighlight:Show()
+            end
         end
     end)
 end
@@ -596,8 +807,11 @@ end
 function Castborn:EndTestCooldowns()
     testModeActive = false
     if frame then
-        -- Clean up drag state
+        -- Clean up drag state and visual markers
         if frame.insertMarker then frame.insertMarker:Hide() end
+        if frame.insertMarkerGlow then frame.insertMarkerGlow:Hide() end
+        if frame.slotHighlight then frame.slotHighlight:Hide() end
+
         for i = 1, MAX_COOLDOWNS do
             if cdFrames[i] then
                 StopEdgePulse(cdFrames[i])
@@ -605,7 +819,16 @@ function Castborn:EndTestCooldowns()
                 cdFrames[i]:SetScript("OnDragStop", nil)
                 cdFrames[i]:SetScript("OnUpdate", nil)
                 cdFrames[i].isDragging = false
+                cdFrames[i]:SetAlpha(1.0)
+                cdFrames[i]:SetScale(1.0)
                 if cdFrames[i].ghost then cdFrames[i].ghost:Hide() end
+                if cdFrames[i].dragShadow then cdFrames[i].dragShadow:Hide() end
+                if cdFrames[i].dragGlow then cdFrames[i].dragGlow:Hide() end
+                if cdFrames[i].dragCursor then cdFrames[i].dragCursor:Hide() end
+                if cdFrames[i].animFrame then
+                    cdFrames[i].animFrame:SetScript("OnUpdate", nil)
+                    cdFrames[i].isAnimating = false
+                end
                 cdFrames[i]:Hide()
             end
         end
@@ -613,6 +836,8 @@ function Castborn:EndTestCooldowns()
     end
     visibleToTrackIndex = {}
     testSpellCount = 0
+    dragState.draggingIndex = nil
+    dragState.currentTargetSlot = nil
 end
 
 -- Register with TestManager
