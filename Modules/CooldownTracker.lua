@@ -4,7 +4,7 @@ Castborn.CooldownTracker = CooldownTracker
 
 local frame = nil
 local cdFrames = {}
-local MAX_COOLDOWNS = 8
+local MAX_COOLDOWNS = 12
 
 local defaults = {
     enabled = true,
@@ -231,7 +231,7 @@ local function UpdateCooldowns()
                 if spell.spellId == 974 or spell.spellId == 24398 then
                     -- Check if buff is active on player
                     for j = 1, 40 do
-                        local name, _, _, count = UnitBuff("player", j)
+                        local name, _, count = UnitBuff("player", j)
                         if not name then break end
                         if name == spell.name then
                             charges = count

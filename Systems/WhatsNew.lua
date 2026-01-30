@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.6.2",
+        features = {},
+        fixes = {
+            "Fixed Lua error spam when Earth Shield or Water Shield buff was active",
+            "Increased max displayed cooldowns from 8 to 12",
+        },
+    },
+    {
         version = "4.6.1",
         features = {},
         fixes = {

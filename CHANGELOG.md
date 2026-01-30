@@ -1,5 +1,11 @@
 # Changelog
 
+## v4.6.2
+
+### Fixes
+- Fixed Lua error spam when Earth Shield or Water Shield buff was active (incorrect UnitBuff API usage)
+- Increased max displayed cooldowns from 8 to 12 to support all class cooldown lists
+
 ## v4.6.1
 
 ### Improvements
