@@ -32,6 +32,9 @@ SpellData.interrupts = {
     ROGUE = { spellId = 1766, name = "Kick", cooldown = 10 },
     MAGE = { spellId = 2139, name = "Counterspell", cooldown = 24 },
     SHAMAN = { spellId = 8042, name = "Earth Shock", cooldown = 6 },
+    DRUID = { spellId = 16979, name = "Feral Charge", cooldown = 15 },
+    PRIEST = { spellId = 15487, name = "Silence", cooldown = 45 },
+    HUNTER = { spellId = 34490, name = "Silencing Shot", cooldown = 20 },
 }
 
 -- Known DoT/Debuff spells with their colors and durations
@@ -300,6 +303,57 @@ SpellData.dots = {
     [10448] = { name = "Flame Shock", school = 4, duration = 12 },
     [29228] = { name = "Flame Shock", school = 4, duration = 12 },
     [25457] = { name = "Flame Shock", school = 4, duration = 12 },    -- TBC
+
+    -- Warlock - Curse of Tongues (all ranks)
+    [1714] = { name = "Curse of Tongues", school = 32, duration = 30 },
+    [11719] = { name = "Curse of Tongues", school = 32, duration = 30 },
+
+    -- Warlock - Curse of the Elements (all ranks)
+    [1490] = { name = "Curse of the Elements", school = 32, duration = 300 },
+    [11721] = { name = "Curse of the Elements", school = 32, duration = 300 },
+    [11722] = { name = "Curse of the Elements", school = 32, duration = 300 },
+    [27228] = { name = "Curse of the Elements", school = 32, duration = 300 },
+
+    -- Warlock - Curse of Recklessness (all ranks)
+    [704] = { name = "Curse of Recklessness", school = 32, duration = 120 },
+    [7658] = { name = "Curse of Recklessness", school = 32, duration = 120 },
+    [7659] = { name = "Curse of Recklessness", school = 32, duration = 120 },
+    [11717] = { name = "Curse of Recklessness", school = 32, duration = 120 },
+    [27226] = { name = "Curse of Recklessness", school = 32, duration = 120 },
+
+    -- Warlock - Curse of Weakness (all ranks)
+    [702] = { name = "Curse of Weakness", school = 32, duration = 120 },
+    [1108] = { name = "Curse of Weakness", school = 32, duration = 120 },
+    [6205] = { name = "Curse of Weakness", school = 32, duration = 120 },
+    [7646] = { name = "Curse of Weakness", school = 32, duration = 120 },
+    [11707] = { name = "Curse of Weakness", school = 32, duration = 120 },
+    [11708] = { name = "Curse of Weakness", school = 32, duration = 120 },
+    [27224] = { name = "Curse of Weakness", school = 32, duration = 120 },
+
+    -- Warrior - Deep Wounds (all ranks)
+    [12721] = { name = "Deep Wounds", school = 1, duration = 12 },
+    [12834] = { name = "Deep Wounds", school = 1, duration = 12 },
+    [12849] = { name = "Deep Wounds", school = 1, duration = 12 },
+
+    -- Hunter - Wyvern Sting DoT (all ranks, nature DoT after sleep)
+    [24131] = { name = "Wyvern Sting", school = 8, duration = 12 },
+    [24134] = { name = "Wyvern Sting", school = 8, duration = 12 },
+    [24135] = { name = "Wyvern Sting", school = 8, duration = 12 },
+    [27069] = { name = "Wyvern Sting", school = 8, duration = 12 },     -- TBC
+
+    -- Hunter - Explosive Trap DoT (all ranks)
+    [13812] = { name = "Explosive Trap", school = 4, duration = 20 },
+    [14314] = { name = "Explosive Trap", school = 4, duration = 20 },
+    [14315] = { name = "Explosive Trap", school = 4, duration = 20 },
+    [27026] = { name = "Explosive Trap", school = 4, duration = 20 },    -- TBC
+
+    -- Rogue - Crippling Poison
+    [3409] = { name = "Crippling Poison", school = 8, duration = 12 },
+
+    -- Rogue - Mind-numbing Poison (all ranks)
+    [5760] = { name = "Mind-numbing Poison", school = 8, duration = 14 },
+    [8692] = { name = "Mind-numbing Poison", school = 8, duration = 14 },
+    [11398] = { name = "Mind-numbing Poison", school = 8, duration = 14 },
 }
 
 -- Class cooldowns to track by default
@@ -314,6 +368,9 @@ SpellData.cooldowns = {
         { spellId = 12043, name = "Presence of Mind" },
         { spellId = 11129, name = "Combustion" },
         { spellId = 12051, name = "Evocation" },
+        { spellId = 2139, name = "Counterspell" },
+        { spellId = 11113, name = "Blast Wave" },
+        { spellId = 31661, name = "Dragon's Breath" },
     },
     WARLOCK = {
         { spellId = 18708, name = "Fel Domination" },
@@ -321,6 +378,10 @@ SpellData.cooldowns = {
         { spellId = 18288, name = "Amplify Curse" },
         { spellId = 17877, name = "Shadowburn" },
         { spellId = 18223, name = "Curse of Exhaustion" },
+        { spellId = 6789, name = "Death Coil" },
+        { spellId = 5484, name = "Howl of Terror" },
+        { spellId = 30283, name = "Shadowfury" },
+        { spellId = 29858, name = "Soul Shatter" },
     },
     PRIEST = {
         { spellId = 6346, name = "Fear Ward" },
@@ -329,6 +390,8 @@ SpellData.cooldowns = {
         { spellId = 15487, name = "Silence" },
         { spellId = 34433, name = "Shadowfiend" },
         { spellId = 32379, name = "Shadow Word: Death" },
+        { spellId = 33206, name = "Pain Suppression" },
+        { spellId = 8122, name = "Psychic Scream" },
     },
     PALADIN = {
         { spellId = 31842, name = "Divine Illumination" },
@@ -336,12 +399,21 @@ SpellData.cooldowns = {
         { spellId = 31884, name = "Avenging Wrath" },
         { spellId = 642, name = "Divine Shield" },
         { spellId = 1044, name = "Blessing of Freedom" },
+        { spellId = 853, name = "Hammer of Justice" },
+        { spellId = 633, name = "Lay on Hands" },
+        { spellId = 1022, name = "Blessing of Protection" },
+        { spellId = 20925, name = "Holy Shield" },
+        { spellId = 31935, name = "Avenger's Shield" },
+        { spellId = 20066, name = "Repentance" },
     },
     DRUID = {
         { spellId = 17116, name = "Nature's Swiftness" },
         { spellId = 29166, name = "Innervate" },
         { spellId = 22812, name = "Barkskin" },
         { spellId = 33831, name = "Force of Nature" },
+        { spellId = 18562, name = "Swiftmend" },
+        { spellId = 16979, name = "Feral Charge" },
+        { spellId = 16689, name = "Nature's Grasp" },
     },
     SHAMAN = {
         { spellId = 16188, name = "Nature's Swiftness" },
@@ -353,6 +425,9 @@ SpellData.cooldowns = {
         { spellId = 24398, name = "Water Shield" },
         { spellId = 32182, name = "Heroism" },
         { spellId = 2825, name = "Bloodlust" },
+        { spellId = 16190, name = "Mana Tide Totem" },
+        { spellId = 8177, name = "Grounding Totem" },
+        { spellId = 17364, name = "Stormstrike" },
     },
     HUNTER = {
         { spellId = 19574, name = "Bestial Wrath" },
@@ -360,6 +435,12 @@ SpellData.cooldowns = {
         { spellId = 19263, name = "Deterrence" },
         { spellId = 3045, name = "Rapid Fire" },
         { spellId = 34490, name = "Silencing Shot" },
+        { spellId = 19577, name = "Intimidation" },
+        { spellId = 5384, name = "Feign Death" },
+        { spellId = 34477, name = "Misdirection" },
+        { spellId = 34026, name = "Kill Command" },
+        { spellId = 19503, name = "Scatter Shot" },
+        { spellId = 19386, name = "Wyvern Sting" },
     },
     ROGUE = {
         { spellId = 14177, name = "Cold Blood" },
@@ -367,6 +448,11 @@ SpellData.cooldowns = {
         { spellId = 13877, name = "Blade Flurry" },
         { spellId = 14185, name = "Preparation" },
         { spellId = 31224, name = "Cloak of Shadows" },
+        { spellId = 1856, name = "Vanish" },
+        { spellId = 5277, name = "Evasion" },
+        { spellId = 2983, name = "Sprint" },
+        { spellId = 36554, name = "Shadowstep" },
+        { spellId = 14183, name = "Premeditation" },
     },
     WARRIOR = {
         { spellId = 12292, name = "Death Wish" },
@@ -375,6 +461,12 @@ SpellData.cooldowns = {
         { spellId = 12294, name = "Mortal Strike" },
         { spellId = 871, name = "Shield Wall" },
         { spellId = 1719, name = "Recklessness" },
+        { spellId = 18499, name = "Berserker Rage" },
+        { spellId = 23920, name = "Spell Reflection" },
+        { spellId = 20252, name = "Intercept" },
+        { spellId = 5246, name = "Intimidating Shout" },
+        { spellId = 12975, name = "Last Stand" },
+        { spellId = 20230, name = "Retaliation" },
     },
 }
 
