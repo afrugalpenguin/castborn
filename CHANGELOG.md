@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.6.1
+
+### Improvements
+- Added missing interrupts for Druid (Feral Charge), Priest (Silence), and Hunter (Silencing Shot)
+- Added missing cooldowns across all classes: defensive, utility, and PvP abilities
+- Added warlock curses (Tongues, Elements, Recklessness, Weakness) to DoT tracker
+- Added Deep Wounds, Wyvern Sting DoT, Explosive Trap DoT, Crippling Poison, and Mind-numbing Poison to DoT tracker
+
 ## v4.6.0
 
 ### Features

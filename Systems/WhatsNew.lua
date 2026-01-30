@@ -14,6 +14,15 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.6.1",
+        features = {},
+        fixes = {
+            "Added missing interrupts for Druid, Priest, and Hunter",
+            "Added missing cooldowns across all classes (defensive, utility, PvP)",
+            "Added warlock curses, Deep Wounds, trap/sting DoTs, and rogue utility poisons to DoT tracker",
+        },
+    },
+    {
         version = "4.6.0",
         features = {
             "Enhanced cooldown drag-and-drop: icons follow cursor, smooth real-time repositioning, golden glow on dragged icon",
