@@ -154,6 +154,13 @@ ignore = {
     "611",  -- Line contains only whitespace
 }
 
+-- Exclude CI/tooling directories
+exclude_files = {
+    ".lua",
+    ".luarocks",
+    "lua_modules",
+}
+
 -- Exclude test files from some checks
 files["tests/**/*.lua"] = {
     std = "+busted",
