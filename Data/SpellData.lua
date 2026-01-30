@@ -314,6 +314,7 @@ SpellData.cooldowns = {
         { spellId = 12043, name = "Presence of Mind" },
         { spellId = 11129, name = "Combustion" },
         { spellId = 12051, name = "Evocation" },
+        { spellId = 974, name = "Earth Shield" },  -- TEMP: for testing charge display
     },
     WARLOCK = {
         { spellId = 18708, name = "Fel Domination" },

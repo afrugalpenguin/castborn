@@ -253,6 +253,18 @@ local function CreateOptionsFrame()
     frame:SetClampedToScreen(true)
     frame:Hide()
 
+    -- Lock frames when options panel is closed
+    frame:SetScript("OnHide", function()
+        if not CastbornDB.locked then
+            CastbornDB.locked = true
+            Castborn:Print("Frames locked")
+            if Castborn.Anchoring then Castborn.Anchoring:HideDragIndicators(true) end
+            Castborn:EndTestMode()
+            if Castborn.HideTestFrames then Castborn:HideTestFrames() end
+            if Castborn.HideTestModePanel then Castborn:HideTestModePanel() end
+        end
+    end)
+
     -- Title bar
     local titleBar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     titleBar:SetHeight(28)

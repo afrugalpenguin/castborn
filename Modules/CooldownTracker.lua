@@ -54,11 +54,11 @@ local function CreateCooldownFrame(parent, index)
     f.time:SetFont("Fonts\\ARIALN.TTF", 11, "OUTLINE")
     f.time:SetPoint("CENTER")
 
-    -- Charge counter (displayed above icon for Earth Shield, Water Shield)
-    f.charges = f:CreateFontString(nil, "OVERLAY")
-    f.charges:SetFont("Fonts\\FRIZQT__.TTF", 18, "OUTLINE")
-    f.charges:SetPoint("BOTTOM", f, "TOP", 0, 2)
-    f.charges:SetTextColor(1, 1, 1, 0.8)
+    -- Charge counter (displayed centered on icon for Earth Shield, Water Shield)
+    f.charges = f:CreateFontString(nil, "OVERLAY", nil, 7)
+    f.charges:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
+    f.charges:SetPoint("CENTER", f.icon, "CENTER", 0, 0)
+    f.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold color
     f.charges:Hide()
 
     -- Glow effect using layered textures for soft glow look
@@ -218,6 +218,14 @@ local function UpdateCooldowns()
             if icon then
                 cdFrame.icon:SetTexture(icon)
 
+                -- Create charges fontstring if it doesn't exist (for existing frames)
+                if not cdFrame.charges then
+                    cdFrame.charges = cdFrame:CreateFontString(nil, "OVERLAY", nil, 7)
+                    cdFrame.charges:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
+                    cdFrame.charges:SetPoint("CENTER", cdFrame.icon, "CENTER", 0, 0)
+                    cdFrame.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold color
+                end
+
                 -- Check for charge-based buffs (Earth Shield, Water Shield)
                 local charges = nil
                 if spell.spellId == 974 or spell.spellId == 24398 then
@@ -233,10 +241,10 @@ local function UpdateCooldowns()
                 end
 
                 -- Display charges if available
-                if charges and charges > 0 and cdFrame.charges then
+                if charges and charges > 0 then
                     cdFrame.charges:SetText(charges)
                     cdFrame.charges:Show()
-                elseif cdFrame.charges then
+                else
                     cdFrame.charges:Hide()
                 end
 
@@ -521,7 +529,15 @@ local function RefreshTestIcons()
     visibleToTrackIndex = {}
     for trackIdx, spell in ipairs(db.trackedSpells or {}) do
         if spell.enabled ~= false then
-            local icon = GetSpellTexture(spell.name)
+            -- In test mode, show all enabled spells regardless of whether known
+            local icon = GetSpellTexture(spell.spellId) or GetSpellTexture(spell.name)
+
+            -- If still no icon, try to get it from spell data
+            if not icon and spell.spellId then
+                -- For unknown spells, create a placeholder or use spell ID
+                icon = "Interface\\Icons\\INV_Misc_QuestionMark"
+            end
+
             if icon then
                 table.insert(testSpells, { icon = icon, trackIdx = trackIdx })
                 visibleToTrackIndex[#testSpells] = trackIdx
@@ -552,17 +568,25 @@ local function RefreshTestIcons()
             cdFrame.icon:SetDesaturated(i == 2)
             cdFrame.cooldown:Clear()
 
+            -- Create charges fontstring if it doesn't exist (for existing frames)
+            if not cdFrame.charges then
+                cdFrame.charges = cdFrame:CreateFontString(nil, "OVERLAY", nil, 7)
+                cdFrame.charges:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
+                cdFrame.charges:SetPoint("CENTER", cdFrame.icon, "CENTER", 0, 0)
+                cdFrame.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold color
+            end
+
             -- Show example charges for Earth Shield (974) and Water Shield (24398)
             if testSpells[i].trackIdx then
                 local spell = db.trackedSpells[testSpells[i].trackIdx]
-                if spell and (spell.spellId == 974 or spell.spellId == 24398) and cdFrame.charges then
+                if spell and (spell.spellId == 974 or spell.spellId == 24398) then
                     local exampleCharges = spell.spellId == 974 and 6 or 3
                     cdFrame.charges:SetText(exampleCharges)
                     cdFrame.charges:Show()
-                elseif cdFrame.charges then
+                else
                     cdFrame.charges:Hide()
                 end
-            elseif cdFrame.charges then
+            else
                 cdFrame.charges:Hide()
             end
 
