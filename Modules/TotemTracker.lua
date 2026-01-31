@@ -153,12 +153,20 @@ local function CreateTotemBar(parent, index)
     return frame
 end
 
--- Get party size (excluding player)
+-- Get party size (excluding player, subgroup only - totems don't affect the whole raid)
 local function GetPartySize()
     if testModeActive then
         return #testPartyMembers
     end
-    return GetNumPartyMembers and GetNumPartyMembers() or math.max(0, GetNumGroupMembers() - 1)
+    -- In a raid, GetNumPartyMembers() returns 0, but "party1"-"party4" still refer to
+    -- subgroup members. Count them directly so we only track our party, not the full raid.
+    local count = 0
+    for i = 1, 4 do
+        if UnitExists("party" .. i) then
+            count = count + 1
+        end
+    end
+    return count
 end
 
 -- Get buffed count for a totem slot (returns buffed, total)
@@ -187,12 +195,11 @@ function TotemTracker:GetMembersNotAffected(totemSlot)
 
     if not haveTotem then return notAffected end
 
-    -- Check party members
-    local numParty = GetNumPartyMembers and GetNumPartyMembers() or GetNumGroupMembers() - 1
-    if numParty > 0 then
-        for i = 1, numParty do
-            local unit = "party" .. i
-            if UnitExists(unit) and not UnitIsDeadOrGhost(unit) then
+    -- Check party members (only subgroup, not full raid)
+    for i = 1, 4 do
+        local unit = "party" .. i
+        if UnitExists(unit) then
+            if not UnitIsDeadOrGhost(unit) then
                 -- Use CheckInteractDistance for range check (index 4 = 28 yards, close to totem range)
                 local inRange = CheckInteractDistance(unit, 4)
                 if not inRange then
@@ -243,7 +250,7 @@ function TotemTracker:ShowTooltip(frame)
     end
 
     -- Show party member status for beneficial totems
-    local numParty = testModeActive and #testPartyMembers or (GetNumPartyMembers and GetNumPartyMembers() or GetNumGroupMembers() - 1)
+    local numParty = GetPartySize()
 
     if #notAffected > 0 then
         GameTooltip:AddLine(" ")

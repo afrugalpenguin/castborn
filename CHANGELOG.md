@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.6.3
+
+### Fixes
+- Fixed totem tracker party member indicators showing all raid members instead of only the shaman's party subgroup
+
 ## v4.6.2
 
 ### Fixes

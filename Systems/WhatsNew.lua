@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.6.3",
+        features = {},
+        fixes = {
+            "Fixed totem tracker showing raid-wide indicators instead of party-only",
+        },
+    },
+    {
         version = "4.6.2",
         features = {},
         fixes = {
