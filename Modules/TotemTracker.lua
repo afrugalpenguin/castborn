@@ -394,7 +394,7 @@ local function UpdateTotemTrackerAppearance()
     if not CB.totemTracker then return end
     local cfg = CastbornDB.totems
     local inCombat = UnitAffectingCombat("player")
-    local opacity = cfg.opacity or 1.0
+    local opacity = CastbornDB.bgOpacity or 1
 
     if CB.totemTracker.background then
         if inCombat then
@@ -555,7 +555,8 @@ function CB:TestTotemTracker()
     -- Show background for test mode
     if CB.totemTracker.background then
         local bgColor = cfg.bgColor or { 0, 0, 0, 0.7 }
-        CB.totemTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.7)
+        local bgOpacity = CastbornDB.bgOpacity or 1
+        CB.totemTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], (bgColor[4] or 0.7) * bgOpacity)
     end
 
     -- Test totems data (realistic mid-combat scenario)

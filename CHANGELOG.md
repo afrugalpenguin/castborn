@@ -1,5 +1,14 @@
 # Changelog
 
+## v4.11.0
+
+### Features
+- Global background opacity slider in Look & Feel options
+- Options window widened for better slider visibility
+
+### Fixes
+- Removed per-module opacity slider from DoT tracker (replaced by global setting)
+
 ## v4.10.2
 
 ### Fixes

@@ -312,7 +312,8 @@ local function CreateContainer()
         edgeFile = "Interface\\Buttons\\WHITE8x8",
         edgeSize = 1,
     })
-    frame:SetBackdropColor(0.05, 0.05, 0.05, 0.8)
+    local bgOpacity = CastbornDB.bgOpacity or 1
+    frame:SetBackdropColor(0.05, 0.05, 0.05, 0.8 * bgOpacity)
     frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
 
     frame.header = frame:CreateFontString(nil, "OVERLAY")

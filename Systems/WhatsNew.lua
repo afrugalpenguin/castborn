@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.11.0",
+        features = {
+            "Global background opacity slider in Look & Feel options",
+        },
+        fixes = {},
+    },
+    {
         version = "4.10.2",
         features = {},
         fixes = {

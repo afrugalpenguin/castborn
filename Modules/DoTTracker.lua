@@ -153,20 +153,17 @@ local function UpdateDoTTrackerAppearance()
     if not CB.dotTracker then return end
     local cfg = CB.db.dots
     local inCombat = UnitAffectingCombat("player")
-    local opacity = cfg.opacity or 1.0
+    local opacity = CastbornDB.bgOpacity or 1
 
     if CB.dotTracker.background then
         if inCombat then
-            -- Show background in combat with user opacity
             local bgColor = cfg.bgColor or {0, 0, 0, 0.7}
             CB.dotTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], (bgColor[4] or 0.7) * opacity)
         else
-            -- Hide background out of combat
             CB.dotTracker.background:SetColorTexture(0, 0, 0, 0)
         end
     end
 
-    -- Border always visible with opacity
     if CB.dotTracker.border then
         local borderColor = cfg.borderColor or {0.3, 0.3, 0.3, 1}
         CB.dotTracker.border:SetBackdropBorderColor(borderColor[1], borderColor[2], borderColor[3], (borderColor[4] or 1) * opacity)
@@ -175,9 +172,6 @@ end
 
 function CB:InitDoTTracker()
     local cfg = CB.db.dots
-
-    -- Ensure opacity default exists
-    if cfg.opacity == nil then cfg.opacity = 1.0 end
 
     local frame = CreateFrame("Frame", "Castborn_DoTTracker", UIParent, "BackdropTemplate")
     frame:SetSize(cfg.width, cfg.height)

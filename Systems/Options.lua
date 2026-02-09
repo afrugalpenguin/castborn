@@ -193,16 +193,9 @@ local function CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step,
     maxLabel:SetText(maxVal)
     maxLabel:SetTextColor(unpack(C.darkGrey))
 
-    -- Determine display format from step precision
-    local stepDecimals = 0
-    local stepStr = tostring(step)
-    local dotPos = stepStr:find("%.")
-    if dotPos then stepDecimals = #stepStr - dotPos end
-    local valueFmt = "%." .. stepDecimals .. "f"
-
     local currentValue = (dbTable and dbKey and dbTable[dbKey]) or minVal
     slider:SetValue(currentValue)
-    valueText:SetText(string.format(valueFmt, currentValue))
+    valueText:SetText(currentValue)
 
     -- Update fill bar width based on value
     local function UpdateFill(value)
@@ -216,7 +209,7 @@ local function CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step,
 
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value / step + 0.5) * step
-        valueText:SetText(string.format(valueFmt, value))
+        valueText:SetText(value)
         UpdateFill(value)
         if dbTable and dbKey then
             dbTable[dbKey] = value
@@ -241,7 +234,7 @@ end
 
 local function CreateOptionsFrame()
     local frame = CreateFrame("Frame", "CastbornOptionsFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(600, 450)
+    frame:SetSize(700, 450)
     frame:SetPoint("CENTER")
     frame:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -835,6 +828,20 @@ function Options:BuildLookFeel(parent)
         end
     end)
     cb2:SetPoint("TOPLEFT", 0, y)
+    y = y - 40
+
+    local header3 = CreateHeader(parent, "Appearance")
+    header3:SetPoint("TOPLEFT", 0, y)
+    header3:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    CastbornDB.bgOpacity = CastbornDB.bgOpacity or 1
+    local opacitySlider = CreateSlider(parent, "Background Opacity", CastbornDB, "bgOpacity", 0, 1, 0.05, function()
+        if Castborn.RefreshBackdropOpacity then
+            Castborn:RefreshBackdropOpacity()
+        end
+    end)
+    opacitySlider:SetPoint("TOPLEFT", 0, y)
 end
 
 function Options:BuildProfiles(parent)
@@ -1312,9 +1319,6 @@ function Options:BuildModule(parent, key)
             end
         end)
         spacingSlider:SetPoint("TOPLEFT", 0, y)
-        db.opacity = db.opacity or 1
-        local opacitySlider = CreateSlider(parent, "Opacity", db, "opacity", 0, 1, 0.05)
-        opacitySlider:SetPoint("TOPLEFT", 220, y)
 
     elseif key == "swing" then
         local testBtn = CreateButton(parent, "Test Swing", 90, function()
