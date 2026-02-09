@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.7.4",
+        features = {},
+        fixes = {
+            "Fixed Backlash proc not appearing in proc tracker",
+        },
+    },
+    {
         version = "4.7.3",
         features = {},
         fixes = {

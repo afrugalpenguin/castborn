@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.7.4
+
+### Fixes
+- Fixed Backlash proc not appearing in proc tracker (was using talent spellId instead of buff spellId)
+
 ## v4.7.3
 
 ### Fixes
