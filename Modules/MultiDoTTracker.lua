@@ -227,6 +227,7 @@ local function UpdateNameplateIndicators()
                 if indicator.attachedTo ~= nameplate then
                     AttachIndicatorToNameplate(indicator, nameplate)
                 end
+                indicator:Show()
                 UpdateIndicatorUrgency(indicator, mostUrgentRemaining)
             end
         end
