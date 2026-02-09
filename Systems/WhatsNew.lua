@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.7.1",
+        features = {
+            "Symbol of Hope now tracked in cooldowns for Draenei priests",
+        },
+        fixes = {},
+    },
+    {
         version = "4.7.0",
         features = {
             "Gift of the Naaru now tracked in cooldowns for Draenei characters (all classes)",

@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.7.1
+
+### Features
+- Added Symbol of Hope to cooldown tracker for Draenei priests
+
 ## v4.7.0
 
 ### Features
