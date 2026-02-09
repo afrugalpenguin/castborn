@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.8.1
+
+### Features
+- Added Holy Concentration Clearcasting proc for Priests
+
 ## v4.8.0
 
 ### Features
