@@ -54,7 +54,7 @@ local function CreateFSRBar()
     -- Make the bar thinner - default 4px height
     local height = cfg.height or 4
     -- Width will be set to match castbar when anchored, or use config/default
-    local width = cfg.width or 220
+    local width = cfg.width or 250
 
     local frame = CreateFrame("Frame", "Castborn_FSR", UIParent)
     frame:SetSize(width, height)
@@ -180,7 +180,7 @@ local function SyncFSRWidth()
         end
     else
         -- Use default/config width when detached
-        CB.fsrFrame:SetWidth(CB.fsrFrame.defaultWidth or 220)
+        CB.fsrFrame:SetWidth(CB.fsrFrame.defaultWidth or 250)
     end
 end
 

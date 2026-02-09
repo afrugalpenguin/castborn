@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.10.1
+
+### Fixes
+- Castbars options page now scrolls when content exceeds container height
+- DoT tracker spacing slider now provides immediate visual feedback
+- Added bar height and width sliders to DoT tracker options
+- Totem tracker bar height and spacing sliders now provide immediate visual feedback
+- Added width slider to totem tracker options
+- Multi-dot tracker row text no longer overflows at large row heights
+- Fixed FSR default width (220) not matching player castbar / GCD default width (250)
+
 ## v4.10.0
 
 ### Features

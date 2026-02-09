@@ -262,6 +262,7 @@ local function CreateTargetRow(parent, index)
 
     local row = CreateFrame("Frame", "Castborn_MultiDoT_Row" .. index, parent)
     row:SetSize(db.width - 4, db.rowHeight)
+    row:SetClipsChildren(true)
 
     row.bg = row:CreateTexture(nil, "BACKGROUND")
     row.bg:SetAllPoints()

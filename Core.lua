@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "4.10.0"
+CB.version = "4.10.1"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -220,7 +220,7 @@ CB.defaults = {
 
     fsr = {
         enabled = true,
-        width = 220,
+        width = 250,
         height = 4,
         anchored = true,
         x = 0,

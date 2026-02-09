@@ -417,7 +417,13 @@ function Options:CreateContent(catId)
     if catId == "general" then
         self:BuildGeneral(content)
     elseif catId == "castbars" then
-        self:BuildCastbars(content)
+        local scrollFrame = CreateFrame("ScrollFrame", nil, content, "UIPanelScrollFrameTemplate")
+        scrollFrame:SetPoint("TOPLEFT", 0, 0)
+        scrollFrame:SetPoint("BOTTOMRIGHT", -24, 0)
+        local scrollChild = CreateFrame("Frame", nil, scrollFrame)
+        scrollChild:SetWidth(scrollFrame:GetWidth() or 400)
+        scrollFrame:SetScrollChild(scrollChild)
+        self:BuildCastbars(scrollChild)
     elseif catId == "lookfeel" then
         self:BuildLookFeel(content)
     elseif catId == "profiles" then
@@ -789,6 +795,8 @@ function Options:BuildCastbars(parent)
     end)
     ttslider2:SetPoint("TOPLEFT", 220, y)
     y = y - 60
+
+    parent:SetHeight(math.abs(y) + 20)
 end
 
 function Options:BuildLookFeel(parent)
@@ -1222,17 +1230,15 @@ function Options:BuildModule(parent, key)
     local db = CastbornDB[key]
 
     -- Width/Height sliders for applicable modules
-    if key == "gcd" or key == "fsr" or key == "dots" or key == "swing" or key == "totems" then
+    if key == "gcd" or key == "fsr" or key == "swing" then
         db.width = db.width or 200
         local widthSlider = CreateSlider(parent, "Width", db, "width", 50, 400, 10, function(v)
             if key == "gcd" and Castborn.gcdFrame then Castborn.gcdFrame:SetWidth(v)
             elseif key == "fsr" and Castborn.fsrFrame then Castborn.fsrFrame:SetWidth(v)
-            elseif key == "dots" and Castborn.dotTracker then Castborn.dotTracker:SetWidth(v)
             elseif key == "swing" and Castborn.swingTimers then
                 if Castborn.swingTimers.mainhand then Castborn.swingTimers.mainhand:SetWidth(v) end
                 if Castborn.swingTimers.offhand then Castborn.swingTimers.offhand:SetWidth(v) end
                 if Castborn.swingTimers.ranged then Castborn.swingTimers.ranged:SetWidth(v) end
-            elseif key == "totems" and Castborn.totemTracker then Castborn.totemTracker:SetWidth(v)
             end
         end)
         widthSlider:SetPoint("TOPLEFT", 0, y)
@@ -1276,8 +1282,28 @@ function Options:BuildModule(parent, key)
         local mineCB = CreateCheckbox(parent, "Show Only My DoTs", db, "showOnlyMine")
         mineCB:SetPoint("TOPLEFT", 0, y)
         y = y - 36
+
+        db.width = db.width or 200
+        local dotWidthSlider = CreateSlider(parent, "Width", db, "width", 100, 400, 10, function(v)
+            if Castborn.dotTracker then Castborn.dotTracker:SetWidth(v) end
+        end)
+        dotWidthSlider:SetPoint("TOPLEFT", 0, y)
+
+        db.barHeight = db.barHeight or 16
+        local dotBarHeightSlider = CreateSlider(parent, "Bar Height", db, "barHeight", 10, 30, 1, function(v)
+            if Castborn.dotTracker then
+                Castborn.dotTracker:SetHeight(math.max(30, 3 * (v + (db.spacing or 2)) + 8))
+            end
+        end)
+        dotBarHeightSlider:SetPoint("TOPLEFT", 220, y)
+        y = y - 60
+
         db.spacing = db.spacing or 2
-        local spacingSlider = CreateSlider(parent, "Bar Spacing", db, "spacing", 0, 10, 1)
+        local spacingSlider = CreateSlider(parent, "Bar Spacing", db, "spacing", 0, 10, 1, function(v)
+            if Castborn.dotTracker then
+                Castborn.dotTracker:SetHeight(math.max(30, 3 * ((db.barHeight or 16) + v) + 8))
+            end
+        end)
         spacingSlider:SetPoint("TOPLEFT", 0, y)
         db.opacity = db.opacity or 1
         local opacitySlider = CreateSlider(parent, "Opacity", db, "opacity", 0, 1, 0.05)
@@ -1426,11 +1452,26 @@ function Options:BuildModule(parent, key)
         focusCB:SetPoint("TOPLEFT", 150, y)
 
     elseif key == "totems" then
+        db.width = db.width or 200
+        local totemWidthSlider = CreateSlider(parent, "Width", db, "width", 100, 400, 10, function(v)
+            if Castborn.totemTracker then Castborn.totemTracker:SetWidth(v) end
+        end)
+        totemWidthSlider:SetPoint("TOPLEFT", 0, y)
+        y = y - 60
+
         db.barHeight = db.barHeight or 16
-        local barHeightSlider = CreateSlider(parent, "Bar Height", db, "barHeight", 10, 30, 1)
+        local barHeightSlider = CreateSlider(parent, "Bar Height", db, "barHeight", 10, 30, 1, function(v)
+            if Castborn.totemTracker then
+                Castborn.totemTracker:SetHeight(v * 4 + (db.spacing or 2) * 3 + 8)
+            end
+        end)
         barHeightSlider:SetPoint("TOPLEFT", 0, y)
         db.spacing = db.spacing or 2
-        local spacingSlider = CreateSlider(parent, "Bar Spacing", db, "spacing", 0, 10, 1)
+        local spacingSlider = CreateSlider(parent, "Bar Spacing", db, "spacing", 0, 10, 1, function(v)
+            if Castborn.totemTracker then
+                Castborn.totemTracker:SetHeight((db.barHeight or 16) * 4 + v * 3 + 8)
+            end
+        end)
         spacingSlider:SetPoint("TOPLEFT", 220, y)
         y = y - 60
 

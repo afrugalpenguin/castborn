@@ -14,6 +14,17 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.10.1",
+        features = {},
+        fixes = {
+            "Castbars options page now scrolls when content overflows",
+            "DoT and totem tracker sliders now provide immediate visual feedback",
+            "Added bar height and width sliders to DoT and totem tracker options",
+            "Multi-dot tracker row text no longer overflows at large row heights",
+            "Fixed FSR default width not matching castbar/GCD default width",
+        },
+    },
+    {
         version = "4.10.0",
         features = {
             "Width and height sliders for target, focus, and target-of-target castbars",
