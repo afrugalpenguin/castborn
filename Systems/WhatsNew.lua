@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.7.0",
+        features = {
+            "Gift of the Naaru now tracked in cooldowns for Draenei characters (all classes)",
+        },
+        fixes = {},
+    },
+    {
         version = "4.6.3",
         features = {},
         fixes = {

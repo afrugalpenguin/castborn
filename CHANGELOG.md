@@ -1,5 +1,11 @@
 # Changelog
 
+## v4.7.0
+
+### Features
+- Added Gift of the Naaru to cooldown tracker for Draenei characters (all classes)
+- Added racial cooldown support system for race-specific abilities
+
 ## v4.6.3
 
 ### Fixes
