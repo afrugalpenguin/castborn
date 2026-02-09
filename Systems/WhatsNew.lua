@@ -14,6 +14,16 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.8.0",
+        features = {
+            "Proc tracker now matches buffs by name as a fallback for rank mismatches",
+        },
+        fixes = {
+            "Fixed Combustion, Vengeance, Seal of Command, Enrage, Flurry, and Slice and Dice procs not appearing",
+            "Removed Thrill of the Hunt (not a trackable buff)",
+        },
+    },
+    {
         version = "4.7.4",
         features = {},
         fixes = {

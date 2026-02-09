@@ -1,5 +1,14 @@
 # Changelog
 
+## v4.8.0
+
+### Features
+- Proc tracker now matches buffs by name as a fallback, handling rank mismatches gracefully
+
+### Fixes
+- Fixed Combustion, Vengeance, Seal of Command, Enrage, Flurry, and Slice and Dice procs not appearing (wrong spellIds)
+- Removed Thrill of the Hunt from proc tracker (not a trackable buff)
+
 ## v4.7.4
 
 ### Fixes
