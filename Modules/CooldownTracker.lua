@@ -329,6 +329,7 @@ end
 Castborn:RegisterCallback("READY", function()
     local db = CastbornDB.cooldowns
     local _, class = UnitClass("player")
+    local _, race = UnitRace("player")
     local currentVersion = Castborn.version
 
     -- Check if class changed (need to reload defaults)
@@ -339,6 +340,12 @@ Castborn:RegisterCallback("READY", function()
         -- First time setup or class changed: load all class defaults
         if class and Castborn.SpellData then
             db.trackedSpells = Castborn.SpellData:GetClassCooldowns(class)
+            -- Append racial cooldowns
+            if race then
+                for _, spell in ipairs(Castborn.SpellData:GetRacialCooldowns(race)) do
+                    table.insert(db.trackedSpells, spell)
+                end
+            end
             db.defaultsLoaded = currentVersion
             db.loadedForClass = class
         end
@@ -346,11 +353,19 @@ Castborn:RegisterCallback("READY", function()
         -- Version changed: merge any new default spells
         if class and Castborn.SpellData then
             local defaults = Castborn.SpellData:GetClassCooldowns(class)
+            local added = 0
             if defaults then
-                local added = MergeNewDefaults(db.trackedSpells, defaults)
-                if added > 0 then
-                    Castborn:Print(added .. " new cooldown(s) added from defaults")
+                added = added + MergeNewDefaults(db.trackedSpells, defaults)
+            end
+            -- Merge racial cooldowns
+            if race then
+                local racials = Castborn.SpellData:GetRacialCooldowns(race)
+                if racials then
+                    added = added + MergeNewDefaults(db.trackedSpells, racials)
                 end
+            end
+            if added > 0 then
+                Castborn:Print(added .. " new cooldown(s) added from defaults")
             end
         end
         db.defaultsLoaded = currentVersion

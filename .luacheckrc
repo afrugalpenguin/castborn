@@ -48,6 +48,7 @@ read_globals = {
     "UnitPosition",
     "UnitAttackSpeed",
     "UnitRangedDamage",
+    "UnitRace",
     "CheckInteractDistance",
 
     -- WoW Game State

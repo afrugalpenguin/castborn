@@ -470,8 +470,19 @@ SpellData.cooldowns = {
     },
 }
 
+-- Racial cooldowns (keyed by race from select(2, UnitRace("player")))
+SpellData.racialCooldowns = {
+    Draenei = {
+        { spellId = 28880, name = "Gift of the Naaru" },
+    },
+}
+
 function SpellData:GetClassCooldowns(class)
     return self.cooldowns[class] or {}
+end
+
+function SpellData:GetRacialCooldowns(race)
+    return self.racialCooldowns[race] or {}
 end
 
 function SpellData:GetSchoolColor(school)
