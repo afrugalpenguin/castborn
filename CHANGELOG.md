@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.7.3
+
+### Fixes
+- Fixed newly added procs not appearing for existing users until settings were reset
+
 ## v4.7.2
 
 ### Fixes

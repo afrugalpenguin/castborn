@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.7.3",
+        features = {},
+        fixes = {
+            "Fixed newly added procs not appearing for existing users until settings were reset",
+        },
+    },
+    {
         version = "4.7.2",
         features = {},
         fixes = {
