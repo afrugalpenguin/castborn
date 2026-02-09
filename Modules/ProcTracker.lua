@@ -18,7 +18,7 @@ local classProcs = {
     },
     WARLOCK = {
         { spellId = 17941, name = "Shadow Trance" },     -- Nightfall proc
-        { spellId = 34939, name = "Backlash" },
+        { spellId = 34936, name = "Backlash" },
     },
     PRIEST = {
         { spellId = 14751, name = "Inner Focus" },
@@ -294,6 +294,18 @@ Castborn:RegisterCallback("INIT", function()
             CastbornDB.procs.loadedForClass = playerClass
         end
     elseif classProcs[playerClass] then
+        -- Remove procs with corrected spellIds (e.g. talent ID replaced by buff ID)
+        local canonical = {}
+        for _, spell in ipairs(classProcs[playerClass]) do
+            canonical[spell.name] = spell.spellId
+        end
+        for i = #CastbornDB.procs.trackedSpells, 1, -1 do
+            local saved = CastbornDB.procs.trackedSpells[i]
+            if canonical[saved.name] and canonical[saved.name] ~= saved.spellId then
+                table.remove(CastbornDB.procs.trackedSpells, i)
+            end
+        end
+
         -- Merge in any newly added procs that the user doesn't have yet
         local existing = {}
         for _, spell in ipairs(CastbornDB.procs.trackedSpells) do
