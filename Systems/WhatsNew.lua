@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.9.0",
+        features = {
+            "Trinket cooldown tracking — equipped trinkets with \"Use:\" effects now show above the cooldown tracker",
+        },
+        fixes = {},
+    },
+    {
         version = "4.8.1",
         features = {
             "Holy Concentration Clearcasting proc now tracked for Priests",

@@ -6,6 +6,10 @@ local frame = nil
 local cdFrames = {}
 local MAX_COOLDOWNS = 12
 
+local trinketFrame = nil
+local trinketFrames = {}
+local TRINKET_SLOTS = { 13, 14 }
+
 local defaults = {
     enabled = true,
     iconSize = 36,
@@ -21,6 +25,7 @@ local defaults = {
     anchorPosition = "LEFT",  -- LEFT, RIGHT, TOP, BOTTOM
     growDirection = "LEFT",   -- LEFT or RIGHT
     showReadyGlow = true,     -- Animated edge glow when ready
+    trackTrinkets = true,
 }
 
 local function CreateCooldownFrame(parent, index)
@@ -110,6 +115,45 @@ local function CreateCooldownFrame(parent, index)
     return f
 end
 
+local function CreateTrinketFrame(parent, index)
+    local size = CastbornDB.cooldowns.iconSize or 32
+
+    local f = CreateFrame("Button", "Castborn_Trinket" .. index, parent)
+    f:SetSize(size, size)
+
+    f.icon = f:CreateTexture(nil, "ARTWORK")
+    f.icon:SetAllPoints()
+    f.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    f.Icon = f.icon
+
+    f.Normal = f:CreateTexture(nil, "BORDER")
+    f.Normal:SetPoint("TOPLEFT", -1, 1)
+    f.Normal:SetPoint("BOTTOMRIGHT", 1, -1)
+    f.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
+    f:SetNormalTexture(f.Normal)
+
+    f.cooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
+    f.cooldown:SetAllPoints()
+    f.cooldown:SetDrawEdge(true)
+    f.cooldown:SetHideCountdownNumbers(false)
+    f.Cooldown = f.cooldown
+
+    f.time = f:CreateFontString(nil, "OVERLAY")
+    f.time:SetFont("Fonts\\ARIALN.TTF", 11, "OUTLINE")
+    f.time:SetPoint("CENTER")
+
+    if Castborn.Masque and Castborn.Masque.enabled then
+        Castborn.Masque:AddButton("cooldowns", f, {
+            Icon = f.icon,
+            Cooldown = f.cooldown,
+            Normal = f.Normal,
+        })
+    end
+
+    f:Hide()
+    return f
+end
+
 local function CreateContainer()
     local db = CastbornDB.cooldowns
 
@@ -144,6 +188,71 @@ local function CreateContainer()
 
     frame:Hide()  -- Start hidden, will show when cooldowns are tracked
     return frame
+end
+
+local function CreateTrinketContainer()
+    local db = CastbornDB.cooldowns
+    local size = db.iconSize or 36
+    local spacing = db.spacing or 4
+
+    trinketFrame = CreateFrame("Frame", "Castborn_TrinketTracker", frame)
+    trinketFrame:SetSize(size * 2 + spacing, size + 4)
+    trinketFrame:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, spacing)
+
+    for i = 1, 2 do
+        trinketFrames[i] = CreateTrinketFrame(trinketFrame, i)
+    end
+
+    trinketFrame:Hide()
+end
+
+local function UpdateTrinkets()
+    local db = CastbornDB.cooldowns
+    if not trinketFrame then return end
+    if not db.trackTrinkets then
+        trinketFrame:Hide()
+        return
+    end
+
+    local size = db.iconSize or 36
+    local spacing = db.spacing or 4
+    local anyVisible = false
+
+    for i, slot in ipairs(TRINKET_SLOTS) do
+        local tf = trinketFrames[i]
+        if not tf then break end
+
+        local itemId = GetInventoryItemID("player", slot)
+        if itemId and GetItemSpell(itemId) then
+            local icon = GetInventoryItemTexture("player", slot)
+            local start, duration, enabled = GetInventoryItemCooldown("player", slot)
+
+            tf.icon:SetTexture(icon)
+            tf:SetSize(size, size)
+            tf:ClearAllPoints()
+            tf:SetPoint("RIGHT", trinketFrame, "RIGHT", -((i - 1) * (size + spacing)), 0)
+
+            if duration and duration > 1.5 then
+                tf.cooldown:SetCooldown(start, duration)
+                tf.icon:SetDesaturated(true)
+            else
+                tf.cooldown:Clear()
+                tf.icon:SetDesaturated(false)
+            end
+
+            tf:Show()
+            anyVisible = true
+        else
+            tf:Hide()
+        end
+    end
+
+    if anyVisible then
+        trinketFrame:SetSize(size * 2 + spacing, size + 4)
+        trinketFrame:Show()
+    else
+        trinketFrame:Hide()
+    end
 end
 
 -- Static glow for ready cooldowns
@@ -373,6 +482,7 @@ Castborn:RegisterCallback("READY", function()
     end
 
     CreateContainer()
+    CreateTrinketContainer()
     UpdateLayout()
 
     local updateFrame = CreateFrame("Frame")
@@ -381,6 +491,7 @@ Castborn:RegisterCallback("READY", function()
         elapsed = elapsed + delta
         if elapsed >= 0.1 then
             UpdateCooldowns()
+            UpdateTrinkets()
             elapsed = 0
         end
     end)
@@ -884,6 +995,33 @@ function Castborn:TestCooldowns()
             SetupDragReorder(cdFrames[i], i)
         end
     end
+
+    -- Show sample trinket icons in test mode
+    if db.trackTrinkets and trinketFrame then
+        local size = db.iconSize or 36
+        local spacing = db.spacing or 4
+        local testTrinketIcons = {
+            "Interface\\Icons\\INV_Trinket_Naxxramas04",
+            "Interface\\Icons\\INV_Trinket_Naxxramas03",
+        }
+        for i = 1, 2 do
+            local tf = trinketFrames[i]
+            if tf then
+                tf.icon:SetTexture(testTrinketIcons[i])
+                tf:SetSize(size, size)
+                tf:ClearAllPoints()
+                tf:SetPoint("RIGHT", trinketFrame, "RIGHT", -((i - 1) * (size + spacing)), 0)
+                tf.cooldown:Clear()
+                tf.icon:SetDesaturated(i == 1)
+                if i == 1 then
+                    tf.cooldown:SetCooldown(GetTime() - 10, 120)
+                end
+                tf:Show()
+            end
+        end
+        trinketFrame:SetSize(size * 2 + spacing, size + 4)
+        trinketFrame:Show()
+    end
 end
 
 -- End test mode
@@ -917,6 +1055,13 @@ function Castborn:EndTestCooldowns()
             end
         end
         frame:Hide()
+    end
+    -- Hide trinket test frames
+    if trinketFrame then
+        for i = 1, 2 do
+            if trinketFrames[i] then trinketFrames[i]:Hide() end
+        end
+        trinketFrame:Hide()
     end
     visibleToTrackIndex = {}
     testSpellCount = 0

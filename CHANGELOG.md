@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.9.0
+
+### Features
+- Trinket cooldown tracking — equipped trinkets with "Use:" effects now show above the cooldown tracker, with a toggle in options
+
 ## v4.8.1
 
 ### Features

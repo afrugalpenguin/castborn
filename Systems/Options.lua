@@ -1181,6 +1181,9 @@ function Options:BuildModule(parent, key)
         db.growLeft = (db.growDirection == "LEFT")
         growCB:SetChecked(db.growLeft)
         growCB:SetPoint("TOPLEFT", 0, y)
+
+        local trinketCB = CreateCheckbox(parent, "Track Trinket Cooldowns", db, "trackTrinkets")
+        trinketCB:SetPoint("TOPLEFT", 220, y)
         y = y - 30
 
         -- Divider
