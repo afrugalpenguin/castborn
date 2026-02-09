@@ -293,6 +293,17 @@ Castborn:RegisterCallback("INIT", function()
             CastbornDB.procs.trackedSpells = classProcs[playerClass]
             CastbornDB.procs.loadedForClass = playerClass
         end
+    elseif classProcs[playerClass] then
+        -- Merge in any newly added procs that the user doesn't have yet
+        local existing = {}
+        for _, spell in ipairs(CastbornDB.procs.trackedSpells) do
+            existing[spell.spellId] = true
+        end
+        for _, spell in ipairs(classProcs[playerClass]) do
+            if not existing[spell.spellId] then
+                table.insert(CastbornDB.procs.trackedSpells, spell)
+            end
+        end
     end
 end)
 
