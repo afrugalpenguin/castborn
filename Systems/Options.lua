@@ -623,6 +623,9 @@ function Options:BuildCastbars(parent)
             f:SetHeight(v)
             if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
             if f.spark then f.spark:SetHeight(v * 2.5) end
+            if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
+            if f.spellText then f.spellText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+            if f.timeText then f.timeText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
         end
     end)
     slider2:SetPoint("TOPLEFT", 220, y)
@@ -658,7 +661,134 @@ function Options:BuildCastbars(parent)
         end
     end)
     tcb3:SetPoint("TOPLEFT", 150, y)
-    y = y - 40
+    y = y - 36
+
+    local tslider1 = CreateSlider(parent, "Width", CastbornDB.target, "width", 100, 400, 10, function(v)
+        if Castborn.castbars and Castborn.castbars.target then
+            Castborn.castbars.target:SetWidth(v)
+        end
+    end)
+    tslider1:SetPoint("TOPLEFT", 0, y)
+
+    local tslider2 = CreateSlider(parent, "Height", CastbornDB.target, "height", 10, 40, 2, function(v)
+        local f = Castborn.castbars and Castborn.castbars.target
+        if f then
+            f:SetHeight(v)
+            if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
+            if f.spark then f.spark:SetHeight(v * 2.5) end
+            if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
+            if f.spellText then f.spellText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+            if f.timeText then f.timeText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+        end
+    end)
+    tslider2:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+
+    -- Focus Castbar
+    local header3 = CreateHeader(parent, "Focus Castbar")
+    header3:SetPoint("TOPLEFT", 0, y)
+    header3:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    CastbornDB.focus = CastbornDB.focus or {}
+
+    local fcb1 = CreateCheckbox(parent, "Show Icon", CastbornDB.focus, "showIcon", function(checked)
+        local focusBar = Castborn.castbars and Castborn.castbars.focus
+        if focusBar and focusBar.iconFrame then
+            if checked then
+                focusBar.iconFrame:Show()
+            else
+                focusBar.iconFrame:Hide()
+            end
+        end
+    end)
+    fcb1:SetPoint("TOPLEFT", 0, y)
+    local fcb2 = CreateCheckbox(parent, "Show Time", CastbornDB.focus, "showTime", function(checked)
+        local focusBar = Castborn.castbars and Castborn.castbars.focus
+        if focusBar and focusBar.timeText then
+            if checked then
+                focusBar.timeText:Show()
+            else
+                focusBar.timeText:Hide()
+            end
+        end
+    end)
+    fcb2:SetPoint("TOPLEFT", 150, y)
+    y = y - 36
+
+    local fslider1 = CreateSlider(parent, "Width", CastbornDB.focus, "width", 100, 400, 10, function(v)
+        if Castborn.castbars and Castborn.castbars.focus then
+            Castborn.castbars.focus:SetWidth(v)
+        end
+    end)
+    fslider1:SetPoint("TOPLEFT", 0, y)
+
+    local fslider2 = CreateSlider(parent, "Height", CastbornDB.focus, "height", 10, 40, 2, function(v)
+        local f = Castborn.castbars and Castborn.castbars.focus
+        if f then
+            f:SetHeight(v)
+            if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
+            if f.spark then f.spark:SetHeight(v * 2.5) end
+            if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
+            if f.spellText then f.spellText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+            if f.timeText then f.timeText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+        end
+    end)
+    fslider2:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+
+    -- Target-of-Target Castbar
+    local header4 = CreateHeader(parent, "Target-of-Target Castbar")
+    header4:SetPoint("TOPLEFT", 0, y)
+    header4:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    CastbornDB.targettarget = CastbornDB.targettarget or {}
+
+    local ttcb1 = CreateCheckbox(parent, "Show Icon", CastbornDB.targettarget, "showIcon", function(checked)
+        local totBar = Castborn.castbars and Castborn.castbars.targettarget
+        if totBar and totBar.iconFrame then
+            if checked then
+                totBar.iconFrame:Show()
+            else
+                totBar.iconFrame:Hide()
+            end
+        end
+    end)
+    ttcb1:SetPoint("TOPLEFT", 0, y)
+    local ttcb2 = CreateCheckbox(parent, "Show Time", CastbornDB.targettarget, "showTime", function(checked)
+        local totBar = Castborn.castbars and Castborn.castbars.targettarget
+        if totBar and totBar.timeText then
+            if checked then
+                totBar.timeText:Show()
+            else
+                totBar.timeText:Hide()
+            end
+        end
+    end)
+    ttcb2:SetPoint("TOPLEFT", 150, y)
+    y = y - 36
+
+    local ttslider1 = CreateSlider(parent, "Width", CastbornDB.targettarget, "width", 100, 400, 10, function(v)
+        if Castborn.castbars and Castborn.castbars.targettarget then
+            Castborn.castbars.targettarget:SetWidth(v)
+        end
+    end)
+    ttslider1:SetPoint("TOPLEFT", 0, y)
+
+    local ttslider2 = CreateSlider(parent, "Height", CastbornDB.targettarget, "height", 10, 40, 2, function(v)
+        local f = Castborn.castbars and Castborn.castbars.targettarget
+        if f then
+            f:SetHeight(v)
+            if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
+            if f.spark then f.spark:SetHeight(v * 2.5) end
+            if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
+            if f.spellText then f.spellText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+            if f.timeText then f.timeText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+        end
+    end)
+    ttslider2:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
 end
 
 function Options:BuildLookFeel(parent)
@@ -1320,6 +1450,47 @@ function Options:BuildModule(parent, key)
         local sortCB = CreateCheckbox(parent, "Sort by Time", db, "sortByTime")
         sortCB:SetPoint("TOPLEFT", 220, y + 15)
 
+        y = y - 50
+
+        local mdWidthSlider = CreateSlider(parent, "Width", db, "width", 100, 400, 10, function(v)
+            local mdFrame = _G["Castborn_MultiDoTTracker"]
+            if mdFrame then
+                local maxT = db.maxTargets or 5
+                mdFrame:SetWidth(v)
+                for i = 1, maxT do
+                    local row = _G["Castborn_MultiDoT_Row" .. i]
+                    if row then row:SetWidth(v - 4) end
+                end
+            end
+        end)
+        mdWidthSlider:SetPoint("TOPLEFT", 0, y)
+
+        db.rowHeight = db.rowHeight or 20
+        local mdRowSlider = CreateSlider(parent, "Row Height", db, "rowHeight", 12, 32, 2, function(v)
+            local mdFrame = _G["Castborn_MultiDoTTracker"]
+            if mdFrame then
+                local maxT = db.maxTargets or 5
+                mdFrame:SetHeight(v * maxT + 18)
+                for i = 1, maxT do
+                    local row = _G["Castborn_MultiDoT_Row" .. i]
+                    if row then
+                        row:SetHeight(v)
+                        row:SetPoint("TOPLEFT", mdFrame, "TOPLEFT", 2, -14 - (i - 1) * v)
+                        if row.urgency then row.urgency:SetHeight(v) end
+                        if row.dots then
+                            for j, dot in ipairs(row.dots) do
+                                dot:SetSize(v - 4, v - 4)
+                                dot:SetPoint("LEFT", row, "LEFT", 5 + (j - 1) * (v - 2), 0)
+                            end
+                        end
+                        if row.name then
+                            row.name:SetPoint("LEFT", row, "LEFT", 5 + 6 * (v - 2), 0)
+                        end
+                    end
+                end
+            end
+        end)
+        mdRowSlider:SetPoint("TOPLEFT", 220, y)
         y = y - 50
 
         -- Nameplate Indicators section
