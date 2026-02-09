@@ -24,6 +24,7 @@ local classProcs = {
         { spellId = 14751, name = "Inner Focus" },
         { spellId = 15271, name = "Spirit Tap" },
         { spellId = 33151, name = "Surge of Light" },
+        { spellId = 34754, name = "Clearcasting" },     -- Holy Concentration
     },
     DRUID = {
         { spellId = 16870, name = "Clearcasting" },      -- Omen of Clarity
