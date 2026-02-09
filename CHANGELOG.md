@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.10.2
+
+### Fixes
+- Sliders now display clean numeric values (e.g. "0.75" instead of raw floats for decimal steps)
+
 ## v4.10.1
 
 ### Fixes

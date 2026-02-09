@@ -193,9 +193,16 @@ local function CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step,
     maxLabel:SetText(maxVal)
     maxLabel:SetTextColor(unpack(C.darkGrey))
 
+    -- Determine display format from step precision
+    local stepDecimals = 0
+    local stepStr = tostring(step)
+    local dotPos = stepStr:find("%.")
+    if dotPos then stepDecimals = #stepStr - dotPos end
+    local valueFmt = "%." .. stepDecimals .. "f"
+
     local currentValue = (dbTable and dbKey and dbTable[dbKey]) or minVal
     slider:SetValue(currentValue)
-    valueText:SetText(currentValue)
+    valueText:SetText(string.format(valueFmt, currentValue))
 
     -- Update fill bar width based on value
     local function UpdateFill(value)
@@ -209,7 +216,7 @@ local function CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step,
 
     slider:SetScript("OnValueChanged", function(self, value)
         value = math.floor(value / step + 0.5) * step
-        valueText:SetText(value)
+        valueText:SetText(string.format(valueFmt, value))
         UpdateFill(value)
         if dbTable and dbKey then
             dbTable[dbKey] = value

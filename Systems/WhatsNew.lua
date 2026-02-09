@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.10.2",
+        features = {},
+        fixes = {
+            "Sliders now display clean numeric values for decimal step sizes",
+        },
+    },
+    {
         version = "4.10.1",
         features = {},
         fixes = {
