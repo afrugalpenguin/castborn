@@ -474,6 +474,7 @@ SpellData.cooldowns = {
 SpellData.racialCooldowns = {
     Draenei = {
         { spellId = 28880, name = "Gift of the Naaru" },
+        { spellId = 32548, name = "Symbol of Hope" },
     },
 }
 
