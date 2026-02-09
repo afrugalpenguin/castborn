@@ -14,7 +14,7 @@ local classProcs = {
         { spellId = 12042, name = "Arcane Power" },
         { spellId = 12472, name = "Icy Veins" },
         { spellId = 12043, name = "Presence of Mind" },
-        { spellId = 29977, name = "Combustion" },
+        { spellId = 28682, name = "Combustion" },
     },
     WARLOCK = {
         { spellId = 17941, name = "Shadow Trance" },     -- Nightfall proc
@@ -36,26 +36,25 @@ local classProcs = {
         { spellId = 16280, name = "Flurry" },
     },
     PALADIN = {
-        { spellId = 20050, name = "Vengeance" },          -- Ret talent proc
-        { spellId = 20375, name = "Seal of Command" },
+        { spellId = 20055, name = "Vengeance" },          -- Ret talent proc
+        { spellId = 27170, name = "Seal of Command" },
         { spellId = 31842, name = "Divine Illumination" },
         { spellId = 20216, name = "Divine Favor" },
     },
     HUNTER = {
         { spellId = 6150, name = "Quick Shots" },
         { spellId = 3045, name = "Rapid Fire" },
-        { spellId = 34720, name = "Thrill of the Hunt" },
     },
     WARRIOR = {
-        { spellId = 12880, name = "Enrage" },
-        { spellId = 12966, name = "Flurry" },
+        { spellId = 14204, name = "Enrage" },
+        { spellId = 12970, name = "Flurry" },
         { spellId = 12292, name = "Death Wish" },
         { spellId = 12328, name = "Sweeping Strikes" },
     },
     ROGUE = {
         { spellId = 13750, name = "Adrenaline Rush" },
         { spellId = 13877, name = "Blade Flurry" },
-        { spellId = 5171, name = "Slice and Dice" },
+        { spellId = 6774, name = "Slice and Dice" },
         { spellId = 14177, name = "Cold Blood" },
     },
 }
@@ -198,9 +197,11 @@ local function ScanProcs()
         return
     end
 
-    local tracked = {}
+    local trackedById = {}
+    local trackedByName = {}
     for _, spell in ipairs(db.trackedSpells or {}) do
-        tracked[spell.spellId] = spell
+        trackedById[spell.spellId] = spell
+        trackedByName[spell.name] = spell
     end
 
     local activeProcs = {}
@@ -208,7 +209,7 @@ local function ScanProcs()
         local name, icon, stacks, _, duration, expirationTime, _, _, _, spellId = UnitBuff("player", i)
         if not name then break end
 
-        if tracked[spellId] then
+        if trackedById[spellId] or trackedByName[name] then
             table.insert(activeProcs, {
                 name = name,
                 icon = icon,
@@ -294,7 +295,7 @@ Castborn:RegisterCallback("INIT", function()
             CastbornDB.procs.loadedForClass = playerClass
         end
     elseif classProcs[playerClass] then
-        -- Remove procs with corrected spellIds (e.g. talent ID replaced by buff ID)
+        -- Remove procs with corrected spellIds or removed from classProcs
         local canonical = {}
         for _, spell in ipairs(classProcs[playerClass]) do
             canonical[spell.name] = spell.spellId
@@ -302,6 +303,8 @@ Castborn:RegisterCallback("INIT", function()
         for i = #CastbornDB.procs.trackedSpells, 1, -1 do
             local saved = CastbornDB.procs.trackedSpells[i]
             if canonical[saved.name] and canonical[saved.name] ~= saved.spellId then
+                table.remove(CastbornDB.procs.trackedSpells, i)
+            elseif not canonical[saved.name] then
                 table.remove(CastbornDB.procs.trackedSpells, i)
             end
         end
