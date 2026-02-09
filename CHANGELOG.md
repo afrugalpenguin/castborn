@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.10.0
+
+### Features
+- Width and height sliders for target, focus, and target-of-target castbars
+- Width and row height sliders for multi-dot tracker
+- Player castbar height slider now also updates shield and font sizes
+
 ## v4.9.0
 
 ### Features

@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.10.0",
+        features = {
+            "Width and height sliders for target, focus, and target-of-target castbars",
+            "Width and row height sliders for multi-dot tracker",
+        },
+        fixes = {},
+    },
+    {
         version = "4.9.0",
         features = {
             "Trinket cooldown tracking — equipped trinkets with \"Use:\" effects now show above the cooldown tracker",
