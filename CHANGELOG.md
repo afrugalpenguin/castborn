@@ -1,5 +1,11 @@
 # Changelog
 
+## v4.11.1
+
+### Fixes
+- Fixed castbars and module options pages not scrolling properly due to narrow scroll child width
+- Options window widened to prevent slider value text from being clipped
+
 ## v4.11.0
 
 ### Features

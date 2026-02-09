@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.11.1",
+        features = {},
+        fixes = {
+            "Fixed castbars options page not scrolling to show all sections",
+        },
+    },
+    {
         version = "4.11.0",
         features = {
             "Global background opacity slider in Look & Feel options",

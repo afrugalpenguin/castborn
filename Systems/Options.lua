@@ -421,8 +421,11 @@ function Options:CreateContent(catId)
         scrollFrame:SetPoint("TOPLEFT", 0, 0)
         scrollFrame:SetPoint("BOTTOMRIGHT", -24, 0)
         local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-        scrollChild:SetWidth(scrollFrame:GetWidth() or 400)
+        scrollChild:SetWidth(content:GetWidth() - 24)
         scrollFrame:SetScrollChild(scrollChild)
+        scrollFrame:SetScript("OnSizeChanged", function(self, w)
+            if w and w > 0 then scrollChild:SetWidth(w) end
+        end)
         self:BuildCastbars(scrollChild)
     elseif catId == "lookfeel" then
         self:BuildLookFeel(content)
@@ -437,8 +440,11 @@ function Options:CreateContent(catId)
         scrollFrame:SetPoint("BOTTOMRIGHT", -24, 0)
 
         local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-        scrollChild:SetWidth(scrollFrame:GetWidth() or 400)
+        scrollChild:SetWidth(content:GetWidth() - 24)
         scrollFrame:SetScrollChild(scrollChild)
+        scrollFrame:SetScript("OnSizeChanged", function(self, w)
+            if w and w > 0 then scrollChild:SetWidth(w) end
+        end)
 
         self:BuildModule(scrollChild, catId)
     end
