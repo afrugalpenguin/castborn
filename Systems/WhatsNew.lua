@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.12.0",
+        features = {
+            "Water Elemental pet timer in Proc Tracker for Mages",
+        },
+        fixes = {},
+    },
+    {
         version = "4.11.1",
         features = {},
         fixes = {

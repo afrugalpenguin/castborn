@@ -187,6 +187,8 @@ end
 
 local trackedProcs = {}
 local testModeActive = false
+local petSummonTime = nil
+local PET_DURATION = 45
 
 local function ScanProcs()
     -- Don't override test mode display
@@ -220,6 +222,25 @@ local function ScanProcs()
                 spellId = spellId,
                 isNew = not trackedProcs[spellId],
             })
+        end
+    end
+
+    -- Inject Water Elemental pet timer for Mages
+    local _, playerClass = UnitClass("player")
+    if playerClass == "MAGE" and petSummonTime and UnitExists("pet") then
+        local expirationTime = petSummonTime + PET_DURATION
+        if expirationTime > GetTime() then
+            table.insert(activeProcs, {
+                name = "Water Elemental",
+                icon = GetSpellTexture(31687),
+                stacks = 0,
+                duration = PET_DURATION,
+                expirationTime = expirationTime,
+                spellId = 31687,
+                isNew = not trackedProcs[31687],
+            })
+        else
+            petSummonTime = nil
         end
     end
 
@@ -329,8 +350,19 @@ Castborn:RegisterCallback("READY", function()
 
     local eventFrame = CreateFrame("Frame")
     eventFrame:RegisterEvent("UNIT_AURA")
+    eventFrame:RegisterEvent("UNIT_PET")
     eventFrame:SetScript("OnEvent", function(self, event, unit)
-        if unit == "player" then
+        if event == "UNIT_PET" then
+            local _, playerClass = UnitClass("player")
+            if playerClass == "MAGE" then
+                if UnitExists("pet") then
+                    petSummonTime = GetTime()
+                else
+                    petSummonTime = nil
+                end
+                ScanProcs()
+            end
+        elseif unit == "player" then
             ScanProcs()
         end
     end)
@@ -377,6 +409,7 @@ function Castborn:TestProcs()
         testProcs = {
             { icon = "Interface\\Icons\\Spell_Shadow_ManaBurn", duration = 15, remaining = 12.3 },  -- Clearcasting
             { icon = "Interface\\Icons\\Spell_Nature_Lightning", duration = 15, remaining = 8.1 },  -- Arcane Power
+            { icon = "Interface\\Icons\\Spell_Frost_SummonWaterElemental_2", duration = 45, remaining = 31.2 },  -- Water Elemental
         }
     elseif playerClass == "WARLOCK" then
         testProcs = {

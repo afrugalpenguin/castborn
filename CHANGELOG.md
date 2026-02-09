@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.12.0
+
+### Features
+- Water Elemental pet timer in Proc Tracker for Mages — shows a 45s countdown icon when the pet is summoned
+
 ## v4.11.1
 
 ### Fixes
