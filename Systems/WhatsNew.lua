@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.7.2",
+        features = {},
+        fixes = {
+            "Fixed multi-DoT nameplate indicator disappearing after briefly flashing",
+        },
+    },
+    {
         version = "4.7.1",
         features = {
             "Symbol of Hope now tracked in cooldowns for Draenei priests",

@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.7.2
+
+### Fixes
+- Fixed multi-DoT nameplate indicator disappearing after briefly flashing
+
 ## v4.7.1
 
 ### Features
