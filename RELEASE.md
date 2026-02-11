@@ -3,7 +3,7 @@
 Before each release:
 
 - [ ] Update version in `Core.lua`
-- [ ] Update `CHANGELOG.md`
+- [ ] Update `CHANGELOG.md` (add extra blank line between the new and previous version)
 - [ ] Update `Systems/WhatsNew.lua` changelog table
 - [ ] Commit with message: `chore(release): bump version to X.Y.Z`
 - [ ] Create and push tag: `git tag vX.Y.Z && git push origin vX.Y.Z`
