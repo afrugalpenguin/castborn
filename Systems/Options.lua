@@ -1336,6 +1336,16 @@ function Options:BuildModule(parent, key)
         local timersCB = CreateCheckbox(parent, "Show Timers", db, "showDuration")
         timersCB:SetPoint("TOPLEFT", 0, y)
 
+        local glowCB = CreateCheckbox(parent, "Show Proc Glow", db, "showGlow")
+        glowCB:SetPoint("TOPLEFT", 220, y)
+        y = y - 36
+
+        db.iconSize = db.iconSize or 28
+        local iconSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 20, 56, 2, function()
+            if Castborn.ProcTracker then Castborn.ProcTracker:UpdateLayout() end
+        end)
+        iconSlider:SetPoint("TOPLEFT", 0, y)
+
     elseif key == "cooldowns" then
         -- Icon Size and Spacing sliders
         db.iconSize = db.iconSize or 36

@@ -73,6 +73,7 @@ local defaults = {
     yPct = -0.237,
     showDuration = true,
     showStacks = true,
+    showGlow = true,
     trackedSpells = {},  -- Will be populated with class defaults on first load
     anchored = false,
 }
@@ -170,19 +171,17 @@ local function UpdateLayout()
     end
 end
 
-local function PulseGlow(procFrame)
-    local elapsed = 0
-    procFrame.glow:SetAlpha(0.7)
-    procFrame:SetScript("OnUpdate", function(self, delta)
-        elapsed = elapsed + delta
-        local alpha = math.sin(elapsed * 6) * 0.3 + 0.4
-        alpha = math.max(0, math.min(1, alpha))
-        procFrame.glow:SetAlpha(alpha)
-        if elapsed > 0.75 then
-            procFrame:SetScript("OnUpdate", nil)
-            procFrame.glow:SetAlpha(0)
-        end
-    end)
+local function StartGlow(procFrame)
+    if not CastbornDB.procs.showGlow then return end
+    procFrame.glowActive = true
+    procFrame.glowElapsed = 0
+    procFrame.glow:SetAlpha(0.55)
+end
+
+local function StopGlow(procFrame)
+    procFrame.glowActive = false
+    procFrame.glowElapsed = nil
+    procFrame.glow:SetAlpha(0)
 end
 
 local trackedProcs = {}
@@ -289,12 +288,13 @@ local function ScanProcs()
                 procFrame.stacks:SetText("")
             end
 
-            if proc.isNew then
-                PulseGlow(procFrame)
+            if not procFrame.glowActive then
+                StartGlow(procFrame)
             end
 
             procFrame:Show()
         else
+            StopGlow(procFrame)
             procFrame:Hide()
             procFrame.expirationTime = nil
         end
@@ -367,12 +367,23 @@ Castborn:RegisterCallback("READY", function()
         end
     end)
 
-    -- OnUpdate for smooth duration countdown
-    local elapsed = 0
+    -- OnUpdate for smooth duration countdown + glow animation
+    local durationElapsed = 0
     frame:SetScript("OnUpdate", function(self, delta)
-        elapsed = elapsed + delta
-        if elapsed >= 0.1 then
-            elapsed = 0
+        -- Glow animation (every frame for smooth pulsing)
+        for i = 1, MAX_PROCS do
+            local procFrame = procFrames[i]
+            if procFrame.glowActive then
+                procFrame.glowElapsed = (procFrame.glowElapsed or 0) + delta
+                local alpha = math.sin(procFrame.glowElapsed * 4) * 0.25 + 0.55
+                procFrame.glow:SetAlpha(alpha)
+            end
+        end
+
+        -- Duration countdown (throttled to 10fps)
+        durationElapsed = durationElapsed + delta
+        if durationElapsed >= 0.1 then
+            durationElapsed = 0
             local db = CastbornDB.procs
             if not db.showDuration then return end
 
@@ -476,7 +487,7 @@ function Castborn:TestProcs()
             procFrame.stacks:SetText("")
 
             -- Show glow effect
-            PulseGlow(procFrame)
+            StartGlow(procFrame)
 
             procFrame:Show()
         end
@@ -494,7 +505,10 @@ function Castborn:EndTestProcs()
     if frame then
         frame:Hide()
         for i = 1, MAX_PROCS do
-            if procFrames[i] then procFrames[i]:Hide() end
+            if procFrames[i] then
+                StopGlow(procFrames[i])
+                procFrames[i]:Hide()
+            end
         end
     end
 end
@@ -538,5 +552,9 @@ Castborn:RegisterCallback("REATTACH_PROCS", function()
     end
     Castborn:Print("Proc Tracker anchored to castbar")
 end)
+
+function ProcTracker:UpdateLayout()
+    UpdateLayout()
+end
 
 Castborn:RegisterModule("ProcTracker", ProcTracker)
