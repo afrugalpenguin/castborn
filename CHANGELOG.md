@@ -1,5 +1,9 @@
 # Changelog
 
+**v4.13.1**
+
+- Fixed proc icon size slider not working (was writing to wrong DB table)
+
 **v4.13.0**
 
 - Persistent pulsing glow on proc icons for the full buff duration

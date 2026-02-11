@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.13.1",
+        features = {},
+        fixes = {
+            "Fixed proc icon size slider not working",
+        },
+    },
+    {
         version = "4.13.0",
         features = {
             "Persistent pulsing glow on proc icons for the full buff duration",
