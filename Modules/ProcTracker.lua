@@ -159,6 +159,10 @@ local function UpdateLayout()
     local spacing = db.spacing or 4
     local isHorizontal = db.orientation == "HORIZONTAL"
 
+    if frame then
+        frame:SetHeight(size + 4)
+    end
+
     for i, f in ipairs(procFrames) do
         f:ClearAllPoints()
         f:SetSize(size, size)
