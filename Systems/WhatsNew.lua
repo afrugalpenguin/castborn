@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.13.0",
+        features = {
+            "Persistent pulsing glow on proc icons for the full buff duration",
+            "Icon size slider and glow toggle in Proc Tracker options",
+        },
+        fixes = {},
+    },
+    {
         version = "4.12.0",
         features = {
             "Water Elemental pet timer in Proc Tracker for Mages",

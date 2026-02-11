@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.13.0
+
+### Features
+- Persistent pulsing glow on proc icons for the full buff duration
+- Icon size slider (20–56) in Proc Tracker options
+- Show Proc Glow toggle in Proc Tracker options
+
 ## v4.12.0
 
 ### Features
