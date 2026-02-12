@@ -379,7 +379,9 @@ Castborn:RegisterCallback("READY", function()
             local _, playerClass = UnitClass("player")
             if playerClass == "MAGE" then
                 if UnitExists("pet") then
-                    petSummonTime = GetTime()
+                    if not petSummonTime then
+                        petSummonTime = GetTime()
+                    end
                 else
                     petSummonTime = nil
                 end
