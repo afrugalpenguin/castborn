@@ -11,6 +11,7 @@ local MAX_PROCS = 8
 local classProcs = {
     MAGE = {
         { spellId = 12536, name = "Clearcasting" },      -- Arcane Concentration
+        { spellId = 36032, name = "Arcane Blast" },       -- Stacking debuff (up to 3)
         { spellId = 12042, name = "Arcane Power" },
         { spellId = 12472, name = "Icy Veins" },
         { spellId = 12043, name = "Presence of Mind" },
@@ -213,6 +214,24 @@ local function ScanProcs()
     local activeProcs = {}
     for i = 1, 40 do
         local name, icon, stacks, _, duration, expirationTime, _, _, _, spellId = UnitBuff("player", i)
+        if not name then break end
+
+        if trackedById[spellId] or trackedByName[name] then
+            table.insert(activeProcs, {
+                name = name,
+                icon = icon,
+                stacks = stacks,
+                duration = duration,
+                expirationTime = expirationTime,
+                spellId = spellId,
+                isNew = not trackedProcs[spellId],
+            })
+        end
+    end
+
+    -- Also scan debuffs (e.g. Arcane Blast stacking debuff)
+    for i = 1, 40 do
+        local name, icon, stacks, _, duration, expirationTime, _, _, _, spellId = UnitDebuff("player", i)
         if not name then break end
 
         if trackedById[spellId] or trackedByName[name] then
