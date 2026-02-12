@@ -19,9 +19,9 @@ local defaults = {
     showCyclingIndicator = true,
     sortByTime = true,
     -- Nameplate indicators
-    nameplateIndicators = true,
+    nameplateIndicators = false,
     nameplateIndicatorSize = 20,
-    nameplateIndicatorPosition = "TOP",  -- TOP, BOTTOM, LEFT, RIGHT
+    nameplateIndicatorPosition = "BOTTOM",  -- TOP, BOTTOM, LEFT, RIGHT
 }
 
 local trackedTargets = {}
@@ -76,6 +76,12 @@ local function CreateNameplateIndicator()
     })
     indicator:SetBackdropColor(0, 0, 0, 0.7)
     indicator:SetBackdropBorderColor(0.2, 0.8, 0.2, 1)
+
+    -- Spell icon texture
+    indicator.icon = indicator:CreateTexture(nil, "ARTWORK")
+    indicator.icon:SetPoint("TOPLEFT", 1, -1)
+    indicator.icon:SetPoint("BOTTOMRIGHT", -1, 1)
+    indicator.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
 
     -- Glow texture (pulsing border effect)
     indicator.glow = indicator:CreateTexture(nil, "BACKGROUND", nil, -1)
@@ -191,14 +197,17 @@ local function UpdateNameplateIndicators()
     local mostUrgentGUID = nil
     local mostUrgentRemaining = 999
     local mostUrgentUnitId = nil
+    local mostUrgentSpellId = nil
 
     for guid, data in pairs(trackedTargets) do
         -- Find the minimum remaining time across all DoTs for this target
         local minRemaining = 999
+        local minSpellId = nil
         for spellId, dot in pairs(data.dots) do
             local remaining = dot.expirationTime - GetTime()
             if remaining > 0 and remaining < minRemaining then
                 minRemaining = remaining
+                minSpellId = spellId
             end
         end
 
@@ -209,6 +218,7 @@ local function UpdateNameplateIndicators()
                 mostUrgentGUID = guid
                 mostUrgentRemaining = minRemaining
                 mostUrgentUnitId = unitId
+                mostUrgentSpellId = minSpellId
             end
         end
     end
@@ -226,6 +236,9 @@ local function UpdateNameplateIndicators()
             if indicator then
                 if indicator.attachedTo ~= nameplate then
                     AttachIndicatorToNameplate(indicator, nameplate)
+                end
+                if mostUrgentSpellId then
+                    indicator.icon:SetTexture(GetSpellTexture(mostUrgentSpellId))
                 end
                 indicator:Show()
                 UpdateIndicatorUrgency(indicator, mostUrgentRemaining)

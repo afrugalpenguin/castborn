@@ -1585,6 +1585,33 @@ function Options:BuildModule(parent, key)
         db.nameplateIndicatorSize = db.nameplateIndicatorSize or 20
         local npSizeSlider = CreateSlider(parent, "Indicator Size", db, "nameplateIndicatorSize", 14, 32, 1)
         npSizeSlider:SetPoint("TOPLEFT", 0, y)
+
+        -- Position dropdown
+        local posLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        posLabel:SetPoint("TOPLEFT", 220, y)
+        posLabel:SetText("Position:")
+        posLabel:SetTextColor(unpack(C.grey))
+
+        local posDropdown = CreateFrame("Frame", "CastbornNPIndicatorPosDropdown", parent, "UIDropDownMenuTemplate")
+        posDropdown:SetPoint("TOPLEFT", 270, y + 6)
+        UIDropDownMenu_SetWidth(posDropdown, 90)
+
+        local positions = { "BOTTOM", "TOP", "LEFT", "RIGHT" }
+        local positionLabels = { BOTTOM = "Bottom", TOP = "Top", LEFT = "Left", RIGHT = "Right" }
+        UIDropDownMenu_Initialize(posDropdown, function(self, level)
+            for _, pos in ipairs(positions) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = positionLabels[pos]
+                info.value = pos
+                info.checked = (db.nameplateIndicatorPosition == pos)
+                info.func = function()
+                    db.nameplateIndicatorPosition = pos
+                    UIDropDownMenu_SetText(posDropdown, positionLabels[pos])
+                end
+                UIDropDownMenu_AddButton(info)
+            end
+        end)
+        UIDropDownMenu_SetText(posDropdown, positionLabels[db.nameplateIndicatorPosition or "BOTTOM"])
         y = y - 10
     end
 
