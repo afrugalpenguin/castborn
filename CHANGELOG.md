@@ -1,5 +1,13 @@
 # Changelog
 
+**v4.14.0**
+
+- Nameplate indicators now show the DoT spell icon instead of a plain colored square
+- Nameplate indicator default position moved to Bottom to avoid overlapping debuff icons
+- Nameplate indicators now disabled by default (opt-in via options)
+- Added position dropdown (Top/Bottom/Left/Right) to Nameplate Indicator options
+- Fixed water elemental timer briefly renewing on pet despawn
+
 **v4.13.2**
 
 - Arcane Blast stacking debuff now tracked in Proc Tracker for Mages

@@ -14,6 +14,16 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.14.0",
+        features = {
+            "Nameplate indicators now show the DoT spell icon instead of a plain square",
+            "Added position dropdown (Top/Bottom/Left/Right) to Nameplate Indicator options",
+        },
+        fixes = {
+            "Fixed water elemental timer briefly renewing on pet despawn",
+        },
+    },
+    {
         version = "4.13.2",
         features = {
             "Arcane Blast stacking debuff tracked in Proc Tracker for Mages",
