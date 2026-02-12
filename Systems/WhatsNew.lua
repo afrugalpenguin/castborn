@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.13.2",
+        features = {
+            "Arcane Blast stacking debuff tracked in Proc Tracker for Mages",
+        },
+        fixes = {},
+    },
+    {
         version = "4.13.1",
         features = {},
         fixes = {

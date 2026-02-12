@@ -1,5 +1,10 @@
 # Changelog
 
+**v4.13.2**
+
+- Arcane Blast stacking debuff now tracked in Proc Tracker for Mages
+- Proc Tracker now scans player debuffs in addition to buffs
+
 **v4.13.1**
 
 - Fixed proc icon size slider not working (was writing to wrong DB table)
