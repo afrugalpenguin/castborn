@@ -1,5 +1,9 @@
 # Changelog
 
+**v4.17.1**
+
+- Updated README with Absorb Tracker and Ctrl+Shift hide feature
+
 **v4.17.0**
 
 - Ctrl+Shift+Click on a module header while unlocked temporarily hides it, making it easier to position overlapping frames
