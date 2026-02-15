@@ -129,9 +129,17 @@ local steps = {
         class = "SHAMAN",
     },
     {
+        id = "absorbs",
+        title = "Absorb Tracker",
+        description = "Track absorb shields like Ice Barrier, Mana Shield, Fire Ward, Shadow Ward, Power Word: Shield, and more.\n\nShows remaining absorb amount with a drain effect. Multiple shields display as a row of icons.",
+        tip = "Works for all classes — Power Word: Shield from a healer is tracked automatically.",
+        getFrame = function() return _G["Castborn_AbsorbTracker"] end,
+        configKey = "absorbs",
+    },
+    {
         id = "moving",
         title = "Moving & Positioning",
-        description = "All Castborn frames can be repositioned!\n\nType |cff88ddff/cb unlock|r to enable dragging, then drag any frame to your preferred position.",
+        description = "All Castborn frames can be repositioned!\n\nType |cff88ddff/cb unlock|r to enable dragging, then drag any frame to your preferred position.\n\n|cff88ddffCtrl+Shift+Click|r a module header to temporarily hide it — useful when frames overlap.",
         tip = "Use |cff88ddff/cb lock|r when done. Use |cff88ddff/cb grid|r for a positioning grid overlay.",
         frame = nil,
     },
@@ -657,6 +665,12 @@ local function ShowTestFrame(frameId)
         if frame then
             return frame
         end
+    elseif frameId == "absorbs" then
+        if CB.TestAbsorbTracker then CB:TestAbsorbTracker() end
+        local frame = _G["Castborn_AbsorbTracker"]
+        if frame then
+            return frame
+        end
     end
 
     return nil
@@ -843,6 +857,7 @@ function Tutorial:End()
     if CB.EndTestDoTTracker then CB:EndTestDoTTracker() end
     if CB.EndTestMultiDoT then CB:EndTestMultiDoT() end
     if CB.EndTestTotemTracker then CB:EndTestTotemTracker() end
+    if CB.EndTestAbsorbTracker then CB:EndTestAbsorbTracker() end
 
     if tutorialFrame then
         tutorialFrame:Hide()
