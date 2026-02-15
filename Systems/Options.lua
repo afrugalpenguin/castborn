@@ -49,6 +49,7 @@ local categories = {
     { id = "cooldowns", name = "Cooldowns" },
     { id = "interrupt", name = "Interrupt" },
     { id = "totems", name = "Totems", class = "SHAMAN" },
+    { id = "absorbs", name = "Absorbs", class = "MAGE" },
     { divider = true },
     { id = "lookfeel", name = "Look & Feel" },
     { id = "profiles", name = "Profiles" },
@@ -1237,6 +1238,7 @@ function Options:BuildModule(parent, key)
         cooldowns = "Cooldown Tracker",
         interrupt = "Interrupt Tracker",
         totems = "Totem Tracker",
+        absorbs = "Absorb Tracker",
     }
 
     local y = 0
@@ -1250,7 +1252,7 @@ function Options:BuildModule(parent, key)
     local db = CastbornDB[key]
 
     -- Width/Height sliders for applicable modules
-    if key == "gcd" or key == "fsr" or key == "swing" then
+    if key == "gcd" or key == "fsr" or key == "swing" or key == "absorbs" then
         db.width = db.width or 200
         local widthSlider = CreateSlider(parent, "Width", db, "width", 50, 400, 10, function(v)
             if key == "gcd" and Castborn.gcdFrame then Castborn.gcdFrame:SetWidth(v)
@@ -1259,16 +1261,23 @@ function Options:BuildModule(parent, key)
                 if Castborn.swingTimers.mainhand then Castborn.swingTimers.mainhand:SetWidth(v) end
                 if Castborn.swingTimers.offhand then Castborn.swingTimers.offhand:SetWidth(v) end
                 if Castborn.swingTimers.ranged then Castborn.swingTimers.ranged:SetWidth(v) end
+            elseif key == "absorbs" then
+                local f = _G["Castborn_AbsorbTracker"]
+                if f then f:SetWidth(v) end
             end
         end)
         widthSlider:SetPoint("TOPLEFT", 0, y)
 
-        if key == "gcd" or key == "fsr" then
+        if key == "gcd" or key == "fsr" or key == "absorbs" then
             local hKey = db.barHeight ~= nil and "barHeight" or "height"
             db[hKey] = db[hKey] or 12
             local heightSlider = CreateSlider(parent, "Height", db, hKey, 2, 40, 2, function(v)
                 if key == "gcd" and Castborn.gcdFrame then Castborn.gcdFrame:SetHeight(v)
-                elseif key == "fsr" and Castborn.fsrFrame then Castborn.fsrFrame:SetHeight(v) end
+                elseif key == "fsr" and Castborn.fsrFrame then Castborn.fsrFrame:SetHeight(v)
+                elseif key == "absorbs" then
+                    local f = _G["Castborn_AbsorbTracker"]
+                    if f then f:SetHeight(v) end
+                end
             end)
             heightSlider:SetPoint("TOPLEFT", 220, y)
         end
@@ -1613,6 +1622,12 @@ function Options:BuildModule(parent, key)
         end)
         UIDropDownMenu_SetText(posDropdown, positionLabels[db.nameplateIndicatorPosition or "BOTTOM"])
         y = y - 10
+
+    elseif key == "absorbs" then
+        local testBtn = CreateButton(parent, "Test Absorb", 90, function()
+            if Castborn.TestAbsorbTracker then Castborn:TestAbsorbTracker() end
+        end)
+        testBtn:SetPoint("TOPLEFT", 0, y)
     end
 
     -- Set parent height for scroll frame
