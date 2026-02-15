@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.15.1",
+        features = {},
+        fixes = {
+            "Fixed absorb tracker not updating remaining value when taking damage",
+        },
+    },
+    {
         version = "4.15.0",
         features = {
             "New Absorb Tracker for Mages — shows Ice Barrier remaining absorb as a shield icon with radial drain",

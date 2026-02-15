@@ -1,5 +1,9 @@
 # Changelog
 
+**v4.15.1**
+
+- Fixed absorb tracker not updating remaining value when taking damage
+
 **v4.15.0**
 
 - New Absorb Tracker module for Mages — shows Ice Barrier remaining absorb as a circular shield icon with radial sweep drain
