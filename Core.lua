@@ -410,6 +410,8 @@ function CB:RefreshBackdropOpacity()
         table.insert(frames, CB.swingTimers.offhand)
         table.insert(frames, CB.swingTimers.ranged)
     end
+    local absorbFrame = _G["Castborn_AbsorbTracker"]
+    if absorbFrame then table.insert(frames, absorbFrame) end
     for _, f in ipairs(frames) do
         if f and f.bg and f._bgColor then
             local c = f._bgColor
@@ -625,7 +627,7 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         -- Migrate legacy pixel positions to percentages
         if Castborn.Anchoring then
             local positionKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd",
-                                  "interrupt", "cooldowns", "multidot", "procs", "totems"}
+                                  "interrupt", "cooldowns", "multidot", "procs", "totems", "absorbs"}
             for _, key in ipairs(positionKeys) do
                 if CB.db[key] then
                     Castborn.Anchoring:MigratePosition(CB.db[key])

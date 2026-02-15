@@ -527,6 +527,7 @@ function Options:BuildGeneral(parent)
         { key = "buffs", label = "Proc Tracker" },
         { key = "cooldowns", label = "Cooldowns" },
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
+        { key = "absorbs", label = "Absorb Tracker", class = "MAGE" },
     }
 
     local col = 0

@@ -27,6 +27,9 @@ local playerGUID = nil
 --------------------------------------------------------------------------------
 
 local function FadeIn(frame, duration)
+    if frame:IsShown() and frame:GetAlpha() >= 1 then
+        return
+    end
     frame:SetAlpha(0)
     frame:Show()
     local elapsed = 0
@@ -267,10 +270,7 @@ CB:RegisterCallback("INIT", function()
     -- Only enable for mages by default
     local _, class = UnitClass("player")
     if class ~= "MAGE" then
-        -- Don't override if user has explicitly set it
-        if CastbornDB.absorbs.enabled == nil then
-            CastbornDB.absorbs.enabled = false
-        end
+        CastbornDB.absorbs.enabled = false
     end
 end)
 
