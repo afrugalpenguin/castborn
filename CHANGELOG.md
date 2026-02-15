@@ -1,5 +1,10 @@
 # Changelog
 
+**v4.18.0**
+
+- Added Absorb Tracker step to the welcome tutorial
+- Updated positioning tutorial step with Ctrl+Shift+Click hide tip
+
 **v4.17.1**
 
 - Updated README with Absorb Tracker and Ctrl+Shift hide feature

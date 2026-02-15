@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.18.0",
+        features = {
+            "Absorb Tracker added to the welcome tutorial",
+            "Positioning tutorial now mentions Ctrl+Shift+Click to hide overlapping frames",
+        },
+        fixes = {},
+    },
+    {
         version = "4.17.1",
         features = {},
         fixes = {},
