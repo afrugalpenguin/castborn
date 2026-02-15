@@ -13,3 +13,6 @@ ignore:
   - .github
   - "*.svg"
   - "*.png"
+  - docs
+  - tests
+  - .luacheckrc

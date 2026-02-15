@@ -18,6 +18,7 @@ read_globals = {
     -- WoW Frame API
     "CreateFrame",
     "UIParent",
+    "WorldFrame",
     "GameTooltip",
     "DEFAULT_CHAT_FRAME",
     "StaticPopup_Show",

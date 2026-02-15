@@ -15,21 +15,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create addon zip
-        run: |
-          # Create fresh directory with correct case
-          rm -rf Castborn castborn
-          mkdir Castborn
-          cp -r Core.lua Systems/ Modules/ Data/ Castborn.toc CHANGELOG.md Castborn/
-          # Replace version placeholder with tag
-          sed -i "s/@project-version@/${{ github.ref_name }}/g" Castborn/Castborn.toc
-          # Use -r to recurse and preserve folder name exactly
-          zip -r "Castborn-${{ github.ref_name }}.zip" Castborn/
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Package and Release
+        uses: BigWigsMods/packager@v2
         with:
-          files: Castborn-${{ github.ref_name }}.zip
-          generate_release_notes: true
+          args: -p 1437587
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
