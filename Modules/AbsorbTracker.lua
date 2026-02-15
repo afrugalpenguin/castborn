@@ -106,13 +106,35 @@ local function CreateAbsorbShield()
     cooldown:SetHideCountdownNumbers(true)
     frame.cooldown = cooldown
 
-    -- Circular border
-    local border = frame:CreateTexture(nil, "OVERLAY")
-    border:SetPoint("TOPLEFT", -1, 1)
-    border:SetPoint("BOTTOMRIGHT", 1, -1)
-    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-    border:SetVertexColor(0.4, 0.7, 1.0, 0.8)
-    frame.border = border
+    -- Simple colored edge border (1px)
+    local borderSize = 1
+    local borderColor = {0.4, 0.7, 1.0, 0.8}
+
+    local borderTop = frame:CreateTexture(nil, "OVERLAY")
+    borderTop:SetColorTexture(borderColor[1], borderColor[2], borderColor[3], borderColor[4])
+    borderTop:SetPoint("TOPLEFT", -borderSize, borderSize)
+    borderTop:SetPoint("TOPRIGHT", borderSize, borderSize)
+    borderTop:SetHeight(borderSize)
+
+    local borderBottom = frame:CreateTexture(nil, "OVERLAY")
+    borderBottom:SetColorTexture(borderColor[1], borderColor[2], borderColor[3], borderColor[4])
+    borderBottom:SetPoint("BOTTOMLEFT", -borderSize, -borderSize)
+    borderBottom:SetPoint("BOTTOMRIGHT", borderSize, -borderSize)
+    borderBottom:SetHeight(borderSize)
+
+    local borderLeft = frame:CreateTexture(nil, "OVERLAY")
+    borderLeft:SetColorTexture(borderColor[1], borderColor[2], borderColor[3], borderColor[4])
+    borderLeft:SetPoint("TOPLEFT", -borderSize, borderSize)
+    borderLeft:SetPoint("BOTTOMLEFT", -borderSize, -borderSize)
+    borderLeft:SetWidth(borderSize)
+
+    local borderRight = frame:CreateTexture(nil, "OVERLAY")
+    borderRight:SetColorTexture(borderColor[1], borderColor[2], borderColor[3], borderColor[4])
+    borderRight:SetPoint("TOPRIGHT", borderSize, borderSize)
+    borderRight:SetPoint("BOTTOMRIGHT", borderSize, -borderSize)
+    borderRight:SetWidth(borderSize)
+
+    frame.borderTextures = {borderTop, borderBottom, borderLeft, borderRight}
 
     -- Absorb amount text (centered on icon)
     local valueText = frame:CreateFontString(nil, "OVERLAY")
@@ -180,7 +202,9 @@ local function ShowAbsorb(spellId, spellName, absorbAmount, duration)
     if absorbFrame then
         -- Reset icon to full brightness
         absorbFrame.icon:SetVertexColor(1, 1, 1, 1)
-        absorbFrame.border:SetVertexColor(0.4, 0.7, 1.0, 0.8)
+        for _, tex in ipairs(absorbFrame.borderTextures) do
+            tex:SetColorTexture(0.4, 0.7, 1.0, 0.8)
+        end
         -- Reset cooldown sweep
         absorbFrame.cooldown:SetCooldown(0, 0)
         FadeIn(absorbFrame, 0.3)
@@ -227,7 +251,9 @@ local function UpdateAbsorbShield()
     local r = 0.4 + (0.6 * (1 - pct))  -- 0.4 -> 1.0
     local g = 0.7 * pct                 -- 0.7 -> 0.0
     local b = 1.0 * pct                 -- 1.0 -> 0.0
-    absorbFrame.border:SetVertexColor(r, g, b, 0.8)
+    for _, tex in ipairs(absorbFrame.borderTextures) do
+        tex:SetColorTexture(r, g, b, 0.8)
+    end
 
     -- Update text
     absorbFrame.valueText:SetText(FormatNumber(math.floor(remaining)))
@@ -347,7 +373,9 @@ function CB:TestAbsorbTracker()
     testModeActive = true
 
     absorbFrame.icon:SetVertexColor(0.8, 0.8, 0.8, 1)
-    absorbFrame.border:SetVertexColor(0.4, 0.5, 0.7, 0.8)
+    for _, tex in ipairs(absorbFrame.borderTextures) do
+        tex:SetColorTexture(0.4, 0.5, 0.7, 0.8)
+    end
     absorbFrame.cooldown:SetCooldown(GetTime() - 0.35, 1)
     absorbFrame.valueText:SetText("1,847")
     absorbFrame.timerText:SetText("42s")
