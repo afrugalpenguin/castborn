@@ -1253,7 +1253,7 @@ function Options:BuildModule(parent, key)
     local db = CastbornDB[key]
 
     -- Width/Height sliders for applicable modules
-    if key == "gcd" or key == "fsr" or key == "swing" or key == "absorbs" then
+    if key == "gcd" or key == "fsr" or key == "swing" then
         db.width = db.width or 200
         local widthSlider = CreateSlider(parent, "Width", db, "width", 50, 400, 10, function(v)
             if key == "gcd" and Castborn.gcdFrame then Castborn.gcdFrame:SetWidth(v)
@@ -1262,22 +1262,16 @@ function Options:BuildModule(parent, key)
                 if Castborn.swingTimers.mainhand then Castborn.swingTimers.mainhand:SetWidth(v) end
                 if Castborn.swingTimers.offhand then Castborn.swingTimers.offhand:SetWidth(v) end
                 if Castborn.swingTimers.ranged then Castborn.swingTimers.ranged:SetWidth(v) end
-            elseif key == "absorbs" then
-                local f = _G["Castborn_AbsorbTracker"]
-                if f then f:SetWidth(v) end
             end
         end)
         widthSlider:SetPoint("TOPLEFT", 0, y)
 
-        if key == "gcd" or key == "fsr" or key == "absorbs" then
+        if key == "gcd" or key == "fsr" then
             local hKey = db.barHeight ~= nil and "barHeight" or "height"
             db[hKey] = db[hKey] or 12
             local heightSlider = CreateSlider(parent, "Height", db, hKey, 2, 40, 2, function(v)
                 if key == "gcd" and Castborn.gcdFrame then Castborn.gcdFrame:SetHeight(v)
                 elseif key == "fsr" and Castborn.fsrFrame then Castborn.fsrFrame:SetHeight(v)
-                elseif key == "absorbs" then
-                    local f = _G["Castborn_AbsorbTracker"]
-                    if f then f:SetHeight(v) end
                 end
             end)
             heightSlider:SetPoint("TOPLEFT", 220, y)
@@ -1625,6 +1619,14 @@ function Options:BuildModule(parent, key)
         y = y - 10
 
     elseif key == "absorbs" then
+        db.size = db.size or 64
+        local sizeSlider = CreateSlider(parent, "Size", db, "size", 32, 128, 4, function(v)
+            local f = _G["Castborn_AbsorbTracker"]
+            if f then f:SetSize(v, v) end
+        end)
+        sizeSlider:SetPoint("TOPLEFT", 0, y)
+        y = y - 50
+
         local testBtn = CreateButton(parent, "Test Absorb", 90, function()
             if Castborn.TestAbsorbTracker then Castborn:TestAbsorbTracker() end
         end)

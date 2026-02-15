@@ -1,6 +1,7 @@
 --[[
     Castborn - Absorb Tracker Module
     Tracks absorb shield remaining amount (Ice Barrier MVP)
+    Displays as a circular shield icon with radial sweep drain
 ]]
 
 local AbsorbTracker = {}
@@ -70,52 +71,62 @@ local function FormatNumber(num)
 end
 
 --------------------------------------------------------------------------------
--- Frame Creation
+-- Frame Creation — Shield Style
 --------------------------------------------------------------------------------
 
-local function CreateAbsorbBar()
+local function CreateAbsorbShield()
     local cfg = CB.db.absorbs
+    local size = cfg.size or 64
 
     local frame = CreateFrame("Frame", "Castborn_AbsorbTracker", UIParent)
-    frame:SetSize(cfg.width, cfg.barHeight)
+    frame:SetSize(size, size)
     frame:SetFrameStrata("MEDIUM")
     frame:SetFrameLevel(5)
 
-    CB:CreateBackdrop(frame, cfg.bgColor, cfg.borderColor)
+    -- Dark circular background
+    local bg = frame:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+    bg:SetVertexColor(0.05, 0.05, 0.05, 0.7)
+    frame.bg = bg
 
-    local bar = CreateFrame("StatusBar", nil, frame)
-    bar:SetPoint("TOPLEFT", 2, -2)
-    bar:SetPoint("BOTTOMRIGHT", -2, 2)
-    bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-    bar:SetMinMaxValues(0, 1)
-    bar:SetValue(1)
-    bar:SetStatusBarColor(cfg.barColor[1], cfg.barColor[2], cfg.barColor[3], cfg.barColor[4])
-    frame.bar = bar
+    -- Shield icon texture (Ice Barrier spell icon)
+    local icon = frame:CreateTexture(nil, "ARTWORK")
+    icon:SetAllPoints()
+    icon:SetTexture("Interface\\Icons\\Spell_Ice_Lament")
+    frame.icon = icon
 
-    local barBg = bar:CreateTexture(nil, "BACKGROUND")
-    barBg:SetAllPoints()
-    barBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
-    barBg:SetVertexColor(0.1, 0.1, 0.1, 0.8)
+    -- Cooldown sweep overlay (drains as absorb is consumed)
+    local cooldown = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
+    cooldown:SetAllPoints()
+    cooldown:SetDrawEdge(true)
+    cooldown:SetDrawBling(false)
+    cooldown:SetDrawSwipe(true)
+    cooldown:SetReverse(true)
+    cooldown:SetHideCountdownNumbers(true)
+    frame.cooldown = cooldown
 
-    local spark = bar:CreateTexture(nil, "OVERLAY")
-    spark:SetTexture("Interface\\CastingBar\\UI-CastingBar-Spark")
-    spark:SetBlendMode("ADD")
-    spark:SetSize(16, cfg.barHeight * 2)
-    spark:Hide()
-    frame.spark = spark
+    -- Circular border
+    local border = frame:CreateTexture(nil, "OVERLAY")
+    border:SetPoint("TOPLEFT", -1, 1)
+    border:SetPoint("BOTTOMRIGHT", 1, -1)
+    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    border:SetVertexColor(0.4, 0.7, 1.0, 0.8)
+    frame.border = border
 
-    -- Left text: spell name
-    local label = bar:CreateFontString(nil, "OVERLAY")
-    label:SetFont("Fonts\\ARIALN.TTF", math.max(8, cfg.barHeight - 6), "OUTLINE")
-    label:SetPoint("LEFT", bar, "LEFT", 4, 0)
-    label:SetText("")
-    frame.label = label
-
-    -- Right text: absorb remaining + timer
-    local valueText = bar:CreateFontString(nil, "OVERLAY")
-    valueText:SetFont("Fonts\\ARIALN.TTF", math.max(8, cfg.barHeight - 6), "OUTLINE")
-    valueText:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
+    -- Absorb amount text (centered on icon)
+    local valueText = frame:CreateFontString(nil, "OVERLAY")
+    valueText:SetFont("Fonts\\FRIZQT__.TTF", math.max(10, math.floor(size * 0.2)), "OUTLINE")
+    valueText:SetPoint("CENTER", frame, "CENTER", 0, 0)
+    valueText:SetTextColor(1, 1, 1, 1)
     frame.valueText = valueText
+
+    -- Timer text (below the icon)
+    local timerText = frame:CreateFontString(nil, "OVERLAY")
+    timerText:SetFont("Fonts\\FRIZQT__.TTF", math.max(9, math.floor(size * 0.16)), "OUTLINE")
+    timerText:SetPoint("TOP", frame, "BOTTOM", 0, -2)
+    timerText:SetTextColor(0.7, 0.9, 1.0, 1)
+    frame.timerText = timerText
 
     -- Make draggable via Anchoring system
     if Castborn.Anchoring then
@@ -167,7 +178,11 @@ local function ShowAbsorb(spellId, spellName, absorbAmount, duration)
     absorbState.duration = duration
 
     if absorbFrame then
-        absorbFrame.label:SetText(spellName)
+        -- Reset icon to full brightness
+        absorbFrame.icon:SetVertexColor(1, 1, 1, 1)
+        absorbFrame.border:SetVertexColor(0.4, 0.7, 1.0, 0.8)
+        -- Reset cooldown sweep
+        absorbFrame.cooldown:SetCooldown(0, 0)
         FadeIn(absorbFrame, 0.3)
     end
 end
@@ -179,19 +194,13 @@ local function HideAbsorb()
     end
 end
 
-local function UpdateAbsorbBar()
+local function UpdateAbsorbShield()
     if not absorbFrame or not absorbState.active then return end
     if not CB.db.absorbs.enabled then absorbFrame:Hide() return end
 
     local remaining = absorbState.remaining
     local max = absorbState.maxAbsorb
-
-    if max > 0 then
-        absorbFrame.bar:SetValue(remaining / max)
-        local sparkPos = (remaining / max) * absorbFrame.bar:GetWidth()
-        absorbFrame.spark:SetPoint("CENTER", absorbFrame.bar, "LEFT", sparkPos, 0)
-        absorbFrame.spark:Show()
-    end
+    local pct = max > 0 and (remaining / max) or 0
 
     -- Time remaining
     local timeLeft = (absorbState.startTime + absorbState.duration) - GetTime()
@@ -200,7 +209,29 @@ local function UpdateAbsorbBar()
         return
     end
 
-    absorbFrame.valueText:SetText(FormatNumber(math.floor(remaining)) .. " | " .. string.format("%.0f", timeLeft) .. "s")
+    -- Update cooldown sweep to show absorb consumed (reverse sweep)
+    -- We use the ratio of absorb consumed to drive the sweep
+    local consumed = 1 - pct
+    if consumed > 0 then
+        -- SetCooldown with a fake duration so the sweep shows the consumed portion
+        absorbFrame.cooldown:SetCooldown(GetTime() - consumed, 1)
+    else
+        absorbFrame.cooldown:SetCooldown(0, 0)
+    end
+
+    -- Dim the icon as absorb drains (full brightness at 100%, dimmer as it drains)
+    local brightness = 0.4 + (0.6 * pct)  -- Range: 0.4 (depleted) to 1.0 (full)
+    absorbFrame.icon:SetVertexColor(brightness, brightness, brightness, 1)
+
+    -- Shift border color from bright blue to dull red as shield weakens
+    local r = 0.4 + (0.6 * (1 - pct))  -- 0.4 -> 1.0
+    local g = 0.7 * pct                 -- 0.7 -> 0.0
+    local b = 1.0 * pct                 -- 1.0 -> 0.0
+    absorbFrame.border:SetVertexColor(r, g, b, 0.8)
+
+    -- Update text
+    absorbFrame.valueText:SetText(FormatNumber(math.floor(remaining)))
+    absorbFrame.timerText:SetText(string.format("%.0f", timeLeft) .. "s")
 end
 
 --------------------------------------------------------------------------------
@@ -254,11 +285,7 @@ end
 
 local defaults = {
     enabled = true,
-    width = 250,
-    barHeight = 20,
-    barColor = {0.4, 0.7, 1.0, 1.0},
-    bgColor = {0.1, 0.1, 0.1, 0.8},
-    borderColor = {0.3, 0.3, 0.3, 1},
+    size = 64,
     point = "CENTER",
     xPct = 0,
     yPct = -0.185,
@@ -266,6 +293,13 @@ local defaults = {
 
 CB:RegisterCallback("INIT", function()
     CastbornDB.absorbs = CB:MergeDefaults(CastbornDB.absorbs or {}, defaults)
+
+    -- Clean up stale bar-style settings from v1
+    CastbornDB.absorbs.width = nil
+    CastbornDB.absorbs.barHeight = nil
+    CastbornDB.absorbs.barColor = nil
+    CastbornDB.absorbs.bgColor = nil
+    CastbornDB.absorbs.borderColor = nil
 
     -- Only enable for mages by default
     local _, class = UnitClass("player")
@@ -280,7 +314,7 @@ CB:RegisterCallback("READY", function()
     if not CastbornDB.absorbs.enabled then return end
 
     playerGUID = UnitGUID("player")
-    absorbFrame = CreateAbsorbBar()
+    absorbFrame = CreateAbsorbShield()
 
     -- Event frame for combat log
     local eventFrame = CreateFrame("Frame")
@@ -294,7 +328,7 @@ CB:RegisterCallback("READY", function()
     -- Update loop
     CB:CreateThrottledUpdater(0.05, function()
         if testModeActive then return end
-        UpdateAbsorbBar()
+        UpdateAbsorbShield()
     end)
 
     -- Register with TestManager
@@ -312,12 +346,11 @@ function CB:TestAbsorbTracker()
     if not absorbFrame then return end
     testModeActive = true
 
-    absorbFrame.label:SetText("Ice Barrier")
-    absorbFrame.bar:SetValue(0.65)
-    local sparkPos = 0.65 * absorbFrame.bar:GetWidth()
-    absorbFrame.spark:SetPoint("CENTER", absorbFrame.bar, "LEFT", sparkPos, 0)
-    absorbFrame.spark:Show()
-    absorbFrame.valueText:SetText("1,847 | 42s")
+    absorbFrame.icon:SetVertexColor(0.8, 0.8, 0.8, 1)
+    absorbFrame.border:SetVertexColor(0.4, 0.5, 0.7, 0.8)
+    absorbFrame.cooldown:SetCooldown(GetTime() - 0.35, 1)
+    absorbFrame.valueText:SetText("1,847")
+    absorbFrame.timerText:SetText("42s")
     absorbFrame:SetAlpha(1)
     absorbFrame:Show()
 end
