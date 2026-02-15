@@ -527,7 +527,7 @@ function Options:BuildGeneral(parent)
         { key = "buffs", label = "Proc Tracker" },
         { key = "cooldowns", label = "Cooldowns" },
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
-        { key = "absorbs", label = "Absorb Tracker", class = "MAGE" },
+        { key = "absorbs", label = "Absorb Tracker" },
     }
 
     local col = 0
@@ -1619,13 +1619,25 @@ function Options:BuildModule(parent, key)
         y = y - 10
 
     elseif key == "absorbs" then
-        db.size = db.size or 64
+        db.size = db.size or 48
         local sizeSlider = CreateSlider(parent, "Size", db, "size", 32, 128, 4, function(v)
             local f = _G["Castborn_AbsorbTracker"]
             if f then f:SetSize(v, v) end
         end)
         sizeSlider:SetPoint("TOPLEFT", 0, y)
+        db.spacing = db.spacing or 4
+        local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
+        spacingSlider:SetPoint("TOPLEFT", 220, y)
         y = y - 50
+
+        -- Grow direction checkbox
+        local growCB = CreateCheckbox(parent, "Grow Left", db, "growLeft", function(v)
+            db.growDirection = v and "LEFT" or "RIGHT"
+        end)
+        db.growLeft = (db.growDirection == "LEFT")
+        growCB:SetChecked(db.growLeft)
+        growCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
 
         local testBtn = CreateButton(parent, "Test Absorb", 90, function()
             if Castborn.TestAbsorbTracker then Castborn:TestAbsorbTracker() end

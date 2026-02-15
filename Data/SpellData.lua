@@ -487,6 +487,7 @@ function SpellData:GetRacialCooldowns(race)
 end
 
 -- Absorb shields (keyed by buff spell ID)
+-- school field = school-specific absorb (only absorbs that school), nil = absorbs all
 SpellData.absorbs = {
     -- Mage - Ice Barrier (all ranks)
     [11426] = { name = "Ice Barrier", duration = 60, class = "MAGE" },
@@ -495,6 +496,60 @@ SpellData.absorbs = {
     [13033] = { name = "Ice Barrier", duration = 60, class = "MAGE" },
     [27134] = { name = "Ice Barrier", duration = 60, class = "MAGE" },
     [33405] = { name = "Ice Barrier", duration = 60, class = "MAGE" },
+
+    -- Mage - Mana Shield (all ranks)
+    [1463]  = { name = "Mana Shield", duration = 60, class = "MAGE" },
+    [8494]  = { name = "Mana Shield", duration = 60, class = "MAGE" },
+    [8495]  = { name = "Mana Shield", duration = 60, class = "MAGE" },
+    [10191] = { name = "Mana Shield", duration = 60, class = "MAGE" },
+    [10192] = { name = "Mana Shield", duration = 60, class = "MAGE" },
+    [10193] = { name = "Mana Shield", duration = 60, class = "MAGE" },
+    [27131] = { name = "Mana Shield", duration = 60, class = "MAGE" },
+
+    -- Mage - Fire Ward (all ranks) — fire only
+    [543]   = { name = "Fire Ward", duration = 30, class = "MAGE", school = 4 },
+    [8457]  = { name = "Fire Ward", duration = 30, class = "MAGE", school = 4 },
+    [8458]  = { name = "Fire Ward", duration = 30, class = "MAGE", school = 4 },
+    [10223] = { name = "Fire Ward", duration = 30, class = "MAGE", school = 4 },
+    [10225] = { name = "Fire Ward", duration = 30, class = "MAGE", school = 4 },
+    [27128] = { name = "Fire Ward", duration = 30, class = "MAGE", school = 4 },
+
+    -- Mage - Frost Ward (all ranks) — frost only
+    [6143]  = { name = "Frost Ward", duration = 30, class = "MAGE", school = 16 },
+    [8461]  = { name = "Frost Ward", duration = 30, class = "MAGE", school = 16 },
+    [8462]  = { name = "Frost Ward", duration = 30, class = "MAGE", school = 16 },
+    [10177] = { name = "Frost Ward", duration = 30, class = "MAGE", school = 16 },
+    [28609] = { name = "Frost Ward", duration = 30, class = "MAGE", school = 16 },
+    [32796] = { name = "Frost Ward", duration = 30, class = "MAGE", school = 16 },
+
+    -- Warlock - Shadow Ward (all ranks) — shadow only
+    [6229]  = { name = "Shadow Ward", duration = 30, class = "WARLOCK", school = 32 },
+    [11739] = { name = "Shadow Ward", duration = 30, class = "WARLOCK", school = 32 },
+    [11740] = { name = "Shadow Ward", duration = 30, class = "WARLOCK", school = 32 },
+    [28610] = { name = "Shadow Ward", duration = 30, class = "WARLOCK", school = 32 },
+
+    -- Warlock - Sacrifice / Voidwalker (all ranks)
+    [7812]  = { name = "Sacrifice", duration = 30, class = "WARLOCK" },
+    [19438] = { name = "Sacrifice", duration = 30, class = "WARLOCK" },
+    [19440] = { name = "Sacrifice", duration = 30, class = "WARLOCK" },
+    [19441] = { name = "Sacrifice", duration = 30, class = "WARLOCK" },
+    [19442] = { name = "Sacrifice", duration = 30, class = "WARLOCK" },
+    [19443] = { name = "Sacrifice", duration = 30, class = "WARLOCK" },
+    [27273] = { name = "Sacrifice", duration = 30, class = "WARLOCK" },
+
+    -- Priest - Power Word: Shield (all ranks) — can be external
+    [17]    = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [592]   = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [600]   = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [3747]  = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [6065]  = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [6066]  = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [10898] = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [10899] = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [10900] = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [10901] = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [25217] = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
+    [25218] = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
 }
 
 function SpellData:GetAbsorbInfo(spellId)

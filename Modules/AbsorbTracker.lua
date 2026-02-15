@@ -1,7 +1,8 @@
 --[[
     Castborn - Absorb Tracker Module
-    Tracks absorb shield remaining amount (Ice Barrier MVP)
-    Displays as a circular shield icon with radial sweep drain
+    Tracks absorb shield remaining amounts across all TBC absorb spells.
+    Displays as circular shield icons with radial sweep drain.
+    Supports multiple simultaneous absorbs with configurable grow direction.
 ]]
 
 local AbsorbTracker = {}
@@ -10,16 +11,10 @@ Castborn.AbsorbTracker = AbsorbTracker
 local CB = Castborn
 
 -- State
-local absorbFrame = nil
-local absorbState = {
-    active = false,
-    spellId = nil,
-    spellName = nil,
-    maxAbsorb = 0,
-    remaining = 0,
-    startTime = 0,
-    duration = 0,
-}
+local containerFrame = nil
+local activeAbsorbs = {}   -- ordered array of { spellId, spellName, maxAbsorb, remaining, startTime, duration, school, frame }
+local iconPool = {}        -- recycled icon frames
+local MAX_ABSORBS = 6
 local testModeActive = false
 local playerGUID = nil
 
@@ -70,15 +65,24 @@ local function FormatNumber(num)
     return tostring(num)
 end
 
+local function GetAbsorbBorderColor(school)
+    if school then
+        local color = Castborn.SpellData:GetSchoolColor(school)
+        return color[1], color[2], color[3], 0.8
+    end
+    -- Default frost-blue for general absorbs
+    return 0.4, 0.7, 1.0, 0.8
+end
+
 --------------------------------------------------------------------------------
--- Frame Creation — Shield Style
+-- Frame Creation — Icon Pool
 --------------------------------------------------------------------------------
 
-local function CreateAbsorbShield()
+local function CreateAbsorbIcon()
     local cfg = CB.db.absorbs
-    local size = cfg.size or 64
+    local size = cfg.size or 48
 
-    local frame = CreateFrame("Frame", "Castborn_AbsorbTracker", UIParent)
+    local frame = CreateFrame("Frame", nil, containerFrame)
     frame:SetSize(size, size)
     frame:SetFrameStrata("MEDIUM")
     frame:SetFrameLevel(5)
@@ -90,10 +94,9 @@ local function CreateAbsorbShield()
     bg:SetVertexColor(0.05, 0.05, 0.05, 0.7)
     frame.bg = bg
 
-    -- Shield icon texture (Ice Barrier spell icon)
+    -- Spell icon texture (set dynamically)
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetAllPoints()
-    icon:SetTexture("Interface\\Icons\\Spell_Ice_Lament")
     frame.icon = icon
 
     -- Cooldown sweep overlay (drains as absorb is consumed)
@@ -108,28 +111,27 @@ local function CreateAbsorbShield()
 
     -- Simple colored edge border (1px)
     local borderSize = 1
-    local borderColor = {0.4, 0.7, 1.0, 0.8}
 
     local borderTop = frame:CreateTexture(nil, "OVERLAY")
-    borderTop:SetColorTexture(borderColor[1], borderColor[2], borderColor[3], borderColor[4])
+    borderTop:SetColorTexture(0.4, 0.7, 1.0, 0.8)
     borderTop:SetPoint("TOPLEFT", -borderSize, borderSize)
     borderTop:SetPoint("TOPRIGHT", borderSize, borderSize)
     borderTop:SetHeight(borderSize)
 
     local borderBottom = frame:CreateTexture(nil, "OVERLAY")
-    borderBottom:SetColorTexture(borderColor[1], borderColor[2], borderColor[3], borderColor[4])
+    borderBottom:SetColorTexture(0.4, 0.7, 1.0, 0.8)
     borderBottom:SetPoint("BOTTOMLEFT", -borderSize, -borderSize)
     borderBottom:SetPoint("BOTTOMRIGHT", borderSize, -borderSize)
     borderBottom:SetHeight(borderSize)
 
     local borderLeft = frame:CreateTexture(nil, "OVERLAY")
-    borderLeft:SetColorTexture(borderColor[1], borderColor[2], borderColor[3], borderColor[4])
+    borderLeft:SetColorTexture(0.4, 0.7, 1.0, 0.8)
     borderLeft:SetPoint("TOPLEFT", -borderSize, borderSize)
     borderLeft:SetPoint("BOTTOMLEFT", -borderSize, -borderSize)
     borderLeft:SetWidth(borderSize)
 
     local borderRight = frame:CreateTexture(nil, "OVERLAY")
-    borderRight:SetColorTexture(borderColor[1], borderColor[2], borderColor[3], borderColor[4])
+    borderRight:SetColorTexture(0.4, 0.7, 1.0, 0.8)
     borderRight:SetPoint("TOPRIGHT", borderSize, borderSize)
     borderRight:SetPoint("BOTTOMRIGHT", borderSize, -borderSize)
     borderRight:SetWidth(borderSize)
@@ -150,16 +152,53 @@ local function CreateAbsorbShield()
     timerText:SetTextColor(0.7, 0.9, 1.0, 1)
     frame.timerText = timerText
 
-    -- Make draggable via Anchoring system
-    if Castborn.Anchoring then
-        Castborn.Anchoring:MakeDraggable(frame, CB.db.absorbs, nil, "Absorb Tracker")
-    else
-        CB:MakeMoveable(frame, "absorbs")
-    end
-    CB:ApplyPosition(frame, "absorbs")
-
     frame:Hide()
     return frame
+end
+
+local function AcquireIcon()
+    local icon = tremove(iconPool)
+    if not icon then
+        icon = CreateAbsorbIcon()
+    end
+    return icon
+end
+
+local function ReleaseIcon(icon)
+    icon:Hide()
+    icon.cooldown:SetCooldown(0, 0)
+    icon.valueText:SetText("")
+    icon.timerText:SetText("")
+    icon:ClearAllPoints()
+    tinsert(iconPool, icon)
+end
+
+--------------------------------------------------------------------------------
+-- Layout
+--------------------------------------------------------------------------------
+
+local function LayoutIcons()
+    local db = CB.db.absorbs
+    local size = db.size or 48
+    local spacing = db.spacing or 4
+
+    for i, absorb in ipairs(activeAbsorbs) do
+        local icon = absorb.frame
+        if icon then
+            icon:ClearAllPoints()
+            icon:SetSize(size, size)
+
+            -- Update font sizes when size changes
+            icon.valueText:SetFont("Fonts\\FRIZQT__.TTF", math.max(10, math.floor(size * 0.2)), "OUTLINE")
+            icon.timerText:SetFont("Fonts\\FRIZQT__.TTF", math.max(9, math.floor(size * 0.16)), "OUTLINE")
+
+            if db.growDirection == "RIGHT" then
+                icon:SetPoint("LEFT", containerFrame, "LEFT", (i - 1) * (size + spacing), 0)
+            else
+                icon:SetPoint("RIGHT", containerFrame, "RIGHT", -((i - 1) * (size + spacing)), 0)
+            end
+        end
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -175,7 +214,6 @@ local function ScanAbsorbTooltip(spellId)
     for i = 1, scanTooltip:NumLines() do
         local text = _G["CastbornAbsorbScanTooltipTextLeft" .. i]:GetText()
         if text then
-            -- Match patterns like "Absorbs 2847 damage" or "absorbs up to 2847 damage"
             local amount = text:match("(%d[%d,]+)%s+damage")
             if amount then
                 amount = amount:gsub(",", "")
@@ -187,77 +225,229 @@ local function ScanAbsorbTooltip(spellId)
 end
 
 --------------------------------------------------------------------------------
--- Show / Hide / Update
+-- Absorb Management
 --------------------------------------------------------------------------------
 
-local function ShowAbsorb(spellId, spellName, absorbAmount, duration)
-    absorbState.active = true
-    absorbState.spellId = spellId
-    absorbState.spellName = spellName
-    absorbState.maxAbsorb = absorbAmount
-    absorbState.remaining = absorbAmount
-    absorbState.startTime = GetTime()
-    absorbState.duration = duration
-
-    if absorbFrame then
-        -- Reset icon to full brightness
-        absorbFrame.icon:SetVertexColor(1, 1, 1, 1)
-        for _, tex in ipairs(absorbFrame.borderTextures) do
-            tex:SetColorTexture(0.4, 0.7, 1.0, 0.8)
+local function FindAbsorbBySpellId(spellId)
+    for i, absorb in ipairs(activeAbsorbs) do
+        if absorb.spellId == spellId then
+            return i, absorb
         end
-        -- Reset cooldown sweep
-        absorbFrame.cooldown:SetCooldown(0, 0)
-        FadeIn(absorbFrame, 0.3)
     end
+    return nil, nil
 end
 
-local function HideAbsorb()
-    absorbState.active = false
-    if absorbFrame and absorbFrame:IsShown() then
-        FadeOut(absorbFrame, 0.3)
+local function FindAbsorbByName(name)
+    for i, absorb in ipairs(activeAbsorbs) do
+        if absorb.spellName == name then
+            return i, absorb
+        end
     end
+    return nil, nil
 end
 
-local function UpdateAbsorbShield()
-    if not absorbFrame or not absorbState.active then return end
-    if not CB.db.absorbs.enabled then absorbFrame:Hide() return end
+local function SetupIconVisuals(icon, spellId, school)
+    -- Set spell icon texture
+    local texture = GetSpellTexture(spellId)
+    if texture then
+        icon.icon:SetTexture(texture)
+    end
 
-    local remaining = absorbState.remaining
-    local max = absorbState.maxAbsorb
-    local pct = max > 0 and (remaining / max) or 0
+    -- Set border color based on spell school
+    local r, g, b, a = GetAbsorbBorderColor(school)
+    for _, tex in ipairs(icon.borderTextures) do
+        tex:SetColorTexture(r, g, b, a)
+    end
 
-    -- Time remaining
-    local timeLeft = (absorbState.startTime + absorbState.duration) - GetTime()
-    if timeLeft <= 0 then
-        HideAbsorb()
+    -- Store base border color for drain effect
+    icon.baseBorderR = r
+    icon.baseBorderG = g
+    icon.baseBorderB = b
+end
+
+local function AddAbsorb(spellId, spellName, absorbAmount, duration, school)
+    if #activeAbsorbs >= MAX_ABSORBS then return end
+
+    -- Check if this spell is already tracked (refresh case handled separately)
+    local _, existing = FindAbsorbBySpellId(spellId)
+    if existing then return end
+
+    -- Also check by name since different ranks have different spellIds
+    local existIdx, existByName = FindAbsorbByName(spellName)
+    if existByName then
+        -- Replace existing with new rank
+        existByName.spellId = spellId
+        existByName.maxAbsorb = absorbAmount
+        existByName.remaining = absorbAmount
+        existByName.startTime = GetTime()
+        existByName.duration = duration
+        existByName.school = school
+        SetupIconVisuals(existByName.frame, spellId, school)
+        existByName.frame.icon:SetVertexColor(1, 1, 1, 1)
+        existByName.frame.cooldown:SetCooldown(0, 0)
+        FadeIn(existByName.frame, 0.3)
         return
     end
 
-    -- Update cooldown sweep to show absorb consumed (reverse sweep)
-    -- We use the ratio of absorb consumed to drive the sweep
-    local consumed = 1 - pct
-    if consumed > 0 then
-        -- SetCooldown with a fake duration so the sweep shows the consumed portion
-        absorbFrame.cooldown:SetCooldown(GetTime() - consumed, 1)
+    local icon = AcquireIcon()
+    SetupIconVisuals(icon, spellId, school)
+    icon.icon:SetVertexColor(1, 1, 1, 1)
+    icon.cooldown:SetCooldown(0, 0)
+
+    local entry = {
+        spellId = spellId,
+        spellName = spellName,
+        maxAbsorb = absorbAmount,
+        remaining = absorbAmount,
+        startTime = GetTime(),
+        duration = duration,
+        school = school,
+        frame = icon,
+    }
+    tinsert(activeAbsorbs, entry)
+
+    LayoutIcons()
+    FadeIn(icon, 0.3)
+end
+
+local function RefreshAbsorb(spellId, absorbAmount, duration)
+    local _, absorb = FindAbsorbBySpellId(spellId)
+    if not absorb then return end
+
+    absorb.maxAbsorb = absorbAmount
+    absorb.remaining = absorbAmount
+    absorb.startTime = GetTime()
+    absorb.duration = duration
+    absorb.frame.icon:SetVertexColor(1, 1, 1, 1)
+    absorb.frame.cooldown:SetCooldown(0, 0)
+
+    local r, g, b, a = GetAbsorbBorderColor(absorb.school)
+    for _, tex in ipairs(absorb.frame.borderTextures) do
+        tex:SetColorTexture(r, g, b, a)
+    end
+end
+
+local function RemoveAbsorb(spellId)
+    local idx, absorb = FindAbsorbBySpellId(spellId)
+    if not absorb then return end
+
+    ReleaseIcon(absorb.frame)
+    tremove(activeAbsorbs, idx)
+    LayoutIcons()
+end
+
+local function RemoveAbsorbByName(name)
+    local idx, absorb = FindAbsorbByName(name)
+    if not absorb then return end
+
+    ReleaseIcon(absorb.frame)
+    tremove(activeAbsorbs, idx)
+    LayoutIcons()
+end
+
+local function ClearAllAbsorbs()
+    for i = #activeAbsorbs, 1, -1 do
+        ReleaseIcon(activeAbsorbs[i].frame)
+        tremove(activeAbsorbs, i)
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Damage Attribution
+--------------------------------------------------------------------------------
+
+local function ApplyAbsorbedDamage(absorbed, damageSchool)
+    if absorbed <= 0 then return end
+
+    local remaining = absorbed
+
+    -- First pass: school-specific absorbs that match the damage school
+    for _, absorb in ipairs(activeAbsorbs) do
+        if remaining <= 0 then break end
+        if absorb.school and absorb.school == damageSchool then
+            local applied = math.min(remaining, absorb.remaining)
+            absorb.remaining = absorb.remaining - applied
+            remaining = remaining - applied
+        end
+    end
+
+    -- Second pass: general absorbs (no school restriction), oldest first
+    for _, absorb in ipairs(activeAbsorbs) do
+        if remaining <= 0 then break end
+        if not absorb.school then
+            local applied = math.min(remaining, absorb.remaining)
+            absorb.remaining = absorb.remaining - applied
+            remaining = remaining - applied
+        end
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Update Loop
+--------------------------------------------------------------------------------
+
+local function UpdateAbsorbIcons()
+    if not containerFrame then return end
+    if not CB.db.absorbs.enabled then
+        containerFrame:Hide()
+        return
+    end
+
+    local now = GetTime()
+
+    -- Update each active absorb icon
+    for i = #activeAbsorbs, 1, -1 do
+        local absorb = activeAbsorbs[i]
+        local icon = absorb.frame
+
+        local timeLeft = (absorb.startTime + absorb.duration) - now
+        if timeLeft <= 0 then
+            -- Expired
+            ReleaseIcon(icon)
+            tremove(activeAbsorbs, i)
+        elseif icon then
+            local pct = absorb.maxAbsorb > 0 and (absorb.remaining / absorb.maxAbsorb) or 0
+
+            -- Update cooldown sweep
+            local consumed = 1 - pct
+            if consumed > 0 then
+                icon.cooldown:SetCooldown(now - consumed, 1)
+            else
+                icon.cooldown:SetCooldown(0, 0)
+            end
+
+            -- Dim icon as absorb drains
+            local brightness = 0.4 + (0.6 * pct)
+            icon.icon:SetVertexColor(brightness, brightness, brightness, 1)
+
+            -- Shift border color towards red as shield weakens
+            local baseR = icon.baseBorderR or 0.4
+            local baseG = icon.baseBorderG or 0.7
+            local baseB = icon.baseBorderB or 1.0
+            local r = baseR + ((1.0 - baseR) * (1 - pct))
+            local g = baseG * pct
+            local b = baseB * pct
+            for _, tex in ipairs(icon.borderTextures) do
+                tex:SetColorTexture(r, g, b, 0.8)
+            end
+
+            -- Update text
+            icon.valueText:SetText(FormatNumber(math.floor(absorb.remaining)))
+            icon.timerText:SetText(string.format("%.0f", timeLeft) .. "s")
+        end
+    end
+
+    -- Re-layout after removing expired absorbs
+    LayoutIcons()
+
+    -- Show/hide container based on active absorbs
+    if #activeAbsorbs > 0 then
+        if not containerFrame:IsShown() then
+            containerFrame:Show()
+        end
     else
-        absorbFrame.cooldown:SetCooldown(0, 0)
+        containerFrame:Hide()
     end
-
-    -- Dim the icon as absorb drains (full brightness at 100%, dimmer as it drains)
-    local brightness = 0.4 + (0.6 * pct)  -- Range: 0.4 (depleted) to 1.0 (full)
-    absorbFrame.icon:SetVertexColor(brightness, brightness, brightness, 1)
-
-    -- Shift border color from bright blue to dull red as shield weakens
-    local r = 0.4 + (0.6 * (1 - pct))  -- 0.4 -> 1.0
-    local g = 0.7 * pct                 -- 0.7 -> 0.0
-    local b = 1.0 * pct                 -- 1.0 -> 0.0
-    for _, tex in ipairs(absorbFrame.borderTextures) do
-        tex:SetColorTexture(r, g, b, 0.8)
-    end
-
-    -- Update text
-    absorbFrame.valueText:SetText(FormatNumber(math.floor(remaining)))
-    absorbFrame.timerText:SetText(string.format("%.0f", timeLeft) .. "s")
 end
 
 --------------------------------------------------------------------------------
@@ -267,14 +457,24 @@ end
 local function OnCombatLogEvent()
     local _, subevent, _, sourceGUID, _, _, _, destGUID = CombatLogGetCurrentEventInfo()
 
-    -- Check for absorb buff applied (self-cast)
-    if (subevent == "SPELL_AURA_APPLIED" or subevent == "SPELL_AURA_REFRESH") and sourceGUID == playerGUID and destGUID == playerGUID then
+    -- Check for absorb buff applied (any source, on player)
+    if (subevent == "SPELL_AURA_APPLIED" or subevent == "SPELL_AURA_REFRESH") and destGUID == playerGUID then
         local spellId, spellName = select(12, CombatLogGetCurrentEventInfo())
         local absorbInfo = Castborn.SpellData:GetAbsorbInfo(spellId)
         if absorbInfo then
             local absorbAmount = ScanAbsorbTooltip(spellId)
             if absorbAmount and absorbAmount > 0 then
-                ShowAbsorb(spellId, absorbInfo.name, absorbAmount, absorbInfo.duration)
+                if subevent == "SPELL_AURA_REFRESH" then
+                    -- Try refresh first, fall back to add
+                    local _, existing = FindAbsorbBySpellId(spellId)
+                    if existing then
+                        RefreshAbsorb(spellId, absorbAmount, absorbInfo.duration)
+                    else
+                        AddAbsorb(spellId, absorbInfo.name, absorbAmount, absorbInfo.duration, absorbInfo.school)
+                    end
+                else
+                    AddAbsorb(spellId, absorbInfo.name, absorbAmount, absorbInfo.duration, absorbInfo.school)
+                end
             end
         end
     end
@@ -282,52 +482,56 @@ local function OnCombatLogEvent()
     -- Check for absorb buff removed
     if subevent == "SPELL_AURA_REMOVED" and destGUID == playerGUID then
         local spellId = select(12, CombatLogGetCurrentEventInfo())
-        if absorbState.active and absorbState.spellId == spellId then
-            HideAbsorb()
+        local absorbInfo = Castborn.SpellData:GetAbsorbInfo(spellId)
+        if absorbInfo then
+            -- Try by spellId first, then by name (handles rank differences)
+            local idx = FindAbsorbBySpellId(spellId)
+            if idx then
+                RemoveAbsorb(spellId)
+            else
+                RemoveAbsorbByName(absorbInfo.name)
+            end
         end
     end
 
-    -- Track damage absorbed while shield is active
-    if absorbState.active and destGUID == playerGUID then
+    -- Track damage absorbed while any shields are active
+    if #activeAbsorbs > 0 and destGUID == playerGUID then
         local absorbed = 0
+        local damageSchool = 1  -- default physical
 
         if subevent == "SWING_DAMAGE" then
-            -- SWING_DAMAGE suffix: amount, overkill, school, resisted, blocked, absorbed, ...
-            -- Search params 12-20 for the absorbed value (position varies by client)
-            local p12, p13, p14, p15, p16, p17, p18, p19, p20 = select(12, CombatLogGetCurrentEventInfo())
-            -- absorbed is typically at position 17 (index 6 in suffix), but try known positions
+            damageSchool = 1
+            local p12, p13, p14, p15, p16, p17 = select(12, CombatLogGetCurrentEventInfo())
             absorbed = (type(p17) == "number" and p17) or 0
-            -- If p17 is 0/1 (looks like a boolean for critical), try p16 instead
             if absorbed <= 1 and type(p16) == "number" and p16 > 1 then
                 absorbed = p16
             end
 
         elseif subevent == "SPELL_DAMAGE" or subevent == "RANGE_DAMAGE" or subevent == "SPELL_PERIODIC_DAMAGE" then
-            -- SPELL_DAMAGE suffix: spellId, spellName, spellSchool, amount, overkill, school, resisted, blocked, absorbed, ...
-            local p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22, p23 = select(12, CombatLogGetCurrentEventInfo())
+            local p12, p13, p14, p15, p16, p17, p18, p19, p20 = select(12, CombatLogGetCurrentEventInfo())
+            damageSchool = p14 or 1  -- spellSchool is param 14 (3rd in spell prefix)
             absorbed = (type(p20) == "number" and p20) or 0
-            -- Fallback: try p19 if p20 looks like a boolean
             if absorbed <= 1 and type(p19) == "number" and p19 > 1 then
                 absorbed = p19
             end
 
         elseif subevent == "SWING_MISSED" then
-            -- SWING_MISSED with missType ABSORB: missType(12), isOffHand(13), amountMissed(14)
+            damageSchool = 1
             local missType, _, amountMissed = select(12, CombatLogGetCurrentEventInfo())
             if missType == "ABSORB" and amountMissed and amountMissed > 0 then
                 absorbed = amountMissed
             end
 
         elseif subevent == "SPELL_MISSED" or subevent == "RANGE_MISSED" or subevent == "SPELL_PERIODIC_MISSED" then
-            -- SPELL_MISSED with missType ABSORB: spellId(12), spellName(13), spellSchool(14), missType(15), isOffHand(16), amountMissed(17)
-            local _, _, _, missType, _, amountMissed = select(12, CombatLogGetCurrentEventInfo())
+            local _, _, spellSchool, missType, _, amountMissed = select(12, CombatLogGetCurrentEventInfo())
+            damageSchool = spellSchool or 1
             if missType == "ABSORB" and amountMissed and amountMissed > 0 then
                 absorbed = amountMissed
             end
         end
 
         if absorbed > 0 then
-            absorbState.remaining = math.max(0, absorbState.remaining - absorbed)
+            ApplyAbsorbedDamage(absorbed, damageSchool)
         end
     end
 end
@@ -338,7 +542,9 @@ end
 
 local defaults = {
     enabled = true,
-    size = 64,
+    size = 48,
+    spacing = 4,
+    growDirection = "LEFT",
     point = "CENTER",
     xPct = 0,
     yPct = -0.185,
@@ -353,21 +559,26 @@ CB:RegisterCallback("INIT", function()
     CastbornDB.absorbs.barColor = nil
     CastbornDB.absorbs.bgColor = nil
     CastbornDB.absorbs.borderColor = nil
-
-    -- Only enable for mages by default
-    local _, class = UnitClass("player")
-    if class ~= "MAGE" then
-        CastbornDB.absorbs.enabled = false
-    end
 end)
 
 CB:RegisterCallback("READY", function()
-    local _, class = UnitClass("player")
-    if class ~= "MAGE" then return end
     if not CastbornDB.absorbs.enabled then return end
 
     playerGUID = UnitGUID("player")
-    absorbFrame = CreateAbsorbShield()
+
+    -- Create container frame (draggable, positionable)
+    containerFrame = CreateFrame("Frame", "Castborn_AbsorbTracker", UIParent)
+    local size = CB.db.absorbs.size or 48
+    containerFrame:SetSize(size, size)
+    containerFrame:SetFrameStrata("MEDIUM")
+
+    if Castborn.Anchoring then
+        Castborn.Anchoring:MakeDraggable(containerFrame, CB.db.absorbs, nil, "Absorb Tracker")
+    else
+        CB:MakeMoveable(containerFrame, "absorbs")
+    end
+    CB:ApplyPosition(containerFrame, "absorbs")
+    containerFrame:Hide()
 
     -- Event frame for combat log
     local eventFrame = CreateFrame("Frame")
@@ -381,7 +592,7 @@ CB:RegisterCallback("READY", function()
     -- Update loop
     CB:CreateThrottledUpdater(0.05, function()
         if testModeActive then return end
-        UpdateAbsorbShield()
+        UpdateAbsorbIcons()
     end)
 
     -- Register with TestManager
@@ -396,25 +607,58 @@ end)
 --------------------------------------------------------------------------------
 
 function CB:TestAbsorbTracker()
-    if not absorbFrame then return end
+    if not containerFrame then return end
     testModeActive = true
 
-    absorbFrame.icon:SetVertexColor(0.8, 0.8, 0.8, 1)
-    for _, tex in ipairs(absorbFrame.borderTextures) do
-        tex:SetColorTexture(0.4, 0.5, 0.7, 0.8)
+    ClearAllAbsorbs()
+
+    -- Show 2 test absorb icons to demonstrate multi-absorb layout
+    local testAbsorbs = {
+        { spellId = 11426, name = "Ice Barrier", amount = 1847, duration = 60, school = nil },
+        { spellId = 17,    name = "Power Word: Shield", amount = 942, duration = 30, school = nil },
+    }
+
+    for i, test in ipairs(testAbsorbs) do
+        local icon = AcquireIcon()
+        SetupIconVisuals(icon, test.spellId, test.school)
+
+        -- Simulate partial drain on first icon
+        local pct = (i == 1) and 0.65 or 1.0
+        local brightness = 0.4 + (0.6 * pct)
+        icon.icon:SetVertexColor(brightness, brightness, brightness, 1)
+
+        if i == 1 then
+            icon.cooldown:SetCooldown(GetTime() - 0.35, 1)
+        end
+
+        icon.valueText:SetText(FormatNumber(test.amount))
+        icon.timerText:SetText("42s")
+
+        local entry = {
+            spellId = test.spellId,
+            spellName = test.name,
+            maxAbsorb = test.amount,
+            remaining = test.amount,
+            startTime = GetTime(),
+            duration = test.duration,
+            school = test.school,
+            frame = icon,
+        }
+        tinsert(activeAbsorbs, entry)
+
+        icon:SetAlpha(1)
+        icon:Show()
     end
-    absorbFrame.cooldown:SetCooldown(GetTime() - 0.35, 1)
-    absorbFrame.valueText:SetText("1,847")
-    absorbFrame.timerText:SetText("42s")
-    absorbFrame:SetAlpha(1)
-    absorbFrame:Show()
+
+    LayoutIcons()
+    containerFrame:Show()
 end
 
 function CB:EndTestAbsorbTracker()
     testModeActive = false
-    if absorbFrame then
-        absorbFrame:Hide()
-        absorbFrame.shownForPositioning = nil
+    ClearAllAbsorbs()
+    if containerFrame then
+        containerFrame:Hide()
     end
 end
 
