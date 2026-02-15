@@ -289,18 +289,45 @@ local function OnCombatLogEvent()
 
     -- Track damage absorbed while shield is active
     if absorbState.active and destGUID == playerGUID then
+        local absorbed = 0
+
         if subevent == "SWING_DAMAGE" then
-            -- SWING_DAMAGE: amount(12), overkill(13), school(14), resisted(15), blocked(16), absorbed(17)
-            local absorbed = select(17, CombatLogGetCurrentEventInfo())
-            if absorbed and absorbed > 0 then
-                absorbState.remaining = math.max(0, absorbState.remaining - absorbed)
+            -- SWING_DAMAGE suffix: amount, overkill, school, resisted, blocked, absorbed, ...
+            -- Search params 12-20 for the absorbed value (position varies by client)
+            local p12, p13, p14, p15, p16, p17, p18, p19, p20 = select(12, CombatLogGetCurrentEventInfo())
+            -- absorbed is typically at position 17 (index 6 in suffix), but try known positions
+            absorbed = (type(p17) == "number" and p17) or 0
+            -- If p17 is 0/1 (looks like a boolean for critical), try p16 instead
+            if absorbed <= 1 and type(p16) == "number" and p16 > 1 then
+                absorbed = p16
             end
+
         elseif subevent == "SPELL_DAMAGE" or subevent == "RANGE_DAMAGE" or subevent == "SPELL_PERIODIC_DAMAGE" then
-            -- SPELL_DAMAGE: spellId(12), spellName(13), spellSchool(14), amount(15), overkill(16), school(17), resisted(18), blocked(19), absorbed(20)
-            local absorbed = select(20, CombatLogGetCurrentEventInfo())
-            if absorbed and absorbed > 0 then
-                absorbState.remaining = math.max(0, absorbState.remaining - absorbed)
+            -- SPELL_DAMAGE suffix: spellId, spellName, spellSchool, amount, overkill, school, resisted, blocked, absorbed, ...
+            local p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22, p23 = select(12, CombatLogGetCurrentEventInfo())
+            absorbed = (type(p20) == "number" and p20) or 0
+            -- Fallback: try p19 if p20 looks like a boolean
+            if absorbed <= 1 and type(p19) == "number" and p19 > 1 then
+                absorbed = p19
             end
+
+        elseif subevent == "SWING_MISSED" then
+            -- SWING_MISSED with missType ABSORB: missType(12), isOffHand(13), amountMissed(14)
+            local missType, _, amountMissed = select(12, CombatLogGetCurrentEventInfo())
+            if missType == "ABSORB" and amountMissed and amountMissed > 0 then
+                absorbed = amountMissed
+            end
+
+        elseif subevent == "SPELL_MISSED" or subevent == "RANGE_MISSED" or subevent == "SPELL_PERIODIC_MISSED" then
+            -- SPELL_MISSED with missType ABSORB: spellId(12), spellName(13), spellSchool(14), missType(15), isOffHand(16), amountMissed(17)
+            local _, _, _, missType, _, amountMissed = select(12, CombatLogGetCurrentEventInfo())
+            if missType == "ABSORB" and amountMissed and amountMissed > 0 then
+                absorbed = amountMissed
+            end
+        end
+
+        if absorbed > 0 then
+            absorbState.remaining = math.max(0, absorbState.remaining - absorbed)
         end
     end
 end
