@@ -486,6 +486,21 @@ function SpellData:GetRacialCooldowns(race)
     return self.racialCooldowns[race] or {}
 end
 
+-- Absorb shields (keyed by buff spell ID)
+SpellData.absorbs = {
+    -- Mage - Ice Barrier (all ranks)
+    [11426] = { name = "Ice Barrier", duration = 60, class = "MAGE" },
+    [13031] = { name = "Ice Barrier", duration = 60, class = "MAGE" },
+    [13032] = { name = "Ice Barrier", duration = 60, class = "MAGE" },
+    [13033] = { name = "Ice Barrier", duration = 60, class = "MAGE" },
+    [27134] = { name = "Ice Barrier", duration = 60, class = "MAGE" },
+    [33405] = { name = "Ice Barrier", duration = 60, class = "MAGE" },
+}
+
+function SpellData:GetAbsorbInfo(spellId)
+    return self.absorbs[spellId]
+end
+
 function SpellData:GetSchoolColor(school)
     return self.schoolColors[school] or { 0.7, 0.7, 0.7, 1 }
 end
