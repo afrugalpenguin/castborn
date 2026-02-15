@@ -1,5 +1,13 @@
 # Changelog
 
+**v4.15.0**
+
+- New Absorb Tracker module for Mages — shows Ice Barrier remaining absorb as a circular shield icon with radial sweep drain
+- Shield icon dims and border shifts from blue to red as absorb is consumed
+- Absorb amount and duration timer displayed on the shield
+- Tooltip scanning for accurate absorb values (accounts for spell power)
+- Absorb Tracker options page with size slider (Mage only)
+
 **v4.14.0**
 
 - Nameplate indicators now show the DoT spell icon instead of a plain colored square

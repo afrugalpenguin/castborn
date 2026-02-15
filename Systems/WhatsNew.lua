@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.15.0",
+        features = {
+            "New Absorb Tracker for Mages — shows Ice Barrier remaining absorb as a shield icon with radial drain",
+            "Shield dims and border shifts blue to red as absorb is consumed",
+        },
+        fixes = {},
+    },
+    {
         version = "4.14.0",
         features = {
             "Nameplate indicators now show the DoT spell icon instead of a plain square",
