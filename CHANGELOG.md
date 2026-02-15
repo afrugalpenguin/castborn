@@ -1,5 +1,9 @@
 # Changelog
 
+**v4.16.1**
+
+- Fixed absorb tracker cooldown sweep flickering rapidly when taking damage
+
 **v4.16.0**
 
 - Absorb Tracker now supports all TBC absorb spells: Mana Shield, Fire Ward, Frost Ward, Shadow Ward, Sacrifice, and Power Word: Shield

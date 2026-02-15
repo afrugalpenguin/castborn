@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.16.1",
+        features = {},
+        fixes = {
+            "Fixed absorb tracker cooldown sweep flickering rapidly when taking damage",
+        },
+    },
+    {
         version = "4.16.0",
         features = {
             "Absorb Tracker supports all TBC absorb spells with multi-icon display",
