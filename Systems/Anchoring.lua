@@ -193,6 +193,15 @@ local function CreateDragIndicator(frame, label)
         end
     end)
 
+    -- Ctrl+Shift+Click to temporarily hide this frame while unlocked
+    indicator:SetScript("OnMouseDown", function(self, button)
+        if button == "LeftButton" and IsControlKeyDown() and IsShiftKeyDown() then
+            frame:Hide()
+            self:Hide()
+            frame.hiddenForPositioning = true
+        end
+    end)
+
     indicator:Hide()
     frame.dragIndicator = indicator
     return indicator
@@ -254,6 +263,12 @@ end
 function Anchoring:ShowDragIndicators(forceShowFrames)
     for _, frame in ipairs(self.draggableFrames) do
         if frame.dragIndicator then
+            -- Restore frames that were Ctrl+Shift hidden in a previous unlock
+            if frame.hiddenForPositioning then
+                frame:Show()
+                frame.hiddenForPositioning = nil
+                frame.shownForPositioning = true
+            end
             if forceShowFrames and not frame:IsShown() then
                 -- Show the frame itself so it can be repositioned
                 frame:Show()
@@ -272,6 +287,12 @@ function Anchoring:HideDragIndicators(hideFrames)
     for _, frame in ipairs(self.draggableFrames) do
         if frame.dragIndicator then
             frame.dragIndicator:Hide()
+        end
+        -- Restore frames that were Ctrl+Shift hidden during this unlock
+        if frame.hiddenForPositioning then
+            frame:Show()
+            frame.hiddenForPositioning = nil
+            frame.shownForPositioning = true
         end
         if hideFrames and frame.shownForPositioning then
             frame:Hide()

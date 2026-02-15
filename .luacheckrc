@@ -71,6 +71,8 @@ read_globals = {
     "GetNumGroupMembers",
     "IsInRaid",
     "InCombatLockdown",
+    "IsControlKeyDown",
+    "IsShiftKeyDown",
     "GetNetStats",
     "GetInventoryItemLink",
     "GetInventoryItemID",
