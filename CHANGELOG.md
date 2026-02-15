@@ -1,5 +1,10 @@
 # Changelog
 
+**v4.17.0**
+
+- Ctrl+Shift+Click on a module header while unlocked temporarily hides it, making it easier to position overlapping frames
+- Hidden frames restore automatically when locking or on next unlock
+
 **v4.16.1**
 
 - Fixed absorb tracker cooldown sweep flickering rapidly when taking damage

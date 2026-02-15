@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.17.0",
+        features = {
+            "Ctrl+Shift+Click module headers while unlocked to temporarily hide them for easier positioning",
+        },
+        fixes = {},
+    },
+    {
         version = "4.16.1",
         features = {},
         fixes = {
