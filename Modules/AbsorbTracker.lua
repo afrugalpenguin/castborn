@@ -324,7 +324,10 @@ end
 
 function CB:EndTestAbsorbTracker()
     testModeActive = false
-    if absorbFrame then absorbFrame:Hide() end
+    if absorbFrame then
+        absorbFrame:Hide()
+        absorbFrame.shownForPositioning = nil
+    end
 end
 
 Castborn:RegisterModule("AbsorbTracker", AbsorbTracker)
