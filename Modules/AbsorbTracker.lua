@@ -167,6 +167,7 @@ end
 local function ReleaseIcon(icon)
     icon:Hide()
     icon.cooldown:SetCooldown(0, 0)
+    icon.lastConsumed = nil
     icon.valueText:SetText("")
     icon.timerText:SetText("")
     icon:ClearAllPoints()
@@ -320,6 +321,7 @@ local function RefreshAbsorb(spellId, absorbAmount, duration)
     absorb.duration = duration
     absorb.frame.icon:SetVertexColor(1, 1, 1, 1)
     absorb.frame.cooldown:SetCooldown(0, 0)
+    absorb.frame.lastConsumed = nil
 
     local r, g, b, a = GetAbsorbBorderColor(absorb.school)
     for _, tex in ipairs(absorb.frame.borderTextures) do
@@ -408,12 +410,16 @@ local function UpdateAbsorbIcons()
         elseif icon then
             local pct = absorb.maxAbsorb > 0 and (absorb.remaining / absorb.maxAbsorb) or 0
 
-            -- Update cooldown sweep
+            -- Update cooldown sweep only when consumed % changes (avoids flicker)
             local consumed = 1 - pct
-            if consumed > 0 then
-                icon.cooldown:SetCooldown(now - consumed, 1)
-            else
-                icon.cooldown:SetCooldown(0, 0)
+            local lastConsumed = icon.lastConsumed or 0
+            if math.abs(consumed - lastConsumed) > 0.005 then
+                icon.lastConsumed = consumed
+                if consumed > 0 then
+                    icon.cooldown:SetCooldown(now - consumed, 1)
+                else
+                    icon.cooldown:SetCooldown(0, 0)
+                end
             end
 
             -- Dim icon as absorb drains
