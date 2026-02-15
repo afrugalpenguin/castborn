@@ -14,6 +14,16 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.16.0",
+        features = {
+            "Absorb Tracker supports all TBC absorb spells with multi-icon display",
+            "Power Word: Shield from healers tracked on any class",
+            "School-specific absorbs show spell-school-colored borders",
+            "Configurable grow direction and spacing for absorb icons",
+        },
+        fixes = {},
+    },
+    {
         version = "4.15.1",
         features = {},
         fixes = {

@@ -1,5 +1,15 @@
 # Changelog
 
+**v4.16.0**
+
+- Absorb Tracker now supports all TBC absorb spells: Mana Shield, Fire Ward, Frost Ward, Shadow Ward, Sacrifice, and Power Word: Shield
+- Multiple simultaneous absorbs display as a row of icons with configurable grow direction
+- Power Word: Shield from healers is now tracked on any class
+- School-specific absorbs (Fire/Frost/Shadow Ward) show spell-school-colored borders
+- Absorb Tracker available for all classes, not just Mage
+- Added spacing and grow direction options to Absorb Tracker settings
+- Switched release packaging to BigWigs packager for CurseForge + GitHub
+
 **v4.15.1**
 
 - Fixed absorb tracker not updating remaining value when taking damage
