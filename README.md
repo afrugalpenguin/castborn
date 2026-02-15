@@ -45,6 +45,7 @@ Player, Target, Focus, and Target-of-Target castbars with latency indicators, cl
 - **Cooldown Tracker** — Track important abilities with per-spell toggles
 - **Interrupt Tracker** — Know when your kick is ready
 - **Totem Tracker** — Shaman-only: track active totems and party coverage
+- **Absorb Tracker** — Track Ice Barrier, Mana Shield, Power Word: Shield, and all TBC absorb effects with remaining amount and drain visualisation
 
 ## Getting Started
 
@@ -69,6 +70,7 @@ That's it. Castborn comes pre-configured with sensible defaults for your class.
 - **Guided onboarding** — Step-by-step tour introduces each feature
 - **Test mode** — See and position everything without being in combat
 - **Layout grid** — Snap frames for pixel-perfect alignment
+- **Ctrl+Shift hide** — Temporarily hide overlapping modules while positioning
 - **Anchor system** — Modules can follow your player castbar
 - **Profile system** — Save, copy, and share configurations
 - **Masque support** — Skin proc icons with your favourite theme
