@@ -99,6 +99,14 @@ local function CreateProcFrame(parent, index)
     f.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
     f:SetNormalTexture(f.Normal)
 
+    -- Cooldown frame for Masque compatibility
+    f.cooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
+    f.cooldown:SetAllPoints()
+    f.cooldown:SetDrawEdge(false)
+    f.cooldown:SetHideCountdownNumbers(true)
+    f.cooldown:Hide()
+    f.Cooldown = f.cooldown  -- Masque alias
+
     f.duration = f:CreateFontString(nil, "OVERLAY")
     f.duration:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
     f.duration:SetPoint("BOTTOM", 0, -2)
@@ -117,8 +125,9 @@ local function CreateProcFrame(parent, index)
 
     -- Register with Masque if available
     if Castborn.Masque and Castborn.Masque.enabled then
-        Castborn.Masque:AddButton("procs", f, {
+        Castborn.Masque:AddButton("buffs", f, {
             Icon = f.icon,
+            Cooldown = f.cooldown,
             Normal = f.Normal,
         })
     end

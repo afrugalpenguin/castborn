@@ -24,6 +24,7 @@ function MasqueSupport:Init()
     self.groups.buffs = MSQ:Group("Castborn", "Buff/Proc Icons")
     self.groups.dots = MSQ:Group("Castborn", "DoT Icons")
     self.groups.interrupts = MSQ:Group("Castborn", "Interrupt Icons")
+    self.groups.absorbs = MSQ:Group("Castborn", "Absorb Icons")
 
     Castborn:Print("Masque support enabled")
 end
@@ -101,7 +102,7 @@ function MasqueSupport:CreateIconButton(parent, size, groupName)
     return button
 end
 
--- Initialize on READY
-Castborn:RegisterCallback("READY", function()
+-- Initialize on INIT so groups exist before modules create frames in READY
+Castborn:RegisterCallback("INIT", function()
     MasqueSupport:Init()
 end)

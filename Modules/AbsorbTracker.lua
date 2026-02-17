@@ -82,7 +82,8 @@ local function CreateAbsorbIcon()
     local cfg = CB.db.absorbs
     local size = cfg.size or 48
 
-    local frame = CreateFrame("Frame", nil, containerFrame)
+    -- Use Button frame for Masque compatibility
+    local frame = CreateFrame("Button", nil, containerFrame)
     frame:SetSize(size, size)
     frame:SetFrameStrata("MEDIUM")
     frame:SetFrameLevel(5)
@@ -97,7 +98,16 @@ local function CreateAbsorbIcon()
     -- Spell icon texture (set dynamically)
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetAllPoints()
+    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     frame.icon = icon
+    frame.Icon = icon  -- Masque alias
+
+    -- Normal texture (border) for Masque
+    frame.Normal = frame:CreateTexture(nil, "BORDER")
+    frame.Normal:SetPoint("TOPLEFT", -1, 1)
+    frame.Normal:SetPoint("BOTTOMRIGHT", 1, -1)
+    frame.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
+    frame:SetNormalTexture(frame.Normal)
 
     -- Cooldown sweep overlay (drains as absorb is consumed)
     local cooldown = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
@@ -108,6 +118,7 @@ local function CreateAbsorbIcon()
     cooldown:SetReverse(true)
     cooldown:SetHideCountdownNumbers(true)
     frame.cooldown = cooldown
+    frame.Cooldown = cooldown  -- Masque alias
 
     -- Simple colored edge border (1px)
     local borderSize = 1
@@ -137,6 +148,15 @@ local function CreateAbsorbIcon()
     borderRight:SetWidth(borderSize)
 
     frame.borderTextures = {borderTop, borderBottom, borderLeft, borderRight}
+
+    -- Register with Masque if available
+    if Castborn.Masque and Castborn.Masque.enabled then
+        Castborn.Masque:AddButton("absorbs", frame, {
+            Icon = icon,
+            Cooldown = cooldown,
+            Normal = frame.Normal,
+        })
+    end
 
     -- Absorb amount text (centered on icon)
     local valueText = frame:CreateFontString(nil, "OVERLAY")
