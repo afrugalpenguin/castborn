@@ -1,5 +1,9 @@
 # Changelog
 
+**v4.18.1**
+
+- Fixed Masque skinning for Proc Tracker and Absorb Tracker icons
+
 **v4.18.0**
 
 - Added Absorb Tracker step to the welcome tutorial

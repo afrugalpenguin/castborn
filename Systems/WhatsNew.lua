@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.18.1",
+        features = {},
+        fixes = {
+            "Fixed Masque skinning for Proc Tracker and Absorb Tracker icons",
+        },
+    },
+    {
         version = "4.18.0",
         features = {
             "Absorb Tracker added to the welcome tutorial",
