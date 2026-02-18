@@ -100,6 +100,7 @@ read_globals = {
     -- Lua globals
     "strsplit",
     "strjoin",
+    "tContains",
     "tinsert",
     "tremove",
     "wipe",

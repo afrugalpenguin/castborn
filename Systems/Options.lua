@@ -50,6 +50,7 @@ local categories = {
     { id = "interrupt", name = "Interrupt" },
     { id = "totems", name = "Totems", class = "SHAMAN" },
     { id = "absorbs", name = "Absorbs", class = "MAGE" },
+    { id = "armortracker", name = "Armor", classes = {"MAGE", "WARLOCK", "PRIEST"} },
     { divider = true },
     { id = "lookfeel", name = "Look & Feel" },
     { id = "profiles", name = "Profiles" },
@@ -311,7 +312,7 @@ local function CreateOptionsFrame()
     local _, playerClass = UnitClass("player")
     for i, cat in ipairs(categories) do
         -- Skip class-restricted categories for other classes
-        if cat.class and cat.class ~= playerClass then
+        if (cat.class and cat.class ~= playerClass) or (cat.classes and not tContains(cat.classes, playerClass)) then
             -- Skip this category
         elseif cat.divider then
             -- Create a horizontal divider line
@@ -528,6 +529,7 @@ function Options:BuildGeneral(parent)
         { key = "cooldowns", label = "Cooldowns" },
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
         { key = "absorbs", label = "Absorb Tracker" },
+        { key = "armortracker", label = "Armor Tracker", classes = {"MAGE", "WARLOCK", "PRIEST"} },
     }
 
     local col = 0
@@ -535,7 +537,7 @@ function Options:BuildGeneral(parent)
     local count = 0
     for i, mod in ipairs(modules) do
         -- Skip class-restricted modules for other classes
-        if not mod.class or mod.class == playerClass then
+        if (not mod.class and not mod.classes) or (mod.class and mod.class == playerClass) or (mod.classes and tContains(mod.classes, playerClass)) then
             count = count + 1
             CastbornDB[mod.key] = CastbornDB[mod.key] or {}
             local cb = CreateCheckbox(parent, mod.label, CastbornDB[mod.key], "enabled")
@@ -1240,6 +1242,7 @@ function Options:BuildModule(parent, key)
         interrupt = "Interrupt Tracker",
         totems = "Totem Tracker",
         absorbs = "Absorb Tracker",
+        armortracker = "Armor Tracker",
     }
 
     local y = 0
@@ -1617,6 +1620,20 @@ function Options:BuildModule(parent, key)
         end)
         UIDropDownMenu_SetText(posDropdown, positionLabels[db.nameplateIndicatorPosition or "BOTTOM"])
         y = y - 10
+
+    elseif key == "armortracker" then
+        db.iconSize = db.iconSize or 36
+        local sizeSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 24, 64, 4, function(v)
+            local f = _G["Castborn_ArmorTracker"]
+            if f then f:SetSize(v, v) end
+        end)
+        sizeSlider:SetPoint("TOPLEFT", 0, y)
+        y = y - 50
+
+        local testBtn = CreateButton(parent, "Test Armor Alert", 110, function()
+            if Castborn.TestArmorTracker then Castborn:TestArmorTracker() end
+        end)
+        testBtn:SetPoint("TOPLEFT", 0, y)
 
     elseif key == "absorbs" then
         db.size = db.size or 48
