@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "4.19.0",
+        features = {
+            "Armor Tracker — shows an alert icon when your armor self-buff is missing (Mage, Warlock, Priest)",
+        },
+        fixes = {},
+    },
+    {
         version = "4.18.1",
         features = {},
         fixes = {

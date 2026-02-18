@@ -1,5 +1,9 @@
 # Changelog
 
+**v4.19.0**
+
+- Added Armor Tracker — shows an alert icon when your armor self-buff is missing (Mage, Warlock, Priest)
+
 **v4.18.1**
 
 - Fixed Masque skinning for Proc Tracker and Absorb Tracker icons
