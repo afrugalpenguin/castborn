@@ -54,18 +54,35 @@ local function CreateCastBar(unit, dbKey)
     -- Create backdrop
     CB:CreateBackdrop(frame, cfg.bgColor, cfg.borderColor)
     
-    -- Icon frame (left side) - always create, show/hide based on setting
-    local iconFrame = CreateFrame("Frame", nil, frame)
+    -- Icon frame (left side) - Button for Masque compatibility
+    local iconFrame = CreateFrame("Button", nil, frame)
     iconFrame:SetSize(cfg.height + 4, cfg.height + 4)
     iconFrame:SetPoint("RIGHT", frame, "LEFT", -4, 0)
     CB:CreateBackdrop(iconFrame, cfg.bgColor, cfg.borderColor)
 
-    local icon = iconFrame:CreateTexture(nil, "ARTWORK")
+    local icon = iconFrame:CreateTexture(nil, "BACKGROUND")
     icon:SetPoint("TOPLEFT", 2, -2)
     icon:SetPoint("BOTTOMRIGHT", -2, 2)
     icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    iconFrame.Icon = icon
     frame.icon = icon
     frame.iconFrame = iconFrame
+
+    -- Normal texture (border) for Masque
+    local iconNormal = iconFrame:CreateTexture(nil, "BORDER")
+    iconNormal:SetPoint("TOPLEFT", -1, 1)
+    iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
+    iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
+    iconFrame.Normal = iconNormal
+    iconFrame:SetNormalTexture(iconNormal)
+
+    -- Cooldown frame for Masque compatibility
+    local iconCooldown = CreateFrame("Cooldown", nil, iconFrame, "CooldownFrameTemplate")
+    iconCooldown:SetAllPoints()
+    iconCooldown:SetDrawEdge(false)
+    iconCooldown:SetHideCountdownNumbers(true)
+    iconFrame.Cooldown = iconCooldown
+
     if not cfg.showIcon then iconFrame:Hide() end
     
     -- Status bar
@@ -182,7 +199,9 @@ local function CreateCastBar(unit, dbKey)
     -- Register icon with Masque if available
     if frame.iconFrame and Castborn.Masque and Castborn.Masque.enabled then
         Castborn.Masque:AddButton("castbar", frame.iconFrame, {
-            Icon = frame.icon,
+            Icon = frame.iconFrame.Icon,
+            Cooldown = frame.iconFrame.Cooldown,
+            Normal = frame.iconFrame.Normal,
         })
     end
 

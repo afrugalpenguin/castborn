@@ -64,7 +64,8 @@ local MAX_NAMEPLATE_INDICATORS = 10
 
 -- Create a single nameplate indicator frame
 local function CreateNameplateIndicator()
-    local indicator = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    -- Button for Masque compatibility
+    local indicator = CreateFrame("Button", nil, UIParent, "BackdropTemplate")
     indicator:SetSize(20, 20)
     indicator:SetFrameStrata("HIGH")
 
@@ -78,10 +79,35 @@ local function CreateNameplateIndicator()
     indicator:SetBackdropBorderColor(0.2, 0.8, 0.2, 1)
 
     -- Spell icon texture
-    indicator.icon = indicator:CreateTexture(nil, "ARTWORK")
+    indicator.icon = indicator:CreateTexture(nil, "BACKGROUND")
     indicator.icon:SetPoint("TOPLEFT", 1, -1)
     indicator.icon:SetPoint("BOTTOMRIGHT", -1, 1)
     indicator.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    indicator.Icon = indicator.icon
+
+    -- Normal texture (border) for Masque
+    local iconNormal = indicator:CreateTexture(nil, "BORDER")
+    iconNormal:SetPoint("TOPLEFT", -1, 1)
+    iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
+    iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
+    indicator.Normal = iconNormal
+    indicator:SetNormalTexture(iconNormal)
+
+    -- Cooldown frame for Masque compatibility
+    local iconCooldown = CreateFrame("Cooldown", nil, indicator, "CooldownFrameTemplate")
+    iconCooldown:SetAllPoints()
+    iconCooldown:SetDrawEdge(false)
+    iconCooldown:SetHideCountdownNumbers(true)
+    indicator.Cooldown = iconCooldown
+
+    -- Register with Masque if available
+    if Castborn.Masque and Castborn.Masque.enabled then
+        Castborn.Masque:AddButton("multidots", indicator, {
+            Icon = indicator.icon,
+            Cooldown = iconCooldown,
+            Normal = iconNormal,
+        })
+    end
 
     -- Glow texture (pulsing border effect)
     indicator.glow = indicator:CreateTexture(nil, "BACKGROUND", nil, -1)
@@ -283,13 +309,37 @@ local function CreateTargetRow(parent, index)
 
     row.dots = {}
     for i = 1, 6 do
-        local dot = CreateFrame("Frame", nil, row)
+        -- Button for Masque compatibility
+        local dot = CreateFrame("Button", nil, row)
         dot:SetSize(db.rowHeight - 4, db.rowHeight - 4)
         dot:SetPoint("LEFT", row, "LEFT", 5 + (i - 1) * (db.rowHeight - 2), 0)
 
-        dot.icon = dot:CreateTexture(nil, "ARTWORK")
+        dot.icon = dot:CreateTexture(nil, "BACKGROUND")
         dot.icon:SetAllPoints()
         dot.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        dot.Icon = dot.icon
+
+        local dotNormal = dot:CreateTexture(nil, "BORDER")
+        dotNormal:SetPoint("TOPLEFT", -1, 1)
+        dotNormal:SetPoint("BOTTOMRIGHT", 1, -1)
+        dotNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
+        dot.Normal = dotNormal
+        dot:SetNormalTexture(dotNormal)
+
+        local dotCooldown = CreateFrame("Cooldown", nil, dot, "CooldownFrameTemplate")
+        dotCooldown:SetAllPoints()
+        dotCooldown:SetDrawEdge(false)
+        dotCooldown:SetHideCountdownNumbers(true)
+        dot.Cooldown = dotCooldown
+
+        -- Register with Masque if available
+        if Castborn.Masque and Castborn.Masque.enabled then
+            Castborn.Masque:AddButton("multidots", dot, {
+                Icon = dot.icon,
+                Cooldown = dotCooldown,
+                Normal = dotNormal,
+            })
+        end
 
         dot.time = dot:CreateFontString(nil, "OVERLAY")
         dot.time:SetFont("Fonts\\ARIALN.TTF", 8, "OUTLINE")

@@ -85,47 +85,76 @@ end
 local function CreateArmorFrame()
     local db = CB.db.armortracker
     local size = db.iconSize or 36
+    local hasMasque = Castborn.Masque and Castborn.Masque.enabled
 
-    local f = CreateFrame("Frame", "Castborn_ArmorTracker", UIParent)
+    -- Button for Masque compatibility
+    local f = CreateFrame("Button", "Castborn_ArmorTracker", UIParent)
     f:SetSize(size, size)
     f:SetFrameStrata("MEDIUM")
     f:SetFrameLevel(5)
 
     -- Icon texture
-    local icon = f:CreateTexture(nil, "ARTWORK")
+    local icon = f:CreateTexture(nil, "BACKGROUND")
     icon:SetAllPoints()
     icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    f.Icon = icon
     f.icon = icon
 
-    -- Border (1px)
-    local borderSize = 1
-    local borderColor = {0.8, 0.2, 0.2, 0.9}
+    -- Normal texture (border) for Masque
+    local iconNormal = f:CreateTexture(nil, "BORDER")
+    iconNormal:SetPoint("TOPLEFT", -1, 1)
+    iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
+    iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
+    f.Normal = iconNormal
+    f:SetNormalTexture(iconNormal)
 
-    local top = f:CreateTexture(nil, "OVERLAY")
-    top:SetColorTexture(unpack(borderColor))
-    top:SetPoint("TOPLEFT", -borderSize, borderSize)
-    top:SetPoint("TOPRIGHT", borderSize, borderSize)
-    top:SetHeight(borderSize)
+    -- Cooldown frame for Masque compatibility
+    local iconCooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
+    iconCooldown:SetAllPoints()
+    iconCooldown:SetDrawEdge(false)
+    iconCooldown:SetHideCountdownNumbers(true)
+    f.Cooldown = iconCooldown
 
-    local bottom = f:CreateTexture(nil, "OVERLAY")
-    bottom:SetColorTexture(unpack(borderColor))
-    bottom:SetPoint("BOTTOMLEFT", -borderSize, -borderSize)
-    bottom:SetPoint("BOTTOMRIGHT", borderSize, -borderSize)
-    bottom:SetHeight(borderSize)
+    -- Register with Masque if available
+    if hasMasque then
+        Castborn.Masque:AddButton("armor", f, {
+            Icon = icon,
+            Cooldown = iconCooldown,
+            Normal = iconNormal,
+        })
+    end
 
-    local left = f:CreateTexture(nil, "OVERLAY")
-    left:SetColorTexture(unpack(borderColor))
-    left:SetPoint("TOPLEFT", -borderSize, borderSize)
-    left:SetPoint("BOTTOMLEFT", -borderSize, -borderSize)
-    left:SetWidth(borderSize)
+    -- Manual border (fallback when Masque is not active)
+    if not hasMasque then
+        local borderSize = 1
+        local borderColor = {0.8, 0.2, 0.2, 0.9}
 
-    local right = f:CreateTexture(nil, "OVERLAY")
-    right:SetColorTexture(unpack(borderColor))
-    right:SetPoint("TOPRIGHT", borderSize, borderSize)
-    right:SetPoint("BOTTOMRIGHT", borderSize, -borderSize)
-    right:SetWidth(borderSize)
+        local top = f:CreateTexture(nil, "OVERLAY")
+        top:SetColorTexture(unpack(borderColor))
+        top:SetPoint("TOPLEFT", -borderSize, borderSize)
+        top:SetPoint("TOPRIGHT", borderSize, borderSize)
+        top:SetHeight(borderSize)
 
-    f.borderTextures = {top, bottom, left, right}
+        local bottom = f:CreateTexture(nil, "OVERLAY")
+        bottom:SetColorTexture(unpack(borderColor))
+        bottom:SetPoint("BOTTOMLEFT", -borderSize, -borderSize)
+        bottom:SetPoint("BOTTOMRIGHT", borderSize, -borderSize)
+        bottom:SetHeight(borderSize)
+
+        local left = f:CreateTexture(nil, "OVERLAY")
+        left:SetColorTexture(unpack(borderColor))
+        left:SetPoint("TOPLEFT", -borderSize, borderSize)
+        left:SetPoint("BOTTOMLEFT", -borderSize, -borderSize)
+        left:SetWidth(borderSize)
+
+        local right = f:CreateTexture(nil, "OVERLAY")
+        right:SetColorTexture(unpack(borderColor))
+        right:SetPoint("TOPRIGHT", borderSize, borderSize)
+        right:SetPoint("BOTTOMRIGHT", borderSize, -borderSize)
+        right:SetWidth(borderSize)
+
+        f.borderTextures = {top, bottom, left, right}
+    end
 
     -- "!" warning text overlay
     local warning = f:CreateFontString(nil, "OVERLAY")
