@@ -1,5 +1,10 @@
 # Changelog
 
+**v4.20.0**
+
+- Full Masque skinning support for all icon-bearing modules (CastBars, InterruptTracker, DoTTracker, TotemTracker, MultiDoTTracker, ArmorTracker)
+- Each module has its own Masque group for independent skin control
+
 **v4.19.0**
 
 - Added Armor Tracker — shows an alert icon when your armor self-buff is missing (Mage, Warlock, Priest)
