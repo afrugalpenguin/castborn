@@ -552,6 +552,29 @@ SpellData.absorbs = {
     [25218] = { name = "Power Word: Shield", duration = 30, class = "PRIEST" },
 }
 
+-- Armor self-buffs by class (buff spell IDs, all ranks)
+-- These are mutually exclusive within each class — having any one means "armor is active"
+SpellData.armors = {
+    MAGE = {
+        { name = "Frost Armor", spellIds = {168, 7300, 7301} },
+        { name = "Ice Armor", spellIds = {7302, 7320, 10219, 10220, 27124} },
+        { name = "Mage Armor", spellIds = {6117, 22782, 22783, 27125} },
+        { name = "Molten Armor", spellIds = {30482} },
+    },
+    WARLOCK = {
+        { name = "Demon Skin", spellIds = {687, 696} },
+        { name = "Demon Armor", spellIds = {706, 1086, 11733, 11734, 11735, 27260} },
+        { name = "Fel Armor", spellIds = {28176, 28189} },
+    },
+    PRIEST = {
+        { name = "Inner Fire", spellIds = {588, 7128, 602, 1006, 10951, 10952, 25431} },
+    },
+}
+
+function SpellData:GetClassArmors(class)
+    return self.armors[class]
+end
+
 function SpellData:GetAbsorbInfo(spellId)
     return self.absorbs[spellId]
 end
