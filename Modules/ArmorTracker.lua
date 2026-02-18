@@ -16,7 +16,7 @@ local armorSpellList = nil  -- reference to SpellData.armors[class]
 
 local defaults = {
     enabled = true,
-    iconSize = 36,
+    iconSize = 50,
     point = "CENTER",
     xPct = 0.05,
     yPct = -0.185,

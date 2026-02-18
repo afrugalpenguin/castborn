@@ -1622,8 +1622,12 @@ function Options:BuildModule(parent, key)
         y = y - 10
 
     elseif key == "armortracker" then
-        db.iconSize = db.iconSize or 36
-        local sizeSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 24, 64, 4, function(v)
+        local enableCB = CreateCheckbox(parent, "Enable Armor Tracker", db, "enabled")
+        enableCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
+        db.iconSize = db.iconSize or 50
+        local sizeSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 24, 80, 4, function(v)
             local f = _G["Castborn_ArmorTracker"]
             if f then f:SetSize(v, v) end
         end)

@@ -336,7 +336,7 @@ CB.defaults = {
 
     armortracker = {
         enabled = true,
-        iconSize = 36,
+        iconSize = 50,
         point = "CENTER",
         xPct = 0.05,
         yPct = -0.185,
