@@ -177,7 +177,7 @@ local function CreateDragIndicator(frame, label)
     text:SetTextColor(1, 1, 1, 1)
 
     -- Size to fit the label text or the frame width, whichever is larger
-    local textWidth = text:GetStringWidth() + 12
+    local textWidth = text:GetStringWidth() + 20
     local minWidth = math.max(frame:GetWidth(), textWidth)
     indicator:SetWidth(minWidth)
 
