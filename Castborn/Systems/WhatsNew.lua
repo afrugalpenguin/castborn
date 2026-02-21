@@ -14,6 +14,15 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.1.0",
+        features = {
+            "Global bar font picker in Look & Feel options with LSM support",
+            "Global bar texture picker in Look & Feel options with LSM support",
+            "Tutorial consolidated from 19 steps to 13 with interactive checkboxes",
+        },
+        fixes = {},
+    },
+    {
         version = "5.0.1",
         features = {},
         fixes = {
