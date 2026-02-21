@@ -121,7 +121,6 @@ end
 CB.defaults = {
     locked = false,
     useClassColors = true,
-    bgOpacity = 1,
     showBorders = true,
 
     player = {
@@ -350,6 +349,19 @@ local function InitDB()
     CastbornDB = CastbornDB or {}
     CB.db = DeepCopy(CB.defaults, CastbornDB)
     CastbornDB = CB.db
+
+    -- Migrate bgOpacity into per-module bgColor alpha
+    if CastbornDB.bgOpacity ~= nil then
+        local opacity = CastbornDB.bgOpacity
+        local moduleKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd", "totems"}
+        for _, key in ipairs(moduleKeys) do
+            if CastbornDB[key] and CastbornDB[key].bgColor then
+                local c = CastbornDB[key].bgColor
+                c[4] = (c[4] or 0.9) * opacity
+            end
+        end
+        CastbornDB.bgOpacity = nil
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -428,55 +440,38 @@ function CB:UpdateBorders()
     self:FireCallback("BORDERS_CHANGED", show)
 end
 
--- Refresh background opacity on all frames created with CreateBackdrop
-function CB:RefreshBackdropOpacity()
-    local opacity = CastbornDB.bgOpacity or 1
-    -- Castbar frames
-    if CB.castbars then
-        for _, bar in pairs(CB.castbars) do
-            if bar.bg and bar._bgColor then
-                local c = bar._bgColor
-                bar.bg:SetColorTexture(c[1], c[2], c[3], (c[4] or 0.9) * opacity)
-            end
-        end
-    end
-    -- Module frames
-    local frames = {CB.gcdFrame, CB.fsrFrame}
-    if CB.swingTimers then
-        table.insert(frames, CB.swingTimers.mainhand)
-        table.insert(frames, CB.swingTimers.offhand)
-        table.insert(frames, CB.swingTimers.ranged)
-    end
-    local absorbFrame = _G["Castborn_AbsorbTracker"]
-    if absorbFrame then table.insert(frames, absorbFrame) end
-    for _, f in ipairs(frames) do
-        if f and f.bg and f._bgColor then
-            local c = f._bgColor
-            f.bg:SetColorTexture(c[1], c[2], c[3], (c[4] or 0.9) * opacity)
+-- Refresh backgrounds on all frames
+function CB:RefreshBackgrounds()
+    -- Frames created with CreateBackdrop
+    for _, frame in ipairs(self._backdropFrames) do
+        if frame.bg and frame._bgColor then
+            local c = frame._bgColor
+            frame.bg:SetColorTexture(c[1], c[2], c[3], c[4] or 0.9)
         end
     end
     -- DoT tracker (separate background texture)
     if CB.dotTracker and CB.dotTracker.background then
         local cfg = CB.db.dots or {}
         local bgColor = cfg.bgColor or {0, 0, 0, 0.7}
-        if UnitAffectingCombat("player") then
-            CB.dotTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], (bgColor[4] or 0.7) * opacity)
-        end
+        CB.dotTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.7)
     end
     -- Multi-DoT tracker (BackdropTemplate)
     local mdFrame = _G["Castborn_MultiDoTTracker"]
     if mdFrame then
-        mdFrame:SetBackdropColor(0.05, 0.05, 0.05, 0.8 * opacity)
+        local mdCfg = CB.db.multidot or {}
+        local bgColor = mdCfg.bgColor or {0.05, 0.05, 0.05, 0.8}
+        mdFrame:SetBackdropColor(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.8)
     end
     -- Totem tracker (separate background texture)
     if CB.totemTracker and CB.totemTracker.background then
         local tCfg = CB.db.totems or {}
         local bgColor = tCfg.bgColor or {0, 0, 0, 0.7}
-        if UnitAffectingCombat("player") then
-            CB.totemTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], (bgColor[4] or 0.7) * opacity)
-        end
+        CB.totemTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.7)
     end
 end
+
+-- Backwards compat alias
+CB.RefreshBackdropOpacity = CB.RefreshBackgrounds
 
 -- Create gradient bar texture
 function CB:CreateGradientBar(parent, color)

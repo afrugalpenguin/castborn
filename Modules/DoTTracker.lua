@@ -179,12 +179,11 @@ local function UpdateDoTTrackerAppearance()
     if not CB.dotTracker then return end
     local cfg = CB.db.dots
     local inCombat = UnitAffectingCombat("player")
-    local opacity = CastbornDB.bgOpacity or 1
 
     if CB.dotTracker.background then
         if inCombat then
             local bgColor = cfg.bgColor or {0, 0, 0, 0.7}
-            CB.dotTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], (bgColor[4] or 0.7) * opacity)
+            CB.dotTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.7)
         else
             CB.dotTracker.background:SetColorTexture(0, 0, 0, 0)
         end
@@ -192,7 +191,7 @@ local function UpdateDoTTrackerAppearance()
 
     if CB.dotTracker.border then
         local borderColor = cfg.borderColor or {0.3, 0.3, 0.3, 1}
-        CB.dotTracker.border:SetBackdropBorderColor(borderColor[1], borderColor[2], borderColor[3], (borderColor[4] or 1) * opacity)
+        CB.dotTracker.border:SetBackdropBorderColor(borderColor[1], borderColor[2], borderColor[3], borderColor[4] or 1)
     end
 end
 
