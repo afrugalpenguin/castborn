@@ -8,13 +8,14 @@ Castborn.Tutorial = Tutorial
 
 local currentStep = 0
 local tutorialFrame = nil
-local highlightFrame = nil
+local highlightFrames = {}
 local spotlightOverlay = nil
 local isActive = false
 local originalFrameInfo = {}  -- Store original strata/level for restoration
 
 -- Tutorial steps configuration
 -- configKey maps to CastbornDB[key].enabled for the enable checkbox
+-- configKeys is an array of keys for merged steps with multiple toggles
 local steps = {
     {
         id = "welcome",
@@ -32,68 +33,36 @@ local steps = {
         -- No configKey - player castbar is always enabled
     },
     {
-        id = "gcd",
-        title = "GCD Indicator",
-        description = "Shows when your Global Cooldown is active. Appears below your castbar and sweeps from left to right.",
-        tip = "This helps you time your next ability perfectly as the GCD ends.",
-        getFrame = function() return Castborn.gcdFrame end,
-        configKey = "gcd",
-    },
-    {
-        id = "fsr",
-        title = "5 Second Rule (MP5)",
-        description = "For mana users, tracks the 5-second rule. After spending mana, you must wait 5 seconds before spirit-based mana regeneration resumes.",
-        tip = "The bar turns green and pulses when you enter the regeneration state. Only visible in combat.",
-        getFrame = function() return Castborn.fsrFrame end,
-        configKey = "fsr",
+        id = "castbar_companions",
+        title = "Castbar Companions",
+        description = "Two thin bars accompany your player castbar:\n\n|cff88ddff5 Second Rule|r \226\128\148 tracks the 5-second mana regeneration window. The bar turns green and pulses when spirit regen resumes.\n\n|cff88ddffGCD Indicator|r \226\128\148 sweeps left-to-right while your Global Cooldown is active, helping you time your next ability.",
+        tip = "Both bars anchor to your player castbar by default.",
+        getFrame = function() return Castborn.castbars and Castborn.castbars.player end,
+        configKeys = {"fsr", "gcd"},
     },
     {
         id = "cooldowns",
         title = "Cooldown Tracker",
-        description = "Track your important cooldowns like Icy Veins, trinkets, and major abilities. Icons show remaining cooldown and glow when ready.\n\nYou can reorder icons by dragging them in test mode.",
+        description = "Track your important cooldowns like trinkets, major abilities, and class cooldowns. Icons show remaining cooldown and glow when ready.\n\nYou can reorder icons by dragging them in test mode.",
         tip = "Use the up/down arrows in Options > Cooldowns to reorder, or drag icons while in test mode.",
         getFrame = function() return _G["Castborn_CooldownTracker"] end,
         configKey = "cooldowns",
     },
     {
-        id = "target_castbar",
-        title = "Target Castbar",
-        description = "See what your target is casting. Essential for interrupting enemy spells in PvP and PvE.",
+        id = "other_castbars",
+        title = "Other Castbars",
+        description = "Castborn provides castbars for your |cff88ddfftarget|r, |cff88ddfftarget-of-target|r, and |cff88ddfffocus|r.\n\nSee what enemies are casting so you can interrupt, or watch your healer's casts to anticipate incoming heals.",
         tip = "A shield icon appears on spells that cannot be interrupted.",
         getFrame = function() return Castborn.castbars and Castborn.castbars.target end,
-        configKey = "target",
-    },
-    {
-        id = "targettarget_castbar",
-        title = "Target-of-Target Castbar",
-        description = "See what your target's target is casting. Useful for watching tank threat or healer casts.",
-        tip = "Commonly used by healers to monitor what the tank is fighting.",
-        getFrame = function() return Castborn.castbars and Castborn.castbars.targettarget end,
-        configKey = "targettarget",
-    },
-    {
-        id = "focus_castbar",
-        title = "Focus Castbar",
-        description = "Track your focus target's casts separately. Great for watching a specific enemy while targeting another.",
-        tip = "Set a focus target with /focus or by right-clicking a unit frame.",
-        getFrame = function() return Castborn.castbars and Castborn.castbars.focus end,
-        configKey = "focus",
+        configKeys = {"target", "targettarget", "focus"},
     },
     {
         id = "dots",
-        title = "DoT Tracker",
-        description = "Track your damage-over-time effects on your current target. Shows duration remaining with colour-coded urgency.",
+        title = "DoT Tracking",
+        description = "Track your damage-over-time effects on your current target with colour-coded urgency bars.\n\nThe |cff88ddffMulti-DoT Tracker|r extends this to multiple enemies, so you can keep them all dotted in AoE fights.",
         tip = "Red means expiring soon! Refresh your DoTs before they fall off.",
         getFrame = function() return _G["Castborn_DoTTracker"] end,
-        configKey = "dots",
-    },
-    {
-        id = "multidot",
-        title = "Multi-DoT Tracker",
-        description = "In multi-target fights, shows DoT status across multiple enemies so you can keep them all dotted.",
-        tip = "Targets are sorted by urgency - the one needing attention most appears first.",
-        getFrame = function() return _G["Castborn_MultiDoTTracker"] end,
-        configKey = "multidot",
+        configKeys = {"dots", "multidot"},
     },
     {
         id = "procs",
@@ -130,50 +99,44 @@ local steps = {
     },
     {
         id = "absorbs",
-        title = "Absorb Tracker",
-        description = "Track absorb shields like Ice Barrier, Mana Shield, Fire Ward, Shadow Ward, Power Word: Shield, and more.\n\nShows remaining absorb amount with a drain effect. Multiple shields display as a row of icons.",
-        tip = "Works for all classes — Power Word: Shield from a healer is tracked automatically.",
+        title = "Defensive Trackers",
+        description = "|cff88ddffAbsorb Tracker|r \226\128\148 tracks absorb shields like Ice Barrier, Power Word: Shield, and Fire/Shadow Ward. Shows remaining absorb with a drain effect; multiple shields display as a row of icons.\n\n|cff88ddffArmour Tracker|r \226\128\148 shows an alert icon when your class armour buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.",
+        tip = "Both trackers work for all classes \226\128\148 Power Word: Shield from a healer is tracked automatically.",
         getFrame = function() return _G["Castborn_AbsorbTracker"] end,
-        configKey = "absorbs",
+        configKeys = {"absorbs", "armortracker"},
     },
     {
-        id = "appearance",
-        title = "Customize Appearance",
-        description = "You can customise the look of every module!\n\nToggle frame borders on or off globally in |cff88ddffLook & Feel|r options, and set a custom background colour and opacity for each module in its settings.",
-        tip = "Open |cff88ddff/cb|r and check Look & Feel for borders, or each module's page for background colour.",
-        getFrame = function() return Castborn.castbars and Castborn.castbars.player end,
-    },
-    {
-        id = "moving",
-        title = "Moving & Positioning",
-        description = "All Castborn frames can be repositioned!\n\nType |cff88ddff/cb unlock|r to enable dragging, then drag any frame to your preferred position.\n\n|cff88ddffCtrl+Shift+Click|r a module header to temporarily hide it — useful when frames overlap.",
-        tip = "Use |cff88ddff/cb lock|r when done. Use |cff88ddff/cb grid|r for a positioning grid overlay.",
+        id = "customise",
+        title = "Customise & Position",
+        description = "Make Castborn your own!\n\n|cff88ddff/cb|r \226\128\148 Open the options panel to adjust sizes, colours, and behaviours.\n|cff88ddff/cb unlock|r \226\128\148 Drag any frame to reposition it.\n|cff88ddff/cb grid|r \226\128\148 Show a positioning grid overlay.\n\n|cff88ddffCtrl+Shift+Click|r a module header to temporarily hide it when frames overlap.",
+        tip = "Toggle borders globally in |cff88ddffLook & Feel|r, or set per-module background colour in each module's page.",
         frame = nil,
-    },
-    {
-        id = "options",
-        title = "Options Panel",
-        description = "Customise everything in the options panel. Adjust sizes, colours, and behaviours for each module.",
-        tip = "Open options anytime with |cff88ddff/cb|r or find Castborn in Interface > AddOns.",
-        frame = nil,
-        action = function()
-            if Castborn.Options then
-                Castborn.Options:Show()
-            end
-        end,
     },
     {
         id = "complete",
         title = "Setup Complete!",
-        description = "You're all set! Castborn is now configured to your preferences.\n\nRemember:\n|cff88ddff/cb|r - Open options\n|cff88ddff/cb unlock|r - Move frames\n|cff88ddff/cb tutorial|r - Replay this setup",
-        tip = "Have fun and good luck with your adventures!",
+        description = "Castborn's modules are now enabled to your preferences.\n\nTo customise them further, open the options panel with |cff88ddff/cb|r or use |cff88ddff/cb unlock|r to reposition frames.\n\nIf you'd like to configure the layout now:",
+        tip = "I hope you enjoy using Castborn \226\128\148 GLHF!",
         frame = nil,
     },
 }
 
--- Create the highlight frame that surrounds the current element
-local function CreateHighlightFrame()
-    local frame = CreateFrame("Frame", "CastbornTutorialHighlight", UIParent, "BackdropTemplate")
+-- Human-readable labels for configKey values (used by multi-checkbox merged steps)
+local configKeyLabels = {
+    gcd = "GCD Indicator",
+    fsr = "5 Second Rule",
+    target = "Target Castbar",
+    targettarget = "Target-of-Target",
+    focus = "Focus Castbar",
+    dots = "DoT Tracker",
+    multidot = "Multi-DoT Tracker",
+    absorbs = "Absorb Tracker",
+    armortracker = "Armour Tracker",
+}
+
+-- Create a highlight frame that surrounds a target element
+local function CreateHighlightFrame(index)
+    local frame = CreateFrame("Frame", "CastbornTutorialHighlight" .. (index or 1), UIParent, "BackdropTemplate")
     frame:SetFrameStrata("FULLSCREEN_DIALOG")
     frame:SetFrameLevel(100)
 
@@ -229,41 +192,31 @@ local function CreateHighlightFrame()
     return frame
 end
 
--- Create the spotlight overlay (dims everything except the focused element)
+-- Create the spotlight overlay (dims everything except focused elements)
 local function CreateSpotlightOverlay()
     local overlay = CreateFrame("Frame", "CastbornTutorialSpotlight", UIParent)
     overlay:SetFrameStrata("FULLSCREEN")
     overlay:SetFrameLevel(50)
     overlay:SetAllPoints(UIParent)
 
-    -- Create 4 dark panels that surround the spotlight "hole"
-    -- Top panel (above the spotlight)
-    overlay.top = overlay:CreateTexture(nil, "BACKGROUND")
-    overlay.top:SetColorTexture(0, 0, 0, 0.75)
-    overlay.top:SetPoint("TOPLEFT", UIParent, "TOPLEFT")
-    overlay.top:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT")
+    -- Pool of dark panels used to dim the screen around spotlight holes
+    overlay.panels = {}
 
-    -- Bottom panel (below the spotlight)
-    overlay.bottom = overlay:CreateTexture(nil, "BACKGROUND")
-    overlay.bottom:SetColorTexture(0, 0, 0, 0.75)
-    overlay.bottom:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT")
-    overlay.bottom:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT")
-
-    -- Left panel (left of the spotlight)
-    overlay.left = overlay:CreateTexture(nil, "BACKGROUND")
-    overlay.left:SetColorTexture(0, 0, 0, 0.75)
-    overlay.left:SetPoint("TOPLEFT", overlay.top, "BOTTOMLEFT")
-    overlay.left:SetPoint("BOTTOMLEFT", overlay.bottom, "TOPLEFT")
-
-    -- Right panel (right of the spotlight)
-    overlay.right = overlay:CreateTexture(nil, "BACKGROUND")
-    overlay.right:SetColorTexture(0, 0, 0, 0.75)
-    overlay.right:SetPoint("TOPRIGHT", overlay.top, "BOTTOMRIGHT")
-    overlay.right:SetPoint("BOTTOMRIGHT", overlay.bottom, "TOPRIGHT")
+    local function GetPanel(index)
+        if not overlay.panels[index] then
+            local tex = overlay:CreateTexture(nil, "BACKGROUND")
+            tex:SetColorTexture(0, 0, 0, 0.75)
+            tex:Hide()
+            overlay.panels[index] = tex
+        end
+        return overlay.panels[index]
+    end
+    overlay.GetPanel = GetPanel
 
     -- Fade in/out animation state
     overlay.targetAlpha = 0.75
     overlay.currentAlpha = 0
+    overlay.activePanels = 0
 
     overlay:SetScript("OnUpdate", function(self, delta)
         if self.currentAlpha ~= self.targetAlpha then
@@ -275,10 +228,9 @@ local function CreateSpotlightOverlay()
                 self.currentAlpha = self.currentAlpha + (diff > 0 and change or -change)
             end
             local a = self.currentAlpha
-            self.top:SetAlpha(a)
-            self.bottom:SetAlpha(a)
-            self.left:SetAlpha(a)
-            self.right:SetAlpha(a)
+            for i = 1, self.activePanels do
+                self.panels[i]:SetAlpha(a)
+            end
         end
     end)
 
@@ -286,60 +238,139 @@ local function CreateSpotlightOverlay()
     return overlay
 end
 
--- Position the spotlight hole around a target frame
-local function PositionSpotlight(targetFrame, padding)
+-- Compute bounding box across one or more frames
+local function ComputeBoundingBox(frames, padding)
+    padding = padding or 15
+    local left, right, top, bottom
+
+    for _, f in ipairs(frames) do
+        if f and f:IsShown() and f:GetLeft() then
+            local fl, fr, ft, fb = f:GetLeft(), f:GetRight(), f:GetTop(), f:GetBottom()
+            left = left and min(left, fl) or fl
+            right = right and max(right, fr) or fr
+            top = top and max(top, ft) or ft
+            bottom = bottom and min(bottom, fb) or fb
+        end
+    end
+
+    if not left then return nil end
+    return left - padding, right + padding, top + padding, bottom - padding
+end
+
+-- Hide all spotlight panels
+local function HideSpotlightPanels()
+    if not spotlightOverlay then return end
+    for _, p in ipairs(spotlightOverlay.panels) do
+        p:Hide()
+    end
+    spotlightOverlay.activePanels = 0
+end
+
+-- Add a positioned dark panel to the spotlight overlay
+local function AddSpotlightPanel(l, r, t, b)
+    if r <= l or t <= b then return end -- skip zero-size panels
+    local idx = spotlightOverlay.activePanels + 1
+    local panel = spotlightOverlay.GetPanel(idx)
+    panel:ClearAllPoints()
+    panel:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", l, t)
+    panel:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", r, b)
+    panel:SetAlpha(spotlightOverlay.currentAlpha)
+    panel:Show()
+    spotlightOverlay.activePanels = idx
+end
+
+-- Position spotlight with individual holes around each target frame
+-- Uses a scanline algorithm to correctly handle any frame arrangement
+local function PositionSpotlight(frames, padding)
     if not spotlightOverlay then
         spotlightOverlay = CreateSpotlightOverlay()
     end
 
     padding = padding or 15
+    HideSpotlightPanels()
 
-    -- Clear all points first
-    spotlightOverlay.top:ClearAllPoints()
-    spotlightOverlay.bottom:ClearAllPoints()
-    spotlightOverlay.left:ClearAllPoints()
-    spotlightOverlay.right:ClearAllPoints()
+    -- Collect padded bounds for each visible frame (including icon frames)
+    local holes = {}
+    for _, f in ipairs(frames) do
+        if f and f:IsShown() and f.GetLeft and f:GetLeft() then
+            local l, r, t, b = f:GetLeft(), f:GetRight(), f:GetTop(), f:GetBottom()
+            -- Expand bounds to include icon frame if present
+            if f.iconFrame and f.iconFrame:IsShown() and f.iconFrame:GetLeft() then
+                l = min(l, f.iconFrame:GetLeft())
+                r = max(r, f.iconFrame:GetRight())
+                t = max(t, f.iconFrame:GetTop())
+                b = min(b, f.iconFrame:GetBottom())
+            end
+            tinsert(holes, {
+                l = l - padding,
+                r = r + padding,
+                t = t + padding,
+                b = b - padding,
+            })
+        end
+    end
 
-    if targetFrame and targetFrame:IsShown() and targetFrame:GetLeft() then
-        local left = targetFrame:GetLeft() - padding
-        local right = targetFrame:GetRight() + padding
-        local top = targetFrame:GetTop() + padding
-        local bottom = targetFrame:GetBottom() - padding
-        local screenWidth = GetScreenWidth()
-        local screenHeight = GetScreenHeight()
+    local sw = GetScreenWidth()
+    local sh = GetScreenHeight()
 
-        -- Top panel: covers from screen top down to spotlight top
-        spotlightOverlay.top:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, 0)
-        spotlightOverlay.top:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", screenWidth, top)
-
-        -- Bottom panel: covers from spotlight bottom down to screen bottom
-        spotlightOverlay.bottom:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 0, bottom)
-        spotlightOverlay.bottom:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", 0, 0)
-
-        -- Left panel: covers left side between top and bottom panels
-        spotlightOverlay.left:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 0, top)
-        spotlightOverlay.left:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", left, bottom)
-
-        -- Right panel: covers right side between top and bottom panels
-        spotlightOverlay.right:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", right, top)
-        spotlightOverlay.right:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", screenWidth, bottom)
-
-        spotlightOverlay.targetAlpha = 0.75
-        spotlightOverlay:Show()
-    else
-        -- No target - show subtle overlay for welcome/complete screens
-        spotlightOverlay.top:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, 0)
-        spotlightOverlay.top:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", 0, 0)
-        -- Hide other panels when no spotlight
-        spotlightOverlay.bottom:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 0, 0)
-        spotlightOverlay.bottom:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", 0, 0)
-        spotlightOverlay.left:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 0, 0)
-        spotlightOverlay.left:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", 0, 0)
-        spotlightOverlay.right:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", 0, 0)
-        spotlightOverlay.right:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", 0, 0)
+    if #holes == 0 then
+        -- No targets - dim the whole screen
+        AddSpotlightPanel(0, sw, sh, 0)
         spotlightOverlay.targetAlpha = 0.6
         spotlightOverlay:Show()
+        return
     end
+
+    -- Collect unique Y edges sorted descending (screen top to bottom)
+    local ySet = {}
+    ySet[sh] = true
+    ySet[0] = true
+    for _, h in ipairs(holes) do
+        ySet[h.t] = true
+        ySet[h.b] = true
+    end
+    local yEdges = {}
+    for y in pairs(ySet) do
+        tinsert(yEdges, y)
+    end
+    table.sort(yEdges, function(a, b) return a > b end)
+
+    -- Scanline: for each horizontal band between consecutive Y edges,
+    -- find which holes are active and create dark panels around them
+    for i = 1, #yEdges - 1 do
+        local bandTop = yEdges[i]
+        local bandBot = yEdges[i + 1]
+
+        -- Find holes that span this band
+        local active = {}
+        for _, h in ipairs(holes) do
+            if h.t >= bandTop and h.b <= bandBot then
+                tinsert(active, h)
+            end
+        end
+
+        if #active == 0 then
+            -- No holes in this band - fill it entirely
+            AddSpotlightPanel(0, sw, bandTop, bandBot)
+        else
+            -- Sort active holes left-to-right
+            table.sort(active, function(a, b) return a.l < b.l end)
+
+            -- Dark panel from screen left to first hole
+            AddSpotlightPanel(0, active[1].l, bandTop, bandBot)
+
+            -- Dark panels between consecutive holes
+            for j = 1, #active - 1 do
+                AddSpotlightPanel(active[j].r, active[j + 1].l, bandTop, bandBot)
+            end
+
+            -- Dark panel from last hole to screen right
+            AddSpotlightPanel(active[#active].r, sw, bandTop, bandBot)
+        end
+    end
+
+    spotlightOverlay.targetAlpha = 0.75
+    spotlightOverlay:Show()
 end
 
 -- Raise a frame above the spotlight overlay
@@ -380,7 +411,7 @@ end
 -- Create the tutorial explanation panel
 local function CreateTutorialFrame()
     local frame = CreateFrame("Frame", "CastbornTutorialFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(400, 240)
+    frame:SetSize(450, 290)
     frame:SetPoint("TOP", UIParent, "TOP", 0, -170)
     frame:SetFrameStrata("FULLSCREEN_DIALOG")
     frame:SetFrameLevel(101)
@@ -414,7 +445,7 @@ local function CreateTutorialFrame()
     frame.description = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     frame.description:SetPoint("TOPLEFT", 16, -55)
     frame.description:SetPoint("TOPRIGHT", -16, -55)
-    frame.description:SetJustifyH("LEFT")
+    frame.description:SetJustifyH("CENTER")
     frame.description:SetJustifyV("TOP")
     frame.description:SetSpacing(2)
 
@@ -429,15 +460,17 @@ local function CreateTutorialFrame()
     frame.tip:SetJustifyH("LEFT")
     frame.tip:SetTextColor(0.7, 0.7, 0.7, 1)
 
-    -- Enable checkbox (for modules that can be toggled)
-    frame.enableCheck = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
-    frame.enableCheck:SetSize(26, 26)
-    frame.enableCheck:SetPoint("BOTTOMLEFT", 16, 42)
-    frame.enableCheck.text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    frame.enableCheck.text:SetPoint("LEFT", frame.enableCheck, "RIGHT", 4, 0)
-    frame.enableCheck.text:SetText("Enable this module")
-    frame.enableCheck.text:SetTextColor(0.9, 0.9, 0.9, 1)
-    frame.enableCheck:Hide()  -- Hidden by default, shown for steps with configKey
+    -- Enable checkboxes (pool of 3 for merged steps with multiple toggles)
+    frame.enableChecks = {}
+    for i = 1, 3 do
+        local cb = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+        cb:SetSize(26, 26)
+        cb.text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        cb.text:SetPoint("LEFT", cb, "RIGHT", 4, 0)
+        cb.text:SetTextColor(0.9, 0.9, 0.9, 1)
+        cb:Hide()
+        frame.enableChecks[i] = cb
+    end
 
     -- Buttons
     frame.skipBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
@@ -460,6 +493,22 @@ local function CreateTutorialFrame()
     frame.nextBtn:SetSize(70, 22)
     frame.nextBtn:SetPoint("BOTTOM", 45, 12)
     frame.nextBtn:SetText("Next")
+
+    -- Test Mode button (shown only on final step)
+    frame.testModeBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    frame.testModeBtn:SetSize(100, 22)
+    frame.testModeBtn:SetPoint("TOP", frame.description, "BOTTOM", 0, -8)
+    frame.testModeBtn:SetText("Test Mode")
+    frame.testModeBtn:SetScript("OnClick", function()
+        Tutorial:End()
+        CastbornDB.locked = false
+        Castborn:FireCallback("TEST_MODE")
+        if Castborn.ShowTest then Castborn:ShowTest() end
+        Castborn:StartTestMode()
+        if Castborn.Anchoring then Castborn.Anchoring:ShowDragIndicators(true) end
+        if Castborn.ShowTestModePanel then Castborn:ShowTestModePanel() end
+    end)
+    frame.testModeBtn:Hide()
     frame.nextBtn:SetScript("OnClick", function()
         Tutorial:NextStep()
     end)
@@ -546,177 +595,210 @@ local function ShowTestFrame(frameId)
             frame:Show()
             return frame
         end
-    elseif frameId == "gcd" then
-        if CB.TestGCD then CB:TestGCD() end
-        if CB.gcdFrame then
-            CB.gcdFrame:Show()
-            return CB.gcdFrame
+    elseif frameId == "castbar_companions" then
+        -- Show GCD + FSR test, highlight only enabled companion bars
+        local frames = {}
+        if CastbornDB.fsr and CastbornDB.fsr.enabled then
+            if CB.TestFSR then CB:TestFSR() end
+            if CB.fsrFrame then tinsert(frames, CB.fsrFrame) end
+        else
+            if CB.EndTestFSR then CB:EndTestFSR() end
         end
-    elseif frameId == "fsr" then
-        if CB.TestFSR then CB:TestFSR() end
-        if CB.fsrFrame then
-            return CB.fsrFrame
+        if CastbornDB.gcd and CastbornDB.gcd.enabled then
+            if CB.TestGCD then CB:TestGCD() end
+            if CB.gcdFrame then tinsert(frames, CB.gcdFrame) end
+        else
+            if CB.EndTestGCD then CB:EndTestGCD() end
+        end
+        -- Include the player castbar for context
+        if CB.castbars and CB.castbars.player then
+            local frame = CB.castbars.player
+            local cfg = CB.db and CB.db.player or {}
+            frame.bar:SetMinMaxValues(0, 1)
+            frame.bar:SetValue(0.6)
+            frame.bar:SetStatusBarColor(cfg.barColor and cfg.barColor[1] or 0.6, cfg.barColor and cfg.barColor[2] or 0.6, cfg.barColor and cfg.barColor[3] or 0.9, 1)
+            if frame.spellText then frame.spellText:SetText("Frostbolt") end
+            if frame.timeText then frame.timeText:SetText("1.2s") end
+            if frame.icon then frame.icon:SetTexture("Interface\\Icons\\Spell_Frost_FrostBolt02") end
+            if frame.iconFrame then frame.iconFrame:Show() end
+            frame:SetAlpha(1)
+            frame:Show()
+            tinsert(frames, frame)
+        end
+        if #frames > 0 then
+            frames.grouped = true
+            return frames
         end
     elseif frameId == "cooldowns" then
         if CB.TestCooldowns then CB:TestCooldowns() end
-        local frame = _G["Castborn_CooldownTracker"]
-        if frame then
-            return frame
+        -- Return both frames as a group so they share one highlight border
+        local cd = _G["Castborn_CooldownTracker"]
+        local trinkets = _G["Castborn_TrinketTracker"]
+        if cd and trinkets and trinkets:IsShown() then
+            return {cd, trinkets, grouped = true}
+        elseif cd then
+            return cd
         end
-    elseif frameId == "target_castbar" then
-        if CB.castbars and CB.castbars.target then
-            local frame = CB.castbars.target
-            local cfg = CB.db and CB.db.target or {}
-            -- Set casting state to keep bar visible
-            frame.casting = true
-            frame.channeling = false
-            frame.fadeOut = 0
-            frame.startTime = GetTime()
-            frame.endTime = GetTime() + 99
-            frame.bar:SetMinMaxValues(0, 1)
-            frame.bar:SetValue(0.4)
-            frame.bar:SetStatusBarColor(cfg.barColor and cfg.barColor[1] or 0.9, cfg.barColor and cfg.barColor[2] or 0.4, cfg.barColor and cfg.barColor[3] or 0.4, 1)
-            if frame.spellText then frame.spellText:SetText("Shadow Bolt") end
-            if frame.timeText then frame.timeText:SetText("2.1s") end
-            if frame.icon then frame.icon:SetTexture("Interface\\Icons\\Spell_Shadow_ShadowBolt") end
-            if frame.iconFrame then frame.iconFrame:Show() end
-            if frame.spark then frame.spark:Hide() end
-            frame:SetAlpha(1)
-            frame:Show()
-            return frame
+    elseif frameId == "other_castbars" then
+        -- Show enabled castbars: target, target-of-target, focus
+        local frames = {}
+        local castbarData = {
+            {key = "target",       spell = "Shadow Bolt",  icon = "Interface\\Icons\\Spell_Shadow_ShadowBolt",  val = 0.4,  r = 0.9, g = 0.4, b = 0.4},
+            {key = "targettarget", spell = "Shadow Bolt",  icon = "Interface\\Icons\\Spell_Shadow_ShadowBolt",  val = 0.35, r = 0.7, g = 0.5, b = 0.8},
+            {key = "focus",        spell = "Greater Heal", icon = "Interface\\Icons\\Spell_Holy_GreaterHeal",   val = 0.7,  r = 0.3, g = 0.7, b = 0.9},
+        }
+        for _, data in ipairs(castbarData) do
+            local db = CastbornDB[data.key]
+            local frame = CB.castbars and CB.castbars[data.key]
+            if frame and db and db.enabled then
+                local cfg = CB.db and CB.db[data.key] or {}
+                frame.casting = true
+                frame.channeling = false
+                frame.fadeOut = 0
+                frame.startTime = GetTime()
+                frame.endTime = GetTime() + 99
+                frame.bar:SetMinMaxValues(0, 1)
+                frame.bar:SetValue(data.val)
+                frame.bar:SetStatusBarColor(cfg.barColor and cfg.barColor[1] or data.r, cfg.barColor and cfg.barColor[2] or data.g, cfg.barColor and cfg.barColor[3] or data.b, 1)
+                if frame.spellText then frame.spellText:SetText(data.spell) end
+                if frame.timeText then frame.timeText:SetText(string.format("%.1fs", data.val * 3)) end
+                if frame.icon then frame.icon:SetTexture(data.icon) end
+                if frame.iconFrame then frame.iconFrame:Show() end
+                if frame.spark then frame.spark:Hide() end
+                frame:SetAlpha(1)
+                frame:Show()
+                tinsert(frames, frame)
+            elseif frame then
+                frame.casting = false
+                frame:Hide()
+            end
         end
-    elseif frameId == "targettarget_castbar" then
-        if CB.castbars and CB.castbars.targettarget then
-            local frame = CB.castbars.targettarget
-            local cfg = CB.db and CB.db.targettarget or {}
-            -- Set casting state to keep bar visible
-            frame.casting = true
-            frame.channeling = false
-            frame.fadeOut = 0
-            frame.startTime = GetTime()
-            frame.endTime = GetTime() + 99
-            frame.bar:SetMinMaxValues(0, 1)
-            frame.bar:SetValue(0.35)
-            frame.bar:SetStatusBarColor(cfg.barColor and cfg.barColor[1] or 0.7, cfg.barColor and cfg.barColor[2] or 0.5, cfg.barColor and cfg.barColor[3] or 0.8, 1)
-            if frame.spellText then frame.spellText:SetText("Shadow Bolt") end
-            if frame.timeText then frame.timeText:SetText("1.8s") end
-            if frame.icon then frame.icon:SetTexture("Interface\\Icons\\Spell_Shadow_ShadowBolt") end
-            if frame.iconFrame then frame.iconFrame:Show() end
-            if frame.spark then frame.spark:Hide() end
-            frame:SetAlpha(1)
-            frame:Show()
-            return frame
-        end
-    elseif frameId == "focus_castbar" then
-        if CB.castbars and CB.castbars.focus then
-            local frame = CB.castbars.focus
-            local cfg = CB.db and CB.db.focus or {}
-            -- Set casting state to keep bar visible
-            frame.casting = true
-            frame.channeling = false
-            frame.fadeOut = 0
-            frame.startTime = GetTime()
-            frame.endTime = GetTime() + 99
-            frame.bar:SetMinMaxValues(0, 1)
-            frame.bar:SetValue(0.7)
-            frame.bar:SetStatusBarColor(cfg.barColor and cfg.barColor[1] or 0.3, cfg.barColor and cfg.barColor[2] or 0.7, cfg.barColor and cfg.barColor[3] or 0.9, 1)
-            if frame.spellText then frame.spellText:SetText("Greater Heal") end
-            if frame.timeText then frame.timeText:SetText("2.5s") end
-            if frame.icon then frame.icon:SetTexture("Interface\\Icons\\Spell_Holy_GreaterHeal") end
-            if frame.iconFrame then frame.iconFrame:Show() end
-            if frame.spark then frame.spark:Hide() end
-            frame:SetAlpha(1)
-            frame:Show()
-            return frame
-        end
+        if #frames > 0 then return frames end
     elseif frameId == "dots" then
-        -- Call the test function to populate with example data
-        if CB.TestDoTTracker then CB:TestDoTTracker() end
-        local frame = _G["Castborn_DoTTracker"]
-        if frame then
-            return frame
+        -- Show enabled DoT trackers
+        local frames = {}
+        if CastbornDB.dots and CastbornDB.dots.enabled then
+            if CB.TestDoTTracker then CB:TestDoTTracker() end
+            local dot = _G["Castborn_DoTTracker"]
+            if dot then tinsert(frames, dot) end
+        else
+            if CB.EndTestDoTTracker then CB:EndTestDoTTracker() end
         end
-    elseif frameId == "multidot" then
-        -- Call the test function to populate with example data
-        if CB.TestMultiDoT then CB:TestMultiDoT() end
-        local frame = _G["Castborn_MultiDoTTracker"]
-        if frame then
-            return frame
+        if CastbornDB.multidot and CastbornDB.multidot.enabled then
+            if CB.TestMultiDoT then CB:TestMultiDoT() end
+            local mdot = _G["Castborn_MultiDoTTracker"]
+            if mdot then tinsert(frames, mdot) end
+        else
+            if CB.EndTestMultiDoT then CB:EndTestMultiDoT() end
         end
+        if #frames > 0 then return frames end
     elseif frameId == "procs" then
         if CB.TestProcs then CB:TestProcs() end
         local frame = _G["Castborn_ProcTracker"]
-        if frame then
-            return frame
-        end
+        if frame then return frame end
     elseif frameId == "swing" then
-        -- Start test swing timers to populate the bars
-        if CB.TestSwingTimers then
-            CB:TestSwingTimers()
-        end
+        if CB.TestSwingTimers then CB:TestSwingTimers() end
         local container = CB.swingTimers and CB.swingTimers.container
-        if container then
-            return container
-        end
+        if container then return container end
     elseif frameId == "interrupt" then
         if CB.TestInterrupt then CB:TestInterrupt() end
         local frame = _G["Castborn_Interrupt"] or _G["Castborn_Interrupt_Mock"]
         if frame then
             return frame
         else
-            -- Create a mockup interrupt tracker for the tutorial
             return CreateMockupInterruptTracker()
         end
     elseif frameId == "totems" then
         if CB.TestTotemTracker then CB:TestTotemTracker() end
         local frame = _G["Castborn_TotemTracker"]
-        if frame then
-            return frame
-        end
+        if frame then return frame end
     elseif frameId == "absorbs" then
-        if CB.TestAbsorbTracker then CB:TestAbsorbTracker() end
-        local frame = _G["Castborn_AbsorbTracker"]
-        if frame then
-            return frame
+        local frames = {}
+        if CastbornDB.absorbs and CastbornDB.absorbs.enabled then
+            if CB.TestAbsorbTracker then CB:TestAbsorbTracker() end
+            local f = _G["Castborn_AbsorbTracker"]
+            if f then tinsert(frames, f) end
+        else
+            if CB.EndTestAbsorbTracker then CB:EndTestAbsorbTracker() end
         end
+        if CastbornDB.armortracker and CastbornDB.armortracker.enabled then
+            if CB.TestArmorTracker then CB:TestArmorTracker() end
+            local f = _G["Castborn_ArmorTracker"]
+            if f then tinsert(frames, f) end
+        else
+            if CB.EndTestArmorTracker then CB:EndTestArmorTracker() end
+        end
+        if #frames > 0 then return frames end
+    elseif frameId == "customise" then
+        -- No specific frame to highlight — this step explains commands
+        return nil
     end
 
     return nil
 end
 
--- Highlight a specific frame with spotlight effect
-local function HighlightFrame(targetFrame)
-    if not highlightFrame then
-        highlightFrame = CreateHighlightFrame()
+-- Get or create a highlight frame from the pool
+local function GetHighlightFrame(index)
+    if not highlightFrames[index] then
+        highlightFrames[index] = CreateHighlightFrame(index)
     end
+    return highlightFrames[index]
+end
 
+-- Hide all highlight frames
+local function HideAllHighlights()
+    for _, hf in ipairs(highlightFrames) do
+        hf:Hide()
+    end
+end
+
+-- Highlight one or more frames with spotlight effect
+-- targetFrames can be a single frame or a table of frames
+local function HighlightFrame(targetFrames)
     -- Restore any previously raised frames
     RestoreAllFrames()
+    HideAllHighlights()
 
-    if targetFrame then
-        -- Make sure the frame is visible
-        targetFrame:Show()
+    -- Normalise to a table
+    if targetFrames and not targetFrames[1] then
+        targetFrames = {targetFrames}
+    end
 
-        -- Raise the target frame above the spotlight
-        RaiseFrameAboveSpotlight(targetFrame)
-
-        -- Also raise the icon frame if this is a castbar with an icon
-        if targetFrame.iconFrame then
-            RaiseFrameAboveSpotlight(targetFrame.iconFrame)
+    if targetFrames and #targetFrames > 0 then
+        -- Raise all target frames above the spotlight
+        for _, f in ipairs(targetFrames) do
+            f:Show()
+            RaiseFrameAboveSpotlight(f)
+            if f.iconFrame then
+                RaiseFrameAboveSpotlight(f.iconFrame)
+            end
         end
 
-        -- Position and show the spotlight overlay
-        PositionSpotlight(targetFrame, 20)
-
-        -- Position highlight border around the frame
-        highlightFrame:ClearAllPoints()
-        highlightFrame:SetPoint("TOPLEFT", targetFrame, "TOPLEFT", -8, 8)
-        highlightFrame:SetPoint("BOTTOMRIGHT", targetFrame, "BOTTOMRIGHT", 8, -8)
-        highlightFrame:Show()
+        if #targetFrames == 1 or targetFrames.grouped then
+            -- Single frame or grouped frames: spotlight hole + one bounding highlight
+            PositionSpotlight(targetFrames, 20)
+            local left, right, top, bottom = ComputeBoundingBox(targetFrames, 8)
+            if left then
+                local hf = GetHighlightFrame(1)
+                hf:ClearAllPoints()
+                hf:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+                hf:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", right, bottom)
+                hf:Show()
+            end
+        else
+            -- Multiple scattered frames: individual holes + individual highlight per frame
+            PositionSpotlight(targetFrames, 20)
+            for i, f in ipairs(targetFrames) do
+                local hf = GetHighlightFrame(i)
+                hf:ClearAllPoints()
+                hf:SetPoint("TOPLEFT", f, "TOPLEFT", -8, 8)
+                hf:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 8, -8)
+                hf:Show()
+            end
+        end
     else
         -- No target - show dim overlay for welcome/complete screens
-        PositionSpotlight(nil)
-        highlightFrame:Hide()
+        PositionSpotlight({})
     end
 end
 
@@ -744,56 +826,83 @@ local function ShowStep(stepNum)
     tutorialFrame.backBtn:SetEnabled(stepNum > 1)
     if stepNum == #steps then
         tutorialFrame.nextBtn:SetText("Finish")
+        tutorialFrame.testModeBtn:Show()
     else
         tutorialFrame.nextBtn:SetText("Next")
+        tutorialFrame.testModeBtn:Hide()
     end
 
-    -- Handle enable checkbox
-    if step.configKey then
-        local configKey = step.configKey
-        local db = CastbornDB[configKey]
+    -- Handle enable checkboxes (single configKey or merged configKeys)
+    local keys = step.configKeys or (step.configKey and {step.configKey}) or nil
+    local numChecks = keys and #keys or 0
 
-        -- Set checkbox state based on current setting
-        tutorialFrame.enableCheck:SetChecked(db and db.enabled)
+    -- Hide all checkboxes first
+    for i = 1, 3 do
+        tutorialFrame.enableChecks[i]:Hide()
+        tutorialFrame.enableChecks[i].text:Hide()
+    end
 
-        -- Wire up the click handler
-        tutorialFrame.enableCheck:SetScript("OnClick", function(self)
-            if CastbornDB[configKey] then
-                CastbornDB[configKey].enabled = self:GetChecked()
-                Castborn:Print(step.title .. " " .. (self:GetChecked() and "enabled" or "disabled"))
+    if keys then
+        for i, key in ipairs(keys) do
+            local cb = tutorialFrame.enableChecks[i]
+            local db = CastbornDB[key]
+
+            -- Position: stack from bottom, first key at top
+            cb:ClearAllPoints()
+            cb:SetPoint("BOTTOMLEFT", 16, 42 + (numChecks - i) * 24)
+
+            -- Set checkbox state based on current setting
+            cb:SetChecked(db and db.enabled)
+
+            -- Label: generic for single-key steps, specific for merged steps
+            if numChecks == 1 then
+                cb.text:SetText("Enable this module")
+            else
+                cb.text:SetText("Enable " .. (configKeyLabels[key] or key))
             end
-        end)
 
-        tutorialFrame.enableCheck:Show()
-        tutorialFrame.enableCheck.text:Show()
+            -- Wire up the click handler — toggle setting and refresh the step
+            cb:SetScript("OnClick", function(self)
+                if CastbornDB[key] then
+                    CastbornDB[key].enabled = self:GetChecked()
+                    local label = configKeyLabels[key] or step.title
+                    Castborn:Print(label .. " " .. (self:GetChecked() and "enabled" or "disabled"))
+                    -- Refresh the step to update visible frames and highlights
+                    ShowStep(currentStep)
+                end
+            end)
 
-        -- Adjust tip position when checkbox is visible
-        tutorialFrame.tipIcon:SetPoint("BOTTOMLEFT", 16, 72)
+            cb:Show()
+            cb.text:Show()
+        end
+
+        -- Adjust tip position based on number of checkboxes
+        tutorialFrame.tipIcon:ClearAllPoints()
+        tutorialFrame.tipIcon:SetPoint("BOTTOMLEFT", 16, 42 + numChecks * 24 + 6)
     else
-        tutorialFrame.enableCheck:Hide()
-        tutorialFrame.enableCheck.text:Hide()
-
-        -- Reset tip position when checkbox is hidden
+        -- Reset tip position when no checkboxes
+        tutorialFrame.tipIcon:ClearAllPoints()
         tutorialFrame.tipIcon:SetPoint("BOTTOMLEFT", 16, 52)
     end
 
-    -- Show test frame and highlight it
-    local targetFrame = nil
+    -- Show test frame(s) and highlight them
+    local targetFrames = nil
 
     -- First try to show a test version of the frame
     if step.id then
-        targetFrame = ShowTestFrame(step.id)
+        targetFrames = ShowTestFrame(step.id)
     end
 
     -- Fall back to getFrame if no test frame was shown
-    if not targetFrame and step.getFrame then
-        targetFrame = step.getFrame()
-        if targetFrame then
-            targetFrame:Show()
+    if not targetFrames and step.getFrame then
+        local f = step.getFrame()
+        if f then
+            f:Show()
+            targetFrames = f
         end
     end
 
-    HighlightFrame(targetFrame)
+    HighlightFrame(targetFrames)
 
     -- Execute any action for this step
     if step.action then
@@ -866,13 +975,12 @@ function Tutorial:End()
     if CB.EndTestMultiDoT then CB:EndTestMultiDoT() end
     if CB.EndTestTotemTracker then CB:EndTestTotemTracker() end
     if CB.EndTestAbsorbTracker then CB:EndTestAbsorbTracker() end
+    if CB.EndTestArmorTracker then CB:EndTestArmorTracker() end
 
     if tutorialFrame then
         tutorialFrame:Hide()
     end
-    if highlightFrame then
-        highlightFrame:Hide()
-    end
+    HideAllHighlights()
     if spotlightOverlay then
         spotlightOverlay:Hide()
     end

@@ -233,9 +233,18 @@ function CB:ShowTestModePanel()
     title:SetPoint("TOP", 0, -8)
     title:SetText("|cff88ddffTest Mode|r")
 
+    -- Tip text
+    local tip = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    tip:SetPoint("BOTTOM", 0, 8)
+    tip:SetTextColor(0.7, 0.7, 0.7, 1)
+    tip:SetText("|cff88ddffTip:|r Ctrl+Shift+Click a header to temporarily hide it")
+
+    -- Size to fit tip text
+    panel:SetSize(270, 110)
+
     -- Show Grid button (toggles grid and unlocks frames when showing)
     local gridBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    gridBtn:SetSize(140, 22)
+    gridBtn:SetSize(200, 22)
     gridBtn:SetPoint("TOP", 0, -28)
     gridBtn:SetText("Show Grid")
     gridBtn:SetScript("OnClick", function()
@@ -253,7 +262,7 @@ function CB:ShowTestModePanel()
 
     -- Done button
     local doneBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    doneBtn:SetSize(140, 22)
+    doneBtn:SetSize(200, 22)
     doneBtn:SetPoint("TOP", gridBtn, "BOTTOM", 0, -4)
     doneBtn:SetText("Done")
     doneBtn:SetScript("OnClick", function()

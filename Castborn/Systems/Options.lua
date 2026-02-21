@@ -559,6 +559,17 @@ function Options:BuildGeneral(parent)
         if Castborn.ShowTestModePanel then Castborn:ShowTestModePanel() end
     end)
     testBtn:SetPoint("LEFT", lockBtn, "RIGHT", 8, 0)
+    testBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText("Test Mode")
+        GameTooltip:AddLine("Shows all modules with sample data so you can reposition them.", 1, 1, 1, true)
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Ctrl+Shift+Click a module header to temporarily hide it \226\128\148 useful when frames overlap.", 0.53, 0.87, 1, true)
+        GameTooltip:Show()
+    end)
+    testBtn:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     local gridBtn = CreateButton(parent, "Grid", 60, function()
         if Castborn.GridPosition then Castborn.GridPosition:TogglePositioningMode() end
