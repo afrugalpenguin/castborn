@@ -106,7 +106,11 @@ local function CreateArmorFrame()
     iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
     iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
     f.Normal = iconNormal
-    f:SetNormalTexture(iconNormal)
+    if Castborn.Masque and Castborn.Masque.enabled then
+        f:SetNormalTexture(iconNormal)
+    else
+        iconNormal:Hide()
+    end
 
     -- Cooldown frame for Masque compatibility
     local iconCooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")

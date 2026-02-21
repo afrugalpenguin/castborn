@@ -122,7 +122,11 @@ local function CreateTotemBar(parent, index)
     iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
     iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
     iconFrame.Normal = iconNormal
-    iconFrame:SetNormalTexture(iconNormal)
+    if Castborn.Masque and Castborn.Masque.enabled then
+        iconFrame:SetNormalTexture(iconNormal)
+    else
+        iconNormal:Hide()
+    end
 
     local iconCooldown = CreateFrame("Cooldown", nil, iconFrame, "CooldownFrameTemplate")
     iconCooldown:SetAllPoints()

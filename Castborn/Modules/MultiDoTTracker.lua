@@ -94,7 +94,11 @@ local function CreateNameplateIndicator()
     iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
     iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
     indicator.Normal = iconNormal
-    indicator:SetNormalTexture(iconNormal)
+    if Castborn.Masque and Castborn.Masque.enabled then
+        indicator:SetNormalTexture(iconNormal)
+    else
+        iconNormal:Hide()
+    end
 
     -- Cooldown frame for Masque compatibility
     local iconCooldown = CreateFrame("Cooldown", nil, indicator, "CooldownFrameTemplate")
@@ -329,7 +333,11 @@ local function CreateTargetRow(parent, index)
         dotNormal:SetPoint("BOTTOMRIGHT", 1, -1)
         dotNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
         dot.Normal = dotNormal
-        dot:SetNormalTexture(dotNormal)
+        if Castborn.Masque and Castborn.Masque.enabled then
+            dot:SetNormalTexture(dotNormal)
+        else
+            dotNormal:Hide()
+        end
 
         local dotCooldown = CreateFrame("Cooldown", nil, dot, "CooldownFrameTemplate")
         dotCooldown:SetAllPoints()

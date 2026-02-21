@@ -46,7 +46,11 @@ local function CreateCooldownFrame(parent, index)
     f.Normal:SetPoint("TOPLEFT", -1, 1)
     f.Normal:SetPoint("BOTTOMRIGHT", 1, -1)
     f.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
-    f:SetNormalTexture(f.Normal)
+    if Castborn.Masque and Castborn.Masque.enabled then
+        f:SetNormalTexture(f.Normal)
+    else
+        f.Normal:Hide()
+    end
 
     -- Cooldown frame
     f.cooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
@@ -134,7 +138,11 @@ local function CreateTrinketFrame(parent, index)
     f.Normal:SetPoint("TOPLEFT", -1, 1)
     f.Normal:SetPoint("BOTTOMRIGHT", 1, -1)
     f.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
-    f:SetNormalTexture(f.Normal)
+    if Castborn.Masque and Castborn.Masque.enabled then
+        f:SetNormalTexture(f.Normal)
+    else
+        f.Normal:Hide()
+    end
 
     f.cooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
     f.cooldown:SetAllPoints()

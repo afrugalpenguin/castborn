@@ -69,7 +69,11 @@ local function CreateInterruptBar()
     iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
     iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
     iconButton.Normal = iconNormal
-    iconButton:SetNormalTexture(iconNormal)
+    if Castborn.Masque and Castborn.Masque.enabled then
+        iconButton:SetNormalTexture(iconNormal)
+    else
+        iconNormal:Hide()
+    end
 
     local iconCooldown = CreateFrame("Cooldown", nil, iconButton, "CooldownFrameTemplate")
     iconCooldown:SetAllPoints()

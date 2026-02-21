@@ -97,7 +97,11 @@ local function CreateProcFrame(parent, index)
     f.Normal:SetPoint("TOPLEFT", -1, 1)
     f.Normal:SetPoint("BOTTOMRIGHT", 1, -1)
     f.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
-    f:SetNormalTexture(f.Normal)
+    if Castborn.Masque and Castborn.Masque.enabled then
+        f:SetNormalTexture(f.Normal)
+    else
+        f.Normal:Hide()
+    end
 
     -- Cooldown frame for Masque compatibility
     f.cooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")

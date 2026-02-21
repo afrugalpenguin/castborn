@@ -107,7 +107,11 @@ local function CreateAbsorbIcon()
     frame.Normal:SetPoint("TOPLEFT", -1, 1)
     frame.Normal:SetPoint("BOTTOMRIGHT", 1, -1)
     frame.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
-    frame:SetNormalTexture(frame.Normal)
+    if Castborn.Masque and Castborn.Masque.enabled then
+        frame:SetNormalTexture(frame.Normal)
+    else
+        frame.Normal:Hide()
+    end
 
     -- Cooldown sweep overlay (drains as absorb is consumed)
     local cooldown = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
