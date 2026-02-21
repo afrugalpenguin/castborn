@@ -128,7 +128,7 @@ local function CreateCheckbox(parent, label, dbTable, dbKey, onChange)
     end
 
     frame:SetScript("OnClick", function(self)
-        local checked = self:GetChecked()
+        local checked = self:GetChecked() and true or false
         if dbTable and dbKey then
             dbTable[dbKey] = checked
         end
@@ -269,12 +269,14 @@ local function CreateColorPicker(parent, label, dbTable, dbKey, onChange)
 
         local function SetColor()
             local nr, ng, nb = ColorPickerFrame:GetColorRGB()
-            local na = 1 - (ColorPickerFrame.opacity or 0)
+            local opacity = OpacitySliderFrame and OpacitySliderFrame:GetValue() or ColorPickerFrame.opacity or 0
+            local na = 1 - opacity
             dbTable[dbKey] = {nr, ng, nb, na}
             UpdateSwatch()
             if onChange then onChange(dbTable[dbKey]) end
         end
 
+        ColorPickerFrame.swatchFunc = SetColor
         ColorPickerFrame.func = SetColor
         ColorPickerFrame.opacityFunc = SetColor
         ColorPickerFrame.cancelFunc = function(prev)
@@ -587,11 +589,13 @@ function Options:BuildGeneral(parent)
         { key = "fsr", label = "5 Second Rule" },
         { key = "swing", label = "Swing Timer" },
         { key = "dots", label = "DoT Tracker" },
-        { key = "buffs", label = "Proc Tracker" },
+        { key = "buffs", label = "Proc Tracker", db = "procs" },
         { key = "cooldowns", label = "Cooldowns" },
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
         { key = "absorbs", label = "Absorb Tracker" },
         { key = "armortracker", label = "Armor Tracker", classes = {"MAGE", "WARLOCK", "PRIEST"} },
+        { key = "interrupt", label = "Interrupt Tracker" },
+        { key = "multidot", label = "Multi-DoT Tracker" },
     }
 
     local col = 0
@@ -601,8 +605,9 @@ function Options:BuildGeneral(parent)
         -- Skip class-restricted modules for other classes
         if (not mod.class and not mod.classes) or (mod.class and mod.class == playerClass) or (mod.classes and tContains(mod.classes, playerClass)) then
             count = count + 1
-            CastbornDB[mod.key] = CastbornDB[mod.key] or {}
-            local cb = CreateCheckbox(parent, mod.label, CastbornDB[mod.key], "enabled")
+            local dbKey = mod.db or mod.key
+            CastbornDB[dbKey] = CastbornDB[dbKey] or {}
+            local cb = CreateCheckbox(parent, mod.label, CastbornDB[dbKey], "enabled")
             cb:SetPoint("TOPLEFT", col * 200, y)
             y = y - 26
             if count == 5 then
@@ -615,6 +620,29 @@ end
 
 function Options:BuildCastbars(parent)
     local y = 0
+
+    -- Global Castbar Colors section
+    local colorHeader = CreateHeader(parent, "Castbar Colors")
+    colorHeader:SetPoint("TOPLEFT", 0, y)
+    colorHeader:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    local classColorCB = CreateCheckbox(parent, "Use Class Colors (Player)", CastbornDB, "useClassColors", function()
+        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
+    end)
+    classColorCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 26
+
+    local globalColorCB = CreateCheckbox(parent, "Set all castbars globally to:", CastbornDB, "useGlobalBarColor", function()
+        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
+    end)
+    globalColorCB:SetPoint("TOPLEFT", 0, y)
+
+    local globalPicker = CreateColorPicker(parent, "Global Bar Color", CastbornDB, "globalBarColor", function()
+        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
+    end)
+    globalPicker:SetPoint("TOPLEFT", 250, y)
+    y = y - 36
 
     -- Player Castbar
     local header1 = CreateHeader(parent, "Player Castbar")
@@ -709,10 +737,15 @@ function Options:BuildCastbars(parent)
     slider2:SetPoint("TOPLEFT", 220, y)
     y = y - 60
 
+    local playerBarPicker = CreateColorPicker(parent, "Bar Color", CastbornDB.player, "barColor", function()
+        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
+    end)
+    playerBarPicker:SetPoint("TOPLEFT", 0, y)
+
     local playerBgPicker = CreateColorPicker(parent, "Background Color", CastbornDB.player, "bgColor", function()
         if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
     end)
-    playerBgPicker:SetPoint("TOPLEFT", 0, y)
+    playerBgPicker:SetPoint("TOPLEFT", 220, y)
     y = y - 30
 
     -- Target Castbar
@@ -768,10 +801,15 @@ function Options:BuildCastbars(parent)
     tslider2:SetPoint("TOPLEFT", 220, y)
     y = y - 60
 
+    local targetBarPicker = CreateColorPicker(parent, "Bar Color", CastbornDB.target, "barColor", function()
+        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
+    end)
+    targetBarPicker:SetPoint("TOPLEFT", 0, y)
+
     local targetBgPicker = CreateColorPicker(parent, "Background Color", CastbornDB.target, "bgColor", function()
         if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
     end)
-    targetBgPicker:SetPoint("TOPLEFT", 0, y)
+    targetBgPicker:SetPoint("TOPLEFT", 220, y)
     y = y - 30
 
     -- Focus Castbar
@@ -827,10 +865,15 @@ function Options:BuildCastbars(parent)
     fslider2:SetPoint("TOPLEFT", 220, y)
     y = y - 60
 
+    local focusBarPicker = CreateColorPicker(parent, "Bar Color", CastbornDB.focus, "barColor", function()
+        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
+    end)
+    focusBarPicker:SetPoint("TOPLEFT", 0, y)
+
     local focusBgPicker = CreateColorPicker(parent, "Background Color", CastbornDB.focus, "bgColor", function()
         if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
     end)
-    focusBgPicker:SetPoint("TOPLEFT", 0, y)
+    focusBgPicker:SetPoint("TOPLEFT", 220, y)
     y = y - 30
 
     -- Target-of-Target Castbar
@@ -886,10 +929,15 @@ function Options:BuildCastbars(parent)
     ttslider2:SetPoint("TOPLEFT", 220, y)
     y = y - 60
 
+    local totBarPicker = CreateColorPicker(parent, "Bar Color", CastbornDB.targettarget, "barColor", function()
+        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
+    end)
+    totBarPicker:SetPoint("TOPLEFT", 0, y)
+
     local totBgPicker = CreateColorPicker(parent, "Background Color", CastbornDB.targettarget, "bgColor", function()
         if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
     end)
-    totBgPicker:SetPoint("TOPLEFT", 0, y)
+    totBgPicker:SetPoint("TOPLEFT", 220, y)
     y = y - 30
 
     parent:SetHeight(math.abs(y) + 20)
@@ -897,20 +945,6 @@ end
 
 function Options:BuildLookFeel(parent)
     local y = 0
-
-    local header1 = CreateHeader(parent, "Colors")
-    header1:SetPoint("TOPLEFT", 0, y)
-    header1:SetPoint("TOPRIGHT", 0, y)
-    y = y - 30
-
-    local cb1 = CreateCheckbox(parent, "Use Class Colors", CastbornDB, "useClassColors", function(checked)
-        -- Refresh castbar colors
-        if Castborn.RefreshCastbarColors then
-            Castborn:RefreshCastbarColors()
-        end
-    end)
-    cb1:SetPoint("TOPLEFT", 0, y)
-    y = y - 40
 
     local header2 = CreateHeader(parent, "Effects")
     header2:SetPoint("TOPLEFT", 0, y)

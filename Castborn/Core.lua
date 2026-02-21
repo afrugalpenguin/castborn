@@ -121,6 +121,8 @@ end
 CB.defaults = {
     locked = false,
     useClassColors = true,
+    useGlobalBarColor = false,
+    globalBarColor = {0.4, 0.6, 0.9, 1},
     showBorders = true,
 
     player = {

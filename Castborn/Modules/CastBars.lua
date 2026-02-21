@@ -30,11 +30,14 @@ local function GetPlayerClassColor()
     return playerClassColor
 end
 
--- Get bar color based on settings (class color or configured color)
+-- Get bar color based on settings (class color > global color > individual color)
 local function GetBarColor(dbKey)
     local cfg = CB.db[dbKey]
     if CB.db.useClassColors and dbKey == "player" then
         return GetPlayerClassColor()
+    end
+    if CB.db.useGlobalBarColor and CB.db.globalBarColor then
+        return CB.db.globalBarColor
     end
     return cfg.barColor
 end
