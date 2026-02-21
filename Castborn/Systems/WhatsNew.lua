@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.0.1",
+        features = {},
+        fixes = {
+            "Fixed spell icons showing as grey squares without Masque installed",
+            "All user-facing text now uses British English",
+        },
+    },
+    {
         version = "5.0.0",
         features = {
             "Castbar colour pickers — global and per-castbar bar colour options",
