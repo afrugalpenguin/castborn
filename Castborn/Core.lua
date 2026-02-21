@@ -15,6 +15,7 @@ CB.modules = {}
 CB.callbacks = {}
 CB._backdropFrames = {}
 CB._barFrames = {}
+CB._fontStrings = {}
 
 -- Optional library detection
 local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
@@ -129,6 +130,7 @@ CB.defaults = {
     globalBarColor = {0.4, 0.6, 0.9, 1},
     showBorders = true,
     barTexture = "Blizzard",
+    barFont = "Arial Narrow",
 
     player = {
         enabled = true,
@@ -477,6 +479,37 @@ function CB:RefreshBarTextures()
     local texture = self:GetBarTexture()
     for bar in pairs(self._barFrames) do
         bar:SetStatusBarTexture(texture)
+    end
+end
+
+-- Built-in bar fonts
+CB.builtinFonts = {
+    ["Arial Narrow"]  = "Fonts\\ARIALN.TTF",
+    ["Friz Quadrata"] = "Fonts\\FRIZQT__.TTF",
+    ["Morpheus"]      = "Fonts\\MORPHEUS.TTF",
+    ["Skurri"]        = "Fonts\\SKURRI.TTF",
+}
+
+function CB:RegisterFontString(fs, size, flags)
+    self._fontStrings[fs] = { size = size, flags = flags or "OUTLINE" }
+end
+
+function CB:GetBarFont()
+    local name = self.db and self.db.barFont or "Arial Narrow"
+    if self.builtinFonts[name] then
+        return self.builtinFonts[name]
+    end
+    if LSM then
+        local path = LSM:Fetch("font", name)
+        if path then return path end
+    end
+    return self.builtinFonts["Arial Narrow"]
+end
+
+function CB:RefreshFonts()
+    local fontPath = self:GetBarFont()
+    for fs, info in pairs(self._fontStrings) do
+        fs:SetFont(fontPath, info.size, info.flags)
     end
 end
 

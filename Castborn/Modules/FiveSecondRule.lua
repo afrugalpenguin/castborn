@@ -97,7 +97,8 @@ local function CreateFSRBar()
     local fontSize = math.max(8, height - 2)
     if height <= 6 then fontSize = 0 end  -- Hide text on very thin bars
     if fontSize > 0 then
-        timeText:SetFont("Fonts\\FRIZQT__.TTF", fontSize, "OUTLINE")
+        timeText:SetFont(Castborn:GetBarFont(), fontSize, "OUTLINE")
+        Castborn:RegisterFontString(timeText, fontSize, "OUTLINE")
         timeText:SetPoint("CENTER", bar, "CENTER", 0, 0)
     end
     frame.timeText = timeText

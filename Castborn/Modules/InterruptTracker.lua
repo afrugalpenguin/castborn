@@ -98,11 +98,13 @@ local function CreateInterruptBar()
     end
 
     frame.time = frame:CreateFontString(nil, "OVERLAY")
-    frame.time:SetFont("Fonts\\ARIALN.TTF", 10, "OUTLINE")
+    frame.time:SetFont(Castborn:GetBarFont(), 10, "OUTLINE")
+    Castborn:RegisterFontString(frame.time, 10, "OUTLINE")
     frame.time:SetPoint("CENTER", frame.bar or frame, "CENTER")
 
     frame.ready = frame:CreateFontString(nil, "OVERLAY")
-    frame.ready:SetFont("Fonts\\ARIALN.TTF", 10, "OUTLINE")
+    frame.ready:SetFont(Castborn:GetBarFont(), 10, "OUTLINE")
+    Castborn:RegisterFontString(frame.ready, 10, "OUTLINE")
     frame.ready:SetPoint("CENTER", frame.bar or frame, "CENTER")
     frame.ready:SetText("READY")
     frame.ready:SetTextColor(0.2, 1, 0.2, 1)
@@ -129,7 +131,8 @@ local function CreateLockoutDisplay()
     lockoutFrame.bg:SetColorTexture(0.1, 0.1, 0.1, 0.8)
 
     lockoutFrame.text = lockoutFrame:CreateFontString(nil, "OVERLAY")
-    lockoutFrame.text:SetFont("Fonts\\ARIALN.TTF", 10, "OUTLINE")
+    lockoutFrame.text:SetFont(Castborn:GetBarFont(), 10, "OUTLINE")
+    Castborn:RegisterFontString(lockoutFrame.text, 10, "OUTLINE")
     lockoutFrame.text:SetPoint("CENTER")
 
     lockoutFrame.school = nil
@@ -292,7 +295,8 @@ function Castborn:TestInterrupt()
         mockFrame.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 
         mockFrame.ready = mockFrame:CreateFontString(nil, "OVERLAY")
-        mockFrame.ready:SetFont("Fonts\\ARIALN.TTF", 10, "OUTLINE")
+        mockFrame.ready:SetFont(Castborn:GetBarFont(), 10, "OUTLINE")
+        Castborn:RegisterFontString(mockFrame.ready, 10, "OUTLINE")
         mockFrame.ready:SetPoint("CENTER", mockFrame.bar, "CENTER")
         mockFrame.ready:SetText("READY")
         mockFrame.ready:SetTextColor(0.2, 1, 0.2, 1)

@@ -170,14 +170,16 @@ local function CreateAbsorbIcon()
 
     -- Absorb amount text (centered on icon)
     local valueText = frame:CreateFontString(nil, "OVERLAY")
-    valueText:SetFont("Fonts\\FRIZQT__.TTF", math.max(10, math.floor(size * 0.2)), "OUTLINE")
+    valueText:SetFont(Castborn:GetBarFont(), math.max(10, math.floor(size * 0.2)), "OUTLINE")
+    Castborn:RegisterFontString(valueText, math.max(10, math.floor(size * 0.2)), "OUTLINE")
     valueText:SetPoint("CENTER", frame, "CENTER", 0, 0)
     valueText:SetTextColor(1, 1, 1, 1)
     frame.valueText = valueText
 
     -- Timer text (below the icon)
     local timerText = frame:CreateFontString(nil, "OVERLAY")
-    timerText:SetFont("Fonts\\FRIZQT__.TTF", math.max(9, math.floor(size * 0.16)), "OUTLINE")
+    timerText:SetFont(Castborn:GetBarFont(), math.max(9, math.floor(size * 0.16)), "OUTLINE")
+    Castborn:RegisterFontString(timerText, math.max(9, math.floor(size * 0.16)), "OUTLINE")
     timerText:SetPoint("TOP", frame, "BOTTOM", 0, -2)
     timerText:SetTextColor(0.7, 0.9, 1.0, 1)
     frame.timerText = timerText
@@ -220,8 +222,10 @@ local function LayoutIcons()
             icon:SetSize(size, size)
 
             -- Update font sizes when size changes
-            icon.valueText:SetFont("Fonts\\FRIZQT__.TTF", math.max(10, math.floor(size * 0.2)), "OUTLINE")
-            icon.timerText:SetFont("Fonts\\FRIZQT__.TTF", math.max(9, math.floor(size * 0.16)), "OUTLINE")
+            icon.valueText:SetFont(Castborn:GetBarFont(), math.max(10, math.floor(size * 0.2)), "OUTLINE")
+            Castborn:RegisterFontString(icon.valueText, math.max(10, math.floor(size * 0.2)), "OUTLINE")
+            icon.timerText:SetFont(Castborn:GetBarFont(), math.max(9, math.floor(size * 0.16)), "OUTLINE")
+            Castborn:RegisterFontString(icon.timerText, math.max(9, math.floor(size * 0.16)), "OUTLINE")
 
             if db.growDirection == "RIGHT" then
                 icon:SetPoint("LEFT", containerFrame, "LEFT", (i - 1) * (size + spacing), 0)

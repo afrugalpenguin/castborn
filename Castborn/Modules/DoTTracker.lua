@@ -76,19 +76,22 @@ local function CreateDotBar(parent, index)
     end
     
     local nameText = bar:CreateFontString(nil, "OVERLAY")
-    nameText:SetFont("Fonts\\ARIALN.TTF", cfg.barHeight - 6, "OUTLINE")
+    nameText:SetFont(Castborn:GetBarFont(), cfg.barHeight - 6, "OUTLINE")
+    Castborn:RegisterFontString(nameText, cfg.barHeight - 6, "OUTLINE")
     nameText:SetPoint("LEFT", bar, "LEFT", 2, 0)
     nameText:SetJustifyH("LEFT")
     frame.nameText = nameText
     
     local timeText = bar:CreateFontString(nil, "OVERLAY")
-    timeText:SetFont("Fonts\\ARIALN.TTF", cfg.barHeight - 6, "OUTLINE")
+    timeText:SetFont(Castborn:GetBarFont(), cfg.barHeight - 6, "OUTLINE")
+    Castborn:RegisterFontString(timeText, cfg.barHeight - 6, "OUTLINE")
     timeText:SetPoint("RIGHT", bar, "RIGHT", -2, 0)
     timeText:SetJustifyH("RIGHT")
     frame.timeText = timeText
     
     local stackText = iconFrame:CreateFontString(nil, "OVERLAY")
-    stackText:SetFont("Fonts\\ARIALN.TTF", cfg.barHeight - 4, "OUTLINE")
+    stackText:SetFont(Castborn:GetBarFont(), cfg.barHeight - 4, "OUTLINE")
+    Castborn:RegisterFontString(stackText, cfg.barHeight - 4, "OUTLINE")
     stackText:SetPoint("BOTTOMRIGHT", iconFrame, "BOTTOMRIGHT", 2, -2)
     frame.stackText = stackText
     

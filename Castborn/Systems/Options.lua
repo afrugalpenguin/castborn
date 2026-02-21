@@ -741,8 +741,14 @@ function Options:BuildCastbars(parent)
             if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
             if f.spark then f.spark:SetHeight(v * 2.5) end
             if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
-            if f.spellText then f.spellText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
-            if f.timeText then f.timeText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+            if f.spellText then
+                f.spellText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
+                Castborn:RegisterFontString(f.spellText, math.max(10, v - 6), "OUTLINE")
+            end
+            if f.timeText then
+                f.timeText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
+                Castborn:RegisterFontString(f.timeText, math.max(10, v - 6), "OUTLINE")
+            end
         end
     end)
     slider2:SetPoint("TOPLEFT", 220, y)
@@ -805,8 +811,14 @@ function Options:BuildCastbars(parent)
             if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
             if f.spark then f.spark:SetHeight(v * 2.5) end
             if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
-            if f.spellText then f.spellText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
-            if f.timeText then f.timeText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+            if f.spellText then
+                f.spellText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
+                Castborn:RegisterFontString(f.spellText, math.max(10, v - 6), "OUTLINE")
+            end
+            if f.timeText then
+                f.timeText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
+                Castborn:RegisterFontString(f.timeText, math.max(10, v - 6), "OUTLINE")
+            end
         end
     end)
     tslider2:SetPoint("TOPLEFT", 220, y)
@@ -869,8 +881,14 @@ function Options:BuildCastbars(parent)
             if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
             if f.spark then f.spark:SetHeight(v * 2.5) end
             if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
-            if f.spellText then f.spellText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
-            if f.timeText then f.timeText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+            if f.spellText then
+                f.spellText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
+                Castborn:RegisterFontString(f.spellText, math.max(10, v - 6), "OUTLINE")
+            end
+            if f.timeText then
+                f.timeText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
+                Castborn:RegisterFontString(f.timeText, math.max(10, v - 6), "OUTLINE")
+            end
         end
     end)
     fslider2:SetPoint("TOPLEFT", 220, y)
@@ -933,8 +951,14 @@ function Options:BuildCastbars(parent)
             if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
             if f.spark then f.spark:SetHeight(v * 2.5) end
             if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
-            if f.spellText then f.spellText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
-            if f.timeText then f.timeText:SetFont("Fonts\\ARIALN.TTF", math.max(10, v - 6), "OUTLINE") end
+            if f.spellText then
+                f.spellText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
+                Castborn:RegisterFontString(f.spellText, math.max(10, v - 6), "OUTLINE")
+            end
+            if f.timeText then
+                f.timeText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
+                Castborn:RegisterFontString(f.timeText, math.max(10, v - 6), "OUTLINE")
+            end
         end
     end)
     ttslider2:SetPoint("TOPLEFT", 220, y)
@@ -1044,6 +1068,73 @@ function Options:BuildLookFeel(parent)
                         CloseDropDownMenus()
                         preview:SetStatusBarTexture(Castborn:GetBarTexture())
                         Castborn:RefreshBarTextures()
+                    end
+                    UIDropDownMenu_AddButton(info)
+                end
+            end
+        end
+    end)
+
+    y = y - 36
+
+    -- Bar Font dropdown
+    local fontLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    fontLabel:SetPoint("TOPLEFT", 0, y)
+    fontLabel:SetText("Bar Font")
+    fontLabel:SetTextColor(unpack(C.grey))
+    y = y - 22
+
+    local fontDropdown = CreateFrame("Frame", "CastbornFontDropdown", parent, "UIDropDownMenuTemplate")
+    fontDropdown:SetPoint("TOPLEFT", -10, y)
+    UIDropDownMenu_SetWidth(fontDropdown, 150)
+    UIDropDownMenu_SetText(fontDropdown, CastbornDB.barFont or "Arial Narrow")
+
+    -- Preview text
+    local fontPreview = parent:CreateFontString(nil, "OVERLAY")
+    fontPreview:SetPoint("LEFT", fontDropdown, "RIGHT", 0, 2)
+    fontPreview:SetFont(Castborn:GetBarFont(), 13, "OUTLINE")
+    fontPreview:SetText("Sample Text 123")
+    fontPreview:SetTextColor(1, 1, 1)
+
+    UIDropDownMenu_Initialize(fontDropdown, function(self, level)
+        -- Built-in fonts (sorted)
+        local builtinNames = {}
+        for name in pairs(Castborn.builtinFonts) do
+            table.insert(builtinNames, name)
+        end
+        table.sort(builtinNames)
+
+        for _, name in ipairs(builtinNames) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = name
+            info.value = name
+            info.checked = (CastbornDB.barFont == name)
+            info.func = function()
+                CastbornDB.barFont = name
+                UIDropDownMenu_SetText(fontDropdown, name)
+                CloseDropDownMenus()
+                fontPreview:SetFont(Castborn:GetBarFont(), 13, "OUTLINE")
+                Castborn:RefreshFonts()
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+
+        -- LSM fonts (if available)
+        local lsm = Castborn.LSM
+        if lsm then
+            local lsmList = lsm:List("font") or {}
+            for _, name in ipairs(lsmList) do
+                if not Castborn.builtinFonts[name] then
+                    local info = UIDropDownMenu_CreateInfo()
+                    info.text = name
+                    info.value = name
+                    info.checked = (CastbornDB.barFont == name)
+                    info.func = function()
+                        CastbornDB.barFont = name
+                        UIDropDownMenu_SetText(fontDropdown, name)
+                        CloseDropDownMenus()
+                        fontPreview:SetFont(Castborn:GetBarFont(), 13, "OUTLINE")
+                        Castborn:RefreshFonts()
                     end
                     UIDropDownMenu_AddButton(info)
                 end

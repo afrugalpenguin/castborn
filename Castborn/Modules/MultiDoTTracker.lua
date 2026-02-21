@@ -125,7 +125,8 @@ local function CreateNameplateIndicator()
 
     -- Timer text
     indicator.timer = indicator:CreateFontString(nil, "OVERLAY")
-    indicator.timer:SetFont("Fonts\\ARIALN.TTF", 11, "OUTLINE")
+    indicator.timer:SetFont(Castborn:GetBarFont(), 11, "OUTLINE")
+    Castborn:RegisterFontString(indicator.timer, 11, "OUTLINE")
     indicator.timer:SetPoint("CENTER", 0, 0)
     indicator.timer:SetTextColor(1, 1, 1, 1)
 
@@ -355,7 +356,8 @@ local function CreateTargetRow(parent, index)
         end
 
         dot.time = dot:CreateFontString(nil, "OVERLAY")
-        dot.time:SetFont("Fonts\\ARIALN.TTF", 8, "OUTLINE")
+        dot.time:SetFont(Castborn:GetBarFont(), 8, "OUTLINE")
+        Castborn:RegisterFontString(dot.time, 8, "OUTLINE")
         dot.time:SetPoint("BOTTOM", 0, -1)
 
         dot:Hide()
@@ -363,7 +365,8 @@ local function CreateTargetRow(parent, index)
     end
 
     row.name = row:CreateFontString(nil, "OVERLAY")
-    row.name:SetFont("Fonts\\ARIALN.TTF", 9, "OUTLINE")
+    row.name:SetFont(Castborn:GetBarFont(), 9, "OUTLINE")
+    Castborn:RegisterFontString(row.name, 9, "OUTLINE")
     row.name:SetPoint("LEFT", row, "LEFT", 5 + 6 * (db.rowHeight - 2), 0)
     row.name:SetJustifyH("LEFT")
 
@@ -397,7 +400,8 @@ local function CreateContainer()
     end
 
     frame.header = frame:CreateFontString(nil, "OVERLAY")
-    frame.header:SetFont("Fonts\\ARIALN.TTF", 9, "OUTLINE")
+    frame.header:SetFont(Castborn:GetBarFont(), 9, "OUTLINE")
+    Castborn:RegisterFontString(frame.header, 9, "OUTLINE")
     frame.header:SetPoint("TOPLEFT", 4, -2)
     frame.header:SetText("DoT Targets")
     frame.header:SetTextColor(0.8, 0.8, 0.8, 1)

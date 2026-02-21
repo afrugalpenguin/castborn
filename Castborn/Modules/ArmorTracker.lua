@@ -168,7 +168,8 @@ local function CreateArmorFrame()
 
     -- "!" warning text overlay
     local warning = f:CreateFontString(nil, "OVERLAY")
-    warning:SetFont("Fonts\\FRIZQT__.TTF", math.max(14, math.floor(size * 0.4)), "OUTLINE")
+    warning:SetFont(Castborn:GetBarFont(), math.max(14, math.floor(size * 0.4)), "OUTLINE")
+    Castborn:RegisterFontString(warning, math.max(14, math.floor(size * 0.4)), "OUTLINE")
     warning:SetPoint("CENTER", 0, 0)
     warning:SetText("!")
     warning:SetTextColor(1, 0.2, 0.2, 1)

@@ -59,13 +59,15 @@ local function CreateSwingBar(swingType, dbKey)
     frame.spark = spark
     
     local label = bar:CreateFontString(nil, "OVERLAY")
-    label:SetFont("Fonts\\ARIALN.TTF", math.max(8, cfg.barHeight - 4), "OUTLINE")
+    label:SetFont(Castborn:GetBarFont(), math.max(8, cfg.barHeight - 4), "OUTLINE")
+    Castborn:RegisterFontString(label, math.max(8, cfg.barHeight - 4), "OUTLINE")
     label:SetPoint("LEFT", bar, "LEFT", 2, 0)
     label:SetText(swingType == "mainhand" and "MH" or swingType == "offhand" and "OH" or "Ranged")
     frame.label = label
-    
+
     local timeText = bar:CreateFontString(nil, "OVERLAY")
-    timeText:SetFont("Fonts\\ARIALN.TTF", math.max(8, cfg.barHeight - 4), "OUTLINE")
+    timeText:SetFont(Castborn:GetBarFont(), math.max(8, cfg.barHeight - 4), "OUTLINE")
+    Castborn:RegisterFontString(timeText, math.max(8, cfg.barHeight - 4), "OUTLINE")
     timeText:SetPoint("RIGHT", bar, "RIGHT", -2, 0)
     frame.timeText = timeText
     

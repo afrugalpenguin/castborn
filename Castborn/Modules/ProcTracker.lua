@@ -112,11 +112,13 @@ local function CreateProcFrame(parent, index)
     f.Cooldown = f.cooldown  -- Masque alias
 
     f.duration = f:CreateFontString(nil, "OVERLAY")
-    f.duration:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+    f.duration:SetFont(Castborn:GetBarFont(), 10, "OUTLINE")
+    Castborn:RegisterFontString(f.duration, 10, "OUTLINE")
     f.duration:SetPoint("BOTTOM", 0, -2)
 
     f.stacks = f:CreateFontString(nil, "OVERLAY")
-    f.stacks:SetFont("Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    f.stacks:SetFont(Castborn:GetBarFont(), 12, "OUTLINE")
+    Castborn:RegisterFontString(f.stacks, 12, "OUTLINE")
     f.stacks:SetPoint("BOTTOMRIGHT", -1, 1)
 
     f.glow = f:CreateTexture(nil, "OVERLAY")

@@ -61,12 +61,14 @@ local function CreateCooldownFrame(parent, index)
     f.Cooldown = f.cooldown  -- Masque alias
 
     f.time = f:CreateFontString(nil, "OVERLAY")
-    f.time:SetFont("Fonts\\ARIALN.TTF", 11, "OUTLINE")
+    f.time:SetFont(Castborn:GetBarFont(), 11, "OUTLINE")
+    Castborn:RegisterFontString(f.time, 11, "OUTLINE")
     f.time:SetPoint("CENTER")
 
     -- Charge counter (displayed centered on icon for Earth Shield, Water Shield)
     f.charges = f:CreateFontString(nil, "OVERLAY", nil, 7)
-    f.charges:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
+    f.charges:SetFont(Castborn:GetBarFont(), 24, "OUTLINE")
+    Castborn:RegisterFontString(f.charges, 24, "OUTLINE")
     f.charges:SetPoint("CENTER", f.icon, "CENTER", 0, 0)
     f.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold colour
     f.charges:Hide()
@@ -151,7 +153,8 @@ local function CreateTrinketFrame(parent, index)
     f.Cooldown = f.cooldown
 
     f.time = f:CreateFontString(nil, "OVERLAY")
-    f.time:SetFont("Fonts\\ARIALN.TTF", 11, "OUTLINE")
+    f.time:SetFont(Castborn:GetBarFont(), 11, "OUTLINE")
+    Castborn:RegisterFontString(f.time, 11, "OUTLINE")
     f.time:SetPoint("CENTER")
 
     if Castborn.Masque and Castborn.Masque.enabled then
@@ -345,7 +348,8 @@ local function UpdateCooldowns()
                 -- Create charges fontstring if it doesn't exist (for existing frames)
                 if not cdFrame.charges then
                     cdFrame.charges = cdFrame:CreateFontString(nil, "OVERLAY", nil, 7)
-                    cdFrame.charges:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
+                    cdFrame.charges:SetFont(Castborn:GetBarFont(), 24, "OUTLINE")
+                    Castborn:RegisterFontString(cdFrame.charges, 24, "OUTLINE")
                     cdFrame.charges:SetPoint("CENTER", cdFrame.icon, "CENTER", 0, 0)
                     cdFrame.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold colour
                 end
@@ -712,7 +716,8 @@ local function RefreshTestIcons()
             -- Create charges fontstring if it doesn't exist (for existing frames)
             if not cdFrame.charges then
                 cdFrame.charges = cdFrame:CreateFontString(nil, "OVERLAY", nil, 7)
-                cdFrame.charges:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
+                cdFrame.charges:SetFont(Castborn:GetBarFont(), 24, "OUTLINE")
+                Castborn:RegisterFontString(cdFrame.charges, 24, "OUTLINE")
                 cdFrame.charges:SetPoint("CENTER", cdFrame.icon, "CENTER", 0, 0)
                 cdFrame.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold colour
             end
