@@ -14,6 +14,19 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.0.0",
+        features = {
+            "Castbar color pickers — global and per-castbar bar color options",
+            "Per-module background color pickers for all modules",
+            "Frame appearance system — individual background alpha, show/hide borders",
+            "Frames are now fully click-through when locked",
+        },
+        fixes = {
+            "DoT and Totem trackers now respect the show borders setting",
+            "Fixed bgOpacity migration for interrupt and multi-DoT trackers",
+        },
+    },
+    {
         version = "4.20.0",
         features = {
             "Full Masque skinning support for all icon-bearing modules — CastBars, Interrupt, DoTs, Totems, Multi-DoT, and Armor Tracker",

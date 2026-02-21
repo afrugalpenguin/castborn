@@ -1,5 +1,16 @@
 # Changelog
 
+**v5.0.0**
+
+- Castbar color pickers — global and per-castbar bar color options in the Castbars settings page
+- Per-module background color pickers for all modules
+- Frame appearance system — individual background alpha, show/hide borders
+- Appearance customization step in the welcome tutorial
+- Frames are now fully click-through when locked (cooldowns, procs, anchored frames)
+- Addon files reorganized into Castborn/ subfolder for easier WoW installation
+- DoT and Totem trackers now respect the show borders setting
+- Fixed bgOpacity migration for interrupt and multi-DoT trackers
+
 **v4.20.0**
 
 - Full Masque skinning support for all icon-bearing modules (CastBars, InterruptTracker, DoTTracker, TotemTracker, MultiDoTTracker, ArmorTracker)
