@@ -132,6 +132,9 @@ local function CreateProcFrame(parent, index)
         })
     end
 
+    -- Click-through (WeakAuras pattern): Disable + EnableMouse(false)
+    f:Disable()
+    f:EnableMouse(false)
     f:Hide()
     return f
 end

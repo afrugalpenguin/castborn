@@ -53,6 +53,7 @@ local function CreateCooldownFrame(parent, index)
     f.cooldown:SetAllPoints()
     f.cooldown:SetDrawEdge(true)
     f.cooldown:SetHideCountdownNumbers(false)
+    f.cooldown:EnableMouse(false)
     f.Cooldown = f.cooldown  -- Masque alias
 
     f.time = f:CreateFontString(nil, "OVERLAY")
@@ -111,6 +112,9 @@ local function CreateCooldownFrame(parent, index)
         })
     end
 
+    -- Click-through (WeakAuras pattern): Disable + EnableMouse(false)
+    f:Disable()
+    f:EnableMouse(false)
     f:Hide()
     return f
 end
@@ -150,6 +154,9 @@ local function CreateTrinketFrame(parent, index)
         })
     end
 
+    -- Click-through (WeakAuras pattern): Disable + EnableMouse(false)
+    f:Disable()
+    f:EnableMouse(false)
     f:Hide()
     return f
 end
@@ -740,6 +747,7 @@ local function SetupDragReorder(cdFrame, visibleIndex)
     cdFrame.visibleIndex = visibleIndex
 
     cdFrame:SetMovable(true)
+    cdFrame:Enable()
     cdFrame:EnableMouse(true)
     cdFrame:RegisterForDrag("LeftButton")
 
@@ -1036,6 +1044,8 @@ function Castborn:EndTestCooldowns()
         for i = 1, MAX_COOLDOWNS do
             if cdFrames[i] then
                 StopEdgePulse(cdFrames[i])
+                cdFrames[i]:Disable()
+                cdFrames[i]:EnableMouse(false)
                 cdFrames[i]:SetScript("OnDragStart", nil)
                 cdFrames[i]:SetScript("OnDragStop", nil)
                 cdFrames[i]:SetScript("OnUpdate", nil)

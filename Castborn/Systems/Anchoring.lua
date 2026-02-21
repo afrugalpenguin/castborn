@@ -214,54 +214,55 @@ Anchoring.draggableFrames = {}
 -- label: optional display name for the drag indicator
 function Anchoring:MakeDraggable(frame, db, onDragStop, label)
     frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
+    frame:EnableMouse(false)
 
     -- Create drag indicator with label
     CreateDragIndicator(frame, label)
 
-    -- Track this frame
-    table.insert(self.draggableFrames, frame)
-
-    frame:SetScript("OnDragStart", function(self)
+    -- Store drag callbacks so we can set/clear them on unlock/lock
+    frame._dragStartFunc = function(self)
         if not CastbornDB.locked then
-            -- Detach if anchored
             if self.isAnchored then
                 Anchoring:Detach(self, db)
             end
             self:StartMoving()
         end
-    end)
-
-    frame:SetScript("OnDragStop", function(self)
+    end
+    frame._dragStopFunc = function(self)
         self:StopMovingOrSizing()
-        -- Save position
         local point, _, _, x, y = self:GetPoint()
 
-        -- Snap to grid if enabled
         if CastbornDB.snapToGrid and Castborn.GridPosition then
             x, y = Castborn.GridPosition:SnapToGrid(x, y)
-            -- Reposition frame to snapped coordinates
             self:ClearAllPoints()
             self:SetPoint(point, UIParent, point, x, y)
         end
 
-        -- Save as percentage for resolution independence
         Anchoring:SavePosition(db, point, x, y)
         db.anchored = false
 
         if onDragStop then
             onDragStop(self)
         end
-    end)
+    end
 
-    -- Indicator starts hidden, only shown via ShowDragIndicators()
+    -- Track this frame
+    table.insert(self.draggableFrames, frame)
+
+    -- Starts click-through; drag scripts set on unlock via ShowDragIndicators()
 end
 
 -- Show drag indicators on all draggable frames
 -- If forceShowFrames is true, also show the frames themselves (for unlock mode)
 function Anchoring:ShowDragIndicators(forceShowFrames)
     for _, frame in ipairs(self.draggableFrames) do
+        -- Enable mouse interaction for dragging
+        frame:EnableMouse(true)
+        frame:RegisterForDrag("LeftButton")
+        if frame._dragStartFunc then
+            frame:SetScript("OnDragStart", frame._dragStartFunc)
+            frame:SetScript("OnDragStop", frame._dragStopFunc)
+        end
         if frame.dragIndicator then
             -- Restore frames that were Ctrl+Shift hidden in a previous unlock
             if frame.hiddenForPositioning then
@@ -285,6 +286,11 @@ end
 -- If hideFrames is true, also hide frames that were shown for positioning
 function Anchoring:HideDragIndicators(hideFrames)
     for _, frame in ipairs(self.draggableFrames) do
+        -- Fully disable mouse interaction for click-through
+        frame:EnableMouse(false)
+        frame:RegisterForDrag()
+        frame:SetScript("OnDragStart", nil)
+        frame:SetScript("OnDragStop", nil)
         if frame.dragIndicator then
             frame.dragIndicator:Hide()
         end
