@@ -18,7 +18,6 @@ local changelog = {
         features = {},
         fixes = {
             "Fixed spell icons showing as grey squares without Masque installed",
-            "All user-facing text now uses British English",
         },
     },
     {
