@@ -19,7 +19,7 @@ local EARTH_TOTEM_SLOT = 2
 local WATER_TOTEM_SLOT = 3
 local AIR_TOTEM_SLOT = 4
 
--- Totem element colors
+-- Totem element colours
 local totemColors = {
     [FIRE_TOTEM_SLOT] = { 0.9, 0.3, 0.1 },   -- Fire - orange/red
     [EARTH_TOTEM_SLOT] = { 0.6, 0.4, 0.2 },  -- Earth - brown
@@ -312,7 +312,7 @@ local function UpdateTotemBar(totemBar, slot, name, icon, startTime, duration)
     local color = totemColors[slot]
     totemBar.bar:SetStatusBarColor(color[1], color[2], color[3], 1)
 
-    -- Color time text based on remaining duration
+    -- Colour time text based on remaining duration
     if remaining < 5 then
         totemBar.timeText:SetTextColor(1, 0.3, 0.3, 1)
     elseif remaining < 10 then
@@ -328,7 +328,7 @@ local function UpdateTotemBar(totemBar, slot, name, icon, startTime, duration)
             -- Build pip string: ● for buffed, ○ for not buffed
             local pips = string.rep("●", buffed) .. string.rep("○", total - buffed)
             totemBar.countText:SetText(pips)
-            -- Color based on coverage
+            -- Colour based on coverage
             if buffed == total then
                 totemBar.countText:SetTextColor(0.3, 0.9, 0.3, 0.9)  -- Green - all buffed
             elseif buffed == 0 then
@@ -639,7 +639,7 @@ function CB:TestTotemTracker()
         local color = totemColors[totem.slot]
         totemBar.bar:SetStatusBarColor(color[1], color[2], color[3], 1)
 
-        -- Color time text
+        -- Colour time text
         if totem.remaining < 5 then
             totemBar.timeText:SetTextColor(1, 0.3, 0.3, 1)
         elseif totem.remaining < 10 then

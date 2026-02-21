@@ -2,7 +2,7 @@
 local SpellData = {}
 Castborn.SpellData = SpellData
 
--- Spell school colors
+-- Spell school colours
 SpellData.schoolColors = {
     [1] = { 1.0, 1.0, 0.5, 1 },    -- Physical (tan)
     [2] = { 1.0, 0.9, 0.5, 1 },    -- Holy (yellow)
@@ -13,7 +13,7 @@ SpellData.schoolColors = {
     [64] = { 1.0, 0.5, 1.0, 1 },   -- Arcane (pink)
 }
 
--- Class colors (standard WoW)
+-- Class colours (standard WoW)
 SpellData.classColors = {
     WARRIOR = { 0.78, 0.61, 0.43, 1 },
     PALADIN = { 0.96, 0.55, 0.73, 1 },
@@ -37,7 +37,7 @@ SpellData.interrupts = {
     HUNTER = { spellId = 34490, name = "Silencing Shot", cooldown = 20 },
 }
 
--- Known DoT/Debuff spells with their colors and durations
+-- Known DoT/Debuff spells with their colours and durations
 SpellData.dots = {
     -- Warlock - Corruption (all ranks)
     [172] = { name = "Corruption", school = 32, duration = 18 },

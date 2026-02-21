@@ -798,7 +798,7 @@ function Castborn:TestMultiDoT()
         if row then
             row.name:SetText(target.name)
 
-            -- Set urgency color
+            -- Set urgency colour
             local r, g, b = 0.2, 0.8, 0.2
             if target.urgency <= 3 then
                 r, g, b = 1, 0.2, 0.2
@@ -814,7 +814,7 @@ function Castborn:TestMultiDoT()
                     dotFrame.icon:SetTexture(dot.icon)
                     dotFrame.time:SetText(string.format("%.0f", dot.remaining))
 
-                    -- Color time based on remaining
+                    -- Colour time based on remaining
                     if dot.remaining <= 3 then
                         dotFrame.time:SetTextColor(1, 0.2, 0.2, 1)
                     elseif dot.remaining <= 5 then

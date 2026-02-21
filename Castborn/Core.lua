@@ -354,7 +354,7 @@ local function InitDB()
     CB.db = DeepCopy(CB.defaults, CastbornDB)
     CastbornDB = CB.db
 
-    -- Migrate bgOpacity into per-module bgColor alpha
+    -- Migrate bgOpacity into per-module bgColour alpha
     if CastbornDB.bgOpacity ~= nil then
         local opacity = CastbornDB.bgOpacity
         local moduleKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd", "totems", "interrupt", "multidot"}
@@ -545,7 +545,7 @@ function CB:FormatTime(seconds)
     end
 end
 
--- Get class color
+-- Get class colour
 function CB:GetClassColor(unit)
     if UnitExists(unit) and UnitIsPlayer(unit) then
         local _, class = UnitClass(unit)

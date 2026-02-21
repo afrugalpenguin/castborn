@@ -2,12 +2,12 @@
 
 **v5.0.0**
 
-- Castbar color pickers — global and per-castbar bar color options in the Castbars settings page
-- Per-module background color pickers for all modules
+- Castbar colour pickers — global and per-castbar bar colour options in the Castbars settings page
+- Per-module background colour pickers for all modules
 - Frame appearance system — individual background alpha, show/hide borders
 - Appearance customisation step in the welcome tutorial
 - Frames are now fully click-through when locked (cooldowns, procs, anchored frames)
-- Addon files reorganized into Castborn/ subfolder for easier WoW installation
+- Addon files reorganised into Castborn/ subfolder for easier WoW installation
 - DoT and Totem trackers now respect the show borders setting
 - Fixed bgOpacity migration for interrupt and multi-DoT trackers
 
@@ -47,7 +47,7 @@
 - Absorb Tracker now supports all TBC absorb spells: Mana Shield, Fire Ward, Frost Ward, Shadow Ward, Sacrifice, and Power Word: Shield
 - Multiple simultaneous absorbs display as a row of icons with configurable grow direction
 - Power Word: Shield from healers is now tracked on any class
-- School-specific absorbs (Fire/Frost/Shadow Ward) show spell-school-colored borders
+- School-specific absorbs (Fire/Frost/Shadow Ward) show spell-school-coloured borders
 - Absorb Tracker available for all classes, not just Mage
 - Added spacing and grow direction options to Absorb Tracker settings
 - Switched release packaging to BigWigs packager for CurseForge + GitHub
@@ -66,7 +66,7 @@
 
 **v4.14.0**
 
-- Nameplate indicators now show the DoT spell icon instead of a plain colored square
+- Nameplate indicators now show the DoT spell icon instead of a plain coloured square
 - Nameplate indicator default position moved to Bottom to avoid overlapping debuff icons
 - Nameplate indicators now disabled by default (opt-in via options)
 - Added position dropdown (Top/Bottom/Left/Right) to Nameplate Indicator options
@@ -194,7 +194,7 @@
 
 **v4.5.0**
 
-- Cooldown icon order is now customizable: drag icons to reorder in test mode
+- Cooldown icon order is now customisable: drag icons to reorder in test mode
 - Options panel: up/down arrows to reorder cooldowns (replaces alphabetical sorting)
 - What's New: animated swap demo for the cooldown reorder feature
 - Tutorial: updated Cooldown Tracker step with reorder instructions
@@ -248,7 +248,7 @@
 
 **v3.3.1**
 
-- DoT Tracker now uses SpellData for colors instead of duplicated local tables
+- DoT Tracker now uses SpellData for colours instead of duplicated local tables
 - Fixed modules listening for non-existent PLAYER_CASTBAR_READY event (now uses PLAYER_CASTBAR_CREATED)
 
 - All modules now use consistent RegisterModule() pattern
@@ -344,7 +344,7 @@
 
 - Fixed `/cb reset` not resetting Swing Timer and other modules with anchoring
 
-- Reorganized README with clearer sections and added missing commands
+- Reorganised README with clearer sections and added missing commands
 
 **v2.6.11**
 
@@ -427,8 +427,8 @@
 
 **v2.3.0**
 
-- Player castbar now uses class colors by default
-- Added "Look & Feel" section in options with class colors toggle
+- Player castbar now uses class colours by default
+- Added "Look & Feel" section in options with class colours toggle
 - Added divider in options menu to separate module settings from appearance/profiles
 
 **v2.2.0**

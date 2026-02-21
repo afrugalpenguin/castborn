@@ -82,7 +82,7 @@ local steps = {
     {
         id = "dots",
         title = "DoT Tracker",
-        description = "Track your damage-over-time effects on your current target. Shows duration remaining with color-coded urgency.",
+        description = "Track your damage-over-time effects on your current target. Shows duration remaining with colour-coded urgency.",
         tip = "Red means expiring soon! Refresh your DoTs before they fall off.",
         getFrame = function() return _G["Castborn_DoTTracker"] end,
         configKey = "dots",
@@ -139,8 +139,8 @@ local steps = {
     {
         id = "appearance",
         title = "Customize Appearance",
-        description = "You can customize the look of every module!\n\nToggle frame borders on or off globally in |cff88ddffLook & Feel|r options, and set a custom background color and opacity for each module in its settings.",
-        tip = "Open |cff88ddff/cb|r and check Look & Feel for borders, or each module's page for background color.",
+        description = "You can customise the look of every module!\n\nToggle frame borders on or off globally in |cff88ddffLook & Feel|r options, and set a custom background colour and opacity for each module in its settings.",
+        tip = "Open |cff88ddff/cb|r and check Look & Feel for borders, or each module's page for background colour.",
         getFrame = function() return Castborn.castbars and Castborn.castbars.player end,
     },
     {
@@ -153,7 +153,7 @@ local steps = {
     {
         id = "options",
         title = "Options Panel",
-        description = "Customize everything in the options panel. Adjust sizes, colors, and behaviors for each module.",
+        description = "Customise everything in the options panel. Adjust sizes, colours, and behaviours for each module.",
         tip = "Open options anytime with |cff88ddff/cb|r or find Castborn in Interface > AddOns.",
         frame = nil,
         action = function()

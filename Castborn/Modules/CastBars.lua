@@ -13,10 +13,10 @@ CB.castbars = {}
 -- Test mode flag to prevent update from hiding test bars
 local testModeActive = false
 
--- Cached player class color
+-- Cached player class colour
 local playerClassColor = nil
 
--- Get the player's class color (cached)
+-- Get the player's class colour (cached)
 local function GetPlayerClassColor()
     if not playerClassColor then
         local _, class = UnitClass("player")
@@ -30,7 +30,7 @@ local function GetPlayerClassColor()
     return playerClassColor
 end
 
--- Get bar color based on settings (class color > global color > individual color)
+-- Get bar colour based on settings (class colour > global colour > individual colour)
 local function GetBarColor(dbKey)
     local cfg = CB.db[dbKey]
     if CB.db.useClassColors and dbKey == "player" then
@@ -260,7 +260,7 @@ local function UpdateCastBar(frame, elapsed)
             frame.fadeOut = 0.3
             frame.spark:Hide()
             frame.bar:SetValue(1)
-            frame.bar:SetStatusBarColor(0.3, 0.9, 0.3, 1)  -- Success color
+            frame.bar:SetStatusBarColor(0.3, 0.9, 0.3, 1)  -- Success colour
             if frame.latency then frame.latency:Hide() end
             if frame.shield then frame.shield:Hide() end
         end
@@ -288,7 +288,7 @@ local function UpdateCastBar(frame, elapsed)
             frame.channeling = false
             frame.fadeOut = 0.3
             frame.spark:Hide()
-            frame.bar:SetStatusBarColor(0.3, 0.9, 0.3, 1)  -- Success color
+            frame.bar:SetStatusBarColor(0.3, 0.9, 0.3, 1)  -- Success colour
             if frame.latency then frame.latency:Hide() end
             if frame.shield then frame.shield:Hide() end
         end
@@ -681,7 +681,7 @@ function CB:ShowBlizzardCastBar()
     end
 end
 
--- Refresh castbar colors (called when class colors setting changes)
+-- Refresh castbar colours (called when class colours setting changes)
 function CB:RefreshCastbarColors()
     if not CB.castbars then return end
     for dbKey, frame in pairs(CB.castbars) do

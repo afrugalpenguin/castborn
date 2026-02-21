@@ -68,7 +68,7 @@ local function CreateCooldownFrame(parent, index)
     f.charges = f:CreateFontString(nil, "OVERLAY", nil, 7)
     f.charges:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
     f.charges:SetPoint("CENTER", f.icon, "CENTER", 0, 0)
-    f.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold color
+    f.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold colour
     f.charges:Hide()
 
     -- Glow effect using layered textures for soft glow look
@@ -347,7 +347,7 @@ local function UpdateCooldowns()
                     cdFrame.charges = cdFrame:CreateFontString(nil, "OVERLAY", nil, 7)
                     cdFrame.charges:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
                     cdFrame.charges:SetPoint("CENTER", cdFrame.icon, "CENTER", 0, 0)
-                    cdFrame.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold color
+                    cdFrame.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold colour
                 end
 
                 -- Check for charge-based buffs (Earth Shield, Water Shield)
@@ -714,7 +714,7 @@ local function RefreshTestIcons()
                 cdFrame.charges = cdFrame:CreateFontString(nil, "OVERLAY", nil, 7)
                 cdFrame.charges:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
                 cdFrame.charges:SetPoint("CENTER", cdFrame.icon, "CENTER", 0, 0)
-                cdFrame.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold color
+                cdFrame.charges:SetTextColor(1, 0.82, 0, 1)  -- Yellow/gold colour
             end
 
             -- Show example charges for Earth Shield (974) and Water Shield (24398)

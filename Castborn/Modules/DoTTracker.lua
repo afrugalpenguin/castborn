@@ -103,7 +103,7 @@ local function GetDotColor(spellId, debuffType)
             return color[1], color[2], color[3]
         end
     end
-    -- Fall back to debuff type colors
+    -- Fall back to debuff type colours
     if debuffType == "Magic" then return 0.2, 0.6, 1.0
     elseif debuffType == "Curse" then return 0.6, 0.0, 1.0
     elseif debuffType == "Disease" then return 0.6, 0.4, 0.0
@@ -358,7 +358,7 @@ function CB:TestDoTTracker()
         dotBar.stackText:SetText("")
         dotBar.bar:SetStatusBarColor(dot.color[1], dot.color[2], dot.color[3], 1)
 
-        -- Color time text based on remaining
+        -- Colour time text based on remaining
         if dot.remaining < 3 then
             dotBar.timeText:SetTextColor(1, 0.3, 0.3, 1)
         elseif dot.remaining < 5 then

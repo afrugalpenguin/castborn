@@ -16,8 +16,8 @@ local changelog = {
     {
         version = "5.0.0",
         features = {
-            "Castbar color pickers — global and per-castbar bar color options",
-            "Per-module background color pickers for all modules",
+            "Castbar colour pickers — global and per-castbar bar colour options",
+            "Per-module background colour pickers for all modules",
             "Frame appearance system — individual background alpha, show/hide borders",
             "Frames are now fully click-through when locked",
         },
@@ -80,7 +80,7 @@ local changelog = {
         features = {
             "Absorb Tracker supports all TBC absorb spells with multi-icon display",
             "Power Word: Shield from healers tracked on any class",
-            "School-specific absorbs show spell-school-colored borders",
+            "School-specific absorbs show spell-school-coloured borders",
             "Configurable grow direction and spacing for absorb icons",
         },
         fixes = {},
@@ -346,7 +346,7 @@ local changelog = {
         version = "3.3.1",
         features = {},
         fixes = {
-            "DoT Tracker now uses SpellData for colors (internal cleanup)",
+            "DoT Tracker now uses SpellData for colours (internal cleanup)",
             "Fixed modules listening for non-existent PLAYER_CASTBAR_READY event",
         },
     },
@@ -613,8 +613,8 @@ local changelog = {
     {
         version = "2.3.0",
         features = {
-            "Player castbar now uses class colors by default",
-            "Added \"Look & Feel\" section in options with class colors toggle",
+            "Player castbar now uses class colours by default",
+            "Added \"Look & Feel\" section in options with class colours toggle",
             "Added divider in options menu to separate module settings from appearance/profiles",
         },
         fixes = {},

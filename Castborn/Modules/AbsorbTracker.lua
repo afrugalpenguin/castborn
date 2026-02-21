@@ -124,7 +124,7 @@ local function CreateAbsorbIcon()
     frame.cooldown = cooldown
     frame.Cooldown = cooldown  -- Masque alias
 
-    -- Simple colored edge border (1px)
+    -- Simple coloured edge border (1px)
     local borderSize = 1
 
     local borderTop = frame:CreateTexture(nil, "OVERLAY")
@@ -284,13 +284,13 @@ local function SetupIconVisuals(icon, spellId, school)
         icon.icon:SetTexture(texture)
     end
 
-    -- Set border color based on spell school
+    -- Set border colour based on spell school
     local r, g, b, a = GetAbsorbBorderColor(school)
     for _, tex in ipairs(icon.borderTextures) do
         tex:SetColorTexture(r, g, b, a)
     end
 
-    -- Store base border color for drain effect
+    -- Store base border colour for drain effect
     icon.baseBorderR = r
     icon.baseBorderG = g
     icon.baseBorderB = b
@@ -456,7 +456,7 @@ local function UpdateAbsorbIcons()
             local brightness = 0.4 + (0.6 * pct)
             icon.icon:SetVertexColor(brightness, brightness, brightness, 1)
 
-            -- Shift border color towards red as shield weakens
+            -- Shift border colour towards red as shield weakens
             local baseR = icon.baseBorderR or 0.4
             local baseG = icon.baseBorderG or 0.7
             local baseB = icon.baseBorderB or 1.0
