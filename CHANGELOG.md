@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.1.2**
+
+- Widened drag header padding so longer labels like Absorb Tracker fit comfortably
+
 **v5.1.0**
 
 - Global bar font picker in Look & Feel options with LSM support
