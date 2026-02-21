@@ -13,6 +13,7 @@ CB.version = "4.20.0"
 -- Module registry and event bus
 CB.modules = {}
 CB.callbacks = {}
+CB._backdropFrames = {}
 
 --------------------------------------------------------------------------------
 -- Module Registration System
@@ -121,6 +122,7 @@ CB.defaults = {
     locked = false,
     useClassColors = true,
     bgOpacity = 1,
+    showBorders = true,
 
     player = {
         enabled = true,
@@ -358,12 +360,11 @@ end
 function CB:CreateBackdrop(frame, bgColor, borderColor)
     bgColor = bgColor or {0.1, 0.1, 0.1, 0.9}
     borderColor = borderColor or {0.3, 0.3, 0.3, 1}
-    local opacity = CastbornDB and CastbornDB.bgOpacity or 1
 
     -- Background
     local bg = frame:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
-    bg:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], (bgColor[4] or 0.9) * opacity)
+    bg:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.9)
     frame.bg = bg
 
     -- Border using edge textures
@@ -396,7 +397,35 @@ function CB:CreateBackdrop(frame, bgColor, borderColor)
     frame.border = {top = top, bottom = bottom, left = left, right = right}
     frame._bgColor = bgColor
 
+    -- Track frame for border toggling
+    self._backdropFrames[#self._backdropFrames + 1] = frame
+
+    -- Hide borders if showBorders is disabled
+    if CastbornDB and CastbornDB.showBorders == false then
+        top:Hide()
+        bottom:Hide()
+        left:Hide()
+        right:Hide()
+    end
+
     return bg
+end
+
+-- Toggle border visibility on all tracked backdrop frames
+function CB:UpdateBorders()
+    local show = CastbornDB.showBorders ~= false
+    for _, frame in ipairs(self._backdropFrames) do
+        if frame.border then
+            for _, tex in pairs(frame.border) do
+                if show then
+                    tex:Show()
+                else
+                    tex:Hide()
+                end
+            end
+        end
+    end
+    self:FireCallback("BORDERS_CHANGED", show)
 end
 
 -- Refresh background opacity on all frames created with CreateBackdrop
