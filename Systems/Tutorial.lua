@@ -137,6 +137,13 @@ local steps = {
         configKey = "absorbs",
     },
     {
+        id = "appearance",
+        title = "Customize Appearance",
+        description = "You can customize the look of every module!\n\nToggle frame borders on or off globally in |cff88ddffLook & Feel|r options, and set a custom background color and opacity for each module in its settings.",
+        tip = "Open |cff88ddff/cb|r and check Look & Feel for borders, or each module's page for background color.",
+        getFrame = function() return Castborn.castbars and Castborn.castbars.player end,
+    },
+    {
         id = "moving",
         title = "Moving & Positioning",
         description = "All Castborn frames can be repositioned!\n\nType |cff88ddff/cb unlock|r to enable dragging, then drag any frame to your preferred position.\n\n|cff88ddffCtrl+Shift+Click|r a module header to temporarily hide it — useful when frames overlap.",
