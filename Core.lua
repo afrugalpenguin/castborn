@@ -355,7 +355,7 @@ local function InitDB()
     -- Migrate bgOpacity into per-module bgColor alpha
     if CastbornDB.bgOpacity ~= nil then
         local opacity = CastbornDB.bgOpacity
-        local moduleKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd", "totems"}
+        local moduleKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd", "totems", "interrupt", "multidot"}
         for _, key in ipairs(moduleKeys) do
             if CastbornDB[key] and CastbornDB[key].bgColor then
                 local c = CastbornDB[key].bgColor
