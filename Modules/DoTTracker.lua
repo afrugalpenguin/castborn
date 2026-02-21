@@ -218,6 +218,9 @@ function CB:InitDoTTracker()
         edgeSize = 1,
     })
     border:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+    if CastbornDB and CastbornDB.showBorders == false then
+        border:SetBackdropBorderColor(0, 0, 0, 0)
+    end
     frame.border = border
 
     if Castborn.Anchoring then
@@ -419,6 +422,19 @@ CB:RegisterCallback("REATTACH_DOTS", function()
         Castborn.Anchoring:ReattachToCastbar(CB.dotTracker, CastbornDB.dots, "BOTTOM", -2)
     end
     CB:Print("DoT Tracker anchored to castbar")
+end)
+
+-- Respond to global border visibility toggle
+Castborn:RegisterCallback("BORDERS_CHANGED", function(show)
+    if CB.dotTracker and CB.dotTracker.border then
+        if show then
+            local cfg = CastbornDB.dots or {}
+            local borderColor = cfg.borderColor or {0.3, 0.3, 0.3, 1}
+            CB.dotTracker.border:SetBackdropBorderColor(borderColor[1], borderColor[2], borderColor[3], borderColor[4] or 1)
+        else
+            CB.dotTracker.border:SetBackdropBorderColor(0, 0, 0, 0)
+        end
+    end
 end)
 
 Castborn:RegisterModule("DoTTracker", DoTTracker)

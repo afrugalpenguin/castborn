@@ -467,6 +467,9 @@ function CB:InitTotemTracker()
         edgeSize = 1,
     })
     border:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+    if CastbornDB and CastbornDB.showBorders == false then
+        border:SetBackdropBorderColor(0, 0, 0, 0)
+    end
     frame.border = border
 
     if Castborn.Anchoring then
@@ -539,6 +542,9 @@ local function EnsureTestFrame()
         edgeSize = 1,
     })
     border:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+    if CastbornDB and CastbornDB.showBorders == false then
+        border:SetBackdropBorderColor(0, 0, 0, 0)
+    end
     frame.border = border
 
     if Castborn.Anchoring then
@@ -706,6 +712,19 @@ Castborn:RegisterCallback("READY", function()
 
     -- Register test mode for ALL classes (so anyone can preview it)
     CB.TestManager:Register("TotemTracker", function() CB:TestTotemTracker() end, function() CB:EndTestTotemTracker() end)
+end)
+
+-- Respond to global border visibility toggle
+Castborn:RegisterCallback("BORDERS_CHANGED", function(show)
+    if CB.totemTracker and CB.totemTracker.border then
+        if show then
+            local cfg = CastbornDB.totems or {}
+            local borderColor = cfg.borderColor or {0.3, 0.3, 0.3, 1}
+            CB.totemTracker.border:SetBackdropBorderColor(borderColor[1], borderColor[2], borderColor[3], borderColor[4] or 1)
+        else
+            CB.totemTracker.border:SetBackdropBorderColor(0, 0, 0, 0)
+        end
+    end
 end)
 
 Castborn:RegisterModule("TotemTracker", TotemTracker)

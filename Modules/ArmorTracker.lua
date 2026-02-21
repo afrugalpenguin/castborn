@@ -154,6 +154,12 @@ local function CreateArmorFrame()
         right:SetWidth(borderSize)
 
         f.borderTextures = {top, bottom, left, right}
+
+        if CastbornDB and CastbornDB.showBorders == false then
+            for _, tex in ipairs(f.borderTextures) do
+                tex:Hide()
+            end
+        end
     end
 
     -- "!" warning text overlay
@@ -255,5 +261,20 @@ function CB:EndTestArmorTracker()
         UpdateArmorState()
     end
 end
+
+-- Respond to global border visibility toggle
+Castborn:RegisterCallback("BORDERS_CHANGED", function(show)
+    if frame and frame.borderTextures then
+        if show then
+            for _, tex in ipairs(frame.borderTextures) do
+                tex:Show()
+            end
+        else
+            for _, tex in ipairs(frame.borderTextures) do
+                tex:Hide()
+            end
+        end
+    end
+end)
 
 Castborn:RegisterModule("ArmorTracker", ArmorTracker)

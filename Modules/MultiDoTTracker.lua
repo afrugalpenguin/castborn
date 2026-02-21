@@ -77,6 +77,9 @@ local function CreateNameplateIndicator()
     })
     indicator:SetBackdropColor(0, 0, 0, 0.7)
     indicator:SetBackdropBorderColor(0.2, 0.8, 0.2, 1)
+    if CastbornDB and CastbornDB.showBorders == false then
+        indicator:SetBackdropBorderColor(0, 0, 0, 0)
+    end
 
     -- Spell icon texture
     indicator.icon = indicator:CreateTexture(nil, "BACKGROUND")
@@ -169,7 +172,9 @@ local function UpdateIndicatorUrgency(indicator, remaining)
         r, g, b = 0.2, 0.8, 0.2
     end
 
-    indicator:SetBackdropBorderColor(r, g, b, 1)
+    if not CastbornDB or CastbornDB.showBorders ~= false then
+        indicator:SetBackdropBorderColor(r, g, b, 1)
+    end
     indicator.glow:SetVertexColor(r, g, b, 0.5)
     indicator.timer:SetText(string.format("%.0f", remaining))
 end
@@ -379,6 +384,9 @@ local function CreateContainer()
     local bgColor = mdCfg.bgColor or {0.05, 0.05, 0.05, 0.8}
     frame:SetBackdropColor(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.8)
     frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+    if CastbornDB and CastbornDB.showBorders == false then
+        frame:SetBackdropBorderColor(0, 0, 0, 0)
+    end
 
     frame.header = frame:CreateFontString(nil, "OVERLAY")
     frame.header:SetFont("Fonts\\ARIALN.TTF", 9, "OUTLINE")
@@ -839,6 +847,26 @@ end
 -- Register with TestManager
 Castborn:RegisterCallback("READY", function()
     Castborn.TestManager:Register("MultiDoT", function() Castborn:TestMultiDoT() end, function() Castborn:EndTestMultiDoT() end)
+end)
+
+-- Respond to global border visibility toggle
+Castborn:RegisterCallback("BORDERS_CHANGED", function(show)
+    -- Main container frame
+    if frame then
+        if show then
+            frame:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+        else
+            frame:SetBackdropBorderColor(0, 0, 0, 0)
+        end
+    end
+    -- Nameplate indicators
+    for guid, indicator in pairs(nameplateIndicators) do
+        if show then
+            indicator:SetBackdropBorderColor(0.2, 0.8, 0.2, 1)
+        else
+            indicator:SetBackdropBorderColor(0, 0, 0, 0)
+        end
+    end
 end)
 
 Castborn:RegisterModule("MultiDoTTracker", MultiDoTTracker)

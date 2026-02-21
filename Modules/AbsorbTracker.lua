@@ -149,6 +149,12 @@ local function CreateAbsorbIcon()
 
     frame.borderTextures = {borderTop, borderBottom, borderLeft, borderRight}
 
+    if CastbornDB and CastbornDB.showBorders == false then
+        for _, tex in ipairs(frame.borderTextures) do
+            tex:Hide()
+        end
+    end
+
     -- Register with Masque if available
     if Castborn.Masque and Castborn.Masque.enabled then
         Castborn.Masque:AddButton("absorbs", frame, {
@@ -687,5 +693,38 @@ function CB:EndTestAbsorbTracker()
         containerFrame:Hide()
     end
 end
+
+-- Respond to global border visibility toggle
+Castborn:RegisterCallback("BORDERS_CHANGED", function(show)
+    -- Update active absorb icons
+    for _, absorb in ipairs(activeAbsorbs) do
+        local icon = absorb.frame
+        if icon and icon.borderTextures then
+            if show then
+                for _, tex in ipairs(icon.borderTextures) do
+                    tex:Show()
+                end
+            else
+                for _, tex in ipairs(icon.borderTextures) do
+                    tex:Hide()
+                end
+            end
+        end
+    end
+    -- Update pooled icons
+    for _, icon in ipairs(iconPool) do
+        if icon.borderTextures then
+            if show then
+                for _, tex in ipairs(icon.borderTextures) do
+                    tex:Show()
+                end
+            else
+                for _, tex in ipairs(icon.borderTextures) do
+                    tex:Hide()
+                end
+            end
+        end
+    end
+end)
 
 Castborn:RegisterModule("AbsorbTracker", AbsorbTracker)
