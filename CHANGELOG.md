@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.2.1**
+
+- Fixed BigWigs packager producing duplicate CurseForge uploads
+
 **v5.2.0**
 
 - Castbar colour pickers — global and per-castbar bar colour options in the Castbars settings page
