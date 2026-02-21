@@ -230,6 +230,68 @@ local function CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step,
     return frame
 end
 
+local function CreateColorPicker(parent, label, dbTable, dbKey, onChange)
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetSize(200, 26)
+
+    local labelText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    labelText:SetPoint("LEFT", 0, 0)
+    labelText:SetText(label)
+    labelText:SetTextColor(unpack(C.grey))
+
+    local swatch = CreateFrame("Button", nil, frame)
+    swatch:SetSize(20, 20)
+    swatch:SetPoint("LEFT", labelText, "RIGHT", 8, 0)
+
+    local swatchBg = swatch:CreateTexture(nil, "BACKGROUND")
+    swatchBg:SetAllPoints()
+    swatchBg:SetColorTexture(0.1, 0.1, 0.1, 1)
+
+    local swatchColor = swatch:CreateTexture(nil, "ARTWORK")
+    swatchColor:SetPoint("TOPLEFT", 1, -1)
+    swatchColor:SetPoint("BOTTOMRIGHT", -1, 1)
+    swatch.colorTex = swatchColor
+
+    local function UpdateSwatch()
+        local c = dbTable[dbKey] or {0.1, 0.1, 0.1, 0.8}
+        swatchColor:SetColorTexture(c[1], c[2], c[3], c[4] or 1)
+    end
+    UpdateSwatch()
+
+    swatch:SetScript("OnClick", function()
+        local c = dbTable[dbKey] or {0.1, 0.1, 0.1, 0.8}
+        local r, g, b, a = c[1], c[2], c[3], c[4] or 1
+
+        ColorPickerFrame:SetColorRGB(r, g, b)
+        ColorPickerFrame.hasOpacity = true
+        ColorPickerFrame.opacity = 1 - a
+        ColorPickerFrame.previousValues = {r, g, b, a}
+
+        local function SetColor()
+            local nr, ng, nb = ColorPickerFrame:GetColorRGB()
+            local na = 1 - (ColorPickerFrame.opacity or 0)
+            dbTable[dbKey] = {nr, ng, nb, na}
+            UpdateSwatch()
+            if onChange then onChange(dbTable[dbKey]) end
+        end
+
+        ColorPickerFrame.func = SetColor
+        ColorPickerFrame.opacityFunc = SetColor
+        ColorPickerFrame.cancelFunc = function(prev)
+            dbTable[dbKey] = {prev[1], prev[2], prev[3], prev[4]}
+            UpdateSwatch()
+            if onChange then onChange(dbTable[dbKey]) end
+        end
+
+        ColorPickerFrame:Hide()
+        ColorPickerFrame:Show()
+    end)
+
+    frame.swatch = swatch
+    frame.UpdateSwatch = UpdateSwatch
+    return frame
+end
+
 --------------------------------------------------------------------------------
 -- Main Frame
 --------------------------------------------------------------------------------
@@ -647,6 +709,12 @@ function Options:BuildCastbars(parent)
     slider2:SetPoint("TOPLEFT", 220, y)
     y = y - 60
 
+    local playerBgPicker = CreateColorPicker(parent, "Background Color", CastbornDB.player, "bgColor", function()
+        if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
+    end)
+    playerBgPicker:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
     -- Target Castbar
     local header2 = CreateHeader(parent, "Target Castbar")
     header2:SetPoint("TOPLEFT", 0, y)
@@ -699,6 +767,12 @@ function Options:BuildCastbars(parent)
     end)
     tslider2:SetPoint("TOPLEFT", 220, y)
     y = y - 60
+
+    local targetBgPicker = CreateColorPicker(parent, "Background Color", CastbornDB.target, "bgColor", function()
+        if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
+    end)
+    targetBgPicker:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
 
     -- Focus Castbar
     local header3 = CreateHeader(parent, "Focus Castbar")
@@ -753,6 +827,12 @@ function Options:BuildCastbars(parent)
     fslider2:SetPoint("TOPLEFT", 220, y)
     y = y - 60
 
+    local focusBgPicker = CreateColorPicker(parent, "Background Color", CastbornDB.focus, "bgColor", function()
+        if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
+    end)
+    focusBgPicker:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
     -- Target-of-Target Castbar
     local header4 = CreateHeader(parent, "Target-of-Target Castbar")
     header4:SetPoint("TOPLEFT", 0, y)
@@ -806,6 +886,12 @@ function Options:BuildCastbars(parent)
     ttslider2:SetPoint("TOPLEFT", 220, y)
     y = y - 60
 
+    local totBgPicker = CreateColorPicker(parent, "Background Color", CastbornDB.targettarget, "bgColor", function()
+        if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
+    end)
+    totBgPicker:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
     parent:SetHeight(math.abs(y) + 20)
 end
 
@@ -845,13 +931,12 @@ function Options:BuildLookFeel(parent)
     header3:SetPoint("TOPRIGHT", 0, y)
     y = y - 30
 
-    CastbornDB.bgOpacity = CastbornDB.bgOpacity or 1
-    local opacitySlider = CreateSlider(parent, "Background Opacity", CastbornDB, "bgOpacity", 0, 1, 0.05, function()
-        if Castborn.RefreshBackdropOpacity then
-            Castborn:RefreshBackdropOpacity()
+    local borderCB = CreateCheckbox(parent, "Show Frame Borders", CastbornDB, "showBorders", function()
+        if Castborn.UpdateBorders then
+            Castborn:UpdateBorders()
         end
     end)
-    opacitySlider:SetPoint("TOPLEFT", 0, y)
+    borderCB:SetPoint("TOPLEFT", 0, y)
 end
 
 function Options:BuildProfiles(parent)
@@ -1292,6 +1377,17 @@ function Options:BuildModule(parent, key)
             end
         end)
         anchorCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+    end
+
+    -- Background color picker
+    if db.bgColor then
+        local bgPicker = CreateColorPicker(parent, "Background Color", db, "bgColor", function()
+            if Castborn.RefreshBackgrounds then
+                Castborn:RefreshBackgrounds()
+            end
+        end)
+        bgPicker:SetPoint("TOPLEFT", 0, y)
         y = y - 30
     end
 

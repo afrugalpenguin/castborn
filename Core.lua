@@ -281,6 +281,7 @@ CB.defaults = {
         y = -215,
         xPct = 0,
         yPct = -0.199,
+        bgColor = {0.05, 0.05, 0.05, 0.9},
     },
 
     procs = {
@@ -317,6 +318,7 @@ CB.defaults = {
         y = -300,
         xPct = 0.345,
         yPct = -0.278,
+        bgColor = {0.05, 0.05, 0.05, 0.8},
     },
 
     totems = {
