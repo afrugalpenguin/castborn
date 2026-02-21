@@ -498,10 +498,11 @@ local function CreateMockupInterruptTracker()
     frame.bar = CreateFrame("StatusBar", nil, frame)
     frame.bar:SetPoint("TOPLEFT", frame, "TOPLEFT", (db.height or 16) + 2, -1)
     frame.bar:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
-    frame.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    frame.bar:SetStatusBarTexture(Castborn:GetBarTexture())
     frame.bar:SetMinMaxValues(0, 1)
     frame.bar:SetValue(1)
     frame.bar:SetStatusBarColor(0.2, 0.8, 0.2, 1)
+    Castborn:RegisterBarFrame(frame.bar)
 
     -- Ready text
     frame.ready = frame:CreateFontString(nil, "OVERLAY")

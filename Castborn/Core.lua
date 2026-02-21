@@ -14,6 +14,10 @@ CB.version = "5.0.1"
 CB.modules = {}
 CB.callbacks = {}
 CB._backdropFrames = {}
+CB._barFrames = {}
+
+-- Optional library detection
+local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
 
 --------------------------------------------------------------------------------
 -- Module Registration System
@@ -124,6 +128,7 @@ CB.defaults = {
     useGlobalBarColor = false,
     globalBarColor = {0.4, 0.6, 0.9, 1},
     showBorders = true,
+    barTexture = "Blizzard",
 
     player = {
         enabled = true,
@@ -444,6 +449,37 @@ function CB:UpdateBorders()
     self:FireCallback("BORDERS_CHANGED", show)
 end
 
+-- Built-in bar textures
+CB.builtinTextures = {
+    ["Blizzard"]  = "Interface\\TargetingFrame\\UI-StatusBar",
+    ["Smooth"]    = "Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar",
+    ["Raid"]      = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill",
+    ["Flat"]      = "Interface\\Tooltips\\UI-Tooltip-Background",
+}
+
+function CB:RegisterBarFrame(bar)
+    self._barFrames[bar] = true
+end
+
+function CB:GetBarTexture()
+    local name = self.db and self.db.barTexture or "Blizzard"
+    if self.builtinTextures[name] then
+        return self.builtinTextures[name]
+    end
+    if LSM then
+        local path = LSM:Fetch("statusbar", name)
+        if path then return path end
+    end
+    return self.builtinTextures["Blizzard"]
+end
+
+function CB:RefreshBarTextures()
+    local texture = self:GetBarTexture()
+    for bar in pairs(self._barFrames) do
+        bar:SetStatusBarTexture(texture)
+    end
+end
+
 -- Refresh backgrounds on all frames
 function CB:RefreshBackgrounds()
     -- Frames created with CreateBackdrop
@@ -670,6 +706,9 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
                 end
             end
         end
+
+        -- Store optional library reference
+        CB.LSM = LSM
 
         -- Fire INIT callback for all registered modules
         CB:FireCallback("INIT")

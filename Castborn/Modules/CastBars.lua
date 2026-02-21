@@ -96,12 +96,13 @@ local function CreateCastBar(unit, dbKey)
     local bar = CreateFrame("StatusBar", nil, frame)
     bar:SetPoint("TOPLEFT", 2, -2)
     bar:SetPoint("BOTTOMRIGHT", -2, 2)
-    bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    bar:SetStatusBarTexture(Castborn:GetBarTexture())
     bar:SetMinMaxValues(0, 1)
     bar:SetValue(0)
     local barColor = GetBarColor(dbKey)
     bar:SetStatusBarColor(barColor[1], barColor[2], barColor[3], barColor[4])
     frame.bar = bar
+    Castborn:RegisterBarFrame(bar)
     
     -- Background for the bar
     local barBg = bar:CreateTexture(nil, "BACKGROUND")

@@ -971,6 +971,74 @@ function Options:BuildLookFeel(parent)
         end
     end)
     borderCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 36
+
+    -- Bar Texture dropdown
+    local texLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    texLabel:SetPoint("TOPLEFT", 0, y)
+    texLabel:SetText("Bar Texture")
+    texLabel:SetTextColor(unpack(C.grey))
+    y = y - 22
+
+    local texDropdown = CreateFrame("Frame", "CastbornTextureDropdown", parent, "UIDropDownMenuTemplate")
+    texDropdown:SetPoint("TOPLEFT", -10, y)
+    UIDropDownMenu_SetWidth(texDropdown, 150)
+    UIDropDownMenu_SetText(texDropdown, CastbornDB.barTexture or "Blizzard")
+
+    -- Preview bar
+    local preview = CreateFrame("StatusBar", nil, parent)
+    preview:SetPoint("LEFT", texDropdown, "RIGHT", 0, 2)
+    preview:SetSize(120, 16)
+    preview:SetStatusBarTexture(Castborn:GetBarTexture())
+    preview:SetStatusBarColor(0.4, 0.6, 0.9, 1)
+    preview:SetMinMaxValues(0, 1)
+    preview:SetValue(0.7)
+
+    UIDropDownMenu_Initialize(texDropdown, function(self, level)
+        -- Built-in textures (sorted)
+        local builtinNames = {}
+        for name in pairs(Castborn.builtinTextures) do
+            table.insert(builtinNames, name)
+        end
+        table.sort(builtinNames)
+
+        for _, name in ipairs(builtinNames) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = name
+            info.value = name
+            info.checked = (CastbornDB.barTexture == name)
+            info.func = function()
+                CastbornDB.barTexture = name
+                UIDropDownMenu_SetText(texDropdown, name)
+                CloseDropDownMenus()
+                preview:SetStatusBarTexture(Castborn:GetBarTexture())
+                Castborn:RefreshBarTextures()
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+
+        -- LSM textures (if available)
+        local lsm = Castborn.LSM
+        if lsm then
+            local lsmList = lsm:List("statusbar") or {}
+            for _, name in ipairs(lsmList) do
+                if not Castborn.builtinTextures[name] then
+                    local info = UIDropDownMenu_CreateInfo()
+                    info.text = name
+                    info.value = name
+                    info.checked = (CastbornDB.barTexture == name)
+                    info.func = function()
+                        CastbornDB.barTexture = name
+                        UIDropDownMenu_SetText(texDropdown, name)
+                        CloseDropDownMenus()
+                        preview:SetStatusBarTexture(Castborn:GetBarTexture())
+                        Castborn:RefreshBarTextures()
+                    end
+                    UIDropDownMenu_AddButton(info)
+                end
+            end
+        end
+    end)
 end
 
 function Options:BuildProfiles(parent)

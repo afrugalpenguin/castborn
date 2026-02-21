@@ -4,7 +4,7 @@
 ## Author: Lightborn
 ## Version: @project-version@
 ## SavedVariables: CastbornDB
-## OptionalDeps: Masque
+## OptionalDeps: Masque, LibSharedMedia-3.0
 ## IconTexture: Interface\Icons\Spell_Arcane_Arcane04
 
 Core.lua

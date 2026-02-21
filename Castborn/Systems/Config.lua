@@ -118,7 +118,7 @@ function CB:ShowTest()
         if frame.icon then frame.icon:SetTexture("Interface\\Icons\\Spell_Fire_FireBolt02") end
         if frame.spellText then frame.spellText:SetText("Test Spell") end
         frame.bar:SetMinMaxValues(0, 1)
-        frame.bar:SetValue(0)
+        frame.bar:SetValue(0.6)
         frame:SetAlpha(1)
         frame:Show()
     end
@@ -135,7 +135,7 @@ function CB:ShowTest()
         if frame.icon then frame.icon:SetTexture("Interface\\Icons\\Spell_Shadow_ShadowBolt") end
         if frame.spellText then frame.spellText:SetText("Enemy Cast") end
         frame.bar:SetMinMaxValues(0, 1)
-        frame.bar:SetValue(0)
+        frame.bar:SetValue(0.4)
         frame:SetAlpha(1)
         frame:Show()
     end
@@ -152,7 +152,7 @@ function CB:ShowTest()
         if frame.icon then frame.icon:SetTexture("Interface\\Icons\\Spell_Nature_Lightning") end
         if frame.spellText then frame.spellText:SetText("Focus Cast") end
         frame.bar:SetMinMaxValues(0, 1)
-        frame.bar:SetValue(0)
+        frame.bar:SetValue(0.5)
         frame:SetAlpha(1)
         frame:Show()
     end

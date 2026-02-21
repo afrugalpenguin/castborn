@@ -36,10 +36,11 @@ local function CreateSwingBar(swingType, dbKey)
     local bar = CreateFrame("StatusBar", nil, frame)
     bar:SetPoint("TOPLEFT", 2, -2)
     bar:SetPoint("BOTTOMRIGHT", -2, 2)
-    bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    bar:SetStatusBarTexture(Castborn:GetBarTexture())
     bar:SetMinMaxValues(0, 1)
     bar:SetValue(0)
-    
+    Castborn:RegisterBarFrame(bar)
+
     if swingType == "mainhand" then bar:SetStatusBarColor(cfg.mainColor[1], cfg.mainColor[2], cfg.mainColor[3], cfg.mainColor[4])
     elseif swingType == "offhand" then bar:SetStatusBarColor(cfg.offColor[1], cfg.offColor[2], cfg.offColor[3], cfg.offColor[4])
     else bar:SetStatusBarColor(cfg.rangedColor[1], cfg.rangedColor[2], cfg.rangedColor[3], cfg.rangedColor[4]) end
