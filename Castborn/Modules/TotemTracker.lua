@@ -431,9 +431,13 @@ local function UpdateTotemTrackerAppearance()
     end
 
     if CB.totemTracker.border then
-        local borderColor = cfg.borderColor or { 0.3, 0.3, 0.3, 1 }
-        CB.totemTracker.border:SetBackdropBorderColor(borderColor[1], borderColor[2], borderColor[3],
-            borderColor[4] or 1)
+        if CastbornDB.showBorders == false then
+            CB.totemTracker.border:SetBackdropBorderColor(0, 0, 0, 0)
+        else
+            local borderColor = cfg.borderColor or { 0.3, 0.3, 0.3, 1 }
+            CB.totemTracker.border:SetBackdropBorderColor(borderColor[1], borderColor[2], borderColor[3],
+                borderColor[4] or 1)
+        end
     end
 end
 
