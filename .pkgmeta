@@ -1,5 +1,4 @@
-move-folders:
-  Castborn: Castborn
+package-as: Castborn
 
 manual-changelog:
   filename: CHANGELOG.md

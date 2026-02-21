@@ -1,6 +1,6 @@
 require("tests.mocks.wow_api")
-dofile("Castborn/Core.lua")
-dofile("Castborn/Systems/Anchoring.lua")
+dofile("Core.lua")
+dofile("Systems/Anchoring.lua")
 
 describe("Anchoring", function()
     local Anchoring = Castborn.Anchoring

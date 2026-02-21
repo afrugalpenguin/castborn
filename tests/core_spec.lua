@@ -1,5 +1,5 @@
 require("tests.mocks.wow_api")
-dofile("Castborn/Core.lua")
+dofile("Core.lua")
 
 describe("Core utilities", function()
     local CB = Castborn

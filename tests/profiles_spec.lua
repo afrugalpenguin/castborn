@@ -1,6 +1,6 @@
 require("tests.mocks.wow_api")
-dofile("Castborn/Core.lua")
-dofile("Castborn/Systems/Profiles.lua")
+dofile("Core.lua")
+dofile("Systems/Profiles.lua")
 
 describe("Profiles", function()
     local Profiles = Castborn.Profiles

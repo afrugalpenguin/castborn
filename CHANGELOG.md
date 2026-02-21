@@ -1,28 +1,18 @@
 # Changelog
 
-**v5.1.2**
-
-- Widened drag header padding so longer labels like Absorb Tracker fit comfortably
-
-**v5.1.0**
-
-- Global bar font picker in Look & Feel options with LSM support
-- Global bar texture picker in Look & Feel options with LSM support
-- Tutorial consolidated from 19 steps to 13 with interactive checkboxes
-
-**v5.0.1**
-
-- Fixed spell icons showing as grey squares without Masque installed
-
-**v5.0.0**
+**v5.2.0**
 
 - Castbar colour pickers — global and per-castbar bar colour options in the Castbars settings page
 - Per-module background colour pickers for all modules
 - Frame appearance system — individual background alpha, show/hide borders
+- Global bar font picker in Look & Feel options with LSM support
+- Global bar texture picker in Look & Feel options with LSM support
+- Tutorial consolidated from 19 steps to 13 with interactive checkboxes
 - Appearance customisation step in the welcome tutorial
 - Frames are now fully click-through when locked (cooldowns, procs, anchored frames)
-- Addon files reorganised into Castborn/ subfolder for easier WoW installation
+- Widened drag header padding so longer labels fit comfortably
 - DoT and Totem trackers now respect the show borders setting
+- Fixed spell icons showing as grey squares without Masque installed
 - Fixed bgOpacity migration for interrupt and multi-DoT trackers
 
 **v4.20.0**

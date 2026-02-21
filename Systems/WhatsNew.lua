@@ -14,32 +14,18 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
-        version = "5.1.0",
-        features = {
-            "Global bar font picker in Look & Feel options with LSM support",
-            "Global bar texture picker in Look & Feel options with LSM support",
-            "Tutorial consolidated from 19 steps to 13 with interactive checkboxes",
-        },
-        fixes = {},
-    },
-    {
-        version = "5.0.1",
-        features = {},
-        fixes = {
-            "Fixed spell icons showing as grey squares without Masque installed",
-        },
-    },
-    {
-        version = "5.0.0",
+        version = "5.2.0",
         features = {
             "Castbar colour pickers — global and per-castbar bar colour options",
             "Per-module background colour pickers for all modules",
             "Frame appearance system — individual background alpha, show/hide borders",
+            "Global bar font picker in Look & Feel options with LSM support",
+            "Global bar texture picker in Look & Feel options with LSM support",
+            "Tutorial consolidated from 19 steps to 13 with interactive checkboxes",
             "Frames are now fully click-through when locked",
         },
         fixes = {
-            "DoT and Totem trackers now respect the show borders setting",
-            "Fixed bgOpacity migration for interrupt and multi-DoT trackers",
+            "Fixed spell icons showing as grey squares without Masque installed",
         },
     },
     {
