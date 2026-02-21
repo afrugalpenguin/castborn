@@ -158,9 +158,8 @@ end
 -- The indicator is positioned above the frame so it doesn't cover content
 local function CreateDragIndicator(frame, label)
     local indicator = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    -- Position above the frame instead of overlaying it
-    indicator:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0, 2)
-    indicator:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, 2)
+    -- Position above the frame, centred, with a minimum width to fit the label
+    indicator:SetPoint("BOTTOM", frame, "TOP", 0, 2)
     indicator:SetHeight(14)
     indicator:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -176,6 +175,11 @@ local function CreateDragIndicator(frame, label)
     text:SetPoint("CENTER")
     text:SetText(label or "Drag")
     text:SetTextColor(1, 1, 1, 1)
+
+    -- Size to fit the label text or the frame width, whichever is larger
+    local textWidth = text:GetStringWidth() + 12
+    local minWidth = math.max(frame:GetWidth(), textWidth)
+    indicator:SetWidth(minWidth)
 
     -- Make the indicator handle dragging (so it works over child frames with EnableMouse)
     indicator:EnableMouse(true)

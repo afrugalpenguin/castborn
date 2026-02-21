@@ -45,7 +45,7 @@ local changelog = {
     {
         version = "4.20.0",
         features = {
-            "Full Masque skinning support for all icon-bearing modules — CastBars, Interrupt, DoTs, Totems, Multi-DoT, and Armor Tracker",
+            "Full Masque skinning support for all icon-bearing modules — CastBars, Interrupt, DoTs, Totems, Multi-DoT, and Armour Tracker",
             "Each module has its own Masque group for independent skin control",
         },
         fixes = {},
@@ -53,7 +53,7 @@ local changelog = {
     {
         version = "4.19.0",
         features = {
-            "Armor Tracker — shows an alert icon when your armor self-buff is missing (Mage, Warlock, Priest)",
+            "Armour Tracker — shows an alert icon when your armour self-buff is missing (Mage, Warlock, Priest)",
         },
         fixes = {},
     },

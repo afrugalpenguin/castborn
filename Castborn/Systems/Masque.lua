@@ -27,7 +27,7 @@ function MasqueSupport:Init()
     self.groups.absorbs = MSQ:Group("Castborn", "Absorb Icons")
     self.groups.totems = MSQ:Group("Castborn", "Totem Icons")
     self.groups.multidots = MSQ:Group("Castborn", "Multi-DoT Icons")
-    self.groups.armor = MSQ:Group("Castborn", "Armor Icons")
+    self.groups.armor = MSQ:Group("Castborn", "Armour Icons")
 
     Castborn:Print("Masque support enabled")
 end

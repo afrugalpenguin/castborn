@@ -50,7 +50,7 @@ local categories = {
     { id = "interrupt", name = "Interrupt" },
     { id = "totems", name = "Totems", class = "SHAMAN" },
     { id = "absorbs", name = "Absorbs", class = "MAGE" },
-    { id = "armortracker", name = "Armor", classes = {"MAGE", "WARLOCK", "PRIEST"} },
+    { id = "armortracker", name = "Armour", classes = {"MAGE", "WARLOCK", "PRIEST"} },
     { divider = true },
     { id = "lookfeel", name = "Look & Feel" },
     { id = "profiles", name = "Profiles" },
@@ -604,7 +604,7 @@ function Options:BuildGeneral(parent)
         { key = "cooldowns", label = "Cooldowns" },
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
         { key = "absorbs", label = "Absorb Tracker" },
-        { key = "armortracker", label = "Armor Tracker", classes = {"MAGE", "WARLOCK", "PRIEST"} },
+        { key = "armortracker", label = "Armour Tracker", classes = {"MAGE", "WARLOCK", "PRIEST"} },
         { key = "interrupt", label = "Interrupt Tracker" },
         { key = "multidot", label = "Multi-DoT Tracker" },
     }
@@ -1531,7 +1531,7 @@ function Options:BuildModule(parent, key)
         interrupt = "Interrupt Tracker",
         totems = "Totem Tracker",
         absorbs = "Absorb Tracker",
-        armortracker = "Armor Tracker",
+        armortracker = "Armour Tracker",
     }
 
     local y = 0
@@ -1922,7 +1922,7 @@ function Options:BuildModule(parent, key)
         y = y - 10
 
     elseif key == "armortracker" then
-        local enableCB = CreateCheckbox(parent, "Enable Armor Tracker", db, "enabled")
+        local enableCB = CreateCheckbox(parent, "Enable Armour Tracker", db, "enabled")
         enableCB:SetPoint("TOPLEFT", 0, y)
         y = y - 30
 
@@ -1934,7 +1934,7 @@ function Options:BuildModule(parent, key)
         sizeSlider:SetPoint("TOPLEFT", 0, y)
         y = y - 50
 
-        local testBtn = CreateButton(parent, "Test Armor Alert", 110, function()
+        local testBtn = CreateButton(parent, "Test Armour Alert", 120, function()
             if Castborn.TestArmorTracker then Castborn:TestArmorTracker() end
         end)
         testBtn:SetPoint("TOPLEFT", 0, y)

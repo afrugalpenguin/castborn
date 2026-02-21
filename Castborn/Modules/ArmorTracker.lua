@@ -177,7 +177,7 @@ local function CreateArmorFrame()
 
     -- Positioning
     if Castborn.Anchoring then
-        Castborn.Anchoring:MakeDraggable(f, db, nil, "Armor Tracker")
+        Castborn.Anchoring:MakeDraggable(f, db, nil, "Armour Tracker")
     else
         CB:MakeMoveable(f, "armortracker")
     end
