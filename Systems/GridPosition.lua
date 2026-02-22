@@ -332,13 +332,6 @@ function GridPosition:CreateControlPanel()
         GridPosition:ExitPositioningMode()
     end)
 
-    panel:SetScript("OnUpdate", function(self)
-        if GridPosition.draggingFrame then
-            local _, _, _, x, y = GridPosition.draggingFrame:GetPoint()
-            self.coords:SetText(string.format("|cffaaaaaaPos:|r X: |cffffffff%d|r  Y: |cffffffff%d|r", math.floor(x or 0), math.floor(y or 0)))
-        end
-    end)
-
     panel:Hide()
     self.controlPanel = panel
 end
