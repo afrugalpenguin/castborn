@@ -467,8 +467,6 @@ function CB:InitTotemTracker()
             CastbornDB.totems = CastbornDB.totems or {}
             CastbornDB.totems.anchored = false
         end, "Totem Tracker")
-    else
-        CB:MakeMoveable(frame, "totems")
     end
 
     -- Apply position only if not anchored
@@ -542,8 +540,6 @@ local function EnsureTestFrame()
             CastbornDB.totems = CastbornDB.totems or {}
             CastbornDB.totems.anchored = false
         end, "Totem Tracker")
-    else
-        CB:MakeMoveable(frame, "totems")
     end
 
     if not CastbornDB.totems or CastbornDB.totems.anchored == false then

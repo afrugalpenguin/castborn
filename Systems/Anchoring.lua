@@ -105,14 +105,6 @@ function Anchoring:GetAnchorInfo(frame)
     return self.anchors[frame]
 end
 
--- Re-anchor a previously detached frame
-function Anchoring:Reanchor(frame)
-    local info = self.anchors[frame]
-    if info then
-        self:Anchor(frame, info.parent, info.position, info.offsetX, info.offsetY)
-    end
-end
-
 Anchoring.CASTBAR_INDENT = 5
 
 function Anchoring:ReattachToCastbar(frame, db, position, offsetY, widthSyncFn)

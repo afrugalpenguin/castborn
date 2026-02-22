@@ -182,9 +182,6 @@ local function CreateCastBar(unit, dbKey)
                 Castborn:FireCallback("PLAYER_CASTBAR_MOVED")
             end
         end, label)
-    else
-        -- Fallback to original MakeMoveable if Anchoring not available
-        CB:MakeMoveable(frame, dbKey)
     end
 
     CB:ApplyPosition(frame, dbKey)

@@ -73,11 +73,6 @@ local changelog = {
         fixes = {},
     },
     {
-        version = "4.17.1",
-        features = {},
-        fixes = {},
-    },
-    {
         version = "4.17.0",
         features = {
             "Ctrl+Shift+Click module headers while unlocked to temporarily hide them for easier positioning",

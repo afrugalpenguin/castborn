@@ -7,7 +7,7 @@ local CB = Castborn
 
 function CB:ResetPositions()
     local positionKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd",
-                          "interrupt", "procs", "cooldowns", "multidot"}
+                          "interrupt", "procs", "cooldowns", "multidot", "totems", "absorbs", "armortracker"}
 
     for _, key in ipairs(positionKeys) do
         local def = CB.defaults[key]
@@ -295,5 +295,5 @@ end
 
 function CB:InitConfig()
     -- Slash commands are registered in Options.lua
-    CB:Print("Type /cb to open options, /cb help for commands")
+
 end
