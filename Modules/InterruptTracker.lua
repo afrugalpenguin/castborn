@@ -54,44 +54,14 @@ local function CreateInterruptBar()
     frame:SetPoint(db.point, UIParent, db.point, db.x, db.y)
 
     -- Icon button for Masque compatibility
-    local iconButton = CreateFrame("Button", nil, frame)
-    iconButton:SetSize(db.height, db.height)
+    local masqueGroup = Castborn.Masque and Castborn.Masque.enabled and Castborn.Masque.groups.interrupts or nil
+    local iconButton = Castborn:CreateMasqueButton(frame, nil, db.height, masqueGroup, {
+        iconLayer = "BACKGROUND",
+    })
     iconButton:SetPoint("LEFT", frame, "LEFT", 0, 0)
-
-    local iconTex = iconButton:CreateTexture(nil, "BACKGROUND")
-    iconTex:SetAllPoints()
-    iconTex:SetTexture(GetSpellTexture(interruptInfo.spellId))
-    iconTex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    iconButton.Icon = iconTex
-    frame.icon = iconTex
-
-    local iconNormal = iconButton:CreateTexture(nil, "BORDER")
-    iconNormal:SetPoint("TOPLEFT", -1, 1)
-    iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
-    iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
-    iconButton.Normal = iconNormal
-    if Castborn.Masque and Castborn.Masque.enabled then
-        iconButton:SetNormalTexture(iconNormal)
-    else
-        iconNormal:Hide()
-    end
-
-    local iconCooldown = CreateFrame("Cooldown", nil, iconButton, "CooldownFrameTemplate")
-    iconCooldown:SetAllPoints()
-    iconCooldown:SetDrawEdge(false)
-    iconCooldown:SetHideCountdownNumbers(true)
-    iconButton.Cooldown = iconCooldown
-
+    iconButton.icon:SetTexture(GetSpellTexture(interruptInfo.spellId))
+    frame.icon = iconButton.icon
     frame.iconButton = iconButton
-
-    -- Register with Masque if available
-    if Castborn.Masque and Castborn.Masque.enabled then
-        Castborn.Masque:AddButton("interrupts", iconButton, {
-            Icon = iconTex,
-            Cooldown = iconCooldown,
-            Normal = iconNormal,
-        })
-    end
 
     if frame.bar then
         frame.bar:SetPoint("TOPLEFT", frame, "TOPLEFT", db.height + 2, -1)

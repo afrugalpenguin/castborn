@@ -86,47 +86,13 @@ local function CreateArmorFrame()
     local db = CB.db.armortracker
     local size = db.iconSize or 36
     local hasMasque = Castborn.Masque and Castborn.Masque.enabled
+    local masqueGroup = hasMasque and Castborn.Masque.groups.armor or nil
 
-    -- Button for Masque compatibility
-    local f = CreateFrame("Button", "Castborn_ArmorTracker", UIParent)
-    f:SetSize(size, size)
+    local f = Castborn:CreateMasqueButton(UIParent, "Castborn_ArmorTracker", size, masqueGroup, {
+        iconLayer = "BACKGROUND",
+    })
     f:SetFrameStrata("MEDIUM")
     f:SetFrameLevel(5)
-
-    -- Icon texture
-    local icon = f:CreateTexture(nil, "BACKGROUND")
-    icon:SetAllPoints()
-    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    f.Icon = icon
-    f.icon = icon
-
-    -- Normal texture (border) for Masque
-    local iconNormal = f:CreateTexture(nil, "BORDER")
-    iconNormal:SetPoint("TOPLEFT", -1, 1)
-    iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
-    iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
-    f.Normal = iconNormal
-    if Castborn.Masque and Castborn.Masque.enabled then
-        f:SetNormalTexture(iconNormal)
-    else
-        iconNormal:Hide()
-    end
-
-    -- Cooldown frame for Masque compatibility
-    local iconCooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
-    iconCooldown:SetAllPoints()
-    iconCooldown:SetDrawEdge(false)
-    iconCooldown:SetHideCountdownNumbers(true)
-    f.Cooldown = iconCooldown
-
-    -- Register with Masque if available
-    if hasMasque then
-        Castborn.Masque:AddButton("armor", f, {
-            Icon = icon,
-            Cooldown = iconCooldown,
-            Normal = iconNormal,
-        })
-    end
 
     -- Manual border (fallback when Masque is not active)
     if not hasMasque then

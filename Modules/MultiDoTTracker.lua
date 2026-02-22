@@ -64,7 +64,7 @@ local MAX_NAMEPLATE_INDICATORS = 10
 
 -- Create a single nameplate indicator frame
 local function CreateNameplateIndicator()
-    -- Button for Masque compatibility
+    -- Button for Masque compatibility (uses BackdropTemplate for urgency border colouring)
     local indicator = CreateFrame("Button", nil, UIParent, "BackdropTemplate")
     indicator:SetSize(20, 20)
     indicator:SetFrameStrata("HIGH")
@@ -318,42 +318,12 @@ local function CreateTargetRow(parent, index)
     row.bg:SetColorTexture(0.1, 0.1, 0.1, 0.7)
 
     row.dots = {}
+    local masqueGroup = Castborn.Masque and Castborn.Masque.enabled and Castborn.Masque.groups.multidots or nil
     for i = 1, 6 do
-        -- Button for Masque compatibility
-        local dot = CreateFrame("Button", nil, row)
-        dot:SetSize(db.rowHeight - 4, db.rowHeight - 4)
+        local dot = Castborn:CreateMasqueButton(row, nil, db.rowHeight - 4, masqueGroup, {
+            iconLayer = "BACKGROUND",
+        })
         dot:SetPoint("LEFT", row, "LEFT", 5 + (i - 1) * (db.rowHeight - 2), 0)
-
-        dot.icon = dot:CreateTexture(nil, "BACKGROUND")
-        dot.icon:SetAllPoints()
-        dot.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        dot.Icon = dot.icon
-
-        local dotNormal = dot:CreateTexture(nil, "BORDER")
-        dotNormal:SetPoint("TOPLEFT", -1, 1)
-        dotNormal:SetPoint("BOTTOMRIGHT", 1, -1)
-        dotNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
-        dot.Normal = dotNormal
-        if Castborn.Masque and Castborn.Masque.enabled then
-            dot:SetNormalTexture(dotNormal)
-        else
-            dotNormal:Hide()
-        end
-
-        local dotCooldown = CreateFrame("Cooldown", nil, dot, "CooldownFrameTemplate")
-        dotCooldown:SetAllPoints()
-        dotCooldown:SetDrawEdge(false)
-        dotCooldown:SetHideCountdownNumbers(true)
-        dot.Cooldown = dotCooldown
-
-        -- Register with Masque if available
-        if Castborn.Masque and Castborn.Masque.enabled then
-            Castborn.Masque:AddButton("multidots", dot, {
-                Icon = dot.icon,
-                Cooldown = dotCooldown,
-                Normal = dotNormal,
-            })
-        end
 
         dot.time = dot:CreateFontString(nil, "OVERLAY")
         dot.time:SetFont(Castborn:GetBarFont(), 8, "OUTLINE")

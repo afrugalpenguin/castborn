@@ -57,38 +57,21 @@ local function CreateCastBar(unit, dbKey)
     -- Create backdrop
     CB:CreateBackdrop(frame, cfg.bgColor, cfg.borderColor)
     
-    -- Icon frame (left side) - Button for Masque compatibility
-    local iconFrame = CreateFrame("Button", nil, frame)
-    iconFrame:SetSize(cfg.height + 4, cfg.height + 4)
+    -- Icon frame (left side) - Button for Masque compatibility (Masque registration deferred)
+    local iconFrame = Castborn:CreateMasqueButton(frame, nil, cfg.height + 4, nil, {
+        texCoord = 0.07,
+        iconLayer = "BACKGROUND",
+    })
     iconFrame:SetPoint("RIGHT", frame, "LEFT", -4, 0)
     CB:CreateBackdrop(iconFrame, cfg.bgColor, cfg.borderColor)
 
-    local icon = iconFrame:CreateTexture(nil, "BACKGROUND")
-    icon:SetPoint("TOPLEFT", 2, -2)
-    icon:SetPoint("BOTTOMRIGHT", -2, 2)
-    icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-    iconFrame.Icon = icon
-    frame.icon = icon
+    -- Inset icon within backdrop padding
+    iconFrame.icon:ClearAllPoints()
+    iconFrame.icon:SetPoint("TOPLEFT", 2, -2)
+    iconFrame.icon:SetPoint("BOTTOMRIGHT", -2, 2)
+
+    frame.icon = iconFrame.icon
     frame.iconFrame = iconFrame
-
-    -- Normal texture (border) for Masque
-    local iconNormal = iconFrame:CreateTexture(nil, "BORDER")
-    iconNormal:SetPoint("TOPLEFT", -1, 1)
-    iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
-    iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
-    iconFrame.Normal = iconNormal
-    if Castborn.Masque and Castborn.Masque.enabled then
-        iconFrame:SetNormalTexture(iconNormal)
-    else
-        iconNormal:Hide()
-    end
-
-    -- Cooldown frame for Masque compatibility
-    local iconCooldown = CreateFrame("Cooldown", nil, iconFrame, "CooldownFrameTemplate")
-    iconCooldown:SetAllPoints()
-    iconCooldown:SetDrawEdge(false)
-    iconCooldown:SetHideCountdownNumbers(true)
-    iconFrame.Cooldown = iconCooldown
 
     if not cfg.showIcon then iconFrame:Hide() end
     

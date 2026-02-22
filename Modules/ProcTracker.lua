@@ -82,35 +82,12 @@ local defaults = {
 
 local function CreateProcFrame(parent, index)
     local size = CastbornDB.procs.iconSize or 28
+    local masqueGroup = Castborn.Masque and Castborn.Masque.enabled and Castborn.Masque.groups.buffs or nil
 
-    -- Use Button for Masque compatibility
-    local f = CreateFrame("Button", "Castborn_Proc" .. index, parent)
-    f:SetSize(size, size)
-
-    -- Icon texture (sublevel 1 to be above Normal texture)
-    f.icon = f:CreateTexture(nil, "ARTWORK", nil, 1)
-    f.icon:SetAllPoints()
-    f.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    f.Icon = f.icon  -- Masque alias
-
-    -- Normal texture (border) for Masque
-    f.Normal = f:CreateTexture(nil, "BORDER")
-    f.Normal:SetPoint("TOPLEFT", -1, 1)
-    f.Normal:SetPoint("BOTTOMRIGHT", 1, -1)
-    f.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
-    if Castborn.Masque and Castborn.Masque.enabled then
-        f:SetNormalTexture(f.Normal)
-    else
-        f.Normal:Hide()
-    end
-
-    -- Cooldown frame for Masque compatibility
-    f.cooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
-    f.cooldown:SetAllPoints()
-    f.cooldown:SetDrawEdge(false)
-    f.cooldown:SetHideCountdownNumbers(true)
+    local f = Castborn:CreateMasqueButton(parent, "Castborn_Proc" .. index, size, masqueGroup, {
+        iconLevel = 1,
+    })
     f.cooldown:Hide()
-    f.Cooldown = f.cooldown  -- Masque alias
 
     f.duration = f:CreateFontString(nil, "OVERLAY")
     f.duration:SetFont(Castborn:GetBarFont(), 10, "OUTLINE")
@@ -129,15 +106,6 @@ local function CreateProcFrame(parent, index)
     f.glow:SetPoint("TOPLEFT", -6, 6)
     f.glow:SetPoint("BOTTOMRIGHT", 6, -6)
     f.glow:SetVertexColor(1, 0.8, 0.2, 0)
-
-    -- Register with Masque if available
-    if Castborn.Masque and Castborn.Masque.enabled then
-        Castborn.Masque:AddButton("buffs", f, {
-            Icon = f.icon,
-            Cooldown = f.cooldown,
-            Normal = f.Normal,
-        })
-    end
 
     -- Click-through (WeakAuras pattern): Disable + EnableMouse(false)
     f:Disable()

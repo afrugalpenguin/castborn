@@ -81,10 +81,11 @@ end
 local function CreateAbsorbIcon()
     local cfg = CB.db.absorbs
     local size = cfg.size or 48
+    local masqueGroup = Castborn.Masque and Castborn.Masque.enabled and Castborn.Masque.groups.absorbs or nil
 
-    -- Use Button frame for Masque compatibility
-    local frame = CreateFrame("Button", nil, containerFrame)
-    frame:SetSize(size, size)
+    local frame = Castborn:CreateMasqueButton(containerFrame, nil, size, masqueGroup, {
+        cdOpts = { SetDrawEdge = true, SetDrawBling = false, SetDrawSwipe = true, SetReverse = true, SetHideCountdownNumbers = true },
+    })
     frame:SetFrameStrata("MEDIUM")
     frame:SetFrameLevel(5)
 
@@ -94,35 +95,6 @@ local function CreateAbsorbIcon()
     bg:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
     bg:SetVertexColor(0.05, 0.05, 0.05, 0.7)
     frame.bg = bg
-
-    -- Spell icon texture (set dynamically)
-    local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetAllPoints()
-    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    frame.icon = icon
-    frame.Icon = icon  -- Masque alias
-
-    -- Normal texture (border) for Masque
-    frame.Normal = frame:CreateTexture(nil, "BORDER")
-    frame.Normal:SetPoint("TOPLEFT", -1, 1)
-    frame.Normal:SetPoint("BOTTOMRIGHT", 1, -1)
-    frame.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
-    if Castborn.Masque and Castborn.Masque.enabled then
-        frame:SetNormalTexture(frame.Normal)
-    else
-        frame.Normal:Hide()
-    end
-
-    -- Cooldown sweep overlay (drains as absorb is consumed)
-    local cooldown = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
-    cooldown:SetAllPoints()
-    cooldown:SetDrawEdge(true)
-    cooldown:SetDrawBling(false)
-    cooldown:SetDrawSwipe(true)
-    cooldown:SetReverse(true)
-    cooldown:SetHideCountdownNumbers(true)
-    frame.cooldown = cooldown
-    frame.Cooldown = cooldown  -- Masque alias
 
     -- Simple coloured edge border (1px)
     local borderSize = 1
@@ -157,15 +129,6 @@ local function CreateAbsorbIcon()
         for _, tex in ipairs(frame.borderTextures) do
             tex:Hide()
         end
-    end
-
-    -- Register with Masque if available
-    if Castborn.Masque and Castborn.Masque.enabled then
-        Castborn.Masque:AddButton("absorbs", frame, {
-            Icon = icon,
-            Cooldown = cooldown,
-            Normal = frame.Normal,
-        })
     end
 
     -- Absorb amount text (centered on icon)

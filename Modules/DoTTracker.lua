@@ -37,43 +37,14 @@ local function CreateDotBar(parent, index)
     barBg:SetVertexColor(0.1, 0.1, 0.1, 0.8)
     
     -- Icon button for Masque compatibility
-    local iconFrame = CreateFrame("Button", nil, frame)
-    iconFrame:SetSize(cfg.barHeight - 2, cfg.barHeight - 2)
+    local masqueGroup = Castborn.Masque and Castborn.Masque.enabled and Castborn.Masque.groups.dots or nil
+    local iconFrame = Castborn:CreateMasqueButton(frame, nil, cfg.barHeight - 2, masqueGroup, {
+        texCoord = 0.07,
+        iconLayer = "BACKGROUND",
+    })
     iconFrame:SetPoint("LEFT", frame, "LEFT", 2, 0)
-
-    local icon = iconFrame:CreateTexture(nil, "BACKGROUND")
-    icon:SetAllPoints()
-    icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-    iconFrame.Icon = icon
-    frame.icon = icon
-
-    local iconNormal = iconFrame:CreateTexture(nil, "BORDER")
-    iconNormal:SetPoint("TOPLEFT", -1, 1)
-    iconNormal:SetPoint("BOTTOMRIGHT", 1, -1)
-    iconNormal:SetColorTexture(0.3, 0.3, 0.3, 1)
-    iconFrame.Normal = iconNormal
-    if Castborn.Masque and Castborn.Masque.enabled then
-        iconFrame:SetNormalTexture(iconNormal)
-    else
-        iconNormal:Hide()
-    end
-
-    local iconCooldown = CreateFrame("Cooldown", nil, iconFrame, "CooldownFrameTemplate")
-    iconCooldown:SetAllPoints()
-    iconCooldown:SetDrawEdge(false)
-    iconCooldown:SetHideCountdownNumbers(true)
-    iconFrame.Cooldown = iconCooldown
-
+    frame.icon = iconFrame.icon
     frame.iconButton = iconFrame
-
-    -- Register with Masque if available
-    if Castborn.Masque and Castborn.Masque.enabled then
-        Castborn.Masque:AddButton("dots", iconFrame, {
-            Icon = icon,
-            Cooldown = iconCooldown,
-            Normal = iconNormal,
-        })
-    end
     
     local nameText = bar:CreateFontString(nil, "OVERLAY")
     nameText:SetFont(Castborn:GetBarFont(), cfg.barHeight - 6, "OUTLINE")
