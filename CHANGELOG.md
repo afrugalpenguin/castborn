@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.3.0**
+
+- Proc Tracker grow direction option — choose Grow Right, Grow Left, or Grow from Centre in Proc Tracker settings
+
 **v5.2.1**
 
 - Fixed BigWigs packager producing duplicate CurseForge uploads

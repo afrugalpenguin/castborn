@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.3.0",
+        features = {
+            "Proc Tracker grow direction — choose Grow Right, Grow Left, or Grow from Centre",
+        },
+        fixes = {},
+    },
+    {
         version = "5.2.0",
         features = {
             "Castbar colour pickers — global and per-castbar bar colour options",
