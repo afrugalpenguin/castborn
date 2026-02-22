@@ -23,11 +23,14 @@ local wasInRegen = false
 local testModeActive = false
 
 -- Forward declare for UpdateFSR to check
+local playerUsesMana = nil
 
 local function PlayerUsesMana()
+    if playerUsesMana ~= nil then return playerUsesMana end
     local _, class = UnitClass("player")
     local manaClasses = {PRIEST=true, MAGE=true, WARLOCK=true, DRUID=true, PALADIN=true, SHAMAN=true, HUNTER=true}
-    return manaClasses[class]
+    playerUsesMana = manaClasses[class] or false
+    return playerUsesMana
 end
 
 -- Pulse glow effect when entering regen state

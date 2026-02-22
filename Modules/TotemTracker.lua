@@ -11,6 +11,7 @@ local CB = Castborn
 CB.totemTracker = nil
 
 local totemBars = {}
+local activeTotems = {}
 local MAX_TOTEMS = 4
 
 -- Totem slot constants
@@ -342,7 +343,7 @@ local function ScanTotems()
     end
 
     -- Collect active totems
-    local activeTotems = {}
+    wipe(activeTotems)
     for slot = 1, MAX_TOTEMS do
         local haveTotem, totemName, startTime, duration, icon = GetTotemInfo(slot)
         if haveTotem and duration > 0 then

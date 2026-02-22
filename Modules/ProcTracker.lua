@@ -198,6 +198,9 @@ local function StopGlow(procFrame)
 end
 
 local trackedProcs = {}
+local scanById = {}
+local scanByName = {}
+local scanActiveProcs = {}
 local testModeActive = false
 local petSummonTime = nil
 local PET_DURATION = 45
@@ -212,20 +215,20 @@ local function ScanProcs()
         return
     end
 
-    local trackedById = {}
-    local trackedByName = {}
+    wipe(scanById)
+    wipe(scanByName)
     for _, spell in ipairs(db.trackedSpells or {}) do
-        trackedById[spell.spellId] = spell
-        trackedByName[spell.name] = spell
+        scanById[spell.spellId] = spell
+        scanByName[spell.name] = spell
     end
 
-    local activeProcs = {}
+    wipe(scanActiveProcs)
     for i = 1, 40 do
         local name, icon, stacks, _, duration, expirationTime, _, _, _, spellId = UnitBuff("player", i)
         if not name then break end
 
-        if trackedById[spellId] or trackedByName[name] then
-            table.insert(activeProcs, {
+        if scanById[spellId] or scanByName[name] then
+            table.insert(scanActiveProcs, {
                 name = name,
                 icon = icon,
                 stacks = stacks,
@@ -242,8 +245,8 @@ local function ScanProcs()
         local name, icon, stacks, _, duration, expirationTime, _, _, _, spellId = UnitDebuff("player", i)
         if not name then break end
 
-        if trackedById[spellId] or trackedByName[name] then
-            table.insert(activeProcs, {
+        if scanById[spellId] or scanByName[name] then
+            table.insert(scanActiveProcs, {
                 name = name,
                 icon = icon,
                 stacks = stacks,
@@ -260,7 +263,7 @@ local function ScanProcs()
     if playerClass == "MAGE" and petSummonTime and UnitExists("pet") then
         local expirationTime = petSummonTime + PET_DURATION
         if expirationTime > GetTime() then
-            table.insert(activeProcs, {
+            table.insert(scanActiveProcs, {
                 name = "Water Elemental",
                 icon = GetSpellTexture(31687),
                 stacks = 0,
@@ -275,7 +278,7 @@ local function ScanProcs()
     end
 
     -- Hide frame if no active procs
-    if #activeProcs == 0 then
+    if #scanActiveProcs == 0 then
         frame:Hide()
         trackedProcs = {}
         return
@@ -287,15 +290,14 @@ local function ScanProcs()
         frame.dragIndicator:Hide()
     end
 
-    local newTracked = {}
-    for _, proc in ipairs(activeProcs) do
-        newTracked[proc.spellId] = true
+    wipe(trackedProcs)
+    for _, proc in ipairs(scanActiveProcs) do
+        trackedProcs[proc.spellId] = true
     end
-    trackedProcs = newTracked
 
     for i = 1, MAX_PROCS do
         local procFrame = procFrames[i]
-        local proc = activeProcs[i]
+        local proc = scanActiveProcs[i]
 
         if proc then
             procFrame.icon:SetTexture(proc.icon)

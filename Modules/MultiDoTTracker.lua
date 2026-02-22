@@ -25,6 +25,7 @@ local defaults = {
 }
 
 local trackedTargets = {}
+local sortedTargets = {}
 local testModeActive = false
 
 --------------------------------------------------------------------------------
@@ -485,7 +486,7 @@ local function GetUrgencyColor(remaining)
 end
 
 local function GetSortedTargets()
-    local sorted = {}
+    wipe(sortedTargets)
     local currentTargetGUID = UnitGUID("target")
 
     for guid, data in pairs(trackedTargets) do
@@ -499,7 +500,7 @@ local function GetSortedTargets()
                 end
             end
 
-            table.insert(sorted, {
+            table.insert(sortedTargets, {
                 guid = guid,
                 name = data.name,
                 dots = data.dots,
@@ -511,16 +512,16 @@ local function GetSortedTargets()
     -- Sort by time remaining if enabled, otherwise by name
     local db = CastbornDB.multidot
     if db.sortByTime ~= false then
-        table.sort(sorted, function(a, b)
+        table.sort(sortedTargets, function(a, b)
             return a.urgency < b.urgency
         end)
     else
-        table.sort(sorted, function(a, b)
+        table.sort(sortedTargets, function(a, b)
             return a.name < b.name
         end)
     end
 
-    return sorted
+    return sortedTargets
 end
 
 local function UpdateDisplay()
