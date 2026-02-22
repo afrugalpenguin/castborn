@@ -67,6 +67,7 @@ local defaults = {
     iconSize = 28,
     spacing = 4,
     orientation = "HORIZONTAL",
+    growDirection = "RIGHT",
     point = "CENTER",
     x = 0,
     y = -255,
@@ -177,17 +178,38 @@ local function UpdateLayout()
     local size = db.iconSize or 28
     local spacing = db.spacing or 4
     local isHorizontal = db.orientation == "HORIZONTAL"
+    local grow = db.growDirection or "RIGHT"
 
     if frame then
         frame:SetHeight(size + 4)
     end
 
+    -- Count visible procs for centre calculation
+    local visibleCount = 0
+    if grow == "CENTRE" and isHorizontal then
+        for _, f in ipairs(procFrames) do
+            if f:IsShown() then visibleCount = visibleCount + 1 end
+        end
+    end
+
+    local visibleIdx = 0
     for i, f in ipairs(procFrames) do
         f:ClearAllPoints()
         f:SetSize(size, size)
 
         if isHorizontal then
-            f:SetPoint("LEFT", frame, "LEFT", (i - 1) * (size + spacing), 0)
+            if grow == "CENTRE" then
+                local totalWidth = visibleCount * size + (visibleCount - 1) * spacing
+                local startOffset = -totalWidth / 2
+                if f:IsShown() then
+                    f:SetPoint("LEFT", frame, "CENTER", startOffset + visibleIdx * (size + spacing), 0)
+                    visibleIdx = visibleIdx + 1
+                end
+            elseif grow == "LEFT" then
+                f:SetPoint("RIGHT", frame, "RIGHT", -((i - 1) * (size + spacing)), 0)
+            else
+                f:SetPoint("LEFT", frame, "LEFT", (i - 1) * (size + spacing), 0)
+            end
         else
             f:SetPoint("TOP", frame, "TOP", 0, -((i - 1) * (size + spacing)))
         end
@@ -339,6 +361,11 @@ local function ScanProcs()
             procFrame:Hide()
             procFrame.expirationTime = nil
         end
+    end
+
+    -- Recalculate positions when grow direction is CENTRE (depends on visible count)
+    if db.growDirection == "CENTRE" then
+        UpdateLayout()
     end
 end
 
@@ -515,12 +542,7 @@ function Castborn:TestProcs()
     for i, proc in ipairs(testProcs) do
         local procFrame = procFrames[i]
         if procFrame then
-            local size = db.iconSize or 28
-            local spacing = db.spacing or 4
-            procFrame:ClearAllPoints()
-            procFrame:SetPoint("LEFT", frame, "LEFT", (i - 1) * (size + spacing), 0)
-            procFrame:SetSize(size, size)
-
+            procFrame:SetSize(db.iconSize or 28, db.iconSize or 28)
             procFrame.icon:SetTexture(proc.icon)
             if proc.remaining > 0 then
                 procFrame.duration:SetText(string.format("%.1f", proc.remaining))
@@ -528,10 +550,7 @@ function Castborn:TestProcs()
                 procFrame.duration:SetText("")
             end
             procFrame.stacks:SetText("")
-
-            -- Show glow effect
             StartGlow(procFrame)
-
             procFrame:Show()
         end
     end
@@ -540,6 +559,8 @@ function Castborn:TestProcs()
     for i = #testProcs + 1, MAX_PROCS do
         if procFrames[i] then procFrames[i]:Hide() end
     end
+
+    UpdateLayout()
 end
 
 -- End test mode

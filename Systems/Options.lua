@@ -1655,6 +1655,46 @@ function Options:BuildModule(parent, key)
             if Castborn.ProcTracker then Castborn.ProcTracker:UpdateLayout() end
         end)
         iconSlider:SetPoint("TOPLEFT", 0, y)
+        y = y - 60
+
+        -- Grow Direction dropdown
+        local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        growLabel:SetPoint("TOPLEFT", 0, y)
+        growLabel:SetText("Grow Direction:")
+        growLabel:SetTextColor(unpack(C.grey))
+
+        local growOptions = {
+            { value = "RIGHT", label = "Grow Right" },
+            { value = "LEFT", label = "Grow Left" },
+            { value = "CENTRE", label = "Grow from Centre" },
+        }
+
+        local growDropdown = CreateFrame("Frame", "CastbornProcGrowDropdown", parent, "UIDropDownMenuTemplate")
+        growDropdown:SetPoint("TOPLEFT", 90, y + 6)
+        UIDropDownMenu_SetWidth(growDropdown, 140)
+
+        local currentGrow = procsDB.growDirection or "RIGHT"
+        for _, opt in ipairs(growOptions) do
+            if opt.value == currentGrow then
+                UIDropDownMenu_SetText(growDropdown, opt.label)
+            end
+        end
+
+        UIDropDownMenu_Initialize(growDropdown, function(self, level)
+            for _, opt in ipairs(growOptions) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = opt.label
+                info.value = opt.value
+                info.checked = (procsDB.growDirection or "RIGHT") == opt.value
+                info.func = function()
+                    procsDB.growDirection = opt.value
+                    UIDropDownMenu_SetText(growDropdown, opt.label)
+                    CloseDropDownMenus()
+                    if Castborn.ProcTracker then Castborn.ProcTracker:UpdateLayout() end
+                end
+                UIDropDownMenu_AddButton(info)
+            end
+        end)
 
     elseif key == "cooldowns" then
         -- Icon Size and Spacing sliders
