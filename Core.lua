@@ -451,6 +451,72 @@ function CB:UpdateBorders()
     self:FireCallback("BORDERS_CHANGED", show)
 end
 
+---------------------------------------------------------------------------------
+-- Masque-compatible icon button factory
+-- Creates a Button frame with Icon, Normal border, and Cooldown sub-frames.
+-- opts fields:
+--   texCoord   — icon inset (number or {l,r,t,b}), default 0.08
+--   iconLayer  — texture layer for the icon, default "ARTWORK"
+--   iconLevel  — texture sublevel for the icon, default nil
+--   noBorder   — skip Normal border texture, default false
+--   cdOpts     — table of Cooldown method calls, e.g. {SetDrawEdge = true}
+---------------------------------------------------------------------------------
+function CB:CreateMasqueButton(parent, name, size, masqueGroup, opts)
+    opts = opts or {}
+    local f = CreateFrame("Button", name, parent)
+    f:SetSize(size, size)
+
+    -- Icon texture
+    local iconLayer = opts.iconLayer or "ARTWORK"
+    local iconLevel = opts.iconLevel or nil
+    local icon = f:CreateTexture(nil, iconLayer, nil, iconLevel)
+    icon:SetAllPoints()
+    local tc = opts.texCoord or 0.08
+    if type(tc) == "number" then
+        icon:SetTexCoord(tc, 1 - tc, tc, 1 - tc)
+    else
+        icon:SetTexCoord(tc[1], tc[2], tc[3], tc[4])
+    end
+    f.icon = icon
+    f.Icon = icon
+
+    -- Normal texture (border) for Masque
+    if not opts.noBorder then
+        local normal = f:CreateTexture(nil, "BORDER")
+        normal:SetPoint("TOPLEFT", -1, 1)
+        normal:SetPoint("BOTTOMRIGHT", 1, -1)
+        normal:SetColorTexture(0.3, 0.3, 0.3, 1)
+        f.Normal = normal
+        if self.Masque and self.Masque.enabled then
+            f:SetNormalTexture(normal)
+        else
+            normal:Hide()
+        end
+    end
+
+    -- Cooldown frame
+    local cd = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
+    cd:SetAllPoints()
+    if opts.cdOpts then
+        for method, value in pairs(opts.cdOpts) do
+            if cd[method] then cd[method](cd, value) end
+        end
+    end
+    f.cooldown = cd
+    f.Cooldown = cd
+
+    -- Register with Masque if a group was provided
+    if masqueGroup then
+        masqueGroup:AddButton(f, {
+            Icon = f.Icon,
+            Cooldown = f.Cooldown,
+            Normal = f.Normal,
+        })
+    end
+
+    return f
+end
+
 -- Built-in bar textures
 CB.builtinTextures = {
     ["Blizzard"]  = "Interface\\TargetingFrame\\UI-StatusBar",
