@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.4.0",
+        features = {
+            "Totem Tracker solo range indicator — shows a single dot when not grouped",
+        },
+        fixes = {},
+    },
+    {
         version = "5.3.0",
         features = {
             "Proc Tracker grow direction — choose Grow Right, Grow Left, or Grow from Centre",

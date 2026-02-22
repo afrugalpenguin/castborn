@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.4.0**
+
+- Totem Tracker solo range indicator — optional single dot showing you're in range of your own beneficial totems when not grouped
+
 **v5.3.0**
 
 - Proc Tracker grow direction option — choose Grow Right, Grow Left, or Grow from Centre in Proc Tracker settings
