@@ -45,7 +45,16 @@ function Profiles:ApplyProfile(profileName)
     local profile = self:GetProfile(profileName)
     if not profile then return end
 
-    -- Apply profile settings to current DB
+    -- Preserve metadata
+    local profiles = CastbornDB.profiles
+    local profileKeys = CastbornDB.profileKeys
+
+    -- Wipe and restore metadata
+    wipe(CastbornDB)
+    CastbornDB.profiles = profiles
+    CastbornDB.profileKeys = profileKeys
+
+    -- Apply profile settings
     for k, v in pairs(profile) do
         if k ~= "profiles" and k ~= "profileKeys" then
             CastbornDB[k] = Castborn:DeepCopy(v)
