@@ -555,6 +555,23 @@ local function CreateMockupInterruptTracker()
     frame.ready:SetText("READY")
     frame.ready:SetTextColor(0.2, 1, 0.2, 1)
 
+    -- Mockup lockout indicator (example: Frost school locked)
+    local lockout = CreateFrame("Frame", nil, frame)
+    lockout:SetSize(80, 20)
+    lockout:SetPoint("LEFT", frame, "RIGHT", 10, 0)
+
+    lockout.bg = lockout:CreateTexture(nil, "BACKGROUND")
+    lockout.bg:SetAllPoints()
+    lockout.bg:SetColorTexture(0.1, 0.1, 0.1, 0.8)
+
+    lockout.text = lockout:CreateFontString(nil, "OVERLAY")
+    lockout.text:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+    lockout.text:SetPoint("CENTER")
+    lockout.text:SetText("Locked 2.4s")
+    lockout.text:SetTextColor(0.5, 0.5, 1.0, 1)  -- Frost school colour
+
+    frame.lockout = lockout
+
     mockupInterruptFrame = frame
     frame:Show()
     return frame
@@ -697,12 +714,28 @@ local function ShowTestFrame(frameId)
         if container then return container end
     elseif frameId == "interrupt" then
         if CB.TestInterrupt then CB:TestInterrupt() end
-        local frame = _G["Castborn_Interrupt"] or _G["Castborn_Interrupt_Mock"]
-        if frame then
-            return frame
-        else
-            return CreateMockupInterruptTracker()
+        local iFrame = _G["Castborn_Interrupt"] or _G["Castborn_Interrupt_Mock"]
+        if not iFrame then
+            iFrame = CreateMockupInterruptTracker()
         end
+        -- Show a mockup lockout indicator if the real one isn't visible
+        local realLockout = _G["Castborn_Lockout"]
+        if not (realLockout and realLockout:IsShown()) and not iFrame.tutorialLockout then
+            local lo = CreateFrame("Frame", nil, iFrame)
+            lo:SetSize(80, 20)
+            lo:SetPoint("LEFT", iFrame, "RIGHT", 10, 0)
+            lo.bg = lo:CreateTexture(nil, "BACKGROUND")
+            lo.bg:SetAllPoints()
+            lo.bg:SetColorTexture(0.1, 0.1, 0.1, 0.8)
+            lo.text = lo:CreateFontString(nil, "OVERLAY")
+            lo.text:SetFont(Castborn:GetBarFont(), 10, "OUTLINE")
+            lo.text:SetPoint("CENTER")
+            lo.text:SetText("Locked 2.4s")
+            lo.text:SetTextColor(0.5, 0.5, 1.0, 1)
+            iFrame.tutorialLockout = lo
+        end
+        if iFrame.tutorialLockout then iFrame.tutorialLockout:Show() end
+        return iFrame
     elseif frameId == "totems" then
         if CB.TestTotemTracker then CB:TestTotemTracker() end
         local frame = _G["Castborn_TotemTracker"]
@@ -981,6 +1014,11 @@ function Tutorial:End()
     end
     if mockupInterruptFrame then
         mockupInterruptFrame:Hide()
+    end
+    -- Hide tutorial lockout on real interrupt frames
+    local iFrame = _G["Castborn_Interrupt"] or _G["Castborn_Interrupt_Mock"]
+    if iFrame and iFrame.tutorialLockout then
+        iFrame.tutorialLockout:Hide()
     end
 
     -- Mark tutorial as complete
