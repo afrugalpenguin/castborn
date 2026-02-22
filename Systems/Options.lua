@@ -322,12 +322,8 @@ local function CreateOptionsFrame()
     -- Lock frames when options panel is closed
     frame:SetScript("OnHide", function()
         if not CastbornDB.locked then
-            CastbornDB.locked = true
+            Castborn:LockFrames()
             Castborn:Print("Frames locked")
-            if Castborn.Anchoring then Castborn.Anchoring:HideDragIndicators(true) end
-            Castborn:EndTestMode()
-            if Castborn.HideTestFrames then Castborn:HideTestFrames() end
-            if Castborn.HideTestModePanel then Castborn:HideTestModePanel() end
         end
     end)
 
@@ -533,30 +529,19 @@ function Options:BuildGeneral(parent)
 
     -- Action buttons
     local lockBtn = CreateButton(parent, CastbornDB.locked and "Unlock Frames" or "Lock Frames", 110, function(self)
-        CastbornDB.locked = not CastbornDB.locked
-        self:SetText(CastbornDB.locked and "Unlock Frames" or "Lock Frames")
-        if CastbornDB.locked then
+        if not CastbornDB.locked then
+            Castborn:LockFrames()
             Castborn:Print("Frames locked")
-            if Castborn.Anchoring then Castborn.Anchoring:HideDragIndicators(true) end
-            Castborn:EndTestMode()
-            if Castborn.HideTestFrames then Castborn:HideTestFrames() end
-            if Castborn.HideTestModePanel then Castborn:HideTestModePanel() end
         else
+            Castborn:UnlockFrames()
             Castborn:Print("Frames unlocked - drag to reposition")
-            if Castborn.ShowTest then Castborn:ShowTest() end
-            Castborn:StartTestMode()
-            if Castborn.Anchoring then Castborn.Anchoring:ShowDragIndicators(true) end
         end
+        self:SetText(CastbornDB.locked and "Unlock Frames" or "Lock Frames")
     end)
     lockBtn:SetPoint("TOPLEFT", 0, y)
 
     local testBtn = CreateButton(parent, "Test Mode", 90, function()
-        CastbornDB.locked = false
-        Castborn:FireCallback("TEST_MODE")
-        if Castborn.ShowTest then Castborn:ShowTest() end
-        Castborn:StartTestMode()
-        if Castborn.Anchoring then Castborn.Anchoring:ShowDragIndicators(true) end
-        if Castborn.ShowTestModePanel then Castborn:ShowTestModePanel() end
+        Castborn:EnterTestMode()
     end)
     testBtn:SetPoint("LEFT", lockBtn, "RIGHT", 8, 0)
     testBtn:SetScript("OnEnter", function(self)
@@ -2089,29 +2074,17 @@ SlashCmdList["CASTBORN"] = function(msg)
     if cmd == "" or cmd == "options" or cmd == "config" or cmd == "settings" then
         Options:Toggle()
     elseif cmd == "lock" then
-        CastbornDB.locked = true
+        Castborn:LockFrames()
         Castborn:Print("Frames locked")
-        if Castborn.Anchoring then Castborn.Anchoring:HideDragIndicators(true) end
-        Castborn:EndTestMode()
-        if Castborn.HideTestFrames then Castborn:HideTestFrames() end
-        if Castborn.HideTestModePanel then Castborn:HideTestModePanel() end
     elseif cmd == "unlock" then
-        CastbornDB.locked = false
+        Castborn:UnlockFrames()
         Castborn:Print("Frames unlocked - drag to reposition")
-        if Castborn.ShowTest then Castborn:ShowTest() end
-        Castborn:StartTestMode()
-        if Castborn.Anchoring then Castborn.Anchoring:ShowDragIndicators(true) end
     elseif cmd == "grid" then
         if Castborn.GridPosition then
             Castborn.GridPosition:TogglePositioningMode()
         end
     elseif cmd == "test" then
-        CastbornDB.locked = false
-        Castborn:FireCallback("TEST_MODE")
-        if Castborn.ShowTest then Castborn:ShowTest() end
-        Castborn:StartTestMode()
-        if Castborn.Anchoring then Castborn.Anchoring:ShowDragIndicators(true) end
-        if Castborn.ShowTestModePanel then Castborn:ShowTestModePanel() end
+        Castborn:EnterTestMode()
     elseif cmd == "reset" then
         Castborn:FireCallback("RESET_POSITIONS")
     elseif cmd == "profiles" then

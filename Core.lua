@@ -712,12 +712,7 @@ end
 
 function CB.TestManager:StartAll()
     self.active = true
-
-    -- Unlock frames and show drag indicators
-    CastbornDB.locked = false
-    if CB.Anchoring then
-        CB.Anchoring:ShowDragIndicators(true)
-    end
+    CB:UnlockFrames()
 
     for _, module in pairs(self.modules) do
         if module.start then module.start() end
@@ -748,6 +743,31 @@ end
 
 function CB:EndTestMode()
     self.TestManager:EndAll()
+end
+
+-- Lock frames, hide drag indicators, end test mode, hide test panels
+function CB:LockFrames()
+    CastbornDB.locked = true
+    self:EndTestMode()
+    if self.HideTestFrames then self:HideTestFrames() end
+    if self.Anchoring then self.Anchoring:HideDragIndicators(true) end
+    if self.HideTestModePanel then self:HideTestModePanel() end
+end
+
+-- Unlock frames and show drag indicators (does NOT enter test mode)
+function CB:UnlockFrames()
+    CastbornDB.locked = false
+    if self.Anchoring then self.Anchoring:ShowDragIndicators(true) end
+end
+
+-- Enter full test mode: unlock, fire callbacks, show test data, show panel
+function CB:EnterTestMode()
+    CastbornDB.locked = false
+    self:FireCallback("TEST_MODE")
+    if self.ShowTest then self:ShowTest() end
+    self:StartTestMode()
+    if self.Anchoring then self.Anchoring:ShowDragIndicators(true) end
+    if self.ShowTestModePanel then self:ShowTestModePanel() end
 end
 
 --------------------------------------------------------------------------------
@@ -845,10 +865,7 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
     elseif event == "PLAYER_REGEN_DISABLED" then
         -- Auto-lock frames when entering combat
         if not CastbornDB.locked then
-            CastbornDB.locked = true
-            CB:EndTestMode()
-            if CB.HideTestFrames then CB:HideTestFrames() end
-            if CB.Anchoring then CB.Anchoring:HideDragIndicators(true) end
+            CB:LockFrames()
             if CB.GridPosition then CB.GridPosition:HideGrid() end
         end
     end

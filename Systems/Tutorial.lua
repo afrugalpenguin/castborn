@@ -501,12 +501,7 @@ local function CreateTutorialFrame()
     frame.testModeBtn:SetText("Test Mode")
     frame.testModeBtn:SetScript("OnClick", function()
         Tutorial:End()
-        CastbornDB.locked = false
-        Castborn:FireCallback("TEST_MODE")
-        if Castborn.ShowTest then Castborn:ShowTest() end
-        Castborn:StartTestMode()
-        if Castborn.Anchoring then Castborn.Anchoring:ShowDragIndicators(true) end
-        if Castborn.ShowTestModePanel then Castborn:ShowTestModePanel() end
+        Castborn:EnterTestMode()
     end)
     frame.testModeBtn:Hide()
     frame.nextBtn:SetScript("OnClick", function()
