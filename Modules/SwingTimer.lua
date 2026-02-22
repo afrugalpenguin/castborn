@@ -131,8 +131,6 @@ local function CreateSwingContainer()
             CastbornDB.swing = CastbornDB.swing or {}
             CastbornDB.swing.anchored = false
         end, "Swing Timer")
-    else
-        CB:MakeMoveable(container, "swing")
     end
 
     -- Apply position only if not anchored
@@ -296,22 +294,7 @@ CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function(frame)
     end
 end)
 
--- Detach Swing timer from castbar
-CB:RegisterCallback("DETACH_SWING", function()
-    if not CB.swingTimers.container then return end
-    if Castborn.Anchoring then
-        Castborn.Anchoring:DetachFromCastbar(CB.swingTimers.container, CastbornDB.swing)
-    end
-    CB:Print("Swing Timer detached from castbar")
-end)
-
--- Reattach Swing timer to castbar
-CB:RegisterCallback("REATTACH_SWING", function()
-    if not CB.swingTimers.container then return end
-    if Castborn.Anchoring then
-        Castborn.Anchoring:ReattachToCastbar(CB.swingTimers.container, CastbornDB.swing, "BOTTOM", -2)
-    end
-    CB:Print("Swing Timer anchored to castbar")
-end)
+-- Detach / reattach Swing timer from castbar
+CB:RegisterAnchorCallbacks("SWING", "Swing Timer", function() return CB.swingTimers.container end, "swing", "BOTTOM", -2)
 
 Castborn:RegisterModule("SwingTimer", SwingTimer)

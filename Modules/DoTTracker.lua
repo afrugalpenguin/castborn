@@ -211,8 +211,6 @@ function CB:InitDoTTracker()
             CastbornDB.dots = CastbornDB.dots or {}
             CastbornDB.dots.anchored = false
         end, "DoT Tracker")
-    else
-        CB:MakeMoveable(frame, "dots")
     end
 
     -- Apply position only if not anchored
@@ -389,23 +387,8 @@ CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function(frame)
     end
 end)
 
--- Detach DoT tracker from castbar
-CB:RegisterCallback("DETACH_DOTS", function()
-    if not CB.dotTracker then return end
-    if Castborn.Anchoring then
-        Castborn.Anchoring:DetachFromCastbar(CB.dotTracker, CastbornDB.dots)
-    end
-    CB:Print("DoT Tracker detached from castbar")
-end)
-
--- Reattach DoT tracker to castbar
-CB:RegisterCallback("REATTACH_DOTS", function()
-    if not CB.dotTracker then return end
-    if Castborn.Anchoring then
-        Castborn.Anchoring:ReattachToCastbar(CB.dotTracker, CastbornDB.dots, "BOTTOM", -2)
-    end
-    CB:Print("DoT Tracker anchored to castbar")
-end)
+-- Detach / reattach DoT tracker from castbar
+CB:RegisterAnchorCallbacks("DOTS", "DoT Tracker", function() return CB.dotTracker end, "dots", "BOTTOM", -2)
 
 -- Respond to global border visibility toggle
 Castborn:RegisterCallback("BORDERS_CHANGED", function(show)

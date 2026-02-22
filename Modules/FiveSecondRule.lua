@@ -104,15 +104,13 @@ local function CreateFSRBar()
     frame.timeText = timeText
 
 
-    -- Use Anchoring system if available, otherwise use old moveable system
+    -- Use Anchoring system for draggable functionality
     if Castborn.Anchoring then
         Castborn.Anchoring:MakeDraggable(frame, CastbornDB.fsr or {}, function(f)
             -- On drag stop, mark as detached
             CastbornDB.fsr = CastbornDB.fsr or {}
             CastbornDB.fsr.anchored = false
         end, "5 Second Rule")
-    else
-        CB:MakeMoveable(frame, "fsr")
     end
 
     -- Apply position if not anchored to castbar
@@ -186,26 +184,10 @@ local function SyncFSRWidth()
     end
 end
 
--- Detach FSR from castbar
-CB:RegisterCallback("DETACH_FSR", function()
-    if not CB.fsrFrame then return end
-    CastbornDB.fsr = CastbornDB.fsr or {}
-    if Castborn.Anchoring then
-        Castborn.Anchoring:DetachFromCastbar(CB.fsrFrame, CastbornDB.fsr)
-    end
-    SyncFSRWidth()
-    CB:Print("5 Second Rule detached from castbar")
-end)
-
--- Reattach FSR to castbar
-CB:RegisterCallback("REATTACH_FSR", function()
-    if not CB.fsrFrame then return end
-    CastbornDB.fsr = CastbornDB.fsr or {}
-    if Castborn.Anchoring then
-        Castborn.Anchoring:ReattachToCastbar(CB.fsrFrame, CastbornDB.fsr, "TOP", 2, SyncFSRWidth)
-    end
-    CB:Print("5 Second Rule anchored to castbar")
-end)
+-- Detach / reattach FSR from castbar
+CB:RegisterAnchorCallbacks("FSR", "5 Second Rule", function() return CB.fsrFrame end, "fsr", "TOP", 2, {
+    syncCallback = SyncFSRWidth,
+})
 
 -- Listen for player castbar creation
 CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function(frame)

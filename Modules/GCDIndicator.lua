@@ -71,8 +71,6 @@ local function CreateGCDIndicator()
             CastbornDB.gcd = CastbornDB.gcd or {}
             CastbornDB.gcd.anchored = false
         end, "GCD")
-    else
-        CB:MakeMoveable(frame, "gcd")
     end
 
     -- Apply position only if not anchored
@@ -218,30 +216,10 @@ CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function(frame)
     end
 end)
 
--- Listen for player castbar movement (anchored frames auto-update)
-CB:RegisterCallback("PLAYER_CASTBAR_MOVED", function()
-    -- Nothing needed - anchored frames move automatically
-end)
-
--- Detach GCD from castbar
-CB:RegisterCallback("DETACH_GCD", function()
-    if not CB.gcdFrame then return end
-    CastbornDB.gcd = CastbornDB.gcd or {}
-    if Castborn.Anchoring then
-        Castborn.Anchoring:DetachFromCastbar(CB.gcdFrame, CastbornDB.gcd)
-    end
-    CB:Print("GCD detached from castbar")
-end)
-
--- Reattach GCD to castbar
-CB:RegisterCallback("REATTACH_GCD", function()
-    if not CB.gcdFrame then return end
-    CastbornDB.gcd = CastbornDB.gcd or {}
-    if Castborn.Anchoring then
-        Castborn.Anchoring:ReattachToCastbar(CB.gcdFrame, CastbornDB.gcd, "BOTTOM", -2, SyncGCDWidth)
-    end
-    CB:Print("GCD anchored to castbar")
-end)
+-- Detach / reattach GCD from castbar
+CB:RegisterAnchorCallbacks("GCD", "GCD", function() return CB.gcdFrame end, "gcd", "BOTTOM", -2, {
+    syncCallback = SyncGCDWidth,
+})
 
 --------------------------------------------------------------------------------
 -- SkinEngine Integration

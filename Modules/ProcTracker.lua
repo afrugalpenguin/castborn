@@ -567,23 +567,8 @@ Castborn:RegisterCallback("PLAYER_CASTBAR_CREATED", function(castbar)
     end
 end)
 
--- Detach Proc tracker from castbar
-Castborn:RegisterCallback("DETACH_PROCS", function()
-    if not frame then return end
-    if Castborn.Anchoring then
-        Castborn.Anchoring:DetachFromCastbar(frame, CastbornDB.procs)
-    end
-    Castborn:Print("Proc Tracker detached from castbar")
-end)
-
--- Reattach Proc tracker to castbar
-Castborn:RegisterCallback("REATTACH_PROCS", function()
-    if not frame then return end
-    if Castborn.Anchoring then
-        Castborn.Anchoring:ReattachToCastbar(frame, CastbornDB.procs, "BOTTOM", -2)
-    end
-    Castborn:Print("Proc Tracker anchored to castbar")
-end)
+-- Detach / reattach Proc tracker from castbar
+Castborn:RegisterAnchorCallbacks("PROCS", "Proc Tracker", function() return frame end, "procs", "BOTTOM", -2)
 
 function ProcTracker:UpdateLayout()
     UpdateLayout()

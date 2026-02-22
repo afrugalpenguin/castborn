@@ -636,32 +636,6 @@ function CB:CreateSpark(parent)
     return spark
 end
 
--- Make frame moveable
-function CB:MakeMoveable(frame, dbKey)
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetClampedToScreen(true)
-
-    frame:SetScript("OnDragStart", function(self)
-        if not CB.db.locked then
-            self:StartMoving()
-        end
-    end)
-
-    frame:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-
-        -- Save position
-        local point, _, _, x, y = self:GetPoint()
-        if CB.db[dbKey] then
-            CB.db[dbKey].point = point
-            CB.db[dbKey].x = x
-            CB.db[dbKey].y = y
-        end
-    end)
-end
-
 function CB:ApplyPosition(frame, dbKey)
     local cfg = CB.db[dbKey]
     if cfg and Castborn.Anchoring then
@@ -770,6 +744,44 @@ function CB:EnterTestMode()
     if self.ShowTestModePanel then self:ShowTestModePanel() end
 end
 
+--- Register DETACH_<name> / REATTACH_<name> anchor callbacks for a module.
+-- @param name       Event suffix (e.g. "DOTS" -> DETACH_DOTS / REATTACH_DOTS)
+-- @param displayName  Human-readable name for chat messages (e.g. "DoT Tracker")
+-- @param frameGetter  Function returning the frame, or a direct frame reference
+-- @param dbKey      Key into CastbornDB for position data (e.g. "dots")
+-- @param side       Anchor side for ReattachToCastbar (e.g. "BOTTOM", "TOP")
+-- @param offset     Pixel offset for ReattachToCastbar (e.g. -2, 2)
+-- @param opts       Optional table: { onDetach = fn, syncCallback = fn }
+--                   syncCallback is passed to ReattachToCastbar and also called on detach
+function CB:RegisterAnchorCallbacks(name, displayName, frameGetter, dbKey, side, offset, opts)
+    opts = opts or {}
+    local function getFrame()
+        return type(frameGetter) == "function" and frameGetter() or frameGetter
+    end
+
+    CB:RegisterCallback("DETACH_" .. name, function()
+        local frame = getFrame()
+        if not frame then return end
+        CastbornDB[dbKey] = CastbornDB[dbKey] or {}
+        if Castborn.Anchoring then
+            Castborn.Anchoring:DetachFromCastbar(frame, CastbornDB[dbKey])
+        end
+        if opts.onDetach then opts.onDetach() end
+        if opts.syncCallback then opts.syncCallback() end
+        CB:Print(displayName .. " detached from castbar")
+    end)
+
+    CB:RegisterCallback("REATTACH_" .. name, function()
+        local frame = getFrame()
+        if not frame then return end
+        CastbornDB[dbKey] = CastbornDB[dbKey] or {}
+        if Castborn.Anchoring then
+            Castborn.Anchoring:ReattachToCastbar(frame, CastbornDB[dbKey], side, offset, opts.syncCallback)
+        end
+        CB:Print(displayName .. " anchored to castbar")
+    end)
+end
+
 --------------------------------------------------------------------------------
 -- Utility Functions
 --------------------------------------------------------------------------------
@@ -781,10 +793,8 @@ function CB:IsSpellKnown(spellId)
     if IsPlayerSpell and IsPlayerSpell(spellId) then
         return true
     end
-    -- Fallback: check by spell name (handles multi-rank talent spells)
-    local name = GetSpellInfo(spellId)
-    if not name then return false end
-    return GetSpellInfo(name) ~= nil
+    -- No reliable fallback available
+    return false
 end
 
 function CB:CreateThrottledUpdater(interval, callback)
