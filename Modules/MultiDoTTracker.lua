@@ -460,11 +460,16 @@ local function ScanAllDebuffs()
     ScanUnitDebuffs("target")
     -- Scan focus
     ScanUnitDebuffs("focus")
-    -- Scan all visible nameplates
-    for i = 1, 40 do
-        local unitId = "nameplate" .. i
-        if UnitExists(unitId) then
-            ScanUnitDebuffs(unitId)
+    -- Only scan nameplates if we have tracked targets
+    if next(trackedTargets) then
+        for i = 1, 40 do
+            local unit = "nameplate" .. i
+            if UnitExists(unit) then
+                local guid = UnitGUID(unit)
+                if guid and trackedTargets[guid] then
+                    ScanUnitDebuffs(unit)
+                end
+            end
         end
     end
 end
