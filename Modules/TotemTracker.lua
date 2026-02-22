@@ -80,6 +80,7 @@ local defaults = {
     bgColor = { 0.05, 0.05, 0.05, 0.85 },
     borderColor = { 0.3, 0.3, 0.3, 1 },
     showTooltip = true,
+    showSoloIndicator = false,
     anchored = false,
 }
 
@@ -205,7 +206,14 @@ end
 -- Get buffed count for a totem slot (returns buffed, total)
 function TotemTracker:GetBuffedCount(totemSlot, totemName)
     local partySize = GetPartySize()
-    if partySize == 0 then return 0, 0 end
+    if partySize == 0 then
+        -- Show a single green dot when solo if the option is enabled
+        local cfg = CastbornDB.totems
+        if cfg and cfg.showSoloIndicator and not offensiveTotems[totemName] then
+            return 1, 1
+        end
+        return 0, 0
+    end
 
     -- Offensive totems don't buff party
     if offensiveTotems[totemName] then return 0, 0 end

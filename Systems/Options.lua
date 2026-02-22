@@ -1856,6 +1856,10 @@ function Options:BuildModule(parent, key)
         tooltipCB:SetPoint("TOPLEFT", 0, y)
         y = y - 30
 
+        local soloCB = CreateCheckbox(parent, "Show range indicator when not grouped", db, "showSoloIndicator")
+        soloCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
         local testBtn = CreateButton(parent, "Test Totems", 100, function()
             if Castborn.TestTotemTracker then Castborn:TestTotemTracker() end
         end)
