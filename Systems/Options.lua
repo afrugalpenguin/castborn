@@ -294,6 +294,19 @@ local function CreateColorPicker(parent, label, dbTable, dbKey, onChange)
     return frame
 end
 
+local function CreateScrollableContent(parent)
+    local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 0, 0)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -24, 0)
+    local scrollChild = CreateFrame("Frame", nil, scrollFrame)
+    scrollChild:SetWidth(parent:GetWidth() - 24)
+    scrollFrame:SetScrollChild(scrollChild)
+    scrollFrame:SetScript("OnSizeChanged", function(self, w)
+        if w and w > 0 then scrollChild:SetWidth(w) end
+    end)
+    return scrollChild, scrollFrame
+end
+
 --------------------------------------------------------------------------------
 -- Main Frame
 --------------------------------------------------------------------------------
@@ -479,15 +492,7 @@ function Options:CreateContent(catId)
     if catId == "general" then
         self:BuildGeneral(content)
     elseif catId == "castbars" then
-        local scrollFrame = CreateFrame("ScrollFrame", nil, content, "UIPanelScrollFrameTemplate")
-        scrollFrame:SetPoint("TOPLEFT", 0, 0)
-        scrollFrame:SetPoint("BOTTOMRIGHT", -24, 0)
-        local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-        scrollChild:SetWidth(content:GetWidth() - 24)
-        scrollFrame:SetScrollChild(scrollChild)
-        scrollFrame:SetScript("OnSizeChanged", function(self, w)
-            if w and w > 0 then scrollChild:SetWidth(w) end
-        end)
+        local scrollChild = CreateScrollableContent(content)
         self:BuildCastbars(scrollChild)
     elseif catId == "lookfeel" then
         self:BuildLookFeel(content)
@@ -497,17 +502,7 @@ function Options:CreateContent(catId)
         self:BuildChangelog(content)
     else
         -- Module pages use a scroll frame for overflow
-        local scrollFrame = CreateFrame("ScrollFrame", nil, content, "UIPanelScrollFrameTemplate")
-        scrollFrame:SetPoint("TOPLEFT", 0, 0)
-        scrollFrame:SetPoint("BOTTOMRIGHT", -24, 0)
-
-        local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-        scrollChild:SetWidth(content:GetWidth() - 24)
-        scrollFrame:SetScrollChild(scrollChild)
-        scrollFrame:SetScript("OnSizeChanged", function(self, w)
-            if w and w > 0 then scrollChild:SetWidth(w) end
-        end)
-
+        local scrollChild = CreateScrollableContent(content)
         self:BuildModule(scrollChild, catId)
     end
 
@@ -1410,13 +1405,8 @@ function Options:BuildChangelog(parent)
     y = y - 30
 
     -- Create scroll frame
-    local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    local scrollChild, scrollFrame = CreateScrollableContent(parent)
     scrollFrame:SetPoint("TOPLEFT", 0, y)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -24, 0)
-
-    local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-    scrollChild:SetWidth(scrollFrame:GetWidth() or 400)
-    scrollFrame:SetScrollChild(scrollChild)
 
     -- Get changelog data from WhatsNew module
     local changelog = Castborn.WhatsNew and Castborn.WhatsNew:GetChangelog() or {}
