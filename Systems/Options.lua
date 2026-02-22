@@ -609,6 +609,29 @@ function Options:BuildGeneral(parent)
     end
 end
 
+local function ApplyCastbarHeight(barKey, v)
+    local f = Castborn.castbars and Castborn.castbars[barKey]
+    if not f then return end
+    f:SetHeight(v)
+    if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
+    if f.spark then f.spark:SetHeight(v * 2.5) end
+    if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
+    local fontSize = math.max(10, v - 6)
+    for _, key in ipairs({"spellText", "timeText"}) do
+        if f[key] then
+            f[key]:SetFont(Castborn:GetBarFont(), fontSize, "OUTLINE")
+            Castborn:RegisterFontString(f[key], fontSize, "OUTLINE")
+        end
+    end
+end
+
+local castbarDefs = {
+    { key = "player", frameKey = "player", label = "Player Castbar" },
+    { key = "target", frameKey = "target", label = "Target Castbar" },
+    { key = "focus", frameKey = "focus", label = "Focus Castbar" },
+    { key = "targettarget", frameKey = "targettarget", label = "Target-of-Target Castbar" },
+}
+
 function Options:BuildCastbars(parent)
     local y = 0
 
@@ -635,325 +658,109 @@ function Options:BuildCastbars(parent)
     globalPicker:SetPoint("TOPLEFT", 250, y)
     y = y - 36
 
-    -- Player Castbar
-    local header1 = CreateHeader(parent, "Player Castbar")
-    header1:SetPoint("TOPLEFT", 0, y)
-    header1:SetPoint("TOPRIGHT", 0, y)
-    y = y - 30
+    for _, def in ipairs(castbarDefs) do
+        local dbKey = def.key
+        local frameKey = def.frameKey
 
-    CastbornDB.player = CastbornDB.player or {}
+        local header = CreateHeader(parent, def.label)
+        header:SetPoint("TOPLEFT", 0, y)
+        header:SetPoint("TOPRIGHT", 0, y)
+        y = y - 30
 
-    local cb2 = CreateCheckbox(parent, "Show Icon", CastbornDB.player, "showIcon", function(checked)
-        local playerBar = Castborn.castbars and Castborn.castbars.player
-        if playerBar and playerBar.iconFrame then
-            if checked then
-                playerBar.iconFrame:Show()
-            else
-                playerBar.iconFrame:Hide()
+        CastbornDB[dbKey] = CastbornDB[dbKey] or {}
+
+        local iconCB = CreateCheckbox(parent, "Show Icon", CastbornDB[dbKey], "showIcon", function(checked)
+            local bar = Castborn.castbars and Castborn.castbars[frameKey]
+            if bar and bar.iconFrame then
+                if checked then
+                    bar.iconFrame:Show()
+                else
+                    bar.iconFrame:Hide()
+                end
             end
-        end
-    end)
-    cb2:SetPoint("TOPLEFT", 0, y)
-    local cb3 = CreateCheckbox(parent, "Show Time", CastbornDB.player, "showTime", function(checked)
-        local playerBar = Castborn.castbars and Castborn.castbars.player
-        if playerBar and playerBar.timeText then
-            if checked then
-                playerBar.timeText:Show()
-            else
-                playerBar.timeText:Hide()
+        end)
+        iconCB:SetPoint("TOPLEFT", 0, y)
+        local timeCB = CreateCheckbox(parent, "Show Time", CastbornDB[dbKey], "showTime", function(checked)
+            local bar = Castborn.castbars and Castborn.castbars[frameKey]
+            if bar and bar.timeText then
+                if checked then
+                    bar.timeText:Show()
+                else
+                    bar.timeText:Hide()
+                end
             end
-        end
-    end)
-    cb3:SetPoint("TOPLEFT", 150, y)
-    y = y - 26
+        end)
+        timeCB:SetPoint("TOPLEFT", 150, y)
+        y = y - 26
 
-    local cb4 = CreateCheckbox(parent, "Show Spell Name", CastbornDB.player, "showSpellName", function(checked)
-        local playerBar = Castborn.castbars and Castborn.castbars.player
-        if playerBar and playerBar.spellText then
-            if checked then
-                playerBar.spellText:Show()
-            else
-                playerBar.spellText:Hide()
-            end
-        end
-    end)
-    cb4:SetPoint("TOPLEFT", 0, y)
-    local cb5 = CreateCheckbox(parent, "Show Latency", CastbornDB.player, "showLatency", function(checked)
-        local playerBar = Castborn.castbars and Castborn.castbars.player
-        if playerBar and playerBar.latency then
-            if checked then
-                playerBar.latency:Show()
-            else
-                playerBar.latency:Hide()
-            end
-        end
-    end)
-    cb5:SetPoint("TOPLEFT", 150, y)
-    y = y - 26
+        if def.key == "player" then
+            local spellNameCB = CreateCheckbox(parent, "Show Spell Name", CastbornDB[dbKey], "showSpellName", function(checked)
+                local bar = Castborn.castbars and Castborn.castbars[frameKey]
+                if bar and bar.spellText then
+                    if checked then
+                        bar.spellText:Show()
+                    else
+                        bar.spellText:Hide()
+                    end
+                end
+            end)
+            spellNameCB:SetPoint("TOPLEFT", 0, y)
+            local latencyCB = CreateCheckbox(parent, "Show Latency", CastbornDB[dbKey], "showLatency", function(checked)
+                local bar = Castborn.castbars and Castborn.castbars[frameKey]
+                if bar and bar.latency then
+                    if checked then
+                        bar.latency:Show()
+                    else
+                        bar.latency:Hide()
+                    end
+                end
+            end)
+            latencyCB:SetPoint("TOPLEFT", 150, y)
+            y = y - 26
 
-    local cbRank = CreateCheckbox(parent, "Show Spell Rank", CastbornDB.player, "showSpellRank")
-    cbRank:SetPoint("TOPLEFT", 0, y)
-    y = y - 26
+            local rankCB = CreateCheckbox(parent, "Show Spell Rank", CastbornDB[dbKey], "showSpellRank")
+            rankCB:SetPoint("TOPLEFT", 0, y)
+            y = y - 26
 
-    local cb6 = CreateCheckbox(parent, "Hide Blizzard Castbar", CastbornDB.player, "hideBlizzardCastBar", function(checked)
-        if checked then
-            Castborn:HideBlizzardCastBar()
+            local blizzCB = CreateCheckbox(parent, "Hide Blizzard Castbar", CastbornDB[dbKey], "hideBlizzardCastBar", function(checked)
+                if checked then
+                    Castborn:HideBlizzardCastBar()
+                else
+                    Castborn:ShowBlizzardCastBar()
+                end
+            end)
+            blizzCB:SetPoint("TOPLEFT", 0, y)
+            local tradeCB = CreateCheckbox(parent, "Hide Tradeskill Casts", CastbornDB[dbKey], "hideTradeSkills")
+            tradeCB:SetPoint("TOPLEFT", 150, y)
+            y = y - 36
         else
-            Castborn:ShowBlizzardCastBar()
+            y = y - 10
         end
-    end)
-    cb6:SetPoint("TOPLEFT", 0, y)
-    local cb7 = CreateCheckbox(parent, "Hide Tradeskill Casts", CastbornDB.player, "hideTradeSkills")
-    cb7:SetPoint("TOPLEFT", 150, y)
-    y = y - 36
 
-    local slider1 = CreateSlider(parent, "Width", CastbornDB.player, "width", 100, 400, 10, function(v)
-        if Castborn.castbars and Castborn.castbars.player then
-            Castborn.castbars.player:SetWidth(v)
-        end
-    end)
-    slider1:SetPoint("TOPLEFT", 0, y)
-
-    local slider2 = CreateSlider(parent, "Height", CastbornDB.player, "height", 10, 40, 2, function(v)
-        if Castborn.castbars and Castborn.castbars.player then
-            local f = Castborn.castbars.player
-            f:SetHeight(v)
-            if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
-            if f.spark then f.spark:SetHeight(v * 2.5) end
-            if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
-            if f.spellText then
-                f.spellText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
-                Castborn:RegisterFontString(f.spellText, math.max(10, v - 6), "OUTLINE")
+        local widthSlider = CreateSlider(parent, "Width", CastbornDB[dbKey], "width", 100, 400, 10, function(v)
+            if Castborn.castbars and Castborn.castbars[frameKey] then
+                Castborn.castbars[frameKey]:SetWidth(v)
             end
-            if f.timeText then
-                f.timeText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
-                Castborn:RegisterFontString(f.timeText, math.max(10, v - 6), "OUTLINE")
-            end
-        end
-    end)
-    slider2:SetPoint("TOPLEFT", 220, y)
-    y = y - 60
+        end)
+        widthSlider:SetPoint("TOPLEFT", 0, y)
 
-    local playerBarPicker = CreateColorPicker(parent, "Bar Colour", CastbornDB.player, "barColor", function()
-        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
-    end)
-    playerBarPicker:SetPoint("TOPLEFT", 0, y)
+        local heightSlider = CreateSlider(parent, "Height", CastbornDB[dbKey], "height", 10, 40, 2, function(v)
+            ApplyCastbarHeight(frameKey, v)
+        end)
+        heightSlider:SetPoint("TOPLEFT", 220, y)
+        y = y - 60
 
-    local playerBgPicker = CreateColorPicker(parent, "Background Colour", CastbornDB.player, "bgColor", function()
-        if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
-    end)
-    playerBgPicker:SetPoint("TOPLEFT", 220, y)
-    y = y - 30
+        local barPicker = CreateColorPicker(parent, "Bar Colour", CastbornDB[dbKey], "barColor", function()
+            if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
+        end)
+        barPicker:SetPoint("TOPLEFT", 0, y)
 
-    -- Target Castbar
-    local header2 = CreateHeader(parent, "Target Castbar")
-    header2:SetPoint("TOPLEFT", 0, y)
-    header2:SetPoint("TOPRIGHT", 0, y)
-    y = y - 30
-
-    CastbornDB.target = CastbornDB.target or {}
-
-    local tcb2 = CreateCheckbox(parent, "Show Icon", CastbornDB.target, "showIcon", function(checked)
-        local targetBar = Castborn.castbars and Castborn.castbars.target
-        if targetBar and targetBar.iconFrame then
-            if checked then
-                targetBar.iconFrame:Show()
-            else
-                targetBar.iconFrame:Hide()
-            end
-        end
-    end)
-    tcb2:SetPoint("TOPLEFT", 0, y)
-    local tcb3 = CreateCheckbox(parent, "Show Time", CastbornDB.target, "showTime", function(checked)
-        local targetBar = Castborn.castbars and Castborn.castbars.target
-        if targetBar and targetBar.timeText then
-            if checked then
-                targetBar.timeText:Show()
-            else
-                targetBar.timeText:Hide()
-            end
-        end
-    end)
-    tcb3:SetPoint("TOPLEFT", 150, y)
-    y = y - 36
-
-    local tslider1 = CreateSlider(parent, "Width", CastbornDB.target, "width", 100, 400, 10, function(v)
-        if Castborn.castbars and Castborn.castbars.target then
-            Castborn.castbars.target:SetWidth(v)
-        end
-    end)
-    tslider1:SetPoint("TOPLEFT", 0, y)
-
-    local tslider2 = CreateSlider(parent, "Height", CastbornDB.target, "height", 10, 40, 2, function(v)
-        local f = Castborn.castbars and Castborn.castbars.target
-        if f then
-            f:SetHeight(v)
-            if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
-            if f.spark then f.spark:SetHeight(v * 2.5) end
-            if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
-            if f.spellText then
-                f.spellText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
-                Castborn:RegisterFontString(f.spellText, math.max(10, v - 6), "OUTLINE")
-            end
-            if f.timeText then
-                f.timeText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
-                Castborn:RegisterFontString(f.timeText, math.max(10, v - 6), "OUTLINE")
-            end
-        end
-    end)
-    tslider2:SetPoint("TOPLEFT", 220, y)
-    y = y - 60
-
-    local targetBarPicker = CreateColorPicker(parent, "Bar Colour", CastbornDB.target, "barColor", function()
-        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
-    end)
-    targetBarPicker:SetPoint("TOPLEFT", 0, y)
-
-    local targetBgPicker = CreateColorPicker(parent, "Background Colour", CastbornDB.target, "bgColor", function()
-        if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
-    end)
-    targetBgPicker:SetPoint("TOPLEFT", 220, y)
-    y = y - 30
-
-    -- Focus Castbar
-    local header3 = CreateHeader(parent, "Focus Castbar")
-    header3:SetPoint("TOPLEFT", 0, y)
-    header3:SetPoint("TOPRIGHT", 0, y)
-    y = y - 30
-
-    CastbornDB.focus = CastbornDB.focus or {}
-
-    local fcb1 = CreateCheckbox(parent, "Show Icon", CastbornDB.focus, "showIcon", function(checked)
-        local focusBar = Castborn.castbars and Castborn.castbars.focus
-        if focusBar and focusBar.iconFrame then
-            if checked then
-                focusBar.iconFrame:Show()
-            else
-                focusBar.iconFrame:Hide()
-            end
-        end
-    end)
-    fcb1:SetPoint("TOPLEFT", 0, y)
-    local fcb2 = CreateCheckbox(parent, "Show Time", CastbornDB.focus, "showTime", function(checked)
-        local focusBar = Castborn.castbars and Castborn.castbars.focus
-        if focusBar and focusBar.timeText then
-            if checked then
-                focusBar.timeText:Show()
-            else
-                focusBar.timeText:Hide()
-            end
-        end
-    end)
-    fcb2:SetPoint("TOPLEFT", 150, y)
-    y = y - 36
-
-    local fslider1 = CreateSlider(parent, "Width", CastbornDB.focus, "width", 100, 400, 10, function(v)
-        if Castborn.castbars and Castborn.castbars.focus then
-            Castborn.castbars.focus:SetWidth(v)
-        end
-    end)
-    fslider1:SetPoint("TOPLEFT", 0, y)
-
-    local fslider2 = CreateSlider(parent, "Height", CastbornDB.focus, "height", 10, 40, 2, function(v)
-        local f = Castborn.castbars and Castborn.castbars.focus
-        if f then
-            f:SetHeight(v)
-            if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
-            if f.spark then f.spark:SetHeight(v * 2.5) end
-            if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
-            if f.spellText then
-                f.spellText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
-                Castborn:RegisterFontString(f.spellText, math.max(10, v - 6), "OUTLINE")
-            end
-            if f.timeText then
-                f.timeText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
-                Castborn:RegisterFontString(f.timeText, math.max(10, v - 6), "OUTLINE")
-            end
-        end
-    end)
-    fslider2:SetPoint("TOPLEFT", 220, y)
-    y = y - 60
-
-    local focusBarPicker = CreateColorPicker(parent, "Bar Colour", CastbornDB.focus, "barColor", function()
-        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
-    end)
-    focusBarPicker:SetPoint("TOPLEFT", 0, y)
-
-    local focusBgPicker = CreateColorPicker(parent, "Background Colour", CastbornDB.focus, "bgColor", function()
-        if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
-    end)
-    focusBgPicker:SetPoint("TOPLEFT", 220, y)
-    y = y - 30
-
-    -- Target-of-Target Castbar
-    local header4 = CreateHeader(parent, "Target-of-Target Castbar")
-    header4:SetPoint("TOPLEFT", 0, y)
-    header4:SetPoint("TOPRIGHT", 0, y)
-    y = y - 30
-
-    CastbornDB.targettarget = CastbornDB.targettarget or {}
-
-    local ttcb1 = CreateCheckbox(parent, "Show Icon", CastbornDB.targettarget, "showIcon", function(checked)
-        local totBar = Castborn.castbars and Castborn.castbars.targettarget
-        if totBar and totBar.iconFrame then
-            if checked then
-                totBar.iconFrame:Show()
-            else
-                totBar.iconFrame:Hide()
-            end
-        end
-    end)
-    ttcb1:SetPoint("TOPLEFT", 0, y)
-    local ttcb2 = CreateCheckbox(parent, "Show Time", CastbornDB.targettarget, "showTime", function(checked)
-        local totBar = Castborn.castbars and Castborn.castbars.targettarget
-        if totBar and totBar.timeText then
-            if checked then
-                totBar.timeText:Show()
-            else
-                totBar.timeText:Hide()
-            end
-        end
-    end)
-    ttcb2:SetPoint("TOPLEFT", 150, y)
-    y = y - 36
-
-    local ttslider1 = CreateSlider(parent, "Width", CastbornDB.targettarget, "width", 100, 400, 10, function(v)
-        if Castborn.castbars and Castborn.castbars.targettarget then
-            Castborn.castbars.targettarget:SetWidth(v)
-        end
-    end)
-    ttslider1:SetPoint("TOPLEFT", 0, y)
-
-    local ttslider2 = CreateSlider(parent, "Height", CastbornDB.targettarget, "height", 10, 40, 2, function(v)
-        local f = Castborn.castbars and Castborn.castbars.targettarget
-        if f then
-            f:SetHeight(v)
-            if f.iconFrame then f.iconFrame:SetSize(v + 4, v + 4) end
-            if f.spark then f.spark:SetHeight(v * 2.5) end
-            if f.shield then f.shield:SetSize(v * 1.5, v * 1.5) end
-            if f.spellText then
-                f.spellText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
-                Castborn:RegisterFontString(f.spellText, math.max(10, v - 6), "OUTLINE")
-            end
-            if f.timeText then
-                f.timeText:SetFont(Castborn:GetBarFont(), math.max(10, v - 6), "OUTLINE")
-                Castborn:RegisterFontString(f.timeText, math.max(10, v - 6), "OUTLINE")
-            end
-        end
-    end)
-    ttslider2:SetPoint("TOPLEFT", 220, y)
-    y = y - 60
-
-    local totBarPicker = CreateColorPicker(parent, "Bar Colour", CastbornDB.targettarget, "barColor", function()
-        if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
-    end)
-    totBarPicker:SetPoint("TOPLEFT", 0, y)
-
-    local totBgPicker = CreateColorPicker(parent, "Background Colour", CastbornDB.targettarget, "bgColor", function()
-        if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
-    end)
-    totBgPicker:SetPoint("TOPLEFT", 220, y)
-    y = y - 30
+        local bgPicker = CreateColorPicker(parent, "Background Colour", CastbornDB[dbKey], "bgColor", function()
+            if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
+        end)
+        bgPicker:SetPoint("TOPLEFT", 220, y)
+        y = y - 30
+    end
 
     parent:SetHeight(math.abs(y) + 20)
 end
