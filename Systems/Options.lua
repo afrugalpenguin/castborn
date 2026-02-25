@@ -1931,6 +1931,35 @@ SlashCmdList["CASTBORN"] = function(msg)
         ToggleModule("gcd", "GCD indicator", state, function()
             if Castborn.gcdFrame then Castborn.gcdFrame:Hide() end
         end)
+    elseif cmd == "debug" and state == "totems" then
+        -- Debug: print totem buff info for party members
+        Castborn:Print("Totem debug info:")
+        for slot = 1, 4 do
+            local haveTotem, name = GetTotemInfo(slot)
+            if haveTotem and name then
+                print("  Slot " .. slot .. ": " .. name)
+            end
+        end
+        local partySize = 0
+        for i = 1, 4 do
+            if UnitExists("party" .. i) then partySize = partySize + 1 end
+        end
+        if partySize == 0 then
+            print("  No party members (solo)")
+        else
+            for i = 1, 4 do
+                local unit = "party" .. i
+                if UnitExists(unit) then
+                    local unitName = UnitName(unit)
+                    print("  " .. unitName .. " buffs:")
+                    for b = 1, 40 do
+                        local buffName = UnitBuff(unit, b)
+                        if not buffName then break end
+                        print("    " .. b .. ": " .. buffName)
+                    end
+                end
+            end
+        end
     elseif cmd == "help" then
         Castborn:Print("Commands:")
         print("  |cffFFCC00/cb|r - Open options")

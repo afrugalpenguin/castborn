@@ -201,7 +201,19 @@ function TotemTracker:GetBuffedCount(totemSlot, totemName)
     return buffedCount, partySize
 end
 
--- Get party/raid members not in range of the totem
+-- Check if a unit has a buff matching the totem name
+-- Matches both exact name and base name (without " Totem" suffix)
+local function UnitHasTotemBuff(unit, totemName)
+    local baseName = totemName:gsub(" Totem$", "")
+    for i = 1, 40 do
+        local name = UnitBuff(unit, i)
+        if not name then break end
+        if name == totemName or name == baseName then return true end
+    end
+    return false
+end
+
+-- Get party/raid members not affected by the totem's buff
 function TotemTracker:GetMembersNotAffected(totemSlot)
     local notAffected = {}
     local haveTotem, totemName, startTime, duration, icon = GetTotemInfo(totemSlot)
@@ -213,9 +225,7 @@ function TotemTracker:GetMembersNotAffected(totemSlot)
         local unit = "party" .. i
         if UnitExists(unit) then
             if not UnitIsDeadOrGhost(unit) then
-                -- Use CheckInteractDistance for range check (index 4 = 28 yards, close to totem range)
-                local inRange = CheckInteractDistance(unit, 4)
-                if not inRange then
+                if not UnitHasTotemBuff(unit, totemName) then
                     local name = UnitName(unit)
                     table.insert(notAffected, name)
                 end
