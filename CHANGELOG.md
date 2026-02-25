@@ -1,5 +1,15 @@
 # Changelog
 
+**v5.5.0**
+
+- Totem Tracker buff-based party check — "not affected" list now checks actual buff presence instead of range estimate
+- Tutorial lockout example in the interrupt tracker step
+- Performance improvements — table reuse in hot paths, cached PlayerUsesMana, reduced castbar safety poll, nameplate scanning optimised for tracked targets only
+- Refactored shared Masque button factory, anchor callbacks, lock/unlock helpers, and options scroll content
+- Fixed position keys, removed dead code, fixed IsSpellKnown fallback
+- Fixed profile switching leaving stale keys
+- Added `/cb debug totems` command for inspecting totem buff state
+
 **v5.4.0**
 
 - Totem Tracker solo range indicator — optional single dot showing you're in range of your own beneficial totems when not grouped

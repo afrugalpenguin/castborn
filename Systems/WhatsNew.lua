@@ -14,6 +14,18 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.5.0",
+        features = {
+            "Totem Tracker buff-based party check — checks actual buff presence instead of range",
+            "Tutorial lockout example in the interrupt tracker step",
+            "Performance improvements across multiple modules",
+        },
+        fixes = {
+            "Fixed position keys and IsSpellKnown fallback",
+            "Fixed profile switching leaving stale keys",
+        },
+    },
+    {
         version = "5.4.0",
         features = {
             "Totem Tracker solo range indicator — shows a single dot when not grouped",
