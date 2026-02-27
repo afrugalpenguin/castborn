@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.6.4**
+
+- Improved reliability of Hide Blizzard Castbar option when other addons reinitialise frames on zone transitions
+
 **v5.6.3**
 
 - Fixed castbar randomly disappearing or misbehaving when clipping casts or quickly cancelling and recasting

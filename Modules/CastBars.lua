@@ -554,9 +554,15 @@ function CB:InitCastBars()
     eventFrame:RegisterEvent("UNIT_SPELLCAST_NOT_INTERRUPTIBLE")
     eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
     eventFrame:RegisterEvent("PLAYER_FOCUS_CHANGED")
+    eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
     eventFrame:SetScript("OnEvent", function(self, event, unit, ...)
-        if event == "PLAYER_TARGET_CHANGED" then
+        if event == "PLAYER_ENTERING_WORLD" then
+            if CB.db.player and CB.db.player.hideBlizzardCastBar then
+                CB:HideBlizzardCastBar(true)
+            end
+            return
+        elseif event == "PLAYER_TARGET_CHANGED" then
             CB.castbars.target.casting = false
             CB.castbars.target.channeling = false
             CB.castbars.target:Hide()

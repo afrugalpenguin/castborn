@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.6.4",
+        features = {},
+        fixes = {
+            "Improved reliability of Hide Blizzard Castbar option when other addons reinitialise frames on zone transitions",
+        },
+    },
+    {
         version = "5.6.3",
         features = {},
         fixes = {
