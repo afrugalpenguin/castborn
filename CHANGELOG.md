@@ -1,5 +1,13 @@
 # Changelog
 
+**v5.6.0**
+
+- Paladin missing buff tracker — alerts when your selected blessing or Righteous Fury is missing
+- Blessing dropdown in options — choose which blessing to track (Might, Wisdom, Kings, or Sanctuary)
+- Righteous Fury tracked automatically when Improved Righteous Fury is talented
+- Cooldown and proc tracker icons are now fully click-through
+- Fixed test previews not clearing when closing options panel
+
 **v5.5.0**
 
 - Totem Tracker buff-based party check — "not affected" list now checks actual buff presence instead of range estimate

@@ -1,18 +1,18 @@
 -- Modules/ArmorTracker.lua
--- Shows an alert icon when the player's armor self-buff is missing
+-- Shows alert icon(s) when the player's armor/blessing self-buff is missing.
+-- Supports multi-slot for Paladin (blessing + Righteous Fury).
 local ArmorTracker = {}
 Castborn.ArmorTracker = ArmorTracker
 
 local CB = Castborn
 
-local frame = nil
 local eventFrame = nil
 local testModeActive = false
-local lastKnownSpellId = nil  -- remembers which armor spell was last active
 
--- Build a fast lookup: spellId -> true, for the player's class
-local armorSpellIds = {}
+-- slots: array of { spellIds = {id=true,...}, frame = Button, lastSpellId = number, category = string, entry = table }
+local slots = {}
 local armorSpellList = nil  -- reference to SpellData.armors[class]
+local playerClass = nil
 
 local defaults = {
     enabled = true,
@@ -20,61 +20,67 @@ local defaults = {
     point = "CENTER",
     xPct = 0.05,
     yPct = -0.185,
+    selectedBlessing = "might",
 }
 
 --------------------------------------------------------------------------------
 -- Helpers
 --------------------------------------------------------------------------------
 
-local function GetArmorTexture(spellId)
-    if spellId then
-        return GetSpellTexture(spellId)
+local function GetSlotTexture(slot)
+    if slot.lastSpellId then
+        return GetSpellTexture(slot.lastSpellId)
     end
-    -- Fallback: use the highest-rank spell from the first armor group
-    if armorSpellList and armorSpellList[1] then
-        local ids = armorSpellList[1].spellIds
-        return GetSpellTexture(ids[#ids])
+    -- Fallback: first spell ID in the slot's entry list
+    if slot.entry then
+        local ids = slot.entry.spellIds
+        if ids and ids[1] then
+            return GetSpellTexture(ids[#ids])
+        end
     end
     return nil
 end
 
-local function ScanForArmorBuff()
+local function ScanForBuff(slot)
     for i = 1, 40 do
         local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
         if not name then break end
-        if spellId and armorSpellIds[spellId] then
+        if spellId and slot.spellIds[spellId] then
             return spellId
         end
     end
     return nil
 end
 
-local function UpdateArmorState()
-    if not frame then return end
+local function UpdateSlotState(slot)
+    if not slot.frame then return end
     if testModeActive then return end
 
     local db = CB.db.armortracker
     if not db or not db.enabled then
-        frame:Hide()
+        slot.frame:Hide()
         return
     end
 
-    local activeSpellId = ScanForArmorBuff()
+    local activeSpellId = ScanForBuff(slot)
 
     if activeSpellId then
-        -- Armor is active — remember it and hide the alert
-        lastKnownSpellId = activeSpellId
-        db.lastSpellId = activeSpellId
-        frame:Hide()
+        slot.lastSpellId = activeSpellId
+        slot.frame:Hide()
     else
-        -- Armor is missing — show alert icon
-        local texture = GetArmorTexture(lastKnownSpellId)
+        local texture = GetSlotTexture(slot)
         if texture then
-            frame.icon:SetTexture(texture)
+            slot.frame.icon:SetTexture(texture)
         end
-        frame.icon:SetDesaturated(true)
-        frame.icon:SetVertexColor(1, 0.3, 0.3, 1)
-        frame:Show()
+        slot.frame.icon:SetDesaturated(true)
+        slot.frame.icon:SetVertexColor(1, 0.3, 0.3, 1)
+        slot.frame:Show()
+    end
+end
+
+local function UpdateAllSlots()
+    for _, slot in ipairs(slots) do
+        UpdateSlotState(slot)
     end
 end
 
@@ -82,13 +88,14 @@ end
 -- Frame Creation
 --------------------------------------------------------------------------------
 
-local function CreateArmorFrame()
+local function CreateSlotFrame(index)
     local db = CB.db.armortracker
-    local size = db.iconSize or 36
+    local size = db.iconSize or 50
     local hasMasque = Castborn.Masque and Castborn.Masque.enabled
     local masqueGroup = hasMasque and Castborn.Masque.groups.armor or nil
 
-    local f = Castborn:CreateMasqueButton(UIParent, "Castborn_ArmorTracker", size, masqueGroup, {
+    local frameName = "Castborn_ArmorTracker" .. (index > 1 and index or "")
+    local f = Castborn:CreateMasqueButton(UIParent, frameName, size, masqueGroup, {
         iconLayer = "BACKGROUND",
     })
     f:SetFrameStrata("MEDIUM")
@@ -141,16 +148,138 @@ local function CreateArmorFrame()
     warning:SetTextColor(1, 0.2, 0.2, 1)
     f.warning = warning
 
-    -- Positioning
-    if Castborn.Anchoring then
-        Castborn.Anchoring:MakeDraggable(f, db, nil, "Armour Tracker")
+    -- Positioning: first slot uses saved position, subsequent anchor to previous
+    if index == 1 then
+        if Castborn.Anchoring then
+            Castborn.Anchoring:MakeDraggable(f, db, nil, "Armour Tracker")
+        else
+            CB:MakeMoveable(f, "armortracker")
+        end
+        CB:ApplyPosition(f, "armortracker")
     else
-        CB:MakeMoveable(f, "armortracker")
+        local prevFrame = slots[index - 1].frame
+        f:ClearAllPoints()
+        f:SetPoint("LEFT", prevFrame, "RIGHT", 4, 0)
+        -- Make draggable but it moves with the first slot
+        f:SetMovable(false)
     end
-    CB:ApplyPosition(f, "armortracker")
 
     f:Hide()
     return f
+end
+
+--------------------------------------------------------------------------------
+-- Slot Building
+--------------------------------------------------------------------------------
+
+local function BuildSpellIdLookup(entry)
+    local lookup = {}
+    for _, id in ipairs(entry.spellIds) do
+        lookup[id] = true
+    end
+    return lookup
+end
+
+local function HasImprovedRF(entry)
+    if not entry.talentTab or not entry.talentIndex then return false end
+    local _, _, _, _, rank = GetTalentInfo(entry.talentTab, entry.talentIndex)
+    return rank and rank > 0
+end
+
+local function DestroySlot(index)
+    local slot = slots[index]
+    if slot and slot.frame then
+        slot.frame:Hide()
+        slot.frame:SetParent(nil)
+    end
+    tremove(slots, index)
+end
+
+local function BuildSlots()
+    -- Destroy existing slots
+    for i = #slots, 1, -1 do
+        DestroySlot(i)
+    end
+
+    if not armorSpellList then return end
+
+    local db = CB.db.armortracker
+
+    if playerClass == "PALADIN" then
+        -- Blessing slot: only the selected blessing's spell IDs
+        local selectedKey = db.selectedBlessing or "might"
+        for _, entry in ipairs(armorSpellList) do
+            if entry.category == "blessing" and entry.key == selectedKey then
+                local slot = {
+                    spellIds = BuildSpellIdLookup(entry),
+                    frame = nil,
+                    lastSpellId = nil,
+                    category = "blessing",
+                    entry = entry,
+                }
+                slots[#slots + 1] = slot
+                break
+            end
+        end
+
+        -- RF slot: only if Improved Righteous Fury is talented
+        for _, entry in ipairs(armorSpellList) do
+            if entry.category == "rf" and HasImprovedRF(entry) then
+                local slot = {
+                    spellIds = BuildSpellIdLookup(entry),
+                    frame = nil,
+                    lastSpellId = nil,
+                    category = "rf",
+                    entry = entry,
+                }
+                slots[#slots + 1] = slot
+                break
+            end
+        end
+    else
+        -- Non-paladin: single slot with all spell IDs pooled
+        local allIds = {}
+        for _, group in ipairs(armorSpellList) do
+            for _, id in ipairs(group.spellIds) do
+                allIds[id] = true
+            end
+        end
+        slots[1] = {
+            spellIds = allIds,
+            frame = nil,
+            lastSpellId = db.lastSpellId,
+            category = "armor",
+            entry = armorSpellList[#armorSpellList],
+        }
+    end
+
+    -- Create frames for each slot
+    for i, slot in ipairs(slots) do
+        slot.frame = CreateSlotFrame(i)
+    end
+end
+
+--- Rebuild just the blessing slot's spell ID lookup (called when dropdown changes).
+function ArmorTracker:RebuildBlessingSlot()
+    if playerClass ~= "PALADIN" then return end
+    local db = CB.db.armortracker
+    local selectedKey = db.selectedBlessing or "might"
+
+    for _, slot in ipairs(slots) do
+        if slot.category == "blessing" then
+            for _, entry in ipairs(armorSpellList) do
+                if entry.category == "blessing" and entry.key == selectedKey then
+                    slot.spellIds = BuildSpellIdLookup(entry)
+                    slot.entry = entry
+                    slot.lastSpellId = nil
+                    break
+                end
+            end
+            break
+        end
+    end
+
+    UpdateAllSlots()
 end
 
 --------------------------------------------------------------------------------
@@ -163,38 +292,37 @@ end)
 
 CB:RegisterCallback("READY", function()
     local info = CB:GetPlayerInfo()
-    armorSpellList = Castborn.SpellData:GetClassArmors(info.class)
+    playerClass = info.class
+    armorSpellList = Castborn.SpellData:GetClassArmors(playerClass)
 
     -- No armor spells for this class — nothing to do
     if not armorSpellList then return end
 
-    -- Build fast lookup table
-    for _, group in ipairs(armorSpellList) do
-        for _, id in ipairs(group.spellIds) do
-            armorSpellIds[id] = true
-        end
-    end
-
-    -- Restore last known spell from saved vars
     local db = CB.db.armortracker
-    lastKnownSpellId = db.lastSpellId
-
     if not db.enabled then return end
 
-    -- Create frame
-    frame = CreateArmorFrame()
+    -- Build slots and frames
+    BuildSlots()
 
     -- Listen for aura changes
     eventFrame = CreateFrame("Frame")
     eventFrame:RegisterEvent("UNIT_AURA")
-    eventFrame:SetScript("OnEvent", function(self, event, unit)
-        if unit == "player" then
-            UpdateArmorState()
+    eventFrame:SetScript("OnEvent", function(_, event, unit)
+        if event == "UNIT_AURA" and unit == "player" then
+            UpdateAllSlots()
+        elseif event == "PLAYER_TALENT_UPDATE" then
+            BuildSlots()
+            UpdateAllSlots()
         end
     end)
 
+    -- Paladin: also listen for talent changes (respec)
+    if playerClass == "PALADIN" then
+        eventFrame:RegisterEvent("PLAYER_TALENT_UPDATE")
+    end
+
     -- Initial scan
-    UpdateArmorState()
+    UpdateAllSlots()
 
     -- Register with TestManager
     CB.TestManager:Register("ArmorTracker",
@@ -208,41 +336,37 @@ end)
 --------------------------------------------------------------------------------
 
 function CB:TestArmorTracker()
-    if not frame and armorSpellList then
-        frame = CreateArmorFrame()
+    if #slots == 0 and armorSpellList then
+        BuildSlots()
     end
-    if not frame then return end
+    if #slots == 0 then return end
 
     testModeActive = true
 
-    -- Show as if armor is missing
-    local testSpellId = armorSpellList and armorSpellList[#armorSpellList].spellIds[1]
-    local texture = GetArmorTexture(testSpellId or lastKnownSpellId)
-    if texture then
-        frame.icon:SetTexture(texture)
+    for _, slot in ipairs(slots) do
+        if slot.frame then
+            local texture = GetSlotTexture(slot)
+            if texture then
+                slot.frame.icon:SetTexture(texture)
+            end
+            slot.frame.icon:SetDesaturated(true)
+            slot.frame.icon:SetVertexColor(1, 0.3, 0.3, 1)
+            slot.frame:Show()
+        end
     end
-    frame.icon:SetDesaturated(true)
-    frame.icon:SetVertexColor(1, 0.3, 0.3, 1)
-    frame:Show()
 end
 
 function CB:EndTestArmorTracker()
     testModeActive = false
-    if frame then
-        UpdateArmorState()
-    end
+    UpdateAllSlots()
 end
 
 -- Respond to global border visibility toggle
 Castborn:RegisterCallback("BORDERS_CHANGED", function(show)
-    if frame and frame.borderTextures then
-        if show then
-            for _, tex in ipairs(frame.borderTextures) do
-                tex:Show()
-            end
-        else
-            for _, tex in ipairs(frame.borderTextures) do
-                tex:Hide()
+    for _, slot in ipairs(slots) do
+        if slot.frame and slot.frame.borderTextures then
+            for _, tex in ipairs(slot.frame.borderTextures) do
+                if show then tex:Show() else tex:Hide() end
             end
         end
     end

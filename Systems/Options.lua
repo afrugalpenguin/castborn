@@ -50,7 +50,7 @@ local categories = {
     { id = "interrupt", name = "Interrupt" },
     { id = "totems", name = "Totems", class = "SHAMAN" },
     { id = "absorbs", name = "Absorbs", class = "MAGE" },
-    { id = "armortracker", name = "Armour", classes = {"MAGE", "WARLOCK", "PRIEST"} },
+    { id = "armortracker", name = "Armour", classes = {"MAGE", "WARLOCK", "PRIEST", "PALADIN"} },
     { divider = true },
     { id = "lookfeel", name = "Look & Feel" },
     { id = "profiles", name = "Profiles" },
@@ -338,6 +338,9 @@ local function CreateOptionsFrame()
             Castborn:LockFrames()
             Castborn:Print("Frames locked")
         end
+        -- End any per-module test previews started from options buttons
+        if Castborn.EndTestArmorTracker then Castborn:EndTestArmorTracker() end
+        if Castborn.EndTestAbsorbTracker then Castborn:EndTestAbsorbTracker() end
     end)
 
     -- Title bar
@@ -584,7 +587,7 @@ function Options:BuildGeneral(parent)
         { key = "cooldowns", label = "Cooldowns" },
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
         { key = "absorbs", label = "Absorb Tracker" },
-        { key = "armortracker", label = "Armour Tracker", classes = {"MAGE", "WARLOCK", "PRIEST"} },
+        { key = "armortracker", label = "Armour Tracker", classes = {"MAGE", "WARLOCK", "PRIEST", "PALADIN"} },
         { key = "interrupt", label = "Interrupt Tracker" },
         { key = "multidot", label = "Multi-DoT Tracker" },
     }
@@ -1759,6 +1762,54 @@ function Options:BuildModule(parent, key)
         end)
         sizeSlider:SetPoint("TOPLEFT", 0, y)
         y = y - 50
+
+        -- Paladin: blessing selection dropdown + RF note
+        local _, optClass = UnitClass("player")
+        if optClass == "PALADIN" then
+            y = y - 10
+            local blessLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            blessLabel:SetPoint("TOPLEFT", 0, y)
+            blessLabel:SetText("Blessing to track:")
+            blessLabel:SetTextColor(unpack(C.grey))
+
+            local blessDropdown = CreateFrame("Frame", "CastbornBlessingDropdown", parent, "UIDropDownMenuTemplate")
+            blessDropdown:SetPoint("TOPLEFT", 110, y + 6)
+            UIDropDownMenu_SetWidth(blessDropdown, 140)
+
+            local blessings = {
+                { key = "might",     label = "Blessing of Might" },
+                { key = "wisdom",    label = "Blessing of Wisdom" },
+                { key = "kings",     label = "Blessing of Kings" },
+                { key = "sanctuary", label = "Blessing of Sanctuary" },
+            }
+            local blessLabelMap = {}
+            for _, b in ipairs(blessings) do blessLabelMap[b.key] = b.label end
+
+            UIDropDownMenu_Initialize(blessDropdown, function(self, level)
+                for _, b in ipairs(blessings) do
+                    local info = UIDropDownMenu_CreateInfo()
+                    info.text = b.label
+                    info.value = b.key
+                    info.checked = (db.selectedBlessing == b.key)
+                    info.func = function()
+                        db.selectedBlessing = b.key
+                        UIDropDownMenu_SetText(blessDropdown, b.label)
+                        if Castborn.ArmorTracker and Castborn.ArmorTracker.RebuildBlessingSlot then
+                            Castborn.ArmorTracker:RebuildBlessingSlot()
+                        end
+                    end
+                    UIDropDownMenu_AddButton(info)
+                end
+            end)
+            UIDropDownMenu_SetText(blessDropdown, blessLabelMap[db.selectedBlessing or "might"])
+            y = y - 40
+
+            local rfNote = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            rfNote:SetPoint("TOPLEFT", 0, y)
+            rfNote:SetText("Righteous Fury is tracked automatically when Improved Righteous Fury is talented.")
+            rfNote:SetTextColor(0.6, 0.6, 0.6)
+            y = y - 20
+        end
 
         local testBtn = CreateButton(parent, "Test Armour Alert", 120, function()
             if Castborn.TestArmorTracker then Castborn:TestArmorTracker() end

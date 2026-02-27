@@ -30,12 +30,35 @@ local defaults = {
 
 local function CreateCooldownFrame(parent, index)
     local size = CastbornDB.cooldowns.iconSize or 32
-    local masqueGroup = Castborn.Masque and Castborn.Masque.enabled and Castborn.Masque.groups.cooldowns or nil
 
-    local f = Castborn:CreateMasqueButton(parent, "Castborn_CD" .. index, size, masqueGroup, {
-        cdOpts = { SetDrawEdge = true, SetHideCountdownNumbers = false },
-    })
+    -- Use Button frame for Masque compatibility
+    local f = CreateFrame("Button", "Castborn_CD" .. index, parent)
+    f:SetSize(size, size)
+
+    -- Icon texture
+    f.icon = f:CreateTexture(nil, "ARTWORK")
+    f.icon:SetAllPoints()
+    f.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    f.Icon = f.icon  -- Masque alias
+
+    -- Normal texture (border) for Masque
+    f.Normal = f:CreateTexture(nil, "BORDER")
+    f.Normal:SetPoint("TOPLEFT", -1, 1)
+    f.Normal:SetPoint("BOTTOMRIGHT", 1, -1)
+    f.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
+    if Castborn.Masque and Castborn.Masque.enabled then
+        f:SetNormalTexture(f.Normal)
+    else
+        f.Normal:Hide()
+    end
+
+    -- Cooldown frame
+    f.cooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
+    f.cooldown:SetAllPoints()
+    f.cooldown:SetDrawEdge(true)
+    f.cooldown:SetHideCountdownNumbers(false)
     f.cooldown:EnableMouse(false)
+    f.Cooldown = f.cooldown  -- Masque alias
 
     f.time = f:CreateFontString(nil, "OVERLAY")
     f.time:SetFont(Castborn:GetBarFont(), 11, "OUTLINE")
@@ -85,6 +108,16 @@ local function CreateCooldownFrame(parent, index)
     f.dragCursor:SetAlpha(0.9)
     f.dragCursor:Hide()
 
+
+    -- Register with Masque if available
+    if Castborn.Masque and Castborn.Masque.enabled then
+        Castborn.Masque:AddButton("cooldowns", f, {
+            Icon = f.icon,
+            Cooldown = f.cooldown,
+            Normal = f.Normal,
+        })
+    end
+
     -- Click-through (WeakAuras pattern): Disable + EnableMouse(false)
     f:Disable()
     f:EnableMouse(false)
@@ -94,16 +127,44 @@ end
 
 local function CreateTrinketFrame(parent, index)
     local size = CastbornDB.cooldowns.iconSize or 32
-    local masqueGroup = Castborn.Masque and Castborn.Masque.enabled and Castborn.Masque.groups.cooldowns or nil
 
-    local f = Castborn:CreateMasqueButton(parent, "Castborn_Trinket" .. index, size, masqueGroup, {
-        cdOpts = { SetDrawEdge = true, SetHideCountdownNumbers = false },
-    })
+    local f = CreateFrame("Button", "Castborn_Trinket" .. index, parent)
+    f:SetSize(size, size)
+
+    f.icon = f:CreateTexture(nil, "ARTWORK")
+    f.icon:SetAllPoints()
+    f.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    f.Icon = f.icon
+
+    f.Normal = f:CreateTexture(nil, "BORDER")
+    f.Normal:SetPoint("TOPLEFT", -1, 1)
+    f.Normal:SetPoint("BOTTOMRIGHT", 1, -1)
+    f.Normal:SetColorTexture(0.3, 0.3, 0.3, 1)
+    if Castborn.Masque and Castborn.Masque.enabled then
+        f:SetNormalTexture(f.Normal)
+    else
+        f.Normal:Hide()
+    end
+
+    f.cooldown = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
+    f.cooldown:SetAllPoints()
+    f.cooldown:SetDrawEdge(true)
+    f.cooldown:SetHideCountdownNumbers(false)
+    f.cooldown:EnableMouse(false)
+    f.Cooldown = f.cooldown
 
     f.time = f:CreateFontString(nil, "OVERLAY")
     f.time:SetFont(Castborn:GetBarFont(), 11, "OUTLINE")
     Castborn:RegisterFontString(f.time, 11, "OUTLINE")
     f.time:SetPoint("CENTER")
+
+    if Castborn.Masque and Castborn.Masque.enabled then
+        Castborn.Masque:AddButton("cooldowns", f, {
+            Icon = f.icon,
+            Cooldown = f.cooldown,
+            Normal = f.Normal,
+        })
+    end
 
     -- Click-through (WeakAuras pattern): Disable + EnableMouse(false)
     f:Disable()

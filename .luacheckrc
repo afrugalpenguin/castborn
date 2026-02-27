@@ -66,6 +66,7 @@ read_globals = {
     "IsSpellKnown",
     "IsPlayerSpell",
     "GetShapeshiftForm",
+    "GetTalentInfo",
     "GetTotemInfo",
     "GetNumPartyMembers",
     "GetNumGroupMembers",

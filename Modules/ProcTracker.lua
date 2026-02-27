@@ -86,6 +86,7 @@ local function CreateProcFrame(parent, index)
 
     local f = Castborn:CreateMasqueButton(parent, "Castborn_Proc" .. index, size, masqueGroup, {
         iconLevel = 1,
+        clickThrough = true,
     })
     f.cooldown:Hide()
 
@@ -107,9 +108,6 @@ local function CreateProcFrame(parent, index)
     f.glow:SetPoint("BOTTOMRIGHT", 6, -6)
     f.glow:SetVertexColor(1, 0.8, 0.2, 0)
 
-    -- Click-through (WeakAuras pattern): Disable + EnableMouse(false)
-    f:Disable()
-    f:EnableMouse(false)
     f:Hide()
     return f
 end

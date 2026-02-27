@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "5.5.0"
+CB.version = "5.6.0"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -352,6 +352,7 @@ CB.defaults = {
         point = "CENTER",
         xPct = 0.05,
         yPct = -0.185,
+        selectedBlessing = "might",
     },
 }
 
@@ -497,6 +498,7 @@ function CB:CreateMasqueButton(parent, name, size, masqueGroup, opts)
     -- Cooldown frame
     local cd = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
     cd:SetAllPoints()
+    cd:EnableMouse(false)
     if opts.cdOpts then
         for method, value in pairs(opts.cdOpts) do
             if cd[method] then cd[method](cd, value) end
@@ -512,6 +514,21 @@ function CB:CreateMasqueButton(parent, name, size, masqueGroup, opts)
             Cooldown = f.Cooldown,
             Normal = f.Normal,
         })
+    end
+
+    -- Click-through: collapse hit rect and disable mouse on button and all
+    -- children so clicks pass through to frames below (e.g. action bars).
+    -- SetHitRectInsets works around a TBC client quirk where disabled Buttons
+    -- with EnableMouse(false) still consume hit tests.
+    if opts.clickThrough then
+        f:EnableMouse(false)
+        f:SetHitRectInsets(size, size, size, size)
+        for _, child in ipairs({ f:GetChildren() }) do
+            child:EnableMouse(false)
+            if child.SetHitRectInsets then
+                child:SetHitRectInsets(size, size, size, size)
+            end
+        end
     end
 
     return f

@@ -569,6 +569,23 @@ SpellData.armors = {
     PRIEST = {
         { name = "Inner Fire", spellIds = {588, 7128, 602, 1006, 10951, 10952, 25431} },
     },
+    PALADIN = {
+        { name = "Blessing of Might",      category = "blessing", key = "might",
+          spellIds = {19740, 19834, 19835, 19836, 19837, 19838, 25291, 27140,  -- regular (ranks 1-8)
+                      25782, 25916, 27141} },                                    -- greater (ranks 1-3)
+        { name = "Blessing of Wisdom",     category = "blessing", key = "wisdom",
+          spellIds = {19742, 19850, 19852, 19853, 19854, 25290, 27142,          -- regular (ranks 1-7)
+                      25894, 25918, 27143} },                                    -- greater (ranks 1-3)
+        { name = "Blessing of Kings",      category = "blessing", key = "kings",
+          spellIds = {20217,                                                     -- regular
+                      25898} },                                                  -- greater
+        { name = "Blessing of Sanctuary",  category = "blessing", key = "sanctuary",
+          spellIds = {20911, 20912, 20913, 20914, 27168,                        -- regular (ranks 1-5)
+                      25899, 27169} },                                           -- greater (ranks 1-2)
+        { name = "Righteous Fury",         category = "rf", key = "rf",
+          spellIds = {25780},                                                    -- single rank, same cast and buff ID
+          talentTab = 2, talentIndex = 7 },                                     -- Protection tree, Improved RF
+    },
 }
 
 function SpellData:GetClassArmors(class)

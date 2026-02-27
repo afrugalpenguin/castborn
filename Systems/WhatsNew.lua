@@ -14,6 +14,18 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.6.0",
+        features = {
+            "Paladin missing buff tracker — alerts when your selected blessing or Righteous Fury is missing",
+            "Blessing dropdown in options — choose which blessing to track (Might, Wisdom, Kings, or Sanctuary)",
+            "Righteous Fury tracked automatically when Improved Righteous Fury is talented",
+            "Cooldown and proc tracker icons are now fully click-through",
+        },
+        fixes = {
+            "Fixed test previews not clearing when closing options panel",
+        },
+    },
+    {
         version = "5.5.0",
         features = {
             "Totem Tracker buff-based party check — checks actual buff presence instead of range",
