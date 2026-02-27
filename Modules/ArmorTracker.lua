@@ -358,7 +358,11 @@ end
 
 function CB:EndTestArmorTracker()
     testModeActive = false
-    UpdateAllSlots()
+    for _, slot in ipairs(slots) do
+        if slot.frame then
+            slot.frame:Hide()
+        end
+    end
 end
 
 -- Respond to global border visibility toggle
