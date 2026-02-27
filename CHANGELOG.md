@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.6.1**
+
+- Updated tutorial to explain paladin blessing and Righteous Fury tracking
+
 **v5.6.0**
 
 - Paladin missing buff tracker — alerts when your selected blessing or Righteous Fury is missing

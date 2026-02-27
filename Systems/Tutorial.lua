@@ -100,8 +100,8 @@ local steps = {
     {
         id = "absorbs",
         title = "Defensive Trackers",
-        description = "|cff88ddffAbsorb Tracker|r \226\128\148 tracks absorb shields like Ice Barrier, Power Word: Shield, and Fire/Shadow Ward. Shows remaining absorb with a drain effect; multiple shields display as a row of icons.\n\n|cff88ddffArmour Tracker|r \226\128\148 shows an alert icon when your class armour buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.",
-        tip = "Both trackers work for all classes \226\128\148 Power Word: Shield from a healer is tracked automatically.",
+        description = "|cff88ddffAbsorb Tracker|r \226\128\148 tracks absorb shields like Ice Barrier, Power Word: Shield, and Fire/Shadow Ward. Shows remaining absorb with a drain effect; multiple shields display as a row of icons.\n\n|cff88ddffArmour Tracker|r \226\128\148 shows an alert icon when your class armour buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.\n\nPaladins get two alert icons: one for your chosen |cff88ddffBlessing|r (Might, Wisdom, Kings, or Sanctuary) and one for |cff88ddffRighteous Fury|r if Improved RF is talented.",
+        tip = "Paladins can choose which blessing to track in Options > Armour.",
         getFrame = function() return _G["Castborn_AbsorbTracker"] end,
         configKeys = {"absorbs", "armortracker"},
     },
@@ -753,6 +753,8 @@ local function ShowTestFrame(frameId)
             if CB.TestArmorTracker then CB:TestArmorTracker() end
             local f = _G["Castborn_ArmorTracker"]
             if f then tinsert(frames, f) end
+            local f2 = _G["Castborn_ArmorTracker2"]
+            if f2 and f2:IsShown() then tinsert(frames, f2) end
         else
             if CB.EndTestArmorTracker then CB:EndTestArmorTracker() end
         end

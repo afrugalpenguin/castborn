@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.6.1",
+        features = {},
+        fixes = {
+            "Updated tutorial to explain paladin blessing and Righteous Fury tracking",
+        },
+    },
+    {
         version = "5.6.0",
         features = {
             "Paladin missing buff tracker — alerts when your selected blessing or Righteous Fury is missing",
