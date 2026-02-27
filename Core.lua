@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "5.6.2"
+CB.version = "5.6.3"
 
 -- Module registry and event bus
 CB.modules = {}

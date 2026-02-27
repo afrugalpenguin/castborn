@@ -611,24 +611,19 @@ function CB:InitCastBars()
     
     local updateFrame = CreateFrame("Frame")
     local timeSinceLastUpdate = 0
-    local timeSinceLastPoll = 0
 
     updateFrame:SetScript("OnUpdate", function(self, elapsed)
         timeSinceLastUpdate = timeSinceLastUpdate + elapsed
-        timeSinceLastPoll = timeSinceLastPoll + elapsed
         if timeSinceLastUpdate >= 0.01 then
             if CB.castbars.player:IsShown() then UpdateCastBar(CB.castbars.player, timeSinceLastUpdate) end
             if CB.castbars.target:IsShown() then UpdateCastBar(CB.castbars.target, timeSinceLastUpdate) end
             if CB.castbars.targettarget:IsShown() then UpdateCastBar(CB.castbars.targettarget, timeSinceLastUpdate) end
             if CB.castbars.focus:IsShown() then UpdateCastBar(CB.castbars.focus, timeSinceLastUpdate) end
-            timeSinceLastUpdate = 0
-        end
-        if timeSinceLastPoll >= 0.5 then
             CheckUnitCast(CB.castbars.player, "player")
             CheckUnitCast(CB.castbars.target, "target")
             CheckUnitCast(CB.castbars.targettarget, "targettarget")
             CheckUnitCast(CB.castbars.focus, "focus")
-            timeSinceLastPoll = 0
+            timeSinceLastUpdate = 0
         end
     end)
     

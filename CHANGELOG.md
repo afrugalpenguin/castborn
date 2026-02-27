@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.6.3**
+
+- Fixed castbar randomly disappearing or misbehaving when clipping casts or quickly cancelling and recasting
+
 **v5.6.2**
 
 - Fixed armour tracker test icon not disappearing when closing options panel

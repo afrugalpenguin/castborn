@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.6.3",
+        features = {},
+        fixes = {
+            "Fixed castbar randomly disappearing or misbehaving when clipping casts or quickly cancelling and recasting",
+        },
+    },
+    {
         version = "5.6.2",
         features = {},
         fixes = {
