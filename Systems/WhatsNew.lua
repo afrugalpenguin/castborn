@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.6.2",
+        features = {},
+        fixes = {
+            "Fixed armour tracker test icon not disappearing when closing options panel",
+        },
+    },
+    {
         version = "5.6.1",
         features = {},
         fixes = {

@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.6.2**
+
+- Fixed armour tracker test icon not disappearing when closing options panel
+
 **v5.6.1**
 
 - Updated tutorial to explain paladin blessing and Righteous Fury tracking
