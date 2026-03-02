@@ -313,7 +313,7 @@ end
 
 local function CreateOptionsFrame()
     local frame = CreateFrame("Frame", "CastbornOptionsFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(700, 450)
+    frame:SetSize(800, 450)
     frame:SetPoint("CENTER")
     frame:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
