@@ -1571,7 +1571,8 @@ function Options:BuildModule(parent, key)
                 row:SetPoint("TOPRIGHT", 0, listY)
 
                 -- Checkbox
-                local cb = CreateCheckbox(row, spell.name, spell, "enabled")
+                local displayName = spell.custom and (spell.name .. " |cff888888(Custom)|r") or spell.name
+                local cb = CreateCheckbox(row, displayName, spell, "enabled")
                 cb:SetPoint("LEFT", 0, 0)
 
                 -- Down arrow
@@ -1611,6 +1612,26 @@ function Options:BuildModule(parent, key)
                         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
                     end
                 end)
+
+                -- Remove button for custom spells
+                if spell.custom then
+                    local removeBtn = CreateFrame("Button", nil, row)
+                    removeBtn:SetSize(14, 14)
+                    removeBtn:SetPoint("RIGHT", upBtn, "LEFT", -6, 0)
+
+                    -- Red X text
+                    local xText = removeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                    xText:SetPoint("CENTER", 0, 0)
+                    xText:SetText("|cffff4444X|r")
+                    xText:SetFont(xText:GetFont(), 12, "OUTLINE")
+
+                    removeBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+                    removeBtn:SetScript("OnClick", function()
+                        table.remove(db.trackedSpells, i)
+                        BuildSpellList()
+                        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                    end)
+                end
 
                 listY = listY - 26
             end
