@@ -1489,6 +1489,9 @@ function Options:BuildModule(parent, key)
         db.spacing = db.spacing or 4
         local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
         spacingSlider:SetPoint("TOPLEFT", 220, y)
+        db.iconsPerRow = db.iconsPerRow or 10
+        local perRowSlider = CreateSlider(parent, "Icons Per Row", db, "iconsPerRow", 1, 20, 1)
+        perRowSlider:SetPoint("TOPLEFT", 440, y)
         y = y - 50
 
         -- Grow direction checkbox
