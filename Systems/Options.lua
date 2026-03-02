@@ -1512,9 +1512,11 @@ function Options:BuildModule(parent, key)
         divider:SetColorTexture(0.25, 0.25, 0.25, 1)
         y = y - 14
 
-        -- Build ordered list from SpellData (ensures all class spells are always shown)
+        -- Build ordered list from SpellData (ensures all class + racial spells are always shown)
         local _, class = UnitClass("player")
+        local _, race = UnitRace("player")
         local classSpells = Castborn.SpellData and Castborn.SpellData:GetClassCooldowns(class) or {}
+        local racialSpells = Castborn.SpellData and race and Castborn.SpellData:GetRacialCooldowns(race) or {}
         db.trackedSpells = db.trackedSpells or {}
 
         -- Index existing tracked spells by spellId for quick lookup
@@ -1525,6 +1527,15 @@ function Options:BuildModule(parent, key)
 
         -- Ensure all class spells exist in trackedSpells
         for _, def in ipairs(classSpells) do
+            if not tracked[def.spellId] then
+                local entry = { spellId = def.spellId, name = def.name, enabled = true }
+                table.insert(db.trackedSpells, entry)
+                tracked[def.spellId] = entry
+            end
+        end
+
+        -- Ensure all racial spells exist in trackedSpells
+        for _, def in ipairs(racialSpells) do
             if not tracked[def.spellId] then
                 local entry = { spellId = def.spellId, name = def.name, enabled = true }
                 table.insert(db.trackedSpells, entry)

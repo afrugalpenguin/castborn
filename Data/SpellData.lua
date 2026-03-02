@@ -476,6 +476,36 @@ SpellData.racialCooldowns = {
         { spellId = 28880, name = "Gift of the Naaru" },
         { spellId = 32548, name = "Symbol of Hope" },
     },
+    Dwarf = {
+        { spellId = 20594, name = "Stoneform" },
+    },
+    Gnome = {
+        { spellId = 20589, name = "Escape Artist" },
+    },
+    NightElf = {
+        { spellId = 20580, name = "Shadowmeld" },
+    },
+    Human = {
+        { spellId = 20600, name = "Perception" },
+    },
+    Orc = {
+        { spellId = 20572, name = "Blood Fury" },   -- AP version (warrior, rogue, hunter)
+        { spellId = 33697, name = "Blood Fury" },   -- SP version (warlock, mage)
+        { spellId = 33702, name = "Blood Fury" },   -- AP+SP version (shaman)
+    },
+    Tauren = {
+        { spellId = 20549, name = "War Stomp" },
+    },
+    Troll = {
+        { spellId = 20554, name = "Berserking" },
+    },
+    Scourge = {
+        { spellId = 7744, name = "Will of the Forsaken" },
+    },
+    BloodElf = {
+        { spellId = 28730, name = "Arcane Torrent" }, -- mana version
+        { spellId = 25046, name = "Arcane Torrent" }, -- energy version (rogue)
+    },
 }
 
 function SpellData:GetClassCooldowns(class)
