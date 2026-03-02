@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.8.0",
+        features = {
+            "Custom spell tracking — add any spell ID to the cooldown tracker for trinkets, consumables, engineering items, and more",
+            "Cooldown tracker now supports up to 20 icons with configurable row wrapping",
+        },
+        fixes = {},
+    },
+    {
         version = "5.7.0",
         features = {
             "All TBC racial cooldowns now tracked — Stoneform, Escape Artist, Shadowmeld, Perception, Blood Fury, War Stomp, Berserking, Will of the Forsaken, and Arcane Torrent",

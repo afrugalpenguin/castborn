@@ -313,7 +313,7 @@ end
 
 local function CreateOptionsFrame()
     local frame = CreateFrame("Frame", "CastbornOptionsFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(700, 450)
+    frame:SetSize(800, 450)
     frame:SetPoint("CENTER")
     frame:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -1489,6 +1489,10 @@ function Options:BuildModule(parent, key)
         db.spacing = db.spacing or 4
         local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
         spacingSlider:SetPoint("TOPLEFT", 220, y)
+        y = y - 60
+        db.iconsPerRow = db.iconsPerRow or 10
+        local perRowSlider = CreateSlider(parent, "Icons Per Row", db, "iconsPerRow", 1, 20, 1)
+        perRowSlider:SetPoint("TOPLEFT", 0, y)
         y = y - 50
 
         -- Grow direction checkbox
@@ -1550,10 +1554,15 @@ function Options:BuildModule(parent, key)
         spellListContainer:SetHeight(1)  -- Will be resized
 
         local function BuildSpellList()
-            -- Clear existing children
+            -- Clear existing children (frames)
             for _, child in ipairs({spellListContainer:GetChildren()}) do
                 child:Hide()
                 child:SetParent(nil)
+            end
+            -- Clear existing regions (font strings, textures)
+            for _, region in ipairs({spellListContainer:GetRegions()}) do
+                region:Hide()
+                region:SetParent(nil)
             end
 
             local listY = 0
@@ -1568,7 +1577,8 @@ function Options:BuildModule(parent, key)
                 row:SetPoint("TOPRIGHT", 0, listY)
 
                 -- Checkbox
-                local cb = CreateCheckbox(row, spell.name, spell, "enabled")
+                local displayName = spell.custom and (spell.name .. " |cff888888(Custom)|r") or spell.name
+                local cb = CreateCheckbox(row, displayName, spell, "enabled")
                 cb:SetPoint("LEFT", 0, 0)
 
                 -- Down arrow
@@ -1609,14 +1619,111 @@ function Options:BuildModule(parent, key)
                     end
                 end)
 
+                -- Remove button for custom spells
+                if spell.custom then
+                    local removeBtn = CreateFrame("Button", nil, row)
+                    removeBtn:SetSize(14, 14)
+                    removeBtn:SetPoint("RIGHT", upBtn, "LEFT", -6, 0)
+
+                    -- Red X text
+                    local xText = removeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                    xText:SetPoint("CENTER", 0, 0)
+                    xText:SetText("|cffff4444X|r")
+                    xText:SetFont(xText:GetFont(), 12, "OUTLINE")
+
+                    removeBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+                    removeBtn:SetScript("OnClick", function()
+                        table.remove(db.trackedSpells, i)
+                        BuildSpellList()
+                        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                    end)
+                end
+
                 listY = listY - 26
             end
 
-            spellListContainer:SetHeight(math.abs(listY) + 4)
+            -- Custom spell input section
+            local customY = listY - 10
+
+            local customLabel = spellListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            customLabel:SetPoint("TOPLEFT", 0, customY)
+            customLabel:SetText("Add Custom Spell ID")
+            customY = customY - 20
+
+            local inputBox = CreateFrame("EditBox", nil, spellListContainer, "InputBoxTemplate")
+            inputBox:SetSize(120, 22)
+            inputBox:SetPoint("TOPLEFT", 0, customY)
+            inputBox:SetAutoFocus(false)
+            inputBox:SetNumeric(true)
+            inputBox:SetMaxLetters(6)
+
+            local addBtn = CreateFrame("Button", nil, spellListContainer, "UIPanelButtonTemplate")
+            addBtn:SetSize(60, 22)
+            addBtn:SetPoint("LEFT", inputBox, "RIGHT", 6, 0)
+            addBtn:SetText("Add")
+
+            local statusText = spellListContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            statusText:SetPoint("LEFT", addBtn, "RIGHT", 8, 0)
+            statusText:SetText("")
+
+            addBtn:SetScript("OnClick", function()
+                local idText = inputBox:GetText()
+                local spellId = tonumber(idText)
+                if not spellId or spellId <= 0 then
+                    statusText:SetText("|cffff4444Enter a valid spell ID|r")
+                    return
+                end
+
+                -- Check cap
+                if #db.trackedSpells >= 20 then
+                    statusText:SetText("|cffff4444Maximum of 20 spells reached|r")
+                    return
+                end
+
+                -- Check for duplicates
+                for _, spell in ipairs(db.trackedSpells) do
+                    if spell.spellId == spellId then
+                        statusText:SetText("|cffff4444Already tracked|r")
+                        return
+                    end
+                end
+
+                -- Validate spell exists
+                local name = GetSpellInfo(spellId)
+                if not name then
+                    statusText:SetText("|cffff4444Spell not found|r")
+                    return
+                end
+
+                -- Add the custom spell
+                table.insert(db.trackedSpells, {
+                    spellId = spellId,
+                    name = name,
+                    enabled = true,
+                    custom = true,
+                })
+
+                inputBox:SetText("")
+                statusText:SetText("|cff44ff44Added: " .. name .. "|r")
+                BuildSpellList()
+                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+            end)
+
+            inputBox:SetScript("OnEnterPressed", function()
+                addBtn:Click()
+            end)
+
+            inputBox:SetScript("OnEscapePressed", function(self)
+                self:ClearFocus()
+            end)
+
+            customY = customY - 30
+            spellListContainer:SetHeight(math.abs(customY) + 4)
         end
 
         BuildSpellList()
-        y = y - (26 * #db.trackedSpells) - 4
+
+        y = y - (26 * #db.trackedSpells) - 60
 
     elseif key == "interrupt" then
         local targetCB = CreateCheckbox(parent, "Track Target", db, "trackTarget")
