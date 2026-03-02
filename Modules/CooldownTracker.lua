@@ -291,6 +291,18 @@ local function StopEdgePulse(cdFrame)
     cdFrame.glow:SetAlpha(0)
 end
 
+-- Calculate x,y offsets for a given visible index with row wrapping
+local function CalcIconPosition(visibleIndex, db)
+    local size = db.iconSize or 36
+    local spacing = db.spacing or 4
+    local perRow = db.iconsPerRow or 10
+    local col = (visibleIndex - 1) % perRow
+    local row = math.floor((visibleIndex - 1) / perRow)
+    local x = col * (size + spacing)
+    local y = -(row * (size + spacing))
+    return x, y
+end
+
 local function UpdateLayout()
     local db = CastbornDB.cooldowns
     local size = db.iconSize or 32
@@ -299,7 +311,8 @@ local function UpdateLayout()
     for i, f in ipairs(cdFrames) do
         f:ClearAllPoints()
         f:SetSize(size, size)
-        f:SetPoint("LEFT", frame, "LEFT", (i - 1) * (size + spacing), 0)
+        local colX, rowY = CalcIconPosition(i, db)
+        f:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
     end
 end
 
@@ -333,18 +346,16 @@ local function UpdateCooldowns()
             local start, duration, enabled = GetSpellCooldown(spell.name)
             local icon = GetSpellTexture(spell.name)
 
-            -- Position the frame based on visible index (compact layout)
+            -- Position the frame based on visible index (compact layout with row wrapping)
             local size = db.iconSize or 32
             local spacing = db.spacing or 4
             cdFrame:ClearAllPoints()
 
-            -- Grow direction: LEFT grows rightward from right edge, RIGHT grows leftward from left edge
+            local colX, rowY = CalcIconPosition(visibleIndex, db)
             if db.growDirection == "LEFT" then
-                -- Icons grow to the left (first icon on right, subsequent icons to the left)
-                cdFrame:SetPoint("RIGHT", frame, "RIGHT", -((visibleIndex - 1) * (size + spacing)), 0)
+                cdFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -colX, rowY)
             else
-                -- Icons grow to the right (default)
-                cdFrame:SetPoint("LEFT", frame, "LEFT", (visibleIndex - 1) * (size + spacing), 0)
+                cdFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
             end
 
             if icon then
@@ -419,8 +430,15 @@ local function UpdateCooldowns()
 
     -- Only show container if there are visible cooldowns
     if visibleIndex > 0 then
+        -- Resize container to fit actual content
+        local perRow = db.iconsPerRow or 10
+        local size = db.iconSize or 36
+        local spacing = db.spacing or 4
+        local cols = math.min(visibleIndex, perRow)
+        local rows = math.ceil(visibleIndex / perRow)
+        frame:SetSize(cols * size + (cols - 1) * spacing,
+                      rows * size + (rows - 1) * spacing + 4)
         frame:Show()
-        -- Hide drag indicator when not in positioning mode
         if frame.dragIndicator and CastbornDB.locked ~= false then
             frame.dragIndicator:Hide()
         end
@@ -604,16 +622,14 @@ local dragState = {
 local function SmoothRepositionIcon(icon, targetSlot, db)
     if not icon or not db then return end
 
-    local size = db.iconSize or 36
-    local spacing = db.spacing or 4
+    local colX, rowY = CalcIconPosition(targetSlot, db)
     local targetX, targetY
-
     if db.growDirection == "LEFT" then
-        targetX = -((targetSlot - 1) * (size + spacing))
-        targetY = 0
+        targetX = -colX
+        targetY = rowY
     else
-        targetX = (targetSlot - 1) * (size + spacing)
-        targetY = 0
+        targetX = colX
+        targetY = rowY
     end
 
     icon.targetX = targetX
@@ -650,9 +666,9 @@ local function SmoothRepositionIcon(icon, targetSlot, db)
             -- Apply position
             icon:ClearAllPoints()
             if db.growDirection == "LEFT" then
-                icon:SetPoint("RIGHT", frame, "RIGHT", newX, newY)
+                icon:SetPoint("TOPRIGHT", frame, "TOPRIGHT", newX, newY)
             else
-                icon:SetPoint("LEFT", frame, "LEFT", newX, newY)
+                icon:SetPoint("TOPLEFT", frame, "TOPLEFT", newX, newY)
             end
         end)
     end
@@ -660,14 +676,14 @@ end
 
 local function PositionTestIcon(cdFrame, visibleIndex, db)
     local size = db.iconSize or 36
-    local spacing = db.spacing or 4
     cdFrame:ClearAllPoints()
     cdFrame:SetSize(size, size)
 
+    local colX, rowY = CalcIconPosition(visibleIndex, db)
     if db.growDirection == "LEFT" then
-        cdFrame:SetPoint("RIGHT", frame, "RIGHT", -((visibleIndex - 1) * (size + spacing)), 0)
+        cdFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -colX, rowY)
     else
-        cdFrame:SetPoint("LEFT", frame, "LEFT", (visibleIndex - 1) * (size + spacing), 0)
+        cdFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
     end
 end
 
@@ -796,11 +812,11 @@ local function SetupDragReorder(cdFrame, visibleIndex)
         self.ghost:SetTexture(self.icon:GetTexture())
         self.ghost:ClearAllPoints()
 
-        local spacing = db.spacing or 4
+        local ghostColX, ghostRowY = CalcIconPosition(self.visibleIndex, db)
         if db.growDirection == "LEFT" then
-            self.ghost:SetPoint("RIGHT", frame, "RIGHT", -((self.visibleIndex - 1) * (size + spacing)), 0)
+            self.ghost:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -ghostColX, ghostRowY)
         else
-            self.ghost:SetPoint("LEFT", frame, "LEFT", (self.visibleIndex - 1) * (size + spacing), 0)
+            self.ghost:SetPoint("TOPLEFT", frame, "TOPLEFT", ghostColX, ghostRowY)
         end
         self.ghost:SetSize(size, size)
         self.ghost:Show()
@@ -929,16 +945,25 @@ local function SetupDragReorder(cdFrame, visibleIndex)
 
         local frameLeft = frame:GetLeft()
         local frameRight = frame:GetRight()
-        if not frameLeft or not frameRight then return end
+        local frameTop = frame:GetTop()
+        if not frameLeft or not frameRight or not frameTop then return end
 
-        local targetSlot
+        local perRow = db.iconsPerRow or 10
+
+        -- Calculate row from Y position
+        local rowFromY = math.floor((frameTop - cursorY) / step)
+        rowFromY = math.max(0, rowFromY)
+
+        -- Calculate column from X position
+        local colFromX
         if db.growDirection == "LEFT" then
-            local offset = frameRight - cursorX
-            targetSlot = math.floor(offset / step + 0.5) + 1
+            colFromX = math.floor((frameRight - cursorX) / step + 0.5)
         else
-            local offset = cursorX - frameLeft
-            targetSlot = math.floor(offset / step + 0.5) + 1
+            colFromX = math.floor((cursorX - frameLeft) / step + 0.5)
         end
+        colFromX = math.max(0, math.min(colFromX, perRow - 1))
+
+        local targetSlot = rowFromY * perRow + colFromX + 1
         targetSlot = math.max(1, math.min(targetSlot, testSpellCount))
 
         -- Only update if target slot changed
@@ -968,16 +993,14 @@ local function SetupDragReorder(cdFrame, visibleIndex)
                 frame.insertMarker:ClearAllPoints()
                 frame.insertMarker:SetSize(4, size)
 
+                local markerColX, markerRowY = CalcIconPosition(targetSlot, db)
                 if db.growDirection == "LEFT" then
-                    local xOff = -((targetSlot - 1) * step) + size / 2 + 2
-                    frame.insertMarker:SetPoint("RIGHT", frame, "RIGHT", xOff, 0)
+                    frame.insertMarker:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -markerColX + size / 2 + 2, markerRowY)
                 else
-                    local xOff = (targetSlot - 1) * step - 2
-                    frame.insertMarker:SetPoint("LEFT", frame, "LEFT", xOff, 0)
+                    frame.insertMarker:SetPoint("TOPLEFT", frame, "TOPLEFT", markerColX - 2, markerRowY)
                 end
                 frame.insertMarker:Show()
 
-                -- Position glow with marker
                 if frame.insertMarkerGlow then
                     frame.insertMarkerGlow:ClearAllPoints()
                     frame.insertMarkerGlow:SetSize(8, size)
@@ -991,12 +1014,11 @@ local function SetupDragReorder(cdFrame, visibleIndex)
                 frame.slotHighlight:ClearAllPoints()
                 frame.slotHighlight:SetSize(size, size)
 
+                local hlColX, hlRowY = CalcIconPosition(targetSlot, db)
                 if db.growDirection == "LEFT" then
-                    local xOff = -((targetSlot - 1) * step)
-                    frame.slotHighlight:SetPoint("RIGHT", frame, "RIGHT", xOff, 0)
+                    frame.slotHighlight:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -hlColX, hlRowY)
                 else
-                    local xOff = (targetSlot - 1) * step
-                    frame.slotHighlight:SetPoint("LEFT", frame, "LEFT", xOff, 0)
+                    frame.slotHighlight:SetPoint("TOPLEFT", frame, "TOPLEFT", hlColX, hlRowY)
                 end
                 frame.slotHighlight:Show()
             end
