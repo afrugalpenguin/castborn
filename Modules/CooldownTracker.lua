@@ -312,7 +312,11 @@ local function UpdateLayout()
         f:ClearAllPoints()
         f:SetSize(size, size)
         local colX, rowY = CalcIconPosition(i, db)
-        f:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
+        if db.growDirection == "LEFT" then
+            f:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -colX, rowY)
+        else
+            f:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
+        end
     end
 end
 
