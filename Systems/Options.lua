@@ -1619,7 +1619,80 @@ function Options:BuildModule(parent, key)
         end
 
         BuildSpellList()
-        y = y - (26 * #db.trackedSpells) - 4
+
+        -- Custom spell input section
+        local customY = -(26 * #db.trackedSpells) - 10
+
+        local customLabel = spellListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        customLabel:SetPoint("TOPLEFT", 0, customY)
+        customLabel:SetText("Add Custom Spell ID")
+        customY = customY - 20
+
+        local inputBox = CreateFrame("EditBox", nil, spellListContainer, "InputBoxTemplate")
+        inputBox:SetSize(120, 22)
+        inputBox:SetPoint("TOPLEFT", 0, customY)
+        inputBox:SetAutoFocus(false)
+        inputBox:SetNumeric(true)
+        inputBox:SetMaxLetters(6)
+
+        local addBtn = CreateFrame("Button", nil, spellListContainer, "UIPanelButtonTemplate")
+        addBtn:SetSize(60, 22)
+        addBtn:SetPoint("LEFT", inputBox, "RIGHT", 6, 0)
+        addBtn:SetText("Add")
+
+        local statusText = spellListContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        statusText:SetPoint("LEFT", addBtn, "RIGHT", 8, 0)
+        statusText:SetText("")
+
+        addBtn:SetScript("OnClick", function()
+            local idText = inputBox:GetText()
+            local spellId = tonumber(idText)
+            if not spellId or spellId <= 0 then
+                statusText:SetText("|cffff4444Enter a valid spell ID|r")
+                return
+            end
+
+            -- Check for duplicates
+            for _, spell in ipairs(db.trackedSpells) do
+                if spell.spellId == spellId then
+                    statusText:SetText("|cffff4444Already tracked|r")
+                    return
+                end
+            end
+
+            -- Validate spell exists
+            local name = GetSpellInfo(spellId)
+            if not name then
+                statusText:SetText("|cffff4444Spell not found|r")
+                return
+            end
+
+            -- Add the custom spell
+            table.insert(db.trackedSpells, {
+                spellId = spellId,
+                name = name,
+                enabled = true,
+                custom = true,
+            })
+
+            inputBox:SetText("")
+            statusText:SetText("|cff44ff44Added: " .. name .. "|r")
+            BuildSpellList()
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        end)
+
+        inputBox:SetScript("OnEnterPressed", function()
+            addBtn:Click()
+        end)
+
+        inputBox:SetScript("OnEscapePressed", function(self)
+            self:ClearFocus()
+        end)
+
+        customY = customY - 30
+        spellListContainer:SetHeight(math.abs(customY) + 4)
+
+        y = y - (26 * #db.trackedSpells) - 60
 
     elseif key == "interrupt" then
         local targetCB = CreateCheckbox(parent, "Track Target", db, "trackTarget")
