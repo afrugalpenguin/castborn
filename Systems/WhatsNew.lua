@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.8.1",
+        features = {},
+        fixes = {
+            "Fixed duplicate CurseForge releases per version",
+        },
+    },
+    {
         version = "5.8.0",
         features = {
             "Custom spell tracking — add any spell ID to the cooldown tracker for trinkets, consumables, engineering items, and more",

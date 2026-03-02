@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.8.1**
+
+- Fixed duplicate CurseForge releases per version
+
 **v5.8.0**
 
 - Custom spell tracking — add any spell ID to the cooldown tracker for tracking trinkets, consumables, engineering items, and more
