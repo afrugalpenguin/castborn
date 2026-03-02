@@ -1553,10 +1553,15 @@ function Options:BuildModule(parent, key)
         spellListContainer:SetHeight(1)  -- Will be resized
 
         local function BuildSpellList()
-            -- Clear existing children
+            -- Clear existing children (frames)
             for _, child in ipairs({spellListContainer:GetChildren()}) do
                 child:Hide()
                 child:SetParent(nil)
+            end
+            -- Clear existing regions (font strings, textures)
+            for _, region in ipairs({spellListContainer:GetRegions()}) do
+                region:Hide()
+                region:SetParent(nil)
             end
 
             local listY = 0
