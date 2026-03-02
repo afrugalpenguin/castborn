@@ -488,7 +488,17 @@ Castborn:RegisterCallback("READY", function()
     local classChanged = db.loadedForClass ~= class
 
     if not db.trackedSpells or #db.trackedSpells == 0 or classChanged then
-        -- First time setup or class changed: load all class defaults
+        -- Preserve custom spells before reloading class defaults
+        local customSpells = {}
+        if db.trackedSpells then
+            for _, spell in ipairs(db.trackedSpells) do
+                if spell.custom then
+                    table.insert(customSpells, spell)
+                end
+            end
+        end
+
+        -- Reload class defaults
         if class and Castborn.SpellData then
             db.trackedSpells = Castborn.SpellData:GetClassCooldowns(class)
             -- Append racial cooldowns
@@ -496,6 +506,10 @@ Castborn:RegisterCallback("READY", function()
                 for _, spell in ipairs(Castborn.SpellData:GetRacialCooldowns(race)) do
                     table.insert(db.trackedSpells, spell)
                 end
+            end
+            -- Re-append custom spells
+            for _, spell in ipairs(customSpells) do
+                table.insert(db.trackedSpells, spell)
             end
             db.defaultsLoaded = currentVersion
             db.loadedForClass = class
