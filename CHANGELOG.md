@@ -1,5 +1,10 @@
 # Changelog
 
+**v5.8.0**
+
+- Custom spell tracking — add any spell ID to the cooldown tracker for tracking trinkets, consumables, engineering items, and more
+- Cooldown tracker now supports up to 20 icons with configurable row wrapping (Icons Per Row setting)
+
 **v5.7.0**
 
 - Added all TBC racial cooldowns to the cooldown tracker (Stoneform, Escape Artist, Shadowmeld, Perception, Blood Fury, War Stomp, Berserking, Will of the Forsaken, Arcane Torrent)
