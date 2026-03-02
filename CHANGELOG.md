@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.7.0**
+
+- Added all TBC racial cooldowns to the cooldown tracker (Stoneform, Escape Artist, Shadowmeld, Perception, Blood Fury, War Stomp, Berserking, Will of the Forsaken, Arcane Torrent)
+
 **v5.6.4**
 
 - Improved reliability of Hide Blizzard Castbar option when other addons reinitialise frames on zone transitions

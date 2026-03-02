@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.7.0",
+        features = {
+            "All TBC racial cooldowns now tracked — Stoneform, Escape Artist, Shadowmeld, Perception, Blood Fury, War Stomp, Berserking, Will of the Forsaken, and Arcane Torrent",
+        },
+        fixes = {},
+    },
+    {
         version = "5.6.4",
         features = {},
         fixes = {
