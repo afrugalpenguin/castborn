@@ -4,7 +4,7 @@ Castborn.CooldownTracker = CooldownTracker
 
 local frame = nil
 local cdFrames = {}
-local MAX_COOLDOWNS = 12
+local MAX_COOLDOWNS = 20
 
 local trinketFrame = nil
 local trinketFrames = {}
@@ -26,6 +26,7 @@ local defaults = {
     growDirection = "LEFT",   -- LEFT or RIGHT
     showReadyGlow = true,     -- Animated edge glow when ready
     trackTrinkets = true,
+    iconsPerRow = 10,
 }
 
 local function CreateCooldownFrame(parent, index)
@@ -177,7 +178,10 @@ local function CreateContainer()
     local db = CastbornDB.cooldowns
 
     frame = CreateFrame("Frame", "Castborn_CooldownTracker", UIParent)
-    frame:SetSize(db.iconSize * MAX_COOLDOWNS + db.spacing * (MAX_COOLDOWNS - 1), db.iconSize + 4)
+    local iconsPerRow = db.iconsPerRow or 10
+    local numRows = math.ceil(MAX_COOLDOWNS / iconsPerRow)
+    frame:SetSize(db.iconSize * iconsPerRow + db.spacing * (iconsPerRow - 1),
+                  db.iconSize * numRows + db.spacing * (numRows - 1) + 4)
     frame:SetPoint(db.point, UIParent, db.point, db.x, db.y)
 
     for i = 1, MAX_COOLDOWNS do
