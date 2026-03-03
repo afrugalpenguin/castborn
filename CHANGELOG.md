@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.9.0**
+
+- Item Tracker — track inventory consumables (potions, bandages, engineering items) with count overlays and cooldown display
+
 **v5.8.2**
 
 - Fixed duplicate GitHub releases per version tag

@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.9.0",
+        features = {
+            "Item Tracker — track inventory consumables (potions, bandages, engineering items) with count overlays and cooldown display",
+        },
+        fixes = {},
+    },
+    {
         version = "5.8.2",
         features = {},
         fixes = {
