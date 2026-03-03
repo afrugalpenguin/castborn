@@ -1827,15 +1827,47 @@ function Options:BuildModule(parent, key)
 
             local customLabel = itemListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             customLabel:SetPoint("TOPLEFT", 0, customY)
-            customLabel:SetText("Add Item ID")
+            customLabel:SetText("Add Item |cff888888(ID, Shift-Click, or Drag)|r")
             customY = customY - 20
 
             local inputBox = CreateFrame("EditBox", nil, itemListContainer, "InputBoxTemplate")
             inputBox:SetSize(120, 22)
             inputBox:SetPoint("TOPLEFT", 0, customY)
             inputBox:SetAutoFocus(false)
-            inputBox:SetNumeric(true)
-            inputBox:SetMaxLetters(6)
+            inputBox:SetMaxLetters(60)
+
+            -- Extract item ID from shift-clicked item links
+            local origOnChar = inputBox:GetScript("OnChar")
+            inputBox:SetScript("OnTextChanged", function(self)
+                local text = self:GetText()
+                -- Match item link format: |Hitem:12345:...|h[Name]|h
+                local itemId = text:match("|Hitem:(%d+)")
+                if itemId then
+                    self:SetText(itemId)
+                    self:SetCursorPosition(#itemId)
+                end
+            end)
+
+            -- Accept drag-and-dropped items
+            inputBox:EnableMouse(true)
+            inputBox:SetScript("OnReceiveDrag", function(self)
+                local infoType, itemId = GetCursorInfo()
+                if infoType == "item" and itemId then
+                    self:SetText(tostring(itemId))
+                    ClearCursor()
+                end
+            end)
+            inputBox:SetScript("OnMouseDown", function(self, button)
+                if button == "LeftButton" and GetCursorInfo() then
+                    local infoType, itemId = GetCursorInfo()
+                    if infoType == "item" and itemId then
+                        self:SetText(tostring(itemId))
+                        ClearCursor()
+                        return
+                    end
+                end
+                self:SetFocus()
+            end)
 
             local addBtn = CreateFrame("Button", nil, itemListContainer, "UIPanelButtonTemplate")
             addBtn:SetSize(60, 22)
