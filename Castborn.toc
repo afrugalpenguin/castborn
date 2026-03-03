@@ -29,6 +29,7 @@ Modules/InterruptTracker.lua
 Modules/TotemTracker.lua
 Modules/AbsorbTracker.lua
 Modules/ArmorTracker.lua
+Modules/ItemTracker.lua
 
 Systems/WhatsNew.lua
 Systems/Options.lua
