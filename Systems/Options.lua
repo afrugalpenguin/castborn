@@ -47,6 +47,7 @@ local categories = {
     { id = "multidot", name = "Multi-DoT" },
     { id = "buffs", name = "Proc Tracker" },
     { id = "cooldowns", name = "Cooldowns" },
+    { id = "itemtracker", name = "Items" },
     { id = "interrupt", name = "Interrupt" },
     { id = "totems", name = "Totems", class = "SHAMAN" },
     { id = "absorbs", name = "Absorbs", class = "MAGE" },
@@ -585,6 +586,7 @@ function Options:BuildGeneral(parent)
         { key = "dots", label = "DoT Tracker" },
         { key = "buffs", label = "Proc Tracker", db = "procs" },
         { key = "cooldowns", label = "Cooldowns" },
+        { key = "itemtracker", label = "Item Tracker" },
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
         { key = "absorbs", label = "Absorb Tracker" },
         { key = "armortracker", label = "Armour Tracker", classes = {"MAGE", "WARLOCK", "PRIEST", "PALADIN"} },
@@ -1313,6 +1315,7 @@ function Options:BuildModule(parent, key)
         multidot = "Multi-DoT Tracker",
         buffs = "Proc Tracker",
         cooldowns = "Cooldown Tracker",
+        itemtracker = "Item Tracker",
         interrupt = "Interrupt Tracker",
         totems = "Totem Tracker",
         absorbs = "Absorb Tracker",
@@ -1724,6 +1727,182 @@ function Options:BuildModule(parent, key)
         BuildSpellList()
 
         y = y - (26 * #db.trackedSpells) - 60
+
+    elseif key == "itemtracker" then
+        -- Icon Size and Spacing sliders
+        db.iconSize = db.iconSize or 36
+        local iconSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 20, 56, 2)
+        iconSlider:SetPoint("TOPLEFT", 0, y)
+        db.spacing = db.spacing or 4
+        local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
+        spacingSlider:SetPoint("TOPLEFT", 220, y)
+        y = y - 60
+        db.iconsPerRow = db.iconsPerRow or 10
+        local perRowSlider = CreateSlider(parent, "Icons Per Row", db, "iconsPerRow", 1, 20, 1)
+        perRowSlider:SetPoint("TOPLEFT", 0, y)
+        y = y - 50
+
+        -- Grow direction checkbox
+        local growCB = CreateCheckbox(parent, "Grow Left", db, "growLeft", function(v)
+            db.growDirection = v and "LEFT" or "RIGHT"
+        end)
+        db.growLeft = (db.growDirection == "LEFT")
+        growCB:SetChecked(db.growLeft)
+        growCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
+        -- Divider
+        local divider = parent:CreateTexture(nil, "ARTWORK")
+        divider:SetHeight(1)
+        divider:SetPoint("TOPLEFT", 0, y - 4)
+        divider:SetPoint("TOPRIGHT", 0, y - 4)
+        divider:SetColorTexture(0.25, 0.25, 0.25, 1)
+        y = y - 14
+
+        db.trackedItems = db.trackedItems or {}
+
+        -- Container for item rows
+        local itemListContainer = CreateFrame("Frame", nil, parent)
+        itemListContainer:SetPoint("TOPLEFT", 0, y)
+        itemListContainer:SetPoint("TOPRIGHT", 0, y)
+        itemListContainer:SetHeight(1)
+
+        local function BuildItemList()
+            -- Clear existing children
+            for _, child in ipairs({itemListContainer:GetChildren()}) do
+                child:Hide()
+                child:SetParent(nil)
+            end
+            -- Clear existing regions
+            for _, region in ipairs({itemListContainer:GetRegions()}) do
+                region:Hide()
+                region:SetParent(nil)
+            end
+
+            local listY = 0
+            local total = #db.trackedItems
+
+            for i, item in ipairs(db.trackedItems) do
+                if item.enabled == nil then item.enabled = true end
+
+                -- Resolve item name (may be cached)
+                local itemName = item.name
+                if not itemName then
+                    itemName = GetItemInfo(item.itemId)
+                    if itemName then item.name = itemName end
+                end
+                itemName = itemName or ("Item #" .. item.itemId)
+
+                local row = CreateFrame("Frame", nil, itemListContainer)
+                row:SetHeight(26)
+                row:SetPoint("TOPLEFT", 0, listY)
+                row:SetPoint("TOPRIGHT", 0, listY)
+
+                -- Checkbox
+                local cb = CreateCheckbox(row, itemName, item, "enabled")
+                cb:SetPoint("LEFT", 0, 0)
+
+                -- Remove button
+                local removeBtn = CreateFrame("Button", nil, row)
+                removeBtn:SetSize(14, 14)
+                removeBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+
+                local xText = removeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                xText:SetPoint("CENTER", 0, 0)
+                xText:SetText("|cffff4444X|r")
+                xText:SetFont(xText:GetFont(), 12, "OUTLINE")
+
+                removeBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+                removeBtn:SetScript("OnClick", function()
+                    table.remove(db.trackedItems, i)
+                    BuildItemList()
+                    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                end)
+
+                listY = listY - 26
+            end
+
+            -- Add item input section
+            local customY = listY - 10
+
+            local customLabel = itemListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            customLabel:SetPoint("TOPLEFT", 0, customY)
+            customLabel:SetText("Add Item ID")
+            customY = customY - 20
+
+            local inputBox = CreateFrame("EditBox", nil, itemListContainer, "InputBoxTemplate")
+            inputBox:SetSize(120, 22)
+            inputBox:SetPoint("TOPLEFT", 0, customY)
+            inputBox:SetAutoFocus(false)
+            inputBox:SetNumeric(true)
+            inputBox:SetMaxLetters(6)
+
+            local addBtn = CreateFrame("Button", nil, itemListContainer, "UIPanelButtonTemplate")
+            addBtn:SetSize(60, 22)
+            addBtn:SetPoint("LEFT", inputBox, "RIGHT", 6, 0)
+            addBtn:SetText("Add")
+
+            local statusText = itemListContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            statusText:SetPoint("LEFT", addBtn, "RIGHT", 8, 0)
+            statusText:SetText("")
+
+            addBtn:SetScript("OnClick", function()
+                local idText = inputBox:GetText()
+                local itemId = tonumber(idText)
+                if not itemId or itemId <= 0 then
+                    statusText:SetText("|cffff4444Enter a valid item ID|r")
+                    return
+                end
+
+                -- Check cap
+                if #db.trackedItems >= 20 then
+                    statusText:SetText("|cffff4444Maximum of 20 items reached|r")
+                    return
+                end
+
+                -- Check for duplicates
+                for _, item in ipairs(db.trackedItems) do
+                    if item.itemId == itemId then
+                        statusText:SetText("|cffff4444Already tracked|r")
+                        return
+                    end
+                end
+
+                -- Validate item exists
+                local name = GetItemInfo(itemId)
+                if not name then
+                    statusText:SetText("|cffff4444Item not found (try again after opening bags)|r")
+                    return
+                end
+
+                -- Add the item
+                table.insert(db.trackedItems, {
+                    itemId = itemId,
+                    name = name,
+                    enabled = true,
+                })
+
+                inputBox:SetText("")
+                statusText:SetText("|cff44ff44Added: " .. name .. "|r")
+                BuildItemList()
+                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+            end)
+
+            inputBox:SetScript("OnEnterPressed", function()
+                addBtn:Click()
+            end)
+
+            inputBox:SetScript("OnEscapePressed", function(self)
+                self:ClearFocus()
+            end)
+
+            customY = customY - 30
+            itemListContainer:SetHeight(math.abs(customY) + 4)
+        end
+
+        BuildItemList()
+
+        y = y - (26 * #db.trackedItems) - 60
 
     elseif key == "interrupt" then
         local targetCB = CreateCheckbox(parent, "Track Target", db, "trackTarget")
