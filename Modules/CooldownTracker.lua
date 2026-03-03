@@ -27,6 +27,7 @@ local defaults = {
     showReadyGlow = true,     -- Animated edge glow when ready
     trackTrinkets = true,
     iconsPerRow = 10,
+    orientation = "HORIZONTAL",
 }
 
 local function CreateCooldownFrame(parent, index)
@@ -179,9 +180,17 @@ local function CreateContainer()
 
     frame = CreateFrame("Frame", "Castborn_CooldownTracker", UIParent)
     local iconsPerRow = db.iconsPerRow or 10
-    local numRows = math.ceil(MAX_COOLDOWNS / iconsPerRow)
-    frame:SetSize(db.iconSize * iconsPerRow + db.spacing * (iconsPerRow - 1),
-                  db.iconSize * numRows + db.spacing * (numRows - 1) + 4)
+    local isVertical = db.orientation == "VERTICAL"
+    local cols, rows
+    if isVertical then
+        rows = math.min(MAX_COOLDOWNS, iconsPerRow)
+        cols = math.ceil(MAX_COOLDOWNS / iconsPerRow)
+    else
+        cols = math.min(MAX_COOLDOWNS, iconsPerRow)
+        rows = math.ceil(MAX_COOLDOWNS / iconsPerRow)
+    end
+    frame:SetSize(db.iconSize * cols + db.spacing * (cols - 1),
+                  db.iconSize * rows + db.spacing * (rows - 1) + 4)
     frame:SetPoint(db.point, UIParent, db.point, db.x, db.y)
 
     for i = 1, MAX_COOLDOWNS do
@@ -291,30 +300,47 @@ local function StopEdgePulse(cdFrame)
     cdFrame.glow:SetAlpha(0)
 end
 
--- Calculate x,y offsets for a given visible index with row wrapping
+-- Calculate x,y offsets for a given visible index with row/column wrapping
 local function CalcIconPosition(visibleIndex, db)
     local size = db.iconSize or 36
     local spacing = db.spacing or 4
     local perRow = db.iconsPerRow or 10
-    local col = (visibleIndex - 1) % perRow
-    local row = math.floor((visibleIndex - 1) / perRow)
-    local x = col * (size + spacing)
-    local y = -(row * (size + spacing))
-    return x, y
+    local isVertical = db.orientation == "VERTICAL"
+
+    if isVertical then
+        -- Vertical: primary axis is Y (down), wrapping on X (right)
+        local row = (visibleIndex - 1) % perRow
+        local col = math.floor((visibleIndex - 1) / perRow)
+        local x = col * (size + spacing)
+        local y = -(row * (size + spacing))
+        return x, y
+    else
+        -- Horizontal: primary axis is X (right), wrapping on Y (down)
+        local col = (visibleIndex - 1) % perRow
+        local row = math.floor((visibleIndex - 1) / perRow)
+        local x = col * (size + spacing)
+        local y = -(row * (size + spacing))
+        return x, y
+    end
 end
 
 local function UpdateLayout()
     local db = CastbornDB.cooldowns
     local size = db.iconSize or 32
     local spacing = db.spacing or 4
+    local grow = db.growDirection or "LEFT"
 
     for i, f in ipairs(cdFrames) do
         f:ClearAllPoints()
         f:SetSize(size, size)
         local colX, rowY = CalcIconPosition(i, db)
-        if db.growDirection == "LEFT" then
+        if grow == "LEFT" then
             f:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -colX, rowY)
-        else
+        elseif grow == "RIGHT" then
+            f:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
+        elseif grow == "UP" then
+            f:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", colX, -rowY)
+        elseif grow == "DOWN" then
             f:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
         end
     end
@@ -358,6 +384,10 @@ local function UpdateCooldowns()
             local colX, rowY = CalcIconPosition(visibleIndex, db)
             if db.growDirection == "LEFT" then
                 cdFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -colX, rowY)
+            elseif db.growDirection == "UP" then
+                cdFrame:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", colX, -rowY)
+            elseif db.growDirection == "DOWN" then
+                cdFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
             else
                 cdFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
             end
@@ -434,12 +464,18 @@ local function UpdateCooldowns()
 
     -- Only show container if there are visible cooldowns
     if visibleIndex > 0 then
-        -- Resize container to fit actual content
         local perRow = db.iconsPerRow or 10
         local size = db.iconSize or 36
         local spacing = db.spacing or 4
-        local cols = math.min(visibleIndex, perRow)
-        local rows = math.ceil(visibleIndex / perRow)
+        local isVertical = db.orientation == "VERTICAL"
+        local cols, rows
+        if isVertical then
+            rows = math.min(visibleIndex, perRow)
+            cols = math.ceil(visibleIndex / perRow)
+        else
+            cols = math.min(visibleIndex, perRow)
+            rows = math.ceil(visibleIndex / perRow)
+        end
         frame:SetSize(cols * size + (cols - 1) * spacing,
                       rows * size + (rows - 1) * spacing + 4)
         frame:Show()
@@ -645,6 +681,12 @@ local function SmoothRepositionIcon(icon, targetSlot, db)
     if db.growDirection == "LEFT" then
         targetX = -colX
         targetY = rowY
+    elseif db.growDirection == "UP" then
+        targetX = colX
+        targetY = -rowY
+    elseif db.growDirection == "DOWN" then
+        targetX = colX
+        targetY = rowY
     else
         targetX = colX
         targetY = rowY
@@ -685,6 +727,10 @@ local function SmoothRepositionIcon(icon, targetSlot, db)
             icon:ClearAllPoints()
             if db.growDirection == "LEFT" then
                 icon:SetPoint("TOPRIGHT", frame, "TOPRIGHT", newX, newY)
+            elseif db.growDirection == "UP" then
+                icon:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", newX, newY)
+            elseif db.growDirection == "DOWN" then
+                icon:SetPoint("TOPLEFT", frame, "TOPLEFT", newX, newY)
             else
                 icon:SetPoint("TOPLEFT", frame, "TOPLEFT", newX, newY)
             end
@@ -700,6 +746,10 @@ local function PositionTestIcon(cdFrame, visibleIndex, db)
     local colX, rowY = CalcIconPosition(visibleIndex, db)
     if db.growDirection == "LEFT" then
         cdFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -colX, rowY)
+    elseif db.growDirection == "UP" then
+        cdFrame:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", colX, -rowY)
+    elseif db.growDirection == "DOWN" then
+        cdFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
     else
         cdFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
     end
@@ -833,6 +883,10 @@ local function SetupDragReorder(cdFrame, visibleIndex)
         local ghostColX, ghostRowY = CalcIconPosition(self.visibleIndex, db)
         if db.growDirection == "LEFT" then
             self.ghost:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -ghostColX, ghostRowY)
+        elseif db.growDirection == "UP" then
+            self.ghost:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", ghostColX, -ghostRowY)
+        elseif db.growDirection == "DOWN" then
+            self.ghost:SetPoint("TOPLEFT", frame, "TOPLEFT", ghostColX, ghostRowY)
         else
             self.ghost:SetPoint("TOPLEFT", frame, "TOPLEFT", ghostColX, ghostRowY)
         end
@@ -1014,6 +1068,10 @@ local function SetupDragReorder(cdFrame, visibleIndex)
                 local markerColX, markerRowY = CalcIconPosition(targetSlot, db)
                 if db.growDirection == "LEFT" then
                     frame.insertMarker:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -markerColX + size / 2 + 2, markerRowY)
+                elseif db.growDirection == "UP" then
+                    frame.insertMarker:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", markerColX - 2, -markerRowY)
+                elseif db.growDirection == "DOWN" then
+                    frame.insertMarker:SetPoint("TOPLEFT", frame, "TOPLEFT", markerColX - 2, markerRowY)
                 else
                     frame.insertMarker:SetPoint("TOPLEFT", frame, "TOPLEFT", markerColX - 2, markerRowY)
                 end
@@ -1035,6 +1093,10 @@ local function SetupDragReorder(cdFrame, visibleIndex)
                 local hlColX, hlRowY = CalcIconPosition(targetSlot, db)
                 if db.growDirection == "LEFT" then
                     frame.slotHighlight:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -hlColX, hlRowY)
+                elseif db.growDirection == "UP" then
+                    frame.slotHighlight:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", hlColX, -hlRowY)
+                elseif db.growDirection == "DOWN" then
+                    frame.slotHighlight:SetPoint("TOPLEFT", frame, "TOPLEFT", hlColX, hlRowY)
                 else
                     frame.slotHighlight:SetPoint("TOPLEFT", frame, "TOPLEFT", hlColX, hlRowY)
                 end
