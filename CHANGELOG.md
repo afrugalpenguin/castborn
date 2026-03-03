@@ -1,5 +1,9 @@
 # Changelog
 
+**v6.0.0**
+
+- Vertical icon layout option for Cooldowns, Procs, and Item Tracker with grow up/down directions
+
 **v5.9.0**
 
 - Item Tracker — track inventory consumables (potions, bandages, engineering items) with count overlays and cooldown display

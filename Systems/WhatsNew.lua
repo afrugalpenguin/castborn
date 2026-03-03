@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.0.0",
+        features = {
+            "Vertical icon layout option for Cooldowns, Procs, and Item Tracker with grow up/down directions",
+        },
+        fixes = {},
+    },
+    {
         version = "5.9.0",
         features = {
             "Item Tracker — track inventory consumables (potions, bandages, engineering items) with count overlays and cooldown display",
