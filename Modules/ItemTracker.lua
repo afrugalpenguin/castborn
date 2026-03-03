@@ -163,6 +163,13 @@ local function UpdateItems()
                 itemFrame.icon:SetTexture(texture)
 
                 local itemCount = GetItemCount(item.itemId)
+                -- For charged items (e.g. mana gems), show charges instead
+                if itemCount == 1 then
+                    local charges = GetItemCount(item.itemId, false, true)
+                    if charges > 1 then
+                        itemCount = charges
+                    end
+                end
                 if itemCount > 0 then
                     itemFrame.count:SetText(itemCount)
                 else
