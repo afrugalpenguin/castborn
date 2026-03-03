@@ -1455,6 +1455,8 @@ function Options:BuildModule(parent, key)
             { value = "RIGHT", label = "Grow Right" },
             { value = "LEFT", label = "Grow Left" },
             { value = "CENTRE", label = "Grow from Centre" },
+            { value = "UP", label = "Grow Up" },
+            { value = "DOWN", label = "Grow Down" },
         }
 
         local growDropdown = CreateFrame("Frame", "CastbornProcGrowDropdown", parent, "UIDropDownMenuTemplate")
@@ -1498,17 +1500,56 @@ function Options:BuildModule(parent, key)
         perRowSlider:SetPoint("TOPLEFT", 0, y)
         y = y - 50
 
-        -- Grow direction checkbox
-        local growCB = CreateCheckbox(parent, "Grow Left", db, "growLeft", function(v)
-            db.growDirection = v and "LEFT" or "RIGHT"
+        -- Orientation checkbox
+        local vertCB = CreateCheckbox(parent, "Vertical Layout", db, "verticalLayout", function(v)
+            db.orientation = v and "VERTICAL" or "HORIZONTAL"
         end)
-        -- Sync initial state from growDirection
-        db.growLeft = (db.growDirection == "LEFT")
-        growCB:SetChecked(db.growLeft)
-        growCB:SetPoint("TOPLEFT", 0, y)
+        db.verticalLayout = (db.orientation == "VERTICAL")
+        vertCB:SetChecked(db.verticalLayout)
+        vertCB:SetPoint("TOPLEFT", 0, y)
 
         local trinketCB = CreateCheckbox(parent, "Track Trinket Cooldowns", db, "trackTrinkets")
         trinketCB:SetPoint("TOPLEFT", 220, y)
+        y = y - 36
+
+        -- Grow Direction dropdown
+        local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        growLabel:SetPoint("TOPLEFT", 0, y)
+        growLabel:SetText("Grow Direction:")
+        growLabel:SetTextColor(unpack(C.grey))
+
+        local growOptions = {
+            { value = "RIGHT", label = "Grow Right" },
+            { value = "LEFT", label = "Grow Left" },
+            { value = "UP", label = "Grow Up" },
+            { value = "DOWN", label = "Grow Down" },
+        }
+
+        local growDropdown = CreateFrame("Frame", "CastbornCooldownGrowDropdown", parent, "UIDropDownMenuTemplate")
+        growDropdown:SetPoint("TOPLEFT", 90, y + 6)
+        UIDropDownMenu_SetWidth(growDropdown, 140)
+
+        local currentGrow = db.growDirection or "LEFT"
+        for _, opt in ipairs(growOptions) do
+            if opt.value == currentGrow then
+                UIDropDownMenu_SetText(growDropdown, opt.label)
+            end
+        end
+
+        UIDropDownMenu_Initialize(growDropdown, function(self, level)
+            for _, opt in ipairs(growOptions) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = opt.label
+                info.value = opt.value
+                info.checked = (db.growDirection or "LEFT") == opt.value
+                info.func = function()
+                    db.growDirection = opt.value
+                    UIDropDownMenu_SetText(growDropdown, opt.label)
+                    CloseDropDownMenus()
+                end
+                UIDropDownMenu_AddButton(info)
+            end
+        end)
         y = y - 30
 
         -- Divider
@@ -1742,13 +1783,53 @@ function Options:BuildModule(parent, key)
         perRowSlider:SetPoint("TOPLEFT", 0, y)
         y = y - 50
 
-        -- Grow direction checkbox
-        local growCB = CreateCheckbox(parent, "Grow Left", db, "growLeft", function(v)
-            db.growDirection = v and "LEFT" or "RIGHT"
+        -- Orientation checkbox
+        local vertCB = CreateCheckbox(parent, "Vertical Layout", db, "verticalLayout", function(v)
+            db.orientation = v and "VERTICAL" or "HORIZONTAL"
         end)
-        db.growLeft = (db.growDirection == "LEFT")
-        growCB:SetChecked(db.growLeft)
-        growCB:SetPoint("TOPLEFT", 0, y)
+        db.verticalLayout = (db.orientation == "VERTICAL")
+        vertCB:SetChecked(db.verticalLayout)
+        vertCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 36
+
+        -- Grow Direction dropdown
+        local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        growLabel:SetPoint("TOPLEFT", 0, y)
+        growLabel:SetText("Grow Direction:")
+        growLabel:SetTextColor(unpack(C.grey))
+
+        local growOptions = {
+            { value = "RIGHT", label = "Grow Right" },
+            { value = "LEFT", label = "Grow Left" },
+            { value = "UP", label = "Grow Up" },
+            { value = "DOWN", label = "Grow Down" },
+        }
+
+        local growDropdown = CreateFrame("Frame", "CastbornItemGrowDropdown", parent, "UIDropDownMenuTemplate")
+        growDropdown:SetPoint("TOPLEFT", 90, y + 6)
+        UIDropDownMenu_SetWidth(growDropdown, 140)
+
+        local currentGrow = db.growDirection or "RIGHT"
+        for _, opt in ipairs(growOptions) do
+            if opt.value == currentGrow then
+                UIDropDownMenu_SetText(growDropdown, opt.label)
+            end
+        end
+
+        UIDropDownMenu_Initialize(growDropdown, function(self, level)
+            for _, opt in ipairs(growOptions) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = opt.label
+                info.value = opt.value
+                info.checked = (db.growDirection or "RIGHT") == opt.value
+                info.func = function()
+                    db.growDirection = opt.value
+                    UIDropDownMenu_SetText(growDropdown, opt.label)
+                    CloseDropDownMenus()
+                end
+                UIDropDownMenu_AddButton(info)
+            end
+        end)
         y = y - 30
 
         -- Divider
