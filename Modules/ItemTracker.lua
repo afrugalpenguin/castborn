@@ -123,14 +123,14 @@ local function GetCachedItemInfo(itemId)
     return nil, nil
 end
 
--- Find an item's cooldown by scanning bags (GetItemCooldown does not exist in TBC)
+-- Find an item's cooldown by scanning bags (TBC Anniversary uses C_Container)
 local function FindItemCooldown(itemId)
     for bag = 0, 4 do
-        local numSlots = GetContainerNumSlots(bag)
+        local numSlots = C_Container.GetContainerNumSlots(bag)
         for slot = 1, numSlots do
-            local id = GetContainerItemID(bag, slot)
-            if id == itemId then
-                local start, duration, enabled = GetContainerItemCooldown(bag, slot)
+            local info = C_Container.GetContainerItemInfo(bag, slot)
+            if info and info.itemID == itemId then
+                local start, duration, enabled = C_Container.GetContainerItemCooldown(bag, slot)
                 if start then
                     return start, duration
                 end
