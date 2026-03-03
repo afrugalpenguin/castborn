@@ -141,7 +141,7 @@ local function UpdateItems()
             local itemFrame = itemFrames[visibleIndex]
             if not itemFrame then break end
 
-            local name, texture = GetCachedItemInfo(item.itemId)
+            local _, texture = GetCachedItemInfo(item.itemId)
             if texture then
                 itemFrame.icon:SetTexture(texture)
 
@@ -153,7 +153,7 @@ local function UpdateItems()
                 end
 
                 -- Check cooldown
-                local start, duration, enabled = GetItemCooldown(item.itemId)
+                local start, duration = GetItemCooldown(item.itemId)
 
                 -- Desaturate if on cooldown or out of stock
                 if (duration and duration > 1.5) or itemCount == 0 then
@@ -218,8 +218,6 @@ Castborn:RegisterCallback("INIT", function()
 end)
 
 Castborn:RegisterCallback("READY", function()
-    local db = CastbornDB.itemtracker
-
     CreateContainer()
 
     local updateFrame = CreateFrame("Frame")
