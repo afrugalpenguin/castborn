@@ -49,6 +49,14 @@ local steps = {
         configKey = "cooldowns",
     },
     {
+        id = "items",
+        title = "Item Tracker",
+        description = "Track your inventory consumables at a glance. Shows item icons with stock counts that update in real time.\n\nIcons desaturate when the item is on cooldown or you've run out, so you always know what's available.",
+        tip = "Add items by ID in Options > Items. Great for arena consumables like Free Action Potions and bandages.",
+        getFrame = function() return _G["Castborn_ItemTracker"] end,
+        configKey = "itemtracker",
+    },
+    {
         id = "other_castbars",
         title = "Other Castbars",
         description = "Castborn provides castbars for your |cff88ddfftarget|r, |cff88ddfftarget-of-target|r, and |cff88ddfffocus|r.\n\nSee what enemies are casting so you can interrupt, or watch your healer's casts to anticipate incoming heals.",
@@ -651,6 +659,10 @@ local function ShowTestFrame(frameId)
         elseif cd then
             return cd
         end
+    elseif frameId == "items" then
+        if CB.TestItems then CB:TestItems() end
+        local frame = _G["Castborn_ItemTracker"]
+        if frame then return frame end
     elseif frameId == "other_castbars" then
         -- Show enabled castbars: target, target-of-target, focus
         local frames = {}
@@ -1006,6 +1018,7 @@ function Tutorial:End()
     if CB.EndTestTotemTracker then CB:EndTestTotemTracker() end
     if CB.EndTestAbsorbTracker then CB:EndTestAbsorbTracker() end
     if CB.EndTestArmorTracker then CB:EndTestArmorTracker() end
+    if CB.EndTestItems then CB:EndTestItems() end
 
     if tutorialFrame then
         tutorialFrame:Hide()
