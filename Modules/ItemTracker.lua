@@ -18,6 +18,7 @@ local defaults = {
     trackedItems = {},
     growDirection = "LEFT",
     iconsPerRow = 10,
+    orientation = "HORIZONTAL",
 }
 
 -- Calculate x,y offsets for a given visible index with row wrapping
@@ -25,11 +26,21 @@ local function CalcIconPosition(visibleIndex, db)
     local size = db.iconSize or 36
     local spacing = db.spacing or 4
     local perRow = db.iconsPerRow or 10
-    local col = (visibleIndex - 1) % perRow
-    local row = math.floor((visibleIndex - 1) / perRow)
-    local x = col * (size + spacing)
-    local y = -(row * (size + spacing))
-    return x, y
+    local isVertical = db.orientation == "VERTICAL"
+
+    if isVertical then
+        local row = (visibleIndex - 1) % perRow
+        local col = math.floor((visibleIndex - 1) / perRow)
+        local x = col * (size + spacing)
+        local y = -(row * (size + spacing))
+        return x, y
+    else
+        local col = (visibleIndex - 1) % perRow
+        local row = math.floor((visibleIndex - 1) / perRow)
+        local x = col * (size + spacing)
+        local y = -(row * (size + spacing))
+        return x, y
+    end
 end
 
 local function CreateItemFrame(parent, index)
@@ -91,9 +102,17 @@ local function CreateContainer()
 
     frame = CreateFrame("Frame", "Castborn_ItemTracker", UIParent)
     local iconsPerRow = db.iconsPerRow or 10
-    local numRows = math.ceil(MAX_ITEMS / iconsPerRow)
-    frame:SetSize(db.iconSize * iconsPerRow + db.spacing * (iconsPerRow - 1),
-                  db.iconSize * numRows + db.spacing * (numRows - 1) + 4)
+    local isVertical = db.orientation == "VERTICAL"
+    local cols, rows
+    if isVertical then
+        rows = math.min(MAX_ITEMS, iconsPerRow)
+        cols = math.ceil(MAX_ITEMS / iconsPerRow)
+    else
+        cols = math.min(MAX_ITEMS, iconsPerRow)
+        rows = math.ceil(MAX_ITEMS / iconsPerRow)
+    end
+    frame:SetSize(db.iconSize * cols + db.spacing * (cols - 1),
+                  db.iconSize * rows + db.spacing * (rows - 1) + 4)
     frame:SetPoint(db.point, UIParent, db.point, db.x, db.y)
 
     for i = 1, MAX_ITEMS do
@@ -200,6 +219,10 @@ local function UpdateItems()
                 local colX, rowY = CalcIconPosition(visibleIndex, db)
                 if db.growDirection == "LEFT" then
                     itemFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -colX, rowY)
+                elseif db.growDirection == "UP" then
+                    itemFrame:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", colX, -rowY)
+                elseif db.growDirection == "DOWN" then
+                    itemFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
                 else
                     itemFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
                 end
@@ -224,8 +247,15 @@ local function UpdateItems()
         local perRow = db.iconsPerRow or 10
         local size = db.iconSize or 36
         local spacing = db.spacing or 4
-        local cols = math.min(visibleIndex, perRow)
-        local rows = math.ceil(visibleIndex / perRow)
+        local isVertical = db.orientation == "VERTICAL"
+        local cols, rows
+        if isVertical then
+            rows = math.min(visibleIndex, perRow)
+            cols = math.ceil(visibleIndex / perRow)
+        else
+            cols = math.min(visibleIndex, perRow)
+            rows = math.ceil(visibleIndex / perRow)
+        end
         frame:SetSize(cols * size + (cols - 1) * spacing,
                       rows * size + (rows - 1) * spacing + 4)
         frame:Show()
@@ -296,6 +326,10 @@ function Castborn:TestItems()
             local colX, rowY = CalcIconPosition(i, db)
             if db.growDirection == "LEFT" then
                 itemFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -colX, rowY)
+            elseif db.growDirection == "UP" then
+                itemFrame:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", colX, -rowY)
+            elseif db.growDirection == "DOWN" then
+                itemFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
             else
                 itemFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", colX, rowY)
             end
