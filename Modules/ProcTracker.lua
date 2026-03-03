@@ -66,6 +66,7 @@ local defaults = {
     width = 200,
     iconSize = 28,
     spacing = 4,
+    iconsPerRow = 10,
     orientation = "HORIZONTAL",
     growDirection = "RIGHT",
     point = "CENTER",
@@ -177,7 +178,15 @@ local function UpdateLayout()
                 f:SetPoint("LEFT", frame, "LEFT", (i - 1) * (size + spacing), 0)
             end
         else
-            f:SetPoint("TOP", frame, "TOP", 0, -((i - 1) * (size + spacing)))
+            local perCol = db.iconsPerRow or 10
+            local row = (i - 1) % perCol
+            local col = math.floor((i - 1) / perCol)
+            local grow = db.growDirection or "RIGHT"
+            if grow == "UP" then
+                f:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", col * (size + spacing), row * (size + spacing))
+            else
+                f:SetPoint("TOPLEFT", frame, "TOPLEFT", col * (size + spacing), -(row * (size + spacing)))
+            end
         end
     end
 end
