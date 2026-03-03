@@ -1,5 +1,9 @@
 # Changelog
 
+**v5.8.2**
+
+- Fixed duplicate GitHub releases per version tag
+
 **v5.8.1**
 
 - Fixed duplicate CurseForge releases per version

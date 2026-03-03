@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "5.8.2",
+        features = {},
+        fixes = {
+            "Fixed duplicate GitHub releases per version tag",
+        },
+    },
+    {
         version = "5.8.1",
         features = {},
         fixes = {
