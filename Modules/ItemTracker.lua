@@ -123,6 +123,23 @@ local function GetCachedItemInfo(itemId)
     return nil, nil
 end
 
+-- Find an item's cooldown by scanning bags (GetItemCooldown does not exist in TBC)
+local function FindItemCooldown(itemId)
+    for bag = 0, 4 do
+        local numSlots = GetContainerNumSlots(bag)
+        for slot = 1, numSlots do
+            local id = GetContainerItemID(bag, slot)
+            if id == itemId then
+                local start, duration, enabled = GetContainerItemCooldown(bag, slot)
+                if start then
+                    return start, duration
+                end
+            end
+        end
+    end
+    return 0, 0
+end
+
 local testModeActive = false
 
 local function UpdateItems()
@@ -153,7 +170,7 @@ local function UpdateItems()
                 end
 
                 -- Check cooldown
-                local start, duration = GetItemCooldown(item.itemId)
+                local start, duration = FindItemCooldown(item.itemId)
 
                 -- Desaturate if on cooldown or out of stock
                 if (duration and duration > 1.5) or itemCount == 0 then
@@ -253,9 +270,9 @@ function Castborn:TestItems()
     -- Fallback if no items configured
     if #testItems == 0 then
         local fallbacks = {
-            { texture = "Interface\\Icons\\INV_Potion_54", count = 5 },
-            { texture = "Interface\\Icons\\INV_Potion_131", count = 3 },
-            { texture = "Interface\\Icons\\INV_Misc_Bandage_12", count = 10 },
+            { texture = "Interface\\Icons\\INV_Potion_54", count = 11 },
+            { texture = "Interface\\Icons\\INV_Potion_131", count = 0 },
+            { texture = "Interface\\Icons\\INV_Misc_Bandage_12", count = 8 },
         }
         for _, fb in ipairs(fallbacks) do
             table.insert(testItems, fb)
