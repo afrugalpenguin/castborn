@@ -1,5 +1,9 @@
 # Changelog
 
+**v6.0.1**
+
+- Fixed BigWigs packaging creating duplicate uploads
+
 **v6.0.0**
 
 - Vertical icon layout option for Cooldowns, Procs, and Item Tracker with grow up/down directions

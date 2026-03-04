@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.0.1",
+        features = {},
+        fixes = {
+            "Fixed BigWigs packaging creating duplicate uploads",
+        },
+    },
+    {
         version = "6.0.0",
         features = {
             "Vertical icon layout option for Cooldowns, Procs, and Item Tracker with grow up/down directions",
