@@ -1,5 +1,10 @@
 # Changelog
 
+**v6.1.0**
+
+- Warlock armour tracker now shows two alerts: missing armour buff and no pet summoned
+- Pet alert uses the Fel Domination icon as a neutral indicator
+
 **v6.0.1**
 
 - Fixed BigWigs packaging creating duplicate uploads

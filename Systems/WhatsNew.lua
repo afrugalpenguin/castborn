@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.1.0",
+        features = {
+            "Warlock armour tracker now shows two alerts: missing armour buff and no pet summoned",
+        },
+        fixes = {},
+    },
+    {
         version = "6.0.1",
         features = {},
         fixes = {
