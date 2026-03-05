@@ -62,10 +62,19 @@ local function UpdateSlotState(slot)
         return
     end
 
-    local activeSpellId = ScanForBuff(slot)
+    -- Custom check function (e.g. pet existence) or default buff scan
+    local isActive
+    if slot.checkFn then
+        isActive = slot.checkFn()
+    else
+        local activeSpellId = ScanForBuff(slot)
+        if activeSpellId then
+            slot.lastSpellId = activeSpellId
+        end
+        isActive = (activeSpellId ~= nil)
+    end
 
-    if activeSpellId then
-        slot.lastSpellId = activeSpellId
+    if isActive then
         slot.frame:Hide()
     else
         local texture = GetSlotTexture(slot)
@@ -236,8 +245,46 @@ local function BuildSlots()
                 break
             end
         end
+    elseif playerClass == "WARLOCK" then
+        -- Armor slot: pool all non-pet spell IDs
+        local allIds = {}
+        local lastArmorEntry = nil
+        for _, entry in ipairs(armorSpellList) do
+            if entry.category ~= "pet" then
+                for _, id in ipairs(entry.spellIds) do
+                    allIds[id] = true
+                end
+                lastArmorEntry = entry
+            end
+        end
+        slots[#slots + 1] = {
+            spellIds = allIds,
+            frame = nil,
+            lastSpellId = db.lastSpellId,
+            category = "armor",
+            entry = lastArmorEntry,
+        }
+
+        -- Pet slot: alert when no pet is summoned
+        local petEntry = nil
+        for _, entry in ipairs(armorSpellList) do
+            if entry.category == "pet" then
+                petEntry = entry
+                break
+            end
+        end
+        if petEntry then
+            slots[#slots + 1] = {
+                spellIds = {},
+                frame = nil,
+                lastSpellId = nil,
+                category = "pet",
+                entry = petEntry,
+                checkFn = function() return UnitExists("pet") end,
+            }
+        end
     else
-        -- Non-paladin: single slot with all spell IDs pooled
+        -- Other classes: single slot with all spell IDs pooled
         local allIds = {}
         for _, group in ipairs(armorSpellList) do
             for _, id in ipairs(group.spellIds) do
@@ -310,6 +357,8 @@ CB:RegisterCallback("READY", function()
     eventFrame:SetScript("OnEvent", function(_, event, unit)
         if event == "UNIT_AURA" and unit == "player" then
             UpdateAllSlots()
+        elseif event == "UNIT_PET" and unit == "player" then
+            UpdateAllSlots()
         elseif event == "PLAYER_TALENT_UPDATE" then
             BuildSlots()
             UpdateAllSlots()
@@ -319,6 +368,11 @@ CB:RegisterCallback("READY", function()
     -- Paladin: also listen for talent changes (respec)
     if playerClass == "PALADIN" then
         eventFrame:RegisterEvent("PLAYER_TALENT_UPDATE")
+    end
+
+    -- Warlock: also listen for pet summon/dismiss
+    if playerClass == "WARLOCK" then
+        eventFrame:RegisterEvent("UNIT_PET")
     end
 
     -- Initial scan

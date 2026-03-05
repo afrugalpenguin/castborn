@@ -595,6 +595,7 @@ SpellData.armors = {
         { name = "Demon Skin", spellIds = {687, 696} },
         { name = "Demon Armor", spellIds = {706, 1086, 11733, 11734, 11735, 27260} },
         { name = "Fel Armor", spellIds = {28176, 28189} },
+        { name = "Summon Demon", category = "pet", spellIds = {18708} },  -- Fel Domination icon
     },
     PRIEST = {
         { name = "Inner Fire", spellIds = {588, 7128, 602, 1006, 10951, 10952, 25431} },
