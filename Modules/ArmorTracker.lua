@@ -245,6 +245,21 @@ local function BuildSlots()
                 break
             end
         end
+
+        -- Aura slot: warn if no aura is active
+        for _, entry in ipairs(armorSpellList) do
+            if entry.category == "aura" then
+                local slot = {
+                    spellIds = BuildSpellIdLookup(entry),
+                    frame = nil,
+                    lastSpellId = nil,
+                    category = "aura",
+                    entry = entry,
+                }
+                slots[#slots + 1] = slot
+                break
+            end
+        end
     elseif playerClass == "WARLOCK" then
         -- Armor slot: pool all non-pet spell IDs
         local allIds = {}
