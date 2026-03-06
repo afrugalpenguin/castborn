@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.2.0",
+        features = {
+            "Paladin armour tracker now warns when no aura is active, using the Devotion Aura icon",
+        },
+        fixes = {},
+    },
+    {
         version = "6.1.0",
         features = {
             "Warlock armour tracker now shows two alerts: missing armour buff and no pet summoned",

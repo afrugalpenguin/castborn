@@ -1,5 +1,9 @@
 # Changelog
 
+**v6.2.0**
+
+- Paladin armour tracker now warns when no aura is active, using the Devotion Aura icon
+
 **v6.1.0**
 
 - Warlock armour tracker now shows two alerts: missing armour buff and no pet summoned
