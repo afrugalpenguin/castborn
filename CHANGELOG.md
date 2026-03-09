@@ -1,5 +1,9 @@
 # Changelog
 
+**v6.3.1**
+
+- Improved reliability of Proc Tracker and Armour Tracker in raids and parties by adding periodic fallback scanning
+
 **v6.3.0**
 
 - Added Consecration to Paladin cooldown tracker

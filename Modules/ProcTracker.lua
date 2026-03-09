@@ -449,6 +449,14 @@ Castborn:RegisterCallback("READY", function()
     end)
 
     ScanProcs()
+
+    -- Periodic fallback scan: UNIT_AURA can be delayed in raids with heavy
+    -- aura traffic, so rescan every 0.5s to catch anything missed.
+    Castborn:CreateThrottledUpdater(0.5, function()
+        if not testModeActive and CastbornDB.procs.enabled then
+            ScanProcs()
+        end
+    end)
 end)
 
 -- Test mode function

@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.3.1",
+        features = {},
+        fixes = {
+            "Improved reliability of Proc Tracker and Armour Tracker in raids and parties by adding periodic fallback scanning",
+        },
+    },
+    {
         version = "6.3.0",
         features = {
             "Added Consecration to Paladin cooldown tracker",

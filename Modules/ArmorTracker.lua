@@ -393,6 +393,14 @@ CB:RegisterCallback("READY", function()
     -- Initial scan
     UpdateAllSlots()
 
+    -- Periodic fallback scan: UNIT_AURA can be delayed in raids with heavy
+    -- aura traffic, so rescan every 0.5s to catch anything missed.
+    CB:CreateThrottledUpdater(0.5, function()
+        if not testModeActive and db.enabled then
+            UpdateAllSlots()
+        end
+    end)
+
     -- Register with TestManager
     CB.TestManager:Register("ArmorTracker",
         function() CB:TestArmorTracker() end,
