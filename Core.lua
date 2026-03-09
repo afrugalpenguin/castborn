@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "6.2.0"
+CB.version = "6.3.0"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -810,7 +810,12 @@ function CB:IsSpellKnown(spellId)
     if IsPlayerSpell and IsPlayerSpell(spellId) then
         return true
     end
-    -- No reliable fallback available
+    -- Fallback: check by spell name (handles ranked spells where the player
+    -- knows a different rank than the one stored in SpellData)
+    local name = GetSpellInfo(spellId)
+    if name and GetSpellInfo(name) then
+        return true
+    end
     return false
 end
 

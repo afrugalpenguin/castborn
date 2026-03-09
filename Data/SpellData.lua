@@ -405,6 +405,7 @@ SpellData.cooldowns = {
         { spellId = 20925, name = "Holy Shield" },
         { spellId = 31935, name = "Avenger's Shield" },
         { spellId = 20066, name = "Repentance" },
+        { spellId = 26573, name = "Consecration" },
     },
     DRUID = {
         { spellId = 17116, name = "Nature's Swiftness" },

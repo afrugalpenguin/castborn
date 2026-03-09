@@ -1,5 +1,10 @@
 # Changelog
 
+**v6.3.0**
+
+- Added Consecration to Paladin cooldown tracker
+- Fixed IsSpellKnown not detecting ranked spells when the player knows a different rank
+
 **v6.2.0**
 
 - Paladin armour tracker now warns when no aura is active, using the Devotion Aura icon

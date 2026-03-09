@@ -14,6 +14,15 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.3.0",
+        features = {
+            "Added Consecration to Paladin cooldown tracker",
+        },
+        fixes = {
+            "Fixed IsSpellKnown not detecting ranked spells when the player knows a different rank",
+        },
+    },
+    {
         version = "6.2.0",
         features = {
             "Paladin armour tracker now warns when no aura is active, using the Devotion Aura icon",
