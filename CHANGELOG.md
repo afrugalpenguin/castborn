@@ -1,5 +1,9 @@
 # Changelog
 
+**v6.4.0**
+
+- Added Shadowflame (T4 4pc) proc tracking for warlocks — shows whether the shadow or fire damage bonus procced
+
 **v6.3.1**
 
 - Improved reliability of Proc Tracker and Armour Tracker in raids and parties by adding periodic fallback scanning

@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.4.0",
+        features = {
+            "Added Shadowflame (T4 4pc) proc tracking for warlocks — shows whether the shadow or fire damage bonus procced",
+        },
+        fixes = {},
+    },
+    {
         version = "6.3.1",
         features = {},
         fixes = {
