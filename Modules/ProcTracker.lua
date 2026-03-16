@@ -20,6 +20,8 @@ local classProcs = {
     WARLOCK = {
         { spellId = 17941, name = "Shadow Trance" },     -- Nightfall proc
         { spellId = 34936, name = "Backlash" },
+        { spellId = 37377, name = "Shadowflame (Shadow)" },  -- T4 4pc shadow damage proc
+        { spellId = 37379, name = "Shadowflame (Fire)" },    -- T4 4pc fire damage proc
     },
     PRIEST = {
         { spellId = 14751, name = "Inner Focus" },
