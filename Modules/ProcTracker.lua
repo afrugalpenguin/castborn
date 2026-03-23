@@ -66,6 +66,7 @@ local classProcs = {
 -- Trinket and other non-class procs (shared across all classes)
 local sharedProcs = {
     { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
+    { spellId = 34597, name = "Power of Arcanagos" }, -- Robe of the Elder Scribes
 }
 
 -- Lookup set for fast membership checks
