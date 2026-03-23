@@ -1438,6 +1438,14 @@ function Options:BuildModule(parent, key)
         glowCB:SetPoint("TOPLEFT", 220, y)
         y = y - 36
 
+        local trinketCB = CreateCheckbox(parent, "Show Trinket Procs", procsDB, "showTrinketProcs", function(checked)
+            if Castborn.ProcTracker then
+                Castborn.ProcTracker:SetTrinketProcs(checked)
+            end
+        end)
+        trinketCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 36
+
         procsDB.iconSize = procsDB.iconSize or 28
         local iconSlider = CreateSlider(parent, "Icon Size", procsDB, "iconSize", 20, 56, 2, function()
             if Castborn.ProcTracker then Castborn.ProcTracker:UpdateLayout() end
