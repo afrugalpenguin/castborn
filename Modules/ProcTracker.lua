@@ -625,4 +625,27 @@ function ProcTracker:UpdateLayout()
     UpdateLayout()
 end
 
+function ProcTracker:SetTrinketProcs(enabled)
+    local db = CastbornDB.procs
+    if enabled then
+        local existing = {}
+        for _, spell in ipairs(db.trackedSpells) do
+            existing[spell.spellId] = true
+        end
+        for _, spell in ipairs(sharedProcs) do
+            if not existing[spell.spellId] then
+                table.insert(db.trackedSpells, spell)
+            end
+        end
+    else
+        for i = #db.trackedSpells, 1, -1 do
+            if sharedProcsSet[db.trackedSpells[i].spellId] then
+                table.remove(db.trackedSpells, i)
+            end
+        end
+    end
+    ScanProcs()
+    UpdateLayout()
+end
+
 Castborn:RegisterModule("ProcTracker", ProcTracker)
