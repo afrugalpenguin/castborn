@@ -16,50 +16,59 @@ local classProcs = {
         { spellId = 12472, name = "Icy Veins" },
         { spellId = 12043, name = "Presence of Mind" },
         { spellId = 28682, name = "Combustion" },
+        { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
     },
     WARLOCK = {
         { spellId = 17941, name = "Shadow Trance" },     -- Nightfall proc
         { spellId = 34936, name = "Backlash" },
         { spellId = 37377, name = "Shadowflame (Shadow)" },  -- T4 4pc shadow damage proc
         { spellId = 37379, name = "Shadowflame (Fire)" },    -- T4 4pc fire damage proc
+        { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
     },
     PRIEST = {
         { spellId = 14751, name = "Inner Focus" },
         { spellId = 15271, name = "Spirit Tap" },
         { spellId = 33151, name = "Surge of Light" },
         { spellId = 34754, name = "Clearcasting" },     -- Holy Concentration
+        { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
     },
     DRUID = {
         { spellId = 16870, name = "Clearcasting" },      -- Omen of Clarity
         { spellId = 16886, name = "Nature's Grace" },
         { spellId = 17116, name = "Nature's Swiftness" },
+        { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
     },
     SHAMAN = {
         { spellId = 16246, name = "Clearcasting" },      -- Elemental Focus
         { spellId = 16188, name = "Nature's Swiftness" },
         { spellId = 16280, name = "Flurry" },
+        { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
     },
     PALADIN = {
         { spellId = 20055, name = "Vengeance" },          -- Ret talent proc
         { spellId = 27170, name = "Seal of Command" },
         { spellId = 31842, name = "Divine Illumination" },
         { spellId = 20216, name = "Divine Favor" },
+        { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
     },
     HUNTER = {
         { spellId = 6150, name = "Quick Shots" },
         { spellId = 3045, name = "Rapid Fire" },
+        { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
     },
     WARRIOR = {
         { spellId = 14204, name = "Enrage" },
         { spellId = 12970, name = "Flurry" },
         { spellId = 12292, name = "Death Wish" },
         { spellId = 12328, name = "Sweeping Strikes" },
+        { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
     },
     ROGUE = {
         { spellId = 13750, name = "Adrenaline Rush" },
         { spellId = 13877, name = "Blade Flurry" },
         { spellId = 6774, name = "Slice and Dice" },
         { spellId = 14177, name = "Cold Blood" },
+        { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
     },
 }
 
