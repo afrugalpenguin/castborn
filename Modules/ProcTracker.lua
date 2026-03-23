@@ -90,6 +90,7 @@ local defaults = {
     showDuration = true,
     showStacks = true,
     showGlow = true,
+    showTrinketProcs = true,
     trackedSpells = {},  -- Will be populated with class defaults on first load
     anchored = false,
 }
@@ -397,6 +398,26 @@ Castborn:RegisterCallback("INIT", function()
         for _, spell in ipairs(classProcs[playerClass]) do
             if not existing[spell.spellId] then
                 table.insert(CastbornDB.procs.trackedSpells, spell)
+            end
+        end
+    end
+
+    -- Merge shared (trinket) procs if enabled
+    if CastbornDB.procs.showTrinketProcs then
+        local existing = {}
+        for _, spell in ipairs(CastbornDB.procs.trackedSpells) do
+            existing[spell.spellId] = true
+        end
+        for _, spell in ipairs(sharedProcs) do
+            if not existing[spell.spellId] then
+                table.insert(CastbornDB.procs.trackedSpells, spell)
+            end
+        end
+    else
+        -- Remove any shared procs that may be lingering
+        for i = #CastbornDB.procs.trackedSpells, 1, -1 do
+            if sharedProcsSet[CastbornDB.procs.trackedSpells[i].spellId] then
+                table.remove(CastbornDB.procs.trackedSpells, i)
             end
         end
     end
