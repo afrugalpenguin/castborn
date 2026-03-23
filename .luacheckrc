@@ -159,7 +159,6 @@ read_globals = {
 -- Ignore certain warnings
 ignore = {
     "211",  -- Unused local variable
-    "241",  -- Variable is mutated but never accessed
     "212",  -- Unused argument (common in WoW callbacks)
     "213",  -- Unused loop variable
     "311",  -- Value assigned to variable is unused
