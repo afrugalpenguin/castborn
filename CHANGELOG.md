@@ -1,5 +1,9 @@
 # Changelog
 
+**v6.5.0**
+
+- Added Quagmirran's Eye proc tracking (Spell Haste) for all classes
+
 **v6.4.0**
 
 - Added Shadowflame (T4 4pc) proc tracking for warlocks — shows whether the shadow or fire damage bonus procced
