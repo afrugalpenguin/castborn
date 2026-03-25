@@ -60,7 +60,6 @@ local function CreateCastBar(unit, dbKey)
     -- Icon frame (left side) - Button for Masque compatibility (Masque registration deferred)
     local iconFrame = Castborn:CreateMasqueButton(frame, nil, cfg.height + 4, nil, {
         texCoord = 0.07,
-        iconLayer = "BACKGROUND",
     })
     iconFrame:SetPoint("RIGHT", frame, "LEFT", -4, 0)
     CB:CreateBackdrop(iconFrame, cfg.bgColor, cfg.borderColor)
