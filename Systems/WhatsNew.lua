@@ -14,6 +14,16 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.6.0",
+        features = {
+            "Added trinket proc tracking toggle — show or hide shared trinket procs separately from class procs",
+            "Added Power of Arcanagos proc tracking for all classes",
+        },
+        fixes = {
+            "Fixed castbar spell icon appearing faded due to backdrop layer overlap",
+        },
+    },
+    {
         version = "6.5.0",
         features = {
             "Added Quagmirran's Eye proc tracking (Spell Haste) for all classes",

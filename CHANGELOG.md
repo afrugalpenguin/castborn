@@ -1,5 +1,11 @@
 # Changelog
 
+**v6.6.0**
+
+- Added trinket proc tracking toggle — show or hide shared trinket procs separately from class procs
+- Added Power of Arcanagos proc tracking for all classes
+- Fixed castbar spell icon appearing faded due to backdrop layer overlap
+
 **v6.5.0**
 
 - Added Quagmirran's Eye proc tracking (Spell Haste) for all classes
