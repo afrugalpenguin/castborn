@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "6.6.0"
+CB.version = "6.7.0"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -291,6 +291,9 @@ CB.defaults = {
         xPct = 0,
         yPct = -0.199,
         bgColor = {0.05, 0.05, 0.05, 0.9},
+        showBar = true,
+        attachToCastbars = false,
+        showReadyGlow = true,
     },
 
     procs = {

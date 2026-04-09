@@ -1,5 +1,14 @@
 # Changelog
 
+**v6.7.0**
+
+- Added width and height sliders to Interrupt Tracker options
+- Added attach-to-castbars mode — interrupt cooldown icons appear on target/focus castbars
+- Added ready glow option for attached interrupt icons
+- Added Show Interrupt Bar toggle to hide the standalone bar when using attached mode
+- Fixed frame leak when toggling attach/detach mode repeatedly
+- Fixed attached icons not appearing when toggling attach mode during test mode
+
 **v6.6.0**
 
 - Added trinket proc tracking toggle — show or hide shared trinket procs separately from class procs

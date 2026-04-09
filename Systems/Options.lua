@@ -2015,10 +2015,66 @@ function Options:BuildModule(parent, key)
         y = y - (26 * #db.trackedItems) - 60
 
     elseif key == "interrupt" then
+        local widthSlider = CreateSlider(parent, "Width", db, "width", 60, 300, 5, function(v)
+            local f = _G["Castborn_Interrupt"]
+            if f then
+                f:SetWidth(v)
+                if f.bar then
+                    f.bar:SetPoint("TOPLEFT", f, "TOPLEFT", (db.height or 16) + 2, -1)
+                end
+            end
+        end)
+        widthSlider:SetPoint("TOPLEFT", 0, y)
+
+        local heightSlider = CreateSlider(parent, "Height", db, "height", 10, 40, 1, function(v)
+            local f = _G["Castborn_Interrupt"]
+            if f then
+                f:SetHeight(v)
+                if f.iconButton then
+                    f.iconButton:SetSize(v, v)
+                end
+                if f.bar then
+                    f.bar:SetPoint("TOPLEFT", f, "TOPLEFT", v + 2, -1)
+                end
+            end
+        end)
+        heightSlider:SetPoint("TOPLEFT", 220, y)
+        y = y - 60
+
+        local lockoutCB = CreateCheckbox(parent, "Show Lockout", db, "showLockout")
+        lockoutCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
         local targetCB = CreateCheckbox(parent, "Track Target", db, "trackTarget")
         targetCB:SetPoint("TOPLEFT", 0, y)
         local focusCB = CreateCheckbox(parent, "Track Focus", db, "trackFocus")
         focusCB:SetPoint("TOPLEFT", 150, y)
+        y = y - 30
+
+        local glowCB = CreateCheckbox(parent, "Show Ready Glow", db, "showReadyGlow")
+
+        local showBarCB = CreateCheckbox(parent, "Show Interrupt Bar", db, "showBar", function(checked)
+            local f = _G["Castborn_Interrupt"]
+            if f then
+                if checked then f:Show() else f:Hide() end
+            end
+            local lf = _G["Castborn_Lockout"]
+            if lf and not checked then lf:Hide() end
+        end)
+        showBarCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
+        local attachCB = CreateCheckbox(parent, "Attach to Castbars", db, "attachToCastbars", function(checked)
+            if Castborn.InterruptTracker and Castborn.InterruptTracker.UpdateAttachMode then
+                Castborn.InterruptTracker:UpdateAttachMode()
+            end
+            if checked then glowCB:Show() else glowCB:Hide() end
+        end)
+        attachCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
+        glowCB:SetPoint("TOPLEFT", 0, y)
+        if not db.attachToCastbars then glowCB:Hide() end
 
     elseif key == "totems" then
         db.width = db.width or 200
