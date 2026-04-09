@@ -391,7 +391,23 @@ function Castborn:TestInterrupt()
         end
     end
 
-    if frame then
+    if db.attachToCastbars then
+        -- In attach mode, hide standalone and show attached icons
+        if frame then frame:Hide() end
+        for _, unit in ipairs({"target", "focus"}) do
+            local btn = attachedIcons[unit]
+            if btn then
+                btn:Show()
+                btn.icon:SetDesaturated(false)
+                btn.cooldown:SetCooldown(0, 0)
+                if db.showReadyGlow and btn.glow then
+                    btn.glow:SetAlpha(0.3)
+                elseif btn.glow then
+                    btn.glow:SetAlpha(0)
+                end
+            end
+        end
+    elseif frame then
         frame:Show()
         if frame.bar then
             frame.bar:SetMinMaxValues(0, 1)
@@ -409,6 +425,10 @@ function Castborn:EndTestInterrupt()
     testModeActive = false
     if frame then
         frame:Hide()
+    end
+    for _, btn in pairs(attachedIcons) do
+        btn:Hide()
+        if btn.glow then btn.glow:SetAlpha(0) end
     end
 end
 
