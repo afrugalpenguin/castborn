@@ -2053,6 +2053,17 @@ function Options:BuildModule(parent, key)
 
         local glowCB = CreateCheckbox(parent, "Show Ready Glow", db, "showReadyGlow")
 
+        local showBarCB = CreateCheckbox(parent, "Show Interrupt Bar", db, "showBar", function(checked)
+            local f = _G["Castborn_Interrupt"]
+            if f then
+                if checked then f:Show() else f:Hide() end
+            end
+            local lf = _G["Castborn_Lockout"]
+            if lf and not checked then lf:Hide() end
+        end)
+        showBarCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
         local attachCB = CreateCheckbox(parent, "Attach to Castbars", db, "attachToCastbars", function(checked)
             if Castborn.InterruptTracker and Castborn.InterruptTracker.UpdateAttachMode then
                 Castborn.InterruptTracker:UpdateAttachMode()

@@ -19,6 +19,7 @@ local defaults = {
     showLockout = true,
     trackTarget = true,
     trackFocus = true,
+    showBar = true,
     attachToCastbars = false,
     showReadyGlow = true,
 }
@@ -263,7 +264,7 @@ local function UpdateInterruptCooldown()
     if not frame or not frame.interruptInfo then return end
 
     local db = CastbornDB.interrupt
-    if not db.enabled then
+    if not db.enabled or db.showBar == false then
         frame:Hide()
         return
     end
