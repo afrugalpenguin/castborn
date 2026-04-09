@@ -2015,6 +2015,36 @@ function Options:BuildModule(parent, key)
         y = y - (26 * #db.trackedItems) - 60
 
     elseif key == "interrupt" then
+        local widthSlider = CreateSlider(parent, "Width", db, "width", 60, 300, 5, function(v)
+            local f = _G["Castborn_Interrupt"]
+            if f then
+                f:SetWidth(v)
+                if f.bar then
+                    f.bar:SetPoint("TOPLEFT", f, "TOPLEFT", (db.height or 16) + 2, -1)
+                end
+            end
+        end)
+        widthSlider:SetPoint("TOPLEFT", 0, y)
+
+        local heightSlider = CreateSlider(parent, "Height", db, "height", 10, 40, 1, function(v)
+            local f = _G["Castborn_Interrupt"]
+            if f then
+                f:SetHeight(v)
+                if f.iconButton then
+                    f.iconButton:SetSize(v, v)
+                end
+                if f.bar then
+                    f.bar:SetPoint("TOPLEFT", f, "TOPLEFT", v + 2, -1)
+                end
+            end
+        end)
+        heightSlider:SetPoint("TOPLEFT", 220, y)
+        y = y - 60
+
+        local lockoutCB = CreateCheckbox(parent, "Show Lockout", db, "showLockout")
+        lockoutCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
         local targetCB = CreateCheckbox(parent, "Track Target", db, "trackTarget")
         targetCB:SetPoint("TOPLEFT", 0, y)
         local focusCB = CreateCheckbox(parent, "Track Focus", db, "trackFocus")
