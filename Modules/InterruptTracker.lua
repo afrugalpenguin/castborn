@@ -120,7 +120,6 @@ local function CreateAttachedIcon(unit)
     local castbar = Castborn.castbars and Castborn.castbars[unit]
     if not castbar then return nil end
 
-    local db = CastbornDB.interrupt
     local playerClass = select(2, UnitClass("player"))
     local interruptInfo = Castborn.SpellData and Castborn.SpellData:GetInterrupt(playerClass)
     if not interruptInfo then return nil end
@@ -172,10 +171,9 @@ function InterruptTracker:UpdateAttachMode()
             end
         end
     else
-        -- Hide and destroy attached icons
-        for unit, btn in pairs(attachedIcons) do
+        -- Hide attached icons (keep frames for reuse)
+        for _, btn in pairs(attachedIcons) do
             btn:Hide()
-            attachedIcons[unit] = nil
         end
     end
 end
