@@ -18,6 +18,8 @@ local defaults = {
     showLockout = true,
     trackTarget = true,
     trackFocus = true,
+    attachToCastbars = false,
+    showReadyGlow = true,
 }
 
 local function CreateInterruptBar()
