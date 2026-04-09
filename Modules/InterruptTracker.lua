@@ -5,6 +5,7 @@ Castborn.InterruptTracker = InterruptTracker
 local frame = nil
 local lockoutFrame = nil
 local testModeActive = false
+local attachedIcons = {}  -- { target = button, focus = button }
 
 local defaults = {
     enabled = true,
@@ -115,6 +116,107 @@ local function CreateLockoutDisplay()
     return lockoutFrame
 end
 
+local function CreateAttachedIcon(unit)
+    local castbar = Castborn.castbars and Castborn.castbars[unit]
+    if not castbar then return nil end
+
+    local db = CastbornDB.interrupt
+    local playerClass = select(2, UnitClass("player"))
+    local interruptInfo = Castborn.SpellData and Castborn.SpellData:GetInterrupt(playerClass)
+    if not interruptInfo then return nil end
+    if not Castborn:IsSpellKnown(interruptInfo.spellId) then return nil end
+
+    local castbarCfg = CastbornDB[unit]
+    local iconSize = (castbarCfg.height or 16) + 4
+
+    local masqueGroup = Castborn.Masque and Castborn.Masque.enabled and Castborn.Masque.groups.interrupts or nil
+    local btn = Castborn:CreateMasqueButton(castbar, nil, iconSize, masqueGroup, {
+        texCoord = 0.07,
+        clickThrough = true,
+    })
+    btn:SetPoint("LEFT", castbar, "RIGHT", 4, 0)
+    btn.icon:SetTexture(GetSpellTexture(interruptInfo.spellId))
+
+    -- Backdrop matching castbar style
+    Castborn:CreateBackdrop(btn, castbarCfg.bgColor, castbarCfg.borderColor)
+    btn.icon:ClearAllPoints()
+    btn.icon:SetPoint("TOPLEFT", 2, -2)
+    btn.icon:SetPoint("BOTTOMRIGHT", -2, 2)
+
+    -- Glow texture (same pattern as CooldownTracker)
+    btn.glowOuter = btn:CreateTexture(nil, "BACKGROUND", nil, -1)
+    btn.glowOuter:SetTexture("Interface\\SpellActivationOverlay\\IconAlert")
+    btn.glowOuter:SetTexCoord(0.00781250, 0.50781250, 0.27734375, 0.52734375)
+    btn.glowOuter:SetBlendMode("ADD")
+    btn.glowOuter:SetPoint("TOPLEFT", -8, 8)
+    btn.glowOuter:SetPoint("BOTTOMRIGHT", 8, -8)
+    btn.glowOuter:SetVertexColor(1, 0.8, 0.3, 0)
+    btn.glow = btn.glowOuter
+
+    btn.interruptInfo = interruptInfo
+    btn:Hide()
+
+    return btn
+end
+
+function InterruptTracker:UpdateAttachMode()
+    local db = CastbornDB.interrupt
+    if db.attachToCastbars then
+        -- Hide standalone
+        if frame then frame:Hide() end
+        if lockoutFrame then lockoutFrame:Hide() end
+        -- Create attached icons if needed
+        for _, unit in ipairs({"target", "focus"}) do
+            if not attachedIcons[unit] then
+                attachedIcons[unit] = CreateAttachedIcon(unit)
+            end
+        end
+    else
+        -- Hide and destroy attached icons
+        for unit, btn in pairs(attachedIcons) do
+            btn:Hide()
+            attachedIcons[unit] = nil
+        end
+    end
+end
+
+local function UpdateAttachedIcons()
+    local db = CastbornDB.interrupt
+    if not db.attachToCastbars then return end
+    if testModeActive then return end
+
+    for _, unit in ipairs({"target", "focus"}) do
+        local btn = attachedIcons[unit]
+        if btn then
+            local tracked = (unit == "target" and db.trackTarget ~= false) or
+                            (unit == "focus" and db.trackFocus ~= false)
+            local castbar = Castborn.castbars and Castborn.castbars[unit]
+            local castbarVisible = castbar and castbar:IsShown() and (castbar.casting or castbar.channeling)
+
+            if tracked and castbarVisible then
+                btn:Show()
+                local start, duration = GetSpellCooldown(btn.interruptInfo.spellId)
+                local onCooldown = duration and duration > 1.5
+                if onCooldown then
+                    btn.cooldown:SetCooldown(start, duration)
+                    btn.icon:SetDesaturated(true)
+                    if btn.glow then btn.glow:SetAlpha(0) end
+                else
+                    btn.cooldown:SetCooldown(0, 0)
+                    btn.icon:SetDesaturated(false)
+                    if db.showReadyGlow and btn.glow then
+                        btn.glow:SetAlpha(0.3)
+                    elseif btn.glow then
+                        btn.glow:SetAlpha(0)
+                    end
+                end
+            else
+                btn:Hide()
+            end
+        end
+    end
+end
+
 local function OnCombatLogEvent(self, event, ...)
     local timestamp, subEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName, spellSchool, extraSpellId, extraSpellName, extraSchool = CombatLogGetCurrentEventInfo()
     if sourceGUID ~= UnitGUID("player") then return end
@@ -146,6 +248,12 @@ end
 local function UpdateInterruptCooldown()
     -- Don't override test mode display
     if testModeActive then return end
+
+    -- In attach mode, standalone bar is hidden
+    if CastbornDB.interrupt.attachToCastbars then
+        if frame then frame:Hide() end
+        return
+    end
 
     if not frame or not frame.interruptInfo then return end
 
@@ -218,6 +326,7 @@ end)
 Castborn:RegisterCallback("READY", function()
     CreateInterruptBar()
     CreateLockoutDisplay()
+    InterruptTracker:UpdateAttachMode()
 
     local eventFrame = CreateFrame("Frame")
     eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
@@ -229,6 +338,7 @@ Castborn:RegisterCallback("READY", function()
         elapsed = elapsed + delta
         if elapsed >= 0.05 then
             UpdateInterruptCooldown()
+            UpdateAttachedIcons()
             UpdateLockout()
             elapsed = 0
         end
