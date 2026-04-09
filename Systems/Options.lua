@@ -2049,6 +2049,25 @@ function Options:BuildModule(parent, key)
         targetCB:SetPoint("TOPLEFT", 0, y)
         local focusCB = CreateCheckbox(parent, "Track Focus", db, "trackFocus")
         focusCB:SetPoint("TOPLEFT", 150, y)
+        y = y - 30
+
+        local attachCB = CreateCheckbox(parent, "Attach to Castbars", db, "attachToCastbars", function(checked)
+            local f = _G["Castborn_Interrupt"]
+            if f then
+                if checked then f:Hide() else f:Show() end
+            end
+            local lf = _G["Castborn_Lockout"]
+            if lf and checked then lf:Hide() end
+            if Castborn.InterruptTracker and Castborn.InterruptTracker.UpdateAttachMode then
+                Castborn.InterruptTracker:UpdateAttachMode()
+            end
+        end)
+        attachCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+
+        local glowCB = CreateCheckbox(parent, "Show Ready Glow", db, "showReadyGlow")
+        glowCB:SetPoint("TOPLEFT", 0, y)
+        if not db.attachToCastbars then glowCB:Hide() end
 
     elseif key == "totems" then
         db.width = db.width or 200
