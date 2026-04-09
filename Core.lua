@@ -291,6 +291,8 @@ CB.defaults = {
         xPct = 0,
         yPct = -0.199,
         bgColor = {0.05, 0.05, 0.05, 0.9},
+        attachToCastbars = false,
+        showReadyGlow = true,
     },
 
     procs = {
