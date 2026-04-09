@@ -170,10 +170,30 @@ function InterruptTracker:UpdateAttachMode()
                 attachedIcons[unit] = CreateAttachedIcon(unit)
             end
         end
+        -- If test mode is active, show attached icons immediately
+        if testModeActive then
+            for _, unit in ipairs({"target", "focus"}) do
+                local btn = attachedIcons[unit]
+                if btn then
+                    btn:Show()
+                    btn.icon:SetDesaturated(false)
+                    btn.cooldown:SetCooldown(0, 0)
+                    if db.showReadyGlow and btn.glow then
+                        btn.glow:SetAlpha(0.3)
+                    elseif btn.glow then
+                        btn.glow:SetAlpha(0)
+                    end
+                end
+            end
+        end
     else
         -- Hide attached icons (keep frames for reuse)
         for _, btn in pairs(attachedIcons) do
             btn:Hide()
+        end
+        -- If test mode is active, show standalone bar
+        if testModeActive and frame then
+            frame:Show()
         end
     end
 end
