@@ -161,9 +161,6 @@ end
 function InterruptTracker:UpdateAttachMode()
     local db = CastbornDB.interrupt
     if db.attachToCastbars then
-        -- Hide standalone
-        if frame then frame:Hide() end
-        if lockoutFrame then lockoutFrame:Hide() end
         -- Create attached icons if needed
         for _, unit in ipairs({"target", "focus"}) do
             if not attachedIcons[unit] then
@@ -190,10 +187,6 @@ function InterruptTracker:UpdateAttachMode()
         -- Hide attached icons (keep frames for reuse)
         for _, btn in pairs(attachedIcons) do
             btn:Hide()
-        end
-        -- If test mode is active, show standalone bar
-        if testModeActive and frame then
-            frame:Show()
         end
     end
 end
@@ -266,12 +259,6 @@ end
 local function UpdateInterruptCooldown()
     -- Don't override test mode display
     if testModeActive then return end
-
-    -- In attach mode, standalone bar is hidden
-    if CastbornDB.interrupt.attachToCastbars then
-        if frame then frame:Hide() end
-        return
-    end
 
     if not frame or not frame.interruptInfo then return end
 
@@ -409,9 +396,8 @@ function Castborn:TestInterrupt()
         end
     end
 
+    -- Show attached icons on castbars if enabled
     if db.attachToCastbars then
-        -- In attach mode, hide standalone and show attached icons
-        if frame then frame:Hide() end
         for _, unit in ipairs({"target", "focus"}) do
             local btn = attachedIcons[unit]
             if btn then
@@ -425,7 +411,10 @@ function Castborn:TestInterrupt()
                 end
             end
         end
-    elseif frame then
+    end
+
+    -- Always show standalone bar in test mode
+    if frame then
         frame:Show()
         if frame.bar then
             frame.bar:SetMinMaxValues(0, 1)
