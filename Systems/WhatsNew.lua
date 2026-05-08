@@ -14,6 +14,12 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.7.1",
+        fixes = {
+            "Fixed 5 Second Rule and custom cooldown spells resetting when switching between characters of different classes",
+        },
+    },
+    {
         version = "6.7.0",
         features = {
             "Added width and height sliders to Interrupt Tracker options",

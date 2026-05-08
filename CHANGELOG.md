@@ -1,5 +1,9 @@
 # Changelog
 
+**v6.7.1**
+
+- Fixed 5 Second Rule and custom cooldown spells resetting when switching between characters of different classes
+
 **v6.7.0**
 
 - Added width and height sliders to Interrupt Tracker options
