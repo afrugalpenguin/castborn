@@ -150,21 +150,26 @@ function ClassDefaults:ApplyFirstRunDefaults()
 
     if CastbornDB.firstRunComplete and not classChanged then return end
 
-    local defaults = self:GetPlayerDefaults()
+    local isFirstRun = not CastbornDB.firstRunComplete
 
-    CastbornDB.fsr = CastbornDB.fsr or {}
-    CastbornDB.fsr.enabled = self:ShouldShowFSR()
+    -- Only apply enabled-state defaults on first run so that user preferences are
+    -- respected when switching between characters of different classes.
+    if isFirstRun then
+        CastbornDB.fsr = CastbornDB.fsr or {}
+        CastbornDB.fsr.enabled = self:ShouldShowFSR()
 
-    CastbornDB.swing = CastbornDB.swing or {}
-    CastbornDB.swing.enabled = self:ShouldShowSwingTimer()
+        CastbornDB.swing = CastbornDB.swing or {}
+        CastbornDB.swing.enabled = self:ShouldShowSwingTimer()
+    end
 
-    -- Reset class-specific tracked spells when class changes
+    -- Signal ProcTracker and CooldownTracker to reload class spells on next session.
+    -- Do NOT clear trackedSpells here: CooldownTracker's READY callback already
+    -- preserves custom spells when reloading for a class change, but only if
+    -- trackedSpells is still intact when that callback runs.
     CastbornDB.procs = CastbornDB.procs or {}
-    CastbornDB.procs.trackedSpells = nil  -- Clear to allow ProcTracker to reload
     CastbornDB.procs.loadedForClass = nil
 
     CastbornDB.cooldowns = CastbornDB.cooldowns or {}
-    CastbornDB.cooldowns.trackedSpells = nil  -- Clear to allow CooldownTracker to reload
     CastbornDB.cooldowns.loadedForClass = nil
 
     CastbornDB.firstRunComplete = true
