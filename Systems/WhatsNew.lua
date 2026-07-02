@@ -14,6 +14,12 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.7.2",
+        fixes = {
+            "Fixed an error when opening the options window (/cb) that stopped the What's New window from appearing",
+        },
+    },
+    {
         version = "6.7.1",
         fixes = {
             "Fixed 5 Second Rule and custom cooldown spells resetting when switching between characters of different classes",

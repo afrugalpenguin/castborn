@@ -1,5 +1,9 @@
 # Changelog
 
+**v6.7.2**
+
+- Fixed an error when opening the options window (/cb) that stopped the What's New window from appearing
+
 **v6.7.1**
 
 - Fixed 5 Second Rule and custom cooldown spells resetting when switching between characters of different classes
