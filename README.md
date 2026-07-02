@@ -46,6 +46,60 @@ Player, Target, Focus, and Target-of-Target castbars with latency indicators, cl
 - **Interrupt Tracker** — Know when your kick is ready
 - **Totem Tracker** — Shaman-only: track active totems and party coverage
 - **Absorb Tracker** — Track Ice Barrier, Mana Shield, Power Word: Shield, and all TBC absorb effects with remaining amount and drain visualisation
+- **Armour Tracker** — Mage and Warlock only: warns when your armour self-buff (Frost/Ice/Mage/Molten or Demon/Fel Armor) is missing
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="images/castbars.png" width="100%"><br>
+      <b>Deep castbar customisation</b><br>
+      Class colours, global colour, latency, and per-bar sizing
+    </td>
+    <td width="50%" align="center">
+      <img src="images/cooldownstrinkets.png" width="100%"><br>
+      <b>Cooldown &amp; trinket tracking</b><br>
+      Abilities and on-use trinkets with ready glow
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="images/procs.png" width="100%"><br>
+      <b>Proc tracking</b><br>
+      Live icons with remaining duration
+    </td>
+    <td width="50%" align="center">
+      <img src="images/absorb.png" width="100%"><br>
+      <b>Absorb tracking</b><br>
+      Remaining shield amount and time left
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="images/totems.png" width="100%"><br>
+      <b>Totem tracking</b><br>
+      Durations, pulse pips, and party range checks
+    </td>
+    <td width="50%" align="center">
+      <img src="images/armour.png" width="100%"><br>
+      <b>Armour reminder</b><br>
+      Flags a missing Mage/Warlock armour buff
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="images/textures.png" width="100%"><br>
+      <b>Look &amp; Feel</b><br>
+      LibSharedMedia bar textures and fonts
+    </td>
+    <td width="50%" align="center">
+      <img src="images/tutorial.png" width="100%"><br>
+      <b>Guided onboarding</b><br>
+      Step-by-step tour of every module
+    </td>
+  </tr>
+</table>
 
 ## Getting Started
 
@@ -74,6 +128,7 @@ That's it. Castborn comes pre-configured with sensible defaults for your class.
 - **Anchor system** — Modules can follow your player castbar
 - **Profile system** — Save, copy, and share configurations
 - **Masque support** — Skin proc icons with your favourite theme
+- **LibSharedMedia support** — Choose custom bar textures and fonts in the Look & Feel panel
 
 ## Feedback & Support
 
