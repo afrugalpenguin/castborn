@@ -1072,7 +1072,7 @@ local function PopulateChangelog(scrollChild)
         y = y - 20
 
         -- Features section
-        if #entry.features > 0 then
+        if entry.features and #entry.features > 0 then
             local featuresLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             featuresLabel:SetPoint("TOPLEFT", 8, y)
             featuresLabel:SetText("|cff88ddffFeatures:|r")
@@ -1100,7 +1100,7 @@ local function PopulateChangelog(scrollChild)
         end
 
         -- Fixes section
-        if #entry.fixes > 0 then
+        if entry.fixes and #entry.fixes > 0 then
             local fixesLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             fixesLabel:SetPoint("TOPLEFT", 8, y)
             fixesLabel:SetText("|cff88ff88Fixes:|r")
