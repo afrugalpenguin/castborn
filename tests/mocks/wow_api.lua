@@ -38,5 +38,27 @@ _G.UIParent = {
     GetHeight = function() return 1080 end,
 }
 
+-- Mock CreateFrame — returns a frame-like table; unknown methods fall back to no-ops
+local function newMockFrame()
+    local frame = {
+        events = {},
+        scripts = {},
+    }
+    frame.RegisterEvent = function(self, event) self.events[event] = true end
+    frame.UnregisterEvent = function(self, event) self.events[event] = nil end
+    frame.SetScript = function(self, handler, fn) self.scripts[handler] = fn end
+    frame.GetScript = function(self, handler) return self.scripts[handler] end
+    frame.GetWidth = function() return 100 end
+    frame.GetHeight = function() return 20 end
+    setmetatable(frame, { __index = function() return function() end end })
+    return frame
+end
+
+_G.CreateFrame = function(frameType, name, parent, template)
+    local frame = newMockFrame()
+    if name then _G[name] = frame end
+    return frame
+end
+
 -- Return module for requiring
 return {}
