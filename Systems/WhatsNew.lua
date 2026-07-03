@@ -14,6 +14,12 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.7.4",
+        fixes = {
+            "Updated internal testing and build tooling (no gameplay changes)",
+        },
+    },
+    {
         version = "6.7.3",
         fixes = {
             "Fixed Reset Positions stopping partway through and leaving some frames unreset if a module's defaults were missing",

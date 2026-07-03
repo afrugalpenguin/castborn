@@ -1,5 +1,9 @@
 # Changelog
 
+**v6.7.4**
+
+- Updated internal testing and build tooling (no gameplay changes)
+
 **v6.7.3**
 
 - Fixed Reset Positions stopping partway through and leaving some frames unreset if a module's defaults were missing
