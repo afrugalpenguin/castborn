@@ -4,5 +4,6 @@ return {
     },
     default = {
         verbose = true,
+        ROOT = {"tests"},
     },
 }
