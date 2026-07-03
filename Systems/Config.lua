@@ -11,8 +11,7 @@ function CB:ResetPositions()
 
     for _, key in ipairs(positionKeys) do
         local def = CB.defaults[key]
-        if not def then break end
-        if CB.db[key] then
+        if def and CB.db[key] then
             CB.db[key].point = def.point
             CB.db[key].xPct = def.xPct
             CB.db[key].yPct = def.yPct
