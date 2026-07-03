@@ -32,6 +32,11 @@ _G.GetRealmName = function()
     return "TestRealm"
 end
 
+-- Mock chat frame
+_G.DEFAULT_CHAT_FRAME = {
+    AddMessage = function() end,
+}
+
 -- Mock UIParent (minimal frame mock)
 _G.UIParent = {
     GetWidth = function() return 1920 end,
