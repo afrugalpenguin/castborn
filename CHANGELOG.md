@@ -1,5 +1,10 @@
 # Changelog
 
+**v6.7.3**
+
+- Fixed Reset Positions stopping partway through and leaving some frames unreset if a module's defaults were missing
+- Removed internal development files (release checklist and a stray image) from the addon package
+
 **v6.7.2**
 
 - Fixed an error when opening the options window (/cb) that stopped the What's New window from appearing

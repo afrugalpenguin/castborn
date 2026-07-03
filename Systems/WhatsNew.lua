@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.7.3",
+        fixes = {
+            "Fixed Reset Positions stopping partway through and leaving some frames unreset if a module's defaults were missing",
+            "Removed internal development files from the addon package",
+        },
+    },
+    {
         version = "6.7.2",
         fixes = {
             "Fixed an error when opening the options window (/cb) that stopped the What's New window from appearing",
