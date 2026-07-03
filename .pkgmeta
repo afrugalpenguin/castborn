@@ -13,6 +13,8 @@ ignore:
   - .github
   - "*.svg"
   - "*.png"
+  - "*.jpg"
+  - RELEASE.md
   - docs
   - tests
   - .luacheckrc
