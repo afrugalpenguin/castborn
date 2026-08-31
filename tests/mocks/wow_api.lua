@@ -32,6 +32,21 @@ _G.GetRealmName = function()
     return "TestRealm"
 end
 
+-- Mock unit identity lookups (specs override these with their own world state)
+_G.UnitGUID = function(unit)
+    return nil
+end
+
+_G.UnitExists = function(unit)
+    return false
+end
+
+-- WoW's table wipe
+_G.wipe = function(t)
+    for k in pairs(t) do t[k] = nil end
+    return t
+end
+
 -- Mock chat frame
 _G.DEFAULT_CHAT_FRAME = {
     AddMessage = function() end,
