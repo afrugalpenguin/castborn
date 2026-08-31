@@ -1306,25 +1306,982 @@ function Options:BuildChangelog(parent)
     scrollChild:SetHeight(math.abs(contentY) + 20)
 end
 
-function Options:BuildModule(parent, key)
-    local titles = {
-        gcd = "GCD Indicator",
-        fsr = "5 Second Rule",
-        swing = "Swing Timer",
-        dots = "DoT Tracker",
-        multidot = "Multi-DoT Tracker",
-        buffs = "Proc Tracker",
-        cooldowns = "Cooldown Tracker",
-        itemtracker = "Item Tracker",
-        interrupt = "Interrupt Tracker",
-        totems = "Totem Tracker",
-        absorbs = "Absorb Tracker",
-        armortracker = "Armour Tracker",
+local moduleTitles = {
+    gcd = "GCD Indicator",
+    fsr = "5 Second Rule",
+    swing = "Swing Timer",
+    dots = "DoT Tracker",
+    multidot = "Multi-DoT Tracker",
+    buffs = "Proc Tracker",
+    cooldowns = "Cooldown Tracker",
+    itemtracker = "Item Tracker",
+    interrupt = "Interrupt Tracker",
+    totems = "Totem Tracker",
+    absorbs = "Absorb Tracker",
+    armortracker = "Armour Tracker",
+}
+
+-- Per-module option builders. Each receives the content frame, the module's
+-- settings table, and the running y offset, and returns the updated offset.
+local moduleBuilders = {}
+
+function moduleBuilders.gcd(parent, db, y)
+    local alwaysCB = CreateCheckbox(parent, "Always Show (even when ready)", db, "alwaysShow")
+    alwaysCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+    local testBtn = CreateButton(parent, "Test GCD", 80, function()
+        if Castborn.TestGCD then Castborn:TestGCD() end
+    end)
+    testBtn:SetPoint("TOPLEFT", 0, y)
+
+    return y
+end
+
+function moduleBuilders.dots(parent, db, y)
+    local mineCB = CreateCheckbox(parent, "Show Only My DoTs", db, "showOnlyMine")
+    mineCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 36
+
+    db.width = db.width or 200
+    local dotWidthSlider = CreateSlider(parent, "Width", db, "width", 100, 400, 10, function(v)
+        if Castborn.dotTracker then Castborn.dotTracker:SetWidth(v) end
+    end)
+    dotWidthSlider:SetPoint("TOPLEFT", 0, y)
+
+    db.barHeight = db.barHeight or 16
+    local dotBarHeightSlider = CreateSlider(parent, "Bar Height", db, "barHeight", 10, 30, 1, function(v)
+        if Castborn.dotTracker then
+            Castborn.dotTracker:SetHeight(math.max(30, 3 * (v + (db.spacing or 2)) + 8))
+        end
+    end)
+    dotBarHeightSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+
+    db.spacing = db.spacing or 2
+    local spacingSlider = CreateSlider(parent, "Bar Spacing", db, "spacing", 0, 10, 1, function(v)
+        if Castborn.dotTracker then
+            Castborn.dotTracker:SetHeight(math.max(30, 3 * ((db.barHeight or 16) + v) + 8))
+        end
+    end)
+    spacingSlider:SetPoint("TOPLEFT", 0, y)
+
+    return y
+end
+
+function moduleBuilders.swing(parent, db, y)
+    local testBtn = CreateButton(parent, "Test Swing", 90, function()
+        if Castborn.TestSwingTimers then Castborn:TestSwingTimers() end
+    end)
+    testBtn:SetPoint("TOPLEFT", 0, y)
+
+    return y
+end
+
+function moduleBuilders.buffs(parent, db, y)
+    -- ProcTracker stores settings in CastbornDB.procs, not CastbornDB.buffs
+    local procsDB = CastbornDB.procs
+
+    local timersCB = CreateCheckbox(parent, "Show Timers", procsDB, "showDuration")
+    timersCB:SetPoint("TOPLEFT", 0, y)
+
+    local glowCB = CreateCheckbox(parent, "Show Proc Glow", procsDB, "showGlow")
+    glowCB:SetPoint("TOPLEFT", 220, y)
+    y = y - 36
+
+    local trinketCB = CreateCheckbox(parent, "Show Trinket Procs", procsDB, "showTrinketProcs", function(checked)
+        if Castborn.ProcTracker then
+            Castborn.ProcTracker:SetTrinketProcs(checked)
+        end
+    end)
+    trinketCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 36
+
+    procsDB.iconSize = procsDB.iconSize or 28
+    local iconSlider = CreateSlider(parent, "Icon Size", procsDB, "iconSize", 20, 56, 2, function()
+        if Castborn.ProcTracker then Castborn.ProcTracker:UpdateLayout() end
+    end)
+    iconSlider:SetPoint("TOPLEFT", 0, y)
+    y = y - 60
+
+    -- Grow Direction dropdown
+    local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    growLabel:SetPoint("TOPLEFT", 0, y)
+    growLabel:SetText("Grow Direction:")
+    growLabel:SetTextColor(unpack(C.grey))
+
+    local growOptions = {
+        { value = "RIGHT", label = "Grow Right" },
+        { value = "LEFT", label = "Grow Left" },
+        { value = "CENTRE", label = "Grow from Centre" },
+        { value = "UP", label = "Grow Up" },
+        { value = "DOWN", label = "Grow Down" },
     }
 
+    local growDropdown = CreateFrame("Frame", "CastbornProcGrowDropdown", parent, "UIDropDownMenuTemplate")
+    growDropdown:SetPoint("TOPLEFT", 90, y + 6)
+    UIDropDownMenu_SetWidth(growDropdown, 140)
+
+    local currentGrow = procsDB.growDirection or "RIGHT"
+    for _, opt in ipairs(growOptions) do
+        if opt.value == currentGrow then
+            UIDropDownMenu_SetText(growDropdown, opt.label)
+        end
+    end
+
+    UIDropDownMenu_Initialize(growDropdown, function(self, level)
+        for _, opt in ipairs(growOptions) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = opt.label
+            info.value = opt.value
+            info.checked = (procsDB.growDirection or "RIGHT") == opt.value
+            info.func = function()
+                procsDB.growDirection = opt.value
+                UIDropDownMenu_SetText(growDropdown, opt.label)
+                CloseDropDownMenus()
+                if Castborn.ProcTracker then Castborn.ProcTracker:UpdateLayout() end
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+
+    return y
+end
+
+function moduleBuilders.cooldowns(parent, db, y)
+    -- Icon Size and Spacing sliders
+    db.iconSize = db.iconSize or 36
+    local iconSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 20, 56, 2)
+    iconSlider:SetPoint("TOPLEFT", 0, y)
+    db.spacing = db.spacing or 4
+    local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
+    spacingSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+    db.iconsPerRow = db.iconsPerRow or 10
+    local perRowSlider = CreateSlider(parent, "Icons Per Row", db, "iconsPerRow", 1, 20, 1)
+    perRowSlider:SetPoint("TOPLEFT", 0, y)
+    y = y - 50
+
+    -- Orientation checkbox
+    local vertCB = CreateCheckbox(parent, "Vertical Layout", db, "verticalLayout", function(v)
+        db.orientation = v and "VERTICAL" or "HORIZONTAL"
+    end)
+    db.verticalLayout = (db.orientation == "VERTICAL")
+    vertCB:SetChecked(db.verticalLayout)
+    vertCB:SetPoint("TOPLEFT", 0, y)
+
+    local trinketCB = CreateCheckbox(parent, "Track Trinket Cooldowns", db, "trackTrinkets")
+    trinketCB:SetPoint("TOPLEFT", 220, y)
+    y = y - 36
+
+    -- Grow Direction dropdown
+    local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    growLabel:SetPoint("TOPLEFT", 0, y)
+    growLabel:SetText("Grow Direction:")
+    growLabel:SetTextColor(unpack(C.grey))
+
+    local growOptions = {
+        { value = "RIGHT", label = "Grow Right" },
+        { value = "LEFT", label = "Grow Left" },
+        { value = "UP", label = "Grow Up" },
+        { value = "DOWN", label = "Grow Down" },
+    }
+
+    local growDropdown = CreateFrame("Frame", "CastbornCooldownGrowDropdown", parent, "UIDropDownMenuTemplate")
+    growDropdown:SetPoint("TOPLEFT", 90, y + 6)
+    UIDropDownMenu_SetWidth(growDropdown, 140)
+
+    local currentGrow = db.growDirection or "LEFT"
+    for _, opt in ipairs(growOptions) do
+        if opt.value == currentGrow then
+            UIDropDownMenu_SetText(growDropdown, opt.label)
+        end
+    end
+
+    UIDropDownMenu_Initialize(growDropdown, function(self, level)
+        for _, opt in ipairs(growOptions) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = opt.label
+            info.value = opt.value
+            info.checked = (db.growDirection or "LEFT") == opt.value
+            info.func = function()
+                db.growDirection = opt.value
+                UIDropDownMenu_SetText(growDropdown, opt.label)
+                CloseDropDownMenus()
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    y = y - 30
+
+    -- Divider
+    local divider = parent:CreateTexture(nil, "ARTWORK")
+    divider:SetHeight(1)
+    divider:SetPoint("TOPLEFT", 0, y - 4)
+    divider:SetPoint("TOPRIGHT", 0, y - 4)
+    divider:SetColorTexture(0.25, 0.25, 0.25, 1)
+    y = y - 14
+
+    -- Build ordered list from SpellData (ensures all class + racial spells are always shown)
+    local _, class = UnitClass("player")
+    local _, race = UnitRace("player")
+    local classSpells = Castborn.SpellData and Castborn.SpellData:GetClassCooldowns(class) or {}
+    local racialSpells = Castborn.SpellData and race and Castborn.SpellData:GetRacialCooldowns(race) or {}
+    db.trackedSpells = db.trackedSpells or {}
+
+    -- Index existing tracked spells by spellId for quick lookup
+    local tracked = {}
+    for _, spell in ipairs(db.trackedSpells) do
+        tracked[spell.spellId] = spell
+    end
+
+    -- Ensure all class spells exist in trackedSpells
+    for _, def in ipairs(classSpells) do
+        if not tracked[def.spellId] then
+            local entry = { spellId = def.spellId, name = def.name, enabled = true }
+            table.insert(db.trackedSpells, entry)
+            tracked[def.spellId] = entry
+        end
+    end
+
+    -- Ensure all racial spells exist in trackedSpells
+    for _, def in ipairs(racialSpells) do
+        if not tracked[def.spellId] then
+            local entry = { spellId = def.spellId, name = def.name, enabled = true }
+            table.insert(db.trackedSpells, entry)
+            tracked[def.spellId] = entry
+        end
+    end
+
+    -- Container for spell rows (so we can rebuild on reorder)
+    local spellListContainer = CreateFrame("Frame", nil, parent)
+    spellListContainer:SetPoint("TOPLEFT", 0, y)
+    spellListContainer:SetPoint("TOPRIGHT", 0, y)
+    spellListContainer:SetHeight(1)  -- Will be resized
+
+    local function BuildSpellList()
+        -- Clear existing children (frames)
+        for _, child in ipairs({spellListContainer:GetChildren()}) do
+            child:Hide()
+            child:SetParent(nil)
+        end
+        -- Clear existing regions (font strings, textures)
+        for _, region in ipairs({spellListContainer:GetRegions()}) do
+            region:Hide()
+            region:SetParent(nil)
+        end
+
+        local listY = 0
+        local total = #db.trackedSpells
+
+        for i, spell in ipairs(db.trackedSpells) do
+            if spell.enabled == nil then spell.enabled = true end
+
+            local row = CreateFrame("Frame", nil, spellListContainer)
+            row:SetHeight(26)
+            row:SetPoint("TOPLEFT", 0, listY)
+            row:SetPoint("TOPRIGHT", 0, listY)
+
+            -- Checkbox
+            local displayName = spell.custom and (spell.name .. " |cff888888(Custom)|r") or spell.name
+            local cb = CreateCheckbox(row, displayName, spell, "enabled")
+            cb:SetPoint("LEFT", 0, 0)
+
+            -- Down arrow
+            local downBtn = CreateFrame("Button", nil, row)
+            downBtn:SetSize(14, 14)
+            downBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+            downBtn:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up")
+            downBtn:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Highlight")
+            downBtn:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Down")
+            if i == total then
+                downBtn:SetAlpha(0.3)
+                downBtn:Disable()
+            end
+            downBtn:SetScript("OnClick", function()
+                if i < total then
+                    db.trackedSpells[i], db.trackedSpells[i + 1] = db.trackedSpells[i + 1], db.trackedSpells[i]
+                    BuildSpellList()
+                    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                end
+            end)
+
+            -- Up arrow
+            local upBtn = CreateFrame("Button", nil, row)
+            upBtn:SetSize(14, 14)
+            upBtn:SetPoint("RIGHT", downBtn, "LEFT", -2, 0)
+            upBtn:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Up")
+            upBtn:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Highlight")
+            upBtn:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Down")
+            if i == 1 then
+                upBtn:SetAlpha(0.3)
+                upBtn:Disable()
+            end
+            upBtn:SetScript("OnClick", function()
+                if i > 1 then
+                    db.trackedSpells[i], db.trackedSpells[i - 1] = db.trackedSpells[i - 1], db.trackedSpells[i]
+                    BuildSpellList()
+                    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                end
+            end)
+
+            -- Remove button for custom spells
+            if spell.custom then
+                local removeBtn = CreateFrame("Button", nil, row)
+                removeBtn:SetSize(14, 14)
+                removeBtn:SetPoint("RIGHT", upBtn, "LEFT", -6, 0)
+
+                -- Red X text
+                local xText = removeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                xText:SetPoint("CENTER", 0, 0)
+                xText:SetText("|cffff4444X|r")
+                xText:SetFont(xText:GetFont(), 12, "OUTLINE")
+
+                removeBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+                removeBtn:SetScript("OnClick", function()
+                    table.remove(db.trackedSpells, i)
+                    BuildSpellList()
+                    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                end)
+            end
+
+            listY = listY - 26
+        end
+
+        -- Custom spell input section
+        local customY = listY - 10
+
+        local customLabel = spellListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        customLabel:SetPoint("TOPLEFT", 0, customY)
+        customLabel:SetText("Add Custom Spell ID")
+        customY = customY - 20
+
+        local inputBox = CreateFrame("EditBox", nil, spellListContainer, "InputBoxTemplate")
+        inputBox:SetSize(120, 22)
+        inputBox:SetPoint("TOPLEFT", 0, customY)
+        inputBox:SetAutoFocus(false)
+        inputBox:SetNumeric(true)
+        inputBox:SetMaxLetters(6)
+
+        local addBtn = CreateFrame("Button", nil, spellListContainer, "UIPanelButtonTemplate")
+        addBtn:SetSize(60, 22)
+        addBtn:SetPoint("LEFT", inputBox, "RIGHT", 6, 0)
+        addBtn:SetText("Add")
+
+        local statusText = spellListContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        statusText:SetPoint("LEFT", addBtn, "RIGHT", 8, 0)
+        statusText:SetText("")
+
+        addBtn:SetScript("OnClick", function()
+            local idText = inputBox:GetText()
+            local spellId = tonumber(idText)
+            if not spellId or spellId <= 0 then
+                statusText:SetText("|cffff4444Enter a valid spell ID|r")
+                return
+            end
+
+            -- Check cap
+            if #db.trackedSpells >= 20 then
+                statusText:SetText("|cffff4444Maximum of 20 spells reached|r")
+                return
+            end
+
+            -- Check for duplicates
+            for _, spell in ipairs(db.trackedSpells) do
+                if spell.spellId == spellId then
+                    statusText:SetText("|cffff4444Already tracked|r")
+                    return
+                end
+            end
+
+            -- Validate spell exists
+            local name = GetSpellInfo(spellId)
+            if not name then
+                statusText:SetText("|cffff4444Spell not found|r")
+                return
+            end
+
+            -- Add the custom spell
+            table.insert(db.trackedSpells, {
+                spellId = spellId,
+                name = name,
+                enabled = true,
+                custom = true,
+            })
+
+            inputBox:SetText("")
+            statusText:SetText("|cff44ff44Added: " .. name .. "|r")
+            BuildSpellList()
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        end)
+
+        inputBox:SetScript("OnEnterPressed", function()
+            addBtn:Click()
+        end)
+
+        inputBox:SetScript("OnEscapePressed", function(self)
+            self:ClearFocus()
+        end)
+
+        customY = customY - 30
+        spellListContainer:SetHeight(math.abs(customY) + 4)
+    end
+
+    BuildSpellList()
+
+    y = y - (26 * #db.trackedSpells) - 60
+
+    return y
+end
+
+function moduleBuilders.itemtracker(parent, db, y)
+    -- Icon Size and Spacing sliders
+    db.iconSize = db.iconSize or 36
+    local iconSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 20, 56, 2)
+    iconSlider:SetPoint("TOPLEFT", 0, y)
+    db.spacing = db.spacing or 4
+    local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
+    spacingSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+    db.iconsPerRow = db.iconsPerRow or 10
+    local perRowSlider = CreateSlider(parent, "Icons Per Row", db, "iconsPerRow", 1, 20, 1)
+    perRowSlider:SetPoint("TOPLEFT", 0, y)
+    y = y - 50
+
+    -- Orientation checkbox
+    local vertCB = CreateCheckbox(parent, "Vertical Layout", db, "verticalLayout", function(v)
+        db.orientation = v and "VERTICAL" or "HORIZONTAL"
+    end)
+    db.verticalLayout = (db.orientation == "VERTICAL")
+    vertCB:SetChecked(db.verticalLayout)
+    vertCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 36
+
+    -- Grow Direction dropdown
+    local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    growLabel:SetPoint("TOPLEFT", 0, y)
+    growLabel:SetText("Grow Direction:")
+    growLabel:SetTextColor(unpack(C.grey))
+
+    local growOptions = {
+        { value = "RIGHT", label = "Grow Right" },
+        { value = "LEFT", label = "Grow Left" },
+        { value = "UP", label = "Grow Up" },
+        { value = "DOWN", label = "Grow Down" },
+    }
+
+    local growDropdown = CreateFrame("Frame", "CastbornItemGrowDropdown", parent, "UIDropDownMenuTemplate")
+    growDropdown:SetPoint("TOPLEFT", 90, y + 6)
+    UIDropDownMenu_SetWidth(growDropdown, 140)
+
+    local currentGrow = db.growDirection or "RIGHT"
+    for _, opt in ipairs(growOptions) do
+        if opt.value == currentGrow then
+            UIDropDownMenu_SetText(growDropdown, opt.label)
+        end
+    end
+
+    UIDropDownMenu_Initialize(growDropdown, function(self, level)
+        for _, opt in ipairs(growOptions) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = opt.label
+            info.value = opt.value
+            info.checked = (db.growDirection or "RIGHT") == opt.value
+            info.func = function()
+                db.growDirection = opt.value
+                UIDropDownMenu_SetText(growDropdown, opt.label)
+                CloseDropDownMenus()
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    y = y - 30
+
+    -- Divider
+    local divider = parent:CreateTexture(nil, "ARTWORK")
+    divider:SetHeight(1)
+    divider:SetPoint("TOPLEFT", 0, y - 4)
+    divider:SetPoint("TOPRIGHT", 0, y - 4)
+    divider:SetColorTexture(0.25, 0.25, 0.25, 1)
+    y = y - 14
+
+    db.trackedItems = db.trackedItems or {}
+
+    -- Container for item rows
+    local itemListContainer = CreateFrame("Frame", nil, parent)
+    itemListContainer:SetPoint("TOPLEFT", 0, y)
+    itemListContainer:SetPoint("TOPRIGHT", 0, y)
+    itemListContainer:SetHeight(1)
+
+    local function BuildItemList()
+        -- Clear existing children
+        for _, child in ipairs({itemListContainer:GetChildren()}) do
+            child:Hide()
+            child:SetParent(nil)
+        end
+        -- Clear existing regions
+        for _, region in ipairs({itemListContainer:GetRegions()}) do
+            region:Hide()
+            region:SetParent(nil)
+        end
+
+        local listY = 0
+        local total = #db.trackedItems
+
+        for i, item in ipairs(db.trackedItems) do
+            if item.enabled == nil then item.enabled = true end
+
+            -- Resolve item name (may be cached)
+            local itemName = item.name
+            if not itemName then
+                itemName = GetItemInfo(item.itemId)
+                if itemName then item.name = itemName end
+            end
+            itemName = itemName or ("Item #" .. item.itemId)
+
+            local row = CreateFrame("Frame", nil, itemListContainer)
+            row:SetHeight(26)
+            row:SetPoint("TOPLEFT", 0, listY)
+            row:SetPoint("TOPRIGHT", 0, listY)
+
+            -- Checkbox
+            local cb = CreateCheckbox(row, itemName, item, "enabled")
+            cb:SetPoint("LEFT", 0, 0)
+
+            -- Remove button
+            local removeBtn = CreateFrame("Button", nil, row)
+            removeBtn:SetSize(14, 14)
+            removeBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+
+            local xText = removeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            xText:SetPoint("CENTER", 0, 0)
+            xText:SetText("|cffff4444X|r")
+            xText:SetFont(xText:GetFont(), 12, "OUTLINE")
+
+            removeBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+            removeBtn:SetScript("OnClick", function()
+                table.remove(db.trackedItems, i)
+                BuildItemList()
+                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+            end)
+
+            listY = listY - 26
+        end
+
+        -- Add item input section
+        local customY = listY - 10
+
+        local customLabel = itemListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        customLabel:SetPoint("TOPLEFT", 0, customY)
+        customLabel:SetText("Add Item |cff888888(ID or Drag from Bags)|r")
+        customY = customY - 20
+
+        local inputBox = CreateFrame("EditBox", nil, itemListContainer, "InputBoxTemplate")
+        inputBox:SetSize(120, 22)
+        inputBox:SetPoint("TOPLEFT", 0, customY)
+        inputBox:SetAutoFocus(false)
+        inputBox:SetNumeric(true)
+        inputBox:SetMaxLetters(6)
+
+        -- Accept drag-and-dropped items
+        inputBox:EnableMouse(true)
+        inputBox:SetScript("OnReceiveDrag", function(self)
+            local infoType, itemId = GetCursorInfo()
+            if infoType == "item" and itemId then
+                self:SetText(tostring(itemId))
+                ClearCursor()
+            end
+        end)
+        inputBox:SetScript("OnMouseDown", function(self, button)
+            if button == "LeftButton" and GetCursorInfo() then
+                local infoType, itemId = GetCursorInfo()
+                if infoType == "item" and itemId then
+                    self:SetText(tostring(itemId))
+                    ClearCursor()
+                    return
+                end
+            end
+            self:SetFocus()
+        end)
+
+        local addBtn = CreateFrame("Button", nil, itemListContainer, "UIPanelButtonTemplate")
+        addBtn:SetSize(60, 22)
+        addBtn:SetPoint("LEFT", inputBox, "RIGHT", 6, 0)
+        addBtn:SetText("Add")
+
+        local statusText = itemListContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        statusText:SetPoint("LEFT", addBtn, "RIGHT", 8, 0)
+        statusText:SetText("")
+
+        addBtn:SetScript("OnClick", function()
+            local idText = inputBox:GetText()
+            local itemId = tonumber(idText)
+            if not itemId or itemId <= 0 then
+                statusText:SetText("|cffff4444Enter a valid item ID|r")
+                return
+            end
+
+            -- Check cap
+            if #db.trackedItems >= 20 then
+                statusText:SetText("|cffff4444Maximum of 20 items reached|r")
+                return
+            end
+
+            -- Check for duplicates
+            for _, item in ipairs(db.trackedItems) do
+                if item.itemId == itemId then
+                    statusText:SetText("|cffff4444Already tracked|r")
+                    return
+                end
+            end
+
+            -- Validate item exists
+            local name = GetItemInfo(itemId)
+            if not name then
+                statusText:SetText("|cffff4444Item not found (try again after opening bags)|r")
+                return
+            end
+
+            -- Add the item
+            table.insert(db.trackedItems, {
+                itemId = itemId,
+                name = name,
+                enabled = true,
+            })
+
+            inputBox:SetText("")
+            statusText:SetText("|cff44ff44Added: " .. name .. "|r")
+            BuildItemList()
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        end)
+
+        inputBox:SetScript("OnEnterPressed", function()
+            addBtn:Click()
+        end)
+
+        inputBox:SetScript("OnEscapePressed", function(self)
+            self:ClearFocus()
+        end)
+
+        customY = customY - 30
+        itemListContainer:SetHeight(math.abs(customY) + 4)
+    end
+
+    BuildItemList()
+
+    y = y - (26 * #db.trackedItems) - 60
+
+    return y
+end
+
+function moduleBuilders.interrupt(parent, db, y)
+    local widthSlider = CreateSlider(parent, "Width", db, "width", 60, 300, 5, function(v)
+        local f = _G["Castborn_Interrupt"]
+        if f then
+            f:SetWidth(v)
+            if f.bar then
+                f.bar:SetPoint("TOPLEFT", f, "TOPLEFT", (db.height or 16) + 2, -1)
+            end
+        end
+    end)
+    widthSlider:SetPoint("TOPLEFT", 0, y)
+
+    local heightSlider = CreateSlider(parent, "Height", db, "height", 10, 40, 1, function(v)
+        local f = _G["Castborn_Interrupt"]
+        if f then
+            f:SetHeight(v)
+            if f.iconButton then
+                f.iconButton:SetSize(v, v)
+            end
+            if f.bar then
+                f.bar:SetPoint("TOPLEFT", f, "TOPLEFT", v + 2, -1)
+            end
+        end
+    end)
+    heightSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+
+    local lockoutCB = CreateCheckbox(parent, "Show Lockout", db, "showLockout")
+    lockoutCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    local targetCB = CreateCheckbox(parent, "Track Target", db, "trackTarget")
+    targetCB:SetPoint("TOPLEFT", 0, y)
+    local focusCB = CreateCheckbox(parent, "Track Focus", db, "trackFocus")
+    focusCB:SetPoint("TOPLEFT", 150, y)
+    y = y - 30
+
+    local glowCB = CreateCheckbox(parent, "Show Ready Glow", db, "showReadyGlow")
+
+    local showBarCB = CreateCheckbox(parent, "Show Interrupt Bar", db, "showBar", function(checked)
+        local f = _G["Castborn_Interrupt"]
+        if f then
+            if checked then f:Show() else f:Hide() end
+        end
+        local lf = _G["Castborn_Lockout"]
+        if lf and not checked then lf:Hide() end
+    end)
+    showBarCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    local attachCB = CreateCheckbox(parent, "Attach to Castbars", db, "attachToCastbars", function(checked)
+        if Castborn.InterruptTracker and Castborn.InterruptTracker.UpdateAttachMode then
+            Castborn.InterruptTracker:UpdateAttachMode()
+        end
+        if checked then glowCB:Show() else glowCB:Hide() end
+    end)
+    attachCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    glowCB:SetPoint("TOPLEFT", 0, y)
+    if not db.attachToCastbars then glowCB:Hide() end
+
+    return y
+end
+
+function moduleBuilders.totems(parent, db, y)
+    db.width = db.width or 200
+    local totemWidthSlider = CreateSlider(parent, "Width", db, "width", 100, 400, 10, function(v)
+        if Castborn.totemTracker then Castborn.totemTracker:SetWidth(v) end
+    end)
+    totemWidthSlider:SetPoint("TOPLEFT", 0, y)
+    y = y - 60
+
+    db.barHeight = db.barHeight or 16
+    local barHeightSlider = CreateSlider(parent, "Bar Height", db, "barHeight", 10, 30, 1, function(v)
+        if Castborn.totemTracker then
+            Castborn.totemTracker:SetHeight(v * 4 + (db.spacing or 2) * 3 + 8)
+        end
+    end)
+    barHeightSlider:SetPoint("TOPLEFT", 0, y)
+    db.spacing = db.spacing or 2
+    local spacingSlider = CreateSlider(parent, "Bar Spacing", db, "spacing", 0, 10, 1, function(v)
+        if Castborn.totemTracker then
+            Castborn.totemTracker:SetHeight((db.barHeight or 16) * 4 + v * 3 + 8)
+        end
+    end)
+    spacingSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+
+    local tooltipCB = CreateCheckbox(parent, "Show Tooltip (party members not in range)", db, "showTooltip")
+    tooltipCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    local soloCB = CreateCheckbox(parent, "Show range indicator when not grouped", db, "showSoloIndicator")
+    soloCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    local testBtn = CreateButton(parent, "Test Totems", 100, function()
+        if Castborn.TestTotemTracker then Castborn:TestTotemTracker() end
+    end)
+    testBtn:SetPoint("TOPLEFT", 0, y)
+
+    return y
+end
+
+function moduleBuilders.multidot(parent, db, y)
+    db.maxTargets = db.maxTargets or 5
+    local maxSlider = CreateSlider(parent, "Max Targets", db, "maxTargets", 1, 10, 1)
+    maxSlider:SetPoint("TOPLEFT", 0, y)
+    local sortCB = CreateCheckbox(parent, "Sort by Time", db, "sortByTime")
+    sortCB:SetPoint("TOPLEFT", 220, y + 15)
+
+    y = y - 50
+
+    local mdWidthSlider = CreateSlider(parent, "Width", db, "width", 100, 400, 10, function(v)
+        local mdFrame = _G["Castborn_MultiDoTTracker"]
+        if mdFrame then
+            local maxT = db.maxTargets or 5
+            mdFrame:SetWidth(v)
+            for i = 1, maxT do
+                local row = _G["Castborn_MultiDoT_Row" .. i]
+                if row then row:SetWidth(v - 4) end
+            end
+        end
+    end)
+    mdWidthSlider:SetPoint("TOPLEFT", 0, y)
+
+    db.rowHeight = db.rowHeight or 20
+    local mdRowSlider = CreateSlider(parent, "Row Height", db, "rowHeight", 12, 32, 2, function(v)
+        local mdFrame = _G["Castborn_MultiDoTTracker"]
+        if mdFrame then
+            local maxT = db.maxTargets or 5
+            mdFrame:SetHeight(v * maxT + 18)
+            for i = 1, maxT do
+                local row = _G["Castborn_MultiDoT_Row" .. i]
+                if row then
+                    row:SetHeight(v)
+                    row:SetPoint("TOPLEFT", mdFrame, "TOPLEFT", 2, -14 - (i - 1) * v)
+                    if row.urgency then row.urgency:SetHeight(v) end
+                    if row.dots then
+                        for j, dot in ipairs(row.dots) do
+                            dot:SetSize(v - 4, v - 4)
+                            dot:SetPoint("LEFT", row, "LEFT", 5 + (j - 1) * (v - 2), 0)
+                        end
+                    end
+                    if row.name then
+                        row.name:SetPoint("LEFT", row, "LEFT", 5 + 6 * (v - 2), 0)
+                    end
+                end
+            end
+        end
+    end)
+    mdRowSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 50
+
+    -- Nameplate Indicators section
+    local npHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    npHeader:SetPoint("TOPLEFT", 0, y)
+    npHeader:SetText("|cff88ddffNameplate Indicators|r")
+    y = y - 20
+
+    local npDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    npDesc:SetPoint("TOPLEFT", 0, y)
+    npDesc:SetWidth(350)
+    npDesc:SetJustifyH("LEFT")
+    npDesc:SetText("Show DoT timer badges on enemy nameplates. Helps identify which mob needs attention when multiple mobs have the same name.")
+    npDesc:SetTextColor(0.7, 0.7, 0.7, 1)
+    y = y - 30
+
+    local npEnableCB = CreateCheckbox(parent, "Show Nameplate Indicators", db, "nameplateIndicators")
+    npEnableCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    db.nameplateIndicatorSize = db.nameplateIndicatorSize or 20
+    local npSizeSlider = CreateSlider(parent, "Indicator Size", db, "nameplateIndicatorSize", 14, 32, 1)
+    npSizeSlider:SetPoint("TOPLEFT", 0, y)
+
+    -- Position dropdown
+    local posLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    posLabel:SetPoint("TOPLEFT", 220, y)
+    posLabel:SetText("Position:")
+    posLabel:SetTextColor(unpack(C.grey))
+
+    local posDropdown = CreateFrame("Frame", "CastbornNPIndicatorPosDropdown", parent, "UIDropDownMenuTemplate")
+    posDropdown:SetPoint("TOPLEFT", 270, y + 6)
+    UIDropDownMenu_SetWidth(posDropdown, 90)
+
+    local positions = { "BOTTOM", "TOP", "LEFT", "RIGHT" }
+    local positionLabels = { BOTTOM = "Bottom", TOP = "Top", LEFT = "Left", RIGHT = "Right" }
+    UIDropDownMenu_Initialize(posDropdown, function(self, level)
+        for _, pos in ipairs(positions) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = positionLabels[pos]
+            info.value = pos
+            info.checked = (db.nameplateIndicatorPosition == pos)
+            info.func = function()
+                db.nameplateIndicatorPosition = pos
+                UIDropDownMenu_SetText(posDropdown, positionLabels[pos])
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    UIDropDownMenu_SetText(posDropdown, positionLabels[db.nameplateIndicatorPosition or "BOTTOM"])
+    y = y - 10
+
+    return y
+end
+
+function moduleBuilders.armortracker(parent, db, y)
+    local enableCB = CreateCheckbox(parent, "Enable Armour Tracker", db, "enabled")
+    enableCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    db.iconSize = db.iconSize or 50
+    local sizeSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 24, 80, 4, function(v)
+        local f = _G["Castborn_ArmorTracker"]
+        if f then f:SetSize(v, v) end
+    end)
+    sizeSlider:SetPoint("TOPLEFT", 0, y)
+    y = y - 50
+
+    -- Paladin: blessing selection dropdown + RF note
+    local _, optClass = UnitClass("player")
+    if optClass == "PALADIN" then
+        y = y - 10
+        local blessLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        blessLabel:SetPoint("TOPLEFT", 0, y)
+        blessLabel:SetText("Blessing to track:")
+        blessLabel:SetTextColor(unpack(C.grey))
+
+        local blessDropdown = CreateFrame("Frame", "CastbornBlessingDropdown", parent, "UIDropDownMenuTemplate")
+        blessDropdown:SetPoint("TOPLEFT", 110, y + 6)
+        UIDropDownMenu_SetWidth(blessDropdown, 140)
+
+        local blessings = {
+            { key = "might",     label = "Blessing of Might" },
+            { key = "wisdom",    label = "Blessing of Wisdom" },
+            { key = "kings",     label = "Blessing of Kings" },
+            { key = "sanctuary", label = "Blessing of Sanctuary" },
+        }
+        local blessLabelMap = {}
+        for _, b in ipairs(blessings) do blessLabelMap[b.key] = b.label end
+
+        UIDropDownMenu_Initialize(blessDropdown, function(self, level)
+            for _, b in ipairs(blessings) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = b.label
+                info.value = b.key
+                info.checked = (db.selectedBlessing == b.key)
+                info.func = function()
+                    db.selectedBlessing = b.key
+                    UIDropDownMenu_SetText(blessDropdown, b.label)
+                    if Castborn.ArmorTracker and Castborn.ArmorTracker.RebuildBlessingSlot then
+                        Castborn.ArmorTracker:RebuildBlessingSlot()
+                    end
+                end
+                UIDropDownMenu_AddButton(info)
+            end
+        end)
+        UIDropDownMenu_SetText(blessDropdown, blessLabelMap[db.selectedBlessing or "might"])
+        y = y - 40
+
+        local rfNote = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        rfNote:SetPoint("TOPLEFT", 0, y)
+        rfNote:SetText("Righteous Fury is tracked automatically when Improved Righteous Fury is talented.")
+        rfNote:SetTextColor(0.6, 0.6, 0.6)
+        y = y - 20
+    end
+
+    local testBtn = CreateButton(parent, "Test Armour Alert", 120, function()
+        if Castborn.TestArmorTracker then Castborn:TestArmorTracker() end
+    end)
+    testBtn:SetPoint("TOPLEFT", 0, y)
+
+    return y
+end
+
+function moduleBuilders.absorbs(parent, db, y)
+    db.size = db.size or 48
+    local sizeSlider = CreateSlider(parent, "Size", db, "size", 32, 128, 4, function(v)
+        local f = _G["Castborn_AbsorbTracker"]
+        if f then f:SetSize(v, v) end
+    end)
+    sizeSlider:SetPoint("TOPLEFT", 0, y)
+    db.spacing = db.spacing or 4
+    local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
+    spacingSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 50
+
+    -- Grow direction checkbox
+    local growCB = CreateCheckbox(parent, "Grow Left", db, "growLeft", function(v)
+        db.growDirection = v and "LEFT" or "RIGHT"
+    end)
+    db.growLeft = (db.growDirection == "LEFT")
+    growCB:SetChecked(db.growLeft)
+    growCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    local testBtn = CreateButton(parent, "Test Absorb", 90, function()
+        if Castborn.TestAbsorbTracker then Castborn:TestAbsorbTracker() end
+    end)
+    testBtn:SetPoint("TOPLEFT", 0, y)
+    return y
+end
+
+function Options:BuildModule(parent, key)
     local y = 0
 
-    local header = CreateHeader(parent, titles[key] or key)
+    local header = CreateHeader(parent, moduleTitles[key] or key)
     header:SetPoint("TOPLEFT", 0, y)
     header:SetPoint("TOPRIGHT", 0, y)
     y = y - 30
@@ -1384,926 +2341,9 @@ function Options:BuildModule(parent, key)
     end
 
     -- Module-specific options
-    if key == "gcd" then
-        local alwaysCB = CreateCheckbox(parent, "Always Show (even when ready)", db, "alwaysShow")
-        alwaysCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 30
-        local testBtn = CreateButton(parent, "Test GCD", 80, function()
-            if Castborn.TestGCD then Castborn:TestGCD() end
-        end)
-        testBtn:SetPoint("TOPLEFT", 0, y)
-
-    elseif key == "dots" then
-        local mineCB = CreateCheckbox(parent, "Show Only My DoTs", db, "showOnlyMine")
-        mineCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 36
-
-        db.width = db.width or 200
-        local dotWidthSlider = CreateSlider(parent, "Width", db, "width", 100, 400, 10, function(v)
-            if Castborn.dotTracker then Castborn.dotTracker:SetWidth(v) end
-        end)
-        dotWidthSlider:SetPoint("TOPLEFT", 0, y)
-
-        db.barHeight = db.barHeight or 16
-        local dotBarHeightSlider = CreateSlider(parent, "Bar Height", db, "barHeight", 10, 30, 1, function(v)
-            if Castborn.dotTracker then
-                Castborn.dotTracker:SetHeight(math.max(30, 3 * (v + (db.spacing or 2)) + 8))
-            end
-        end)
-        dotBarHeightSlider:SetPoint("TOPLEFT", 220, y)
-        y = y - 60
-
-        db.spacing = db.spacing or 2
-        local spacingSlider = CreateSlider(parent, "Bar Spacing", db, "spacing", 0, 10, 1, function(v)
-            if Castborn.dotTracker then
-                Castborn.dotTracker:SetHeight(math.max(30, 3 * ((db.barHeight or 16) + v) + 8))
-            end
-        end)
-        spacingSlider:SetPoint("TOPLEFT", 0, y)
-
-    elseif key == "swing" then
-        local testBtn = CreateButton(parent, "Test Swing", 90, function()
-            if Castborn.TestSwingTimers then Castborn:TestSwingTimers() end
-        end)
-        testBtn:SetPoint("TOPLEFT", 0, y)
-
-    elseif key == "buffs" then
-        -- ProcTracker stores settings in CastbornDB.procs, not CastbornDB.buffs
-        local procsDB = CastbornDB.procs
-
-        local timersCB = CreateCheckbox(parent, "Show Timers", procsDB, "showDuration")
-        timersCB:SetPoint("TOPLEFT", 0, y)
-
-        local glowCB = CreateCheckbox(parent, "Show Proc Glow", procsDB, "showGlow")
-        glowCB:SetPoint("TOPLEFT", 220, y)
-        y = y - 36
-
-        local trinketCB = CreateCheckbox(parent, "Show Trinket Procs", procsDB, "showTrinketProcs", function(checked)
-            if Castborn.ProcTracker then
-                Castborn.ProcTracker:SetTrinketProcs(checked)
-            end
-        end)
-        trinketCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 36
-
-        procsDB.iconSize = procsDB.iconSize or 28
-        local iconSlider = CreateSlider(parent, "Icon Size", procsDB, "iconSize", 20, 56, 2, function()
-            if Castborn.ProcTracker then Castborn.ProcTracker:UpdateLayout() end
-        end)
-        iconSlider:SetPoint("TOPLEFT", 0, y)
-        y = y - 60
-
-        -- Grow Direction dropdown
-        local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        growLabel:SetPoint("TOPLEFT", 0, y)
-        growLabel:SetText("Grow Direction:")
-        growLabel:SetTextColor(unpack(C.grey))
-
-        local growOptions = {
-            { value = "RIGHT", label = "Grow Right" },
-            { value = "LEFT", label = "Grow Left" },
-            { value = "CENTRE", label = "Grow from Centre" },
-            { value = "UP", label = "Grow Up" },
-            { value = "DOWN", label = "Grow Down" },
-        }
-
-        local growDropdown = CreateFrame("Frame", "CastbornProcGrowDropdown", parent, "UIDropDownMenuTemplate")
-        growDropdown:SetPoint("TOPLEFT", 90, y + 6)
-        UIDropDownMenu_SetWidth(growDropdown, 140)
-
-        local currentGrow = procsDB.growDirection or "RIGHT"
-        for _, opt in ipairs(growOptions) do
-            if opt.value == currentGrow then
-                UIDropDownMenu_SetText(growDropdown, opt.label)
-            end
-        end
-
-        UIDropDownMenu_Initialize(growDropdown, function(self, level)
-            for _, opt in ipairs(growOptions) do
-                local info = UIDropDownMenu_CreateInfo()
-                info.text = opt.label
-                info.value = opt.value
-                info.checked = (procsDB.growDirection or "RIGHT") == opt.value
-                info.func = function()
-                    procsDB.growDirection = opt.value
-                    UIDropDownMenu_SetText(growDropdown, opt.label)
-                    CloseDropDownMenus()
-                    if Castborn.ProcTracker then Castborn.ProcTracker:UpdateLayout() end
-                end
-                UIDropDownMenu_AddButton(info)
-            end
-        end)
-
-    elseif key == "cooldowns" then
-        -- Icon Size and Spacing sliders
-        db.iconSize = db.iconSize or 36
-        local iconSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 20, 56, 2)
-        iconSlider:SetPoint("TOPLEFT", 0, y)
-        db.spacing = db.spacing or 4
-        local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
-        spacingSlider:SetPoint("TOPLEFT", 220, y)
-        y = y - 60
-        db.iconsPerRow = db.iconsPerRow or 10
-        local perRowSlider = CreateSlider(parent, "Icons Per Row", db, "iconsPerRow", 1, 20, 1)
-        perRowSlider:SetPoint("TOPLEFT", 0, y)
-        y = y - 50
-
-        -- Orientation checkbox
-        local vertCB = CreateCheckbox(parent, "Vertical Layout", db, "verticalLayout", function(v)
-            db.orientation = v and "VERTICAL" or "HORIZONTAL"
-        end)
-        db.verticalLayout = (db.orientation == "VERTICAL")
-        vertCB:SetChecked(db.verticalLayout)
-        vertCB:SetPoint("TOPLEFT", 0, y)
-
-        local trinketCB = CreateCheckbox(parent, "Track Trinket Cooldowns", db, "trackTrinkets")
-        trinketCB:SetPoint("TOPLEFT", 220, y)
-        y = y - 36
-
-        -- Grow Direction dropdown
-        local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        growLabel:SetPoint("TOPLEFT", 0, y)
-        growLabel:SetText("Grow Direction:")
-        growLabel:SetTextColor(unpack(C.grey))
-
-        local growOptions = {
-            { value = "RIGHT", label = "Grow Right" },
-            { value = "LEFT", label = "Grow Left" },
-            { value = "UP", label = "Grow Up" },
-            { value = "DOWN", label = "Grow Down" },
-        }
-
-        local growDropdown = CreateFrame("Frame", "CastbornCooldownGrowDropdown", parent, "UIDropDownMenuTemplate")
-        growDropdown:SetPoint("TOPLEFT", 90, y + 6)
-        UIDropDownMenu_SetWidth(growDropdown, 140)
-
-        local currentGrow = db.growDirection or "LEFT"
-        for _, opt in ipairs(growOptions) do
-            if opt.value == currentGrow then
-                UIDropDownMenu_SetText(growDropdown, opt.label)
-            end
-        end
-
-        UIDropDownMenu_Initialize(growDropdown, function(self, level)
-            for _, opt in ipairs(growOptions) do
-                local info = UIDropDownMenu_CreateInfo()
-                info.text = opt.label
-                info.value = opt.value
-                info.checked = (db.growDirection or "LEFT") == opt.value
-                info.func = function()
-                    db.growDirection = opt.value
-                    UIDropDownMenu_SetText(growDropdown, opt.label)
-                    CloseDropDownMenus()
-                end
-                UIDropDownMenu_AddButton(info)
-            end
-        end)
-        y = y - 30
-
-        -- Divider
-        local divider = parent:CreateTexture(nil, "ARTWORK")
-        divider:SetHeight(1)
-        divider:SetPoint("TOPLEFT", 0, y - 4)
-        divider:SetPoint("TOPRIGHT", 0, y - 4)
-        divider:SetColorTexture(0.25, 0.25, 0.25, 1)
-        y = y - 14
-
-        -- Build ordered list from SpellData (ensures all class + racial spells are always shown)
-        local _, class = UnitClass("player")
-        local _, race = UnitRace("player")
-        local classSpells = Castborn.SpellData and Castborn.SpellData:GetClassCooldowns(class) or {}
-        local racialSpells = Castborn.SpellData and race and Castborn.SpellData:GetRacialCooldowns(race) or {}
-        db.trackedSpells = db.trackedSpells or {}
-
-        -- Index existing tracked spells by spellId for quick lookup
-        local tracked = {}
-        for _, spell in ipairs(db.trackedSpells) do
-            tracked[spell.spellId] = spell
-        end
-
-        -- Ensure all class spells exist in trackedSpells
-        for _, def in ipairs(classSpells) do
-            if not tracked[def.spellId] then
-                local entry = { spellId = def.spellId, name = def.name, enabled = true }
-                table.insert(db.trackedSpells, entry)
-                tracked[def.spellId] = entry
-            end
-        end
-
-        -- Ensure all racial spells exist in trackedSpells
-        for _, def in ipairs(racialSpells) do
-            if not tracked[def.spellId] then
-                local entry = { spellId = def.spellId, name = def.name, enabled = true }
-                table.insert(db.trackedSpells, entry)
-                tracked[def.spellId] = entry
-            end
-        end
-
-        -- Container for spell rows (so we can rebuild on reorder)
-        local spellListContainer = CreateFrame("Frame", nil, parent)
-        spellListContainer:SetPoint("TOPLEFT", 0, y)
-        spellListContainer:SetPoint("TOPRIGHT", 0, y)
-        spellListContainer:SetHeight(1)  -- Will be resized
-
-        local function BuildSpellList()
-            -- Clear existing children (frames)
-            for _, child in ipairs({spellListContainer:GetChildren()}) do
-                child:Hide()
-                child:SetParent(nil)
-            end
-            -- Clear existing regions (font strings, textures)
-            for _, region in ipairs({spellListContainer:GetRegions()}) do
-                region:Hide()
-                region:SetParent(nil)
-            end
-
-            local listY = 0
-            local total = #db.trackedSpells
-
-            for i, spell in ipairs(db.trackedSpells) do
-                if spell.enabled == nil then spell.enabled = true end
-
-                local row = CreateFrame("Frame", nil, spellListContainer)
-                row:SetHeight(26)
-                row:SetPoint("TOPLEFT", 0, listY)
-                row:SetPoint("TOPRIGHT", 0, listY)
-
-                -- Checkbox
-                local displayName = spell.custom and (spell.name .. " |cff888888(Custom)|r") or spell.name
-                local cb = CreateCheckbox(row, displayName, spell, "enabled")
-                cb:SetPoint("LEFT", 0, 0)
-
-                -- Down arrow
-                local downBtn = CreateFrame("Button", nil, row)
-                downBtn:SetSize(14, 14)
-                downBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
-                downBtn:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up")
-                downBtn:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Highlight")
-                downBtn:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Down")
-                if i == total then
-                    downBtn:SetAlpha(0.3)
-                    downBtn:Disable()
-                end
-                downBtn:SetScript("OnClick", function()
-                    if i < total then
-                        db.trackedSpells[i], db.trackedSpells[i + 1] = db.trackedSpells[i + 1], db.trackedSpells[i]
-                        BuildSpellList()
-                        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                    end
-                end)
-
-                -- Up arrow
-                local upBtn = CreateFrame("Button", nil, row)
-                upBtn:SetSize(14, 14)
-                upBtn:SetPoint("RIGHT", downBtn, "LEFT", -2, 0)
-                upBtn:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Up")
-                upBtn:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Highlight")
-                upBtn:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Down")
-                if i == 1 then
-                    upBtn:SetAlpha(0.3)
-                    upBtn:Disable()
-                end
-                upBtn:SetScript("OnClick", function()
-                    if i > 1 then
-                        db.trackedSpells[i], db.trackedSpells[i - 1] = db.trackedSpells[i - 1], db.trackedSpells[i]
-                        BuildSpellList()
-                        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                    end
-                end)
-
-                -- Remove button for custom spells
-                if spell.custom then
-                    local removeBtn = CreateFrame("Button", nil, row)
-                    removeBtn:SetSize(14, 14)
-                    removeBtn:SetPoint("RIGHT", upBtn, "LEFT", -6, 0)
-
-                    -- Red X text
-                    local xText = removeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-                    xText:SetPoint("CENTER", 0, 0)
-                    xText:SetText("|cffff4444X|r")
-                    xText:SetFont(xText:GetFont(), 12, "OUTLINE")
-
-                    removeBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
-                    removeBtn:SetScript("OnClick", function()
-                        table.remove(db.trackedSpells, i)
-                        BuildSpellList()
-                        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                    end)
-                end
-
-                listY = listY - 26
-            end
-
-            -- Custom spell input section
-            local customY = listY - 10
-
-            local customLabel = spellListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            customLabel:SetPoint("TOPLEFT", 0, customY)
-            customLabel:SetText("Add Custom Spell ID")
-            customY = customY - 20
-
-            local inputBox = CreateFrame("EditBox", nil, spellListContainer, "InputBoxTemplate")
-            inputBox:SetSize(120, 22)
-            inputBox:SetPoint("TOPLEFT", 0, customY)
-            inputBox:SetAutoFocus(false)
-            inputBox:SetNumeric(true)
-            inputBox:SetMaxLetters(6)
-
-            local addBtn = CreateFrame("Button", nil, spellListContainer, "UIPanelButtonTemplate")
-            addBtn:SetSize(60, 22)
-            addBtn:SetPoint("LEFT", inputBox, "RIGHT", 6, 0)
-            addBtn:SetText("Add")
-
-            local statusText = spellListContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            statusText:SetPoint("LEFT", addBtn, "RIGHT", 8, 0)
-            statusText:SetText("")
-
-            addBtn:SetScript("OnClick", function()
-                local idText = inputBox:GetText()
-                local spellId = tonumber(idText)
-                if not spellId or spellId <= 0 then
-                    statusText:SetText("|cffff4444Enter a valid spell ID|r")
-                    return
-                end
-
-                -- Check cap
-                if #db.trackedSpells >= 20 then
-                    statusText:SetText("|cffff4444Maximum of 20 spells reached|r")
-                    return
-                end
-
-                -- Check for duplicates
-                for _, spell in ipairs(db.trackedSpells) do
-                    if spell.spellId == spellId then
-                        statusText:SetText("|cffff4444Already tracked|r")
-                        return
-                    end
-                end
-
-                -- Validate spell exists
-                local name = GetSpellInfo(spellId)
-                if not name then
-                    statusText:SetText("|cffff4444Spell not found|r")
-                    return
-                end
-
-                -- Add the custom spell
-                table.insert(db.trackedSpells, {
-                    spellId = spellId,
-                    name = name,
-                    enabled = true,
-                    custom = true,
-                })
-
-                inputBox:SetText("")
-                statusText:SetText("|cff44ff44Added: " .. name .. "|r")
-                BuildSpellList()
-                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-            end)
-
-            inputBox:SetScript("OnEnterPressed", function()
-                addBtn:Click()
-            end)
-
-            inputBox:SetScript("OnEscapePressed", function(self)
-                self:ClearFocus()
-            end)
-
-            customY = customY - 30
-            spellListContainer:SetHeight(math.abs(customY) + 4)
-        end
-
-        BuildSpellList()
-
-        y = y - (26 * #db.trackedSpells) - 60
-
-    elseif key == "itemtracker" then
-        -- Icon Size and Spacing sliders
-        db.iconSize = db.iconSize or 36
-        local iconSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 20, 56, 2)
-        iconSlider:SetPoint("TOPLEFT", 0, y)
-        db.spacing = db.spacing or 4
-        local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
-        spacingSlider:SetPoint("TOPLEFT", 220, y)
-        y = y - 60
-        db.iconsPerRow = db.iconsPerRow or 10
-        local perRowSlider = CreateSlider(parent, "Icons Per Row", db, "iconsPerRow", 1, 20, 1)
-        perRowSlider:SetPoint("TOPLEFT", 0, y)
-        y = y - 50
-
-        -- Orientation checkbox
-        local vertCB = CreateCheckbox(parent, "Vertical Layout", db, "verticalLayout", function(v)
-            db.orientation = v and "VERTICAL" or "HORIZONTAL"
-        end)
-        db.verticalLayout = (db.orientation == "VERTICAL")
-        vertCB:SetChecked(db.verticalLayout)
-        vertCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 36
-
-        -- Grow Direction dropdown
-        local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        growLabel:SetPoint("TOPLEFT", 0, y)
-        growLabel:SetText("Grow Direction:")
-        growLabel:SetTextColor(unpack(C.grey))
-
-        local growOptions = {
-            { value = "RIGHT", label = "Grow Right" },
-            { value = "LEFT", label = "Grow Left" },
-            { value = "UP", label = "Grow Up" },
-            { value = "DOWN", label = "Grow Down" },
-        }
-
-        local growDropdown = CreateFrame("Frame", "CastbornItemGrowDropdown", parent, "UIDropDownMenuTemplate")
-        growDropdown:SetPoint("TOPLEFT", 90, y + 6)
-        UIDropDownMenu_SetWidth(growDropdown, 140)
-
-        local currentGrow = db.growDirection or "RIGHT"
-        for _, opt in ipairs(growOptions) do
-            if opt.value == currentGrow then
-                UIDropDownMenu_SetText(growDropdown, opt.label)
-            end
-        end
-
-        UIDropDownMenu_Initialize(growDropdown, function(self, level)
-            for _, opt in ipairs(growOptions) do
-                local info = UIDropDownMenu_CreateInfo()
-                info.text = opt.label
-                info.value = opt.value
-                info.checked = (db.growDirection or "RIGHT") == opt.value
-                info.func = function()
-                    db.growDirection = opt.value
-                    UIDropDownMenu_SetText(growDropdown, opt.label)
-                    CloseDropDownMenus()
-                end
-                UIDropDownMenu_AddButton(info)
-            end
-        end)
-        y = y - 30
-
-        -- Divider
-        local divider = parent:CreateTexture(nil, "ARTWORK")
-        divider:SetHeight(1)
-        divider:SetPoint("TOPLEFT", 0, y - 4)
-        divider:SetPoint("TOPRIGHT", 0, y - 4)
-        divider:SetColorTexture(0.25, 0.25, 0.25, 1)
-        y = y - 14
-
-        db.trackedItems = db.trackedItems or {}
-
-        -- Container for item rows
-        local itemListContainer = CreateFrame("Frame", nil, parent)
-        itemListContainer:SetPoint("TOPLEFT", 0, y)
-        itemListContainer:SetPoint("TOPRIGHT", 0, y)
-        itemListContainer:SetHeight(1)
-
-        local function BuildItemList()
-            -- Clear existing children
-            for _, child in ipairs({itemListContainer:GetChildren()}) do
-                child:Hide()
-                child:SetParent(nil)
-            end
-            -- Clear existing regions
-            for _, region in ipairs({itemListContainer:GetRegions()}) do
-                region:Hide()
-                region:SetParent(nil)
-            end
-
-            local listY = 0
-            local total = #db.trackedItems
-
-            for i, item in ipairs(db.trackedItems) do
-                if item.enabled == nil then item.enabled = true end
-
-                -- Resolve item name (may be cached)
-                local itemName = item.name
-                if not itemName then
-                    itemName = GetItemInfo(item.itemId)
-                    if itemName then item.name = itemName end
-                end
-                itemName = itemName or ("Item #" .. item.itemId)
-
-                local row = CreateFrame("Frame", nil, itemListContainer)
-                row:SetHeight(26)
-                row:SetPoint("TOPLEFT", 0, listY)
-                row:SetPoint("TOPRIGHT", 0, listY)
-
-                -- Checkbox
-                local cb = CreateCheckbox(row, itemName, item, "enabled")
-                cb:SetPoint("LEFT", 0, 0)
-
-                -- Remove button
-                local removeBtn = CreateFrame("Button", nil, row)
-                removeBtn:SetSize(14, 14)
-                removeBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
-
-                local xText = removeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-                xText:SetPoint("CENTER", 0, 0)
-                xText:SetText("|cffff4444X|r")
-                xText:SetFont(xText:GetFont(), 12, "OUTLINE")
-
-                removeBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
-                removeBtn:SetScript("OnClick", function()
-                    table.remove(db.trackedItems, i)
-                    BuildItemList()
-                    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                end)
-
-                listY = listY - 26
-            end
-
-            -- Add item input section
-            local customY = listY - 10
-
-            local customLabel = itemListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            customLabel:SetPoint("TOPLEFT", 0, customY)
-            customLabel:SetText("Add Item |cff888888(ID or Drag from Bags)|r")
-            customY = customY - 20
-
-            local inputBox = CreateFrame("EditBox", nil, itemListContainer, "InputBoxTemplate")
-            inputBox:SetSize(120, 22)
-            inputBox:SetPoint("TOPLEFT", 0, customY)
-            inputBox:SetAutoFocus(false)
-            inputBox:SetNumeric(true)
-            inputBox:SetMaxLetters(6)
-
-            -- Accept drag-and-dropped items
-            inputBox:EnableMouse(true)
-            inputBox:SetScript("OnReceiveDrag", function(self)
-                local infoType, itemId = GetCursorInfo()
-                if infoType == "item" and itemId then
-                    self:SetText(tostring(itemId))
-                    ClearCursor()
-                end
-            end)
-            inputBox:SetScript("OnMouseDown", function(self, button)
-                if button == "LeftButton" and GetCursorInfo() then
-                    local infoType, itemId = GetCursorInfo()
-                    if infoType == "item" and itemId then
-                        self:SetText(tostring(itemId))
-                        ClearCursor()
-                        return
-                    end
-                end
-                self:SetFocus()
-            end)
-
-            local addBtn = CreateFrame("Button", nil, itemListContainer, "UIPanelButtonTemplate")
-            addBtn:SetSize(60, 22)
-            addBtn:SetPoint("LEFT", inputBox, "RIGHT", 6, 0)
-            addBtn:SetText("Add")
-
-            local statusText = itemListContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            statusText:SetPoint("LEFT", addBtn, "RIGHT", 8, 0)
-            statusText:SetText("")
-
-            addBtn:SetScript("OnClick", function()
-                local idText = inputBox:GetText()
-                local itemId = tonumber(idText)
-                if not itemId or itemId <= 0 then
-                    statusText:SetText("|cffff4444Enter a valid item ID|r")
-                    return
-                end
-
-                -- Check cap
-                if #db.trackedItems >= 20 then
-                    statusText:SetText("|cffff4444Maximum of 20 items reached|r")
-                    return
-                end
-
-                -- Check for duplicates
-                for _, item in ipairs(db.trackedItems) do
-                    if item.itemId == itemId then
-                        statusText:SetText("|cffff4444Already tracked|r")
-                        return
-                    end
-                end
-
-                -- Validate item exists
-                local name = GetItemInfo(itemId)
-                if not name then
-                    statusText:SetText("|cffff4444Item not found (try again after opening bags)|r")
-                    return
-                end
-
-                -- Add the item
-                table.insert(db.trackedItems, {
-                    itemId = itemId,
-                    name = name,
-                    enabled = true,
-                })
-
-                inputBox:SetText("")
-                statusText:SetText("|cff44ff44Added: " .. name .. "|r")
-                BuildItemList()
-                PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-            end)
-
-            inputBox:SetScript("OnEnterPressed", function()
-                addBtn:Click()
-            end)
-
-            inputBox:SetScript("OnEscapePressed", function(self)
-                self:ClearFocus()
-            end)
-
-            customY = customY - 30
-            itemListContainer:SetHeight(math.abs(customY) + 4)
-        end
-
-        BuildItemList()
-
-        y = y - (26 * #db.trackedItems) - 60
-
-    elseif key == "interrupt" then
-        local widthSlider = CreateSlider(parent, "Width", db, "width", 60, 300, 5, function(v)
-            local f = _G["Castborn_Interrupt"]
-            if f then
-                f:SetWidth(v)
-                if f.bar then
-                    f.bar:SetPoint("TOPLEFT", f, "TOPLEFT", (db.height or 16) + 2, -1)
-                end
-            end
-        end)
-        widthSlider:SetPoint("TOPLEFT", 0, y)
-
-        local heightSlider = CreateSlider(parent, "Height", db, "height", 10, 40, 1, function(v)
-            local f = _G["Castborn_Interrupt"]
-            if f then
-                f:SetHeight(v)
-                if f.iconButton then
-                    f.iconButton:SetSize(v, v)
-                end
-                if f.bar then
-                    f.bar:SetPoint("TOPLEFT", f, "TOPLEFT", v + 2, -1)
-                end
-            end
-        end)
-        heightSlider:SetPoint("TOPLEFT", 220, y)
-        y = y - 60
-
-        local lockoutCB = CreateCheckbox(parent, "Show Lockout", db, "showLockout")
-        lockoutCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 30
-
-        local targetCB = CreateCheckbox(parent, "Track Target", db, "trackTarget")
-        targetCB:SetPoint("TOPLEFT", 0, y)
-        local focusCB = CreateCheckbox(parent, "Track Focus", db, "trackFocus")
-        focusCB:SetPoint("TOPLEFT", 150, y)
-        y = y - 30
-
-        local glowCB = CreateCheckbox(parent, "Show Ready Glow", db, "showReadyGlow")
-
-        local showBarCB = CreateCheckbox(parent, "Show Interrupt Bar", db, "showBar", function(checked)
-            local f = _G["Castborn_Interrupt"]
-            if f then
-                if checked then f:Show() else f:Hide() end
-            end
-            local lf = _G["Castborn_Lockout"]
-            if lf and not checked then lf:Hide() end
-        end)
-        showBarCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 30
-
-        local attachCB = CreateCheckbox(parent, "Attach to Castbars", db, "attachToCastbars", function(checked)
-            if Castborn.InterruptTracker and Castborn.InterruptTracker.UpdateAttachMode then
-                Castborn.InterruptTracker:UpdateAttachMode()
-            end
-            if checked then glowCB:Show() else glowCB:Hide() end
-        end)
-        attachCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 30
-
-        glowCB:SetPoint("TOPLEFT", 0, y)
-        if not db.attachToCastbars then glowCB:Hide() end
-
-    elseif key == "totems" then
-        db.width = db.width or 200
-        local totemWidthSlider = CreateSlider(parent, "Width", db, "width", 100, 400, 10, function(v)
-            if Castborn.totemTracker then Castborn.totemTracker:SetWidth(v) end
-        end)
-        totemWidthSlider:SetPoint("TOPLEFT", 0, y)
-        y = y - 60
-
-        db.barHeight = db.barHeight or 16
-        local barHeightSlider = CreateSlider(parent, "Bar Height", db, "barHeight", 10, 30, 1, function(v)
-            if Castborn.totemTracker then
-                Castborn.totemTracker:SetHeight(v * 4 + (db.spacing or 2) * 3 + 8)
-            end
-        end)
-        barHeightSlider:SetPoint("TOPLEFT", 0, y)
-        db.spacing = db.spacing or 2
-        local spacingSlider = CreateSlider(parent, "Bar Spacing", db, "spacing", 0, 10, 1, function(v)
-            if Castborn.totemTracker then
-                Castborn.totemTracker:SetHeight((db.barHeight or 16) * 4 + v * 3 + 8)
-            end
-        end)
-        spacingSlider:SetPoint("TOPLEFT", 220, y)
-        y = y - 60
-
-        local tooltipCB = CreateCheckbox(parent, "Show Tooltip (party members not in range)", db, "showTooltip")
-        tooltipCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 30
-
-        local soloCB = CreateCheckbox(parent, "Show range indicator when not grouped", db, "showSoloIndicator")
-        soloCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 30
-
-        local testBtn = CreateButton(parent, "Test Totems", 100, function()
-            if Castborn.TestTotemTracker then Castborn:TestTotemTracker() end
-        end)
-        testBtn:SetPoint("TOPLEFT", 0, y)
-
-    elseif key == "multidot" then
-        db.maxTargets = db.maxTargets or 5
-        local maxSlider = CreateSlider(parent, "Max Targets", db, "maxTargets", 1, 10, 1)
-        maxSlider:SetPoint("TOPLEFT", 0, y)
-        local sortCB = CreateCheckbox(parent, "Sort by Time", db, "sortByTime")
-        sortCB:SetPoint("TOPLEFT", 220, y + 15)
-
-        y = y - 50
-
-        local mdWidthSlider = CreateSlider(parent, "Width", db, "width", 100, 400, 10, function(v)
-            local mdFrame = _G["Castborn_MultiDoTTracker"]
-            if mdFrame then
-                local maxT = db.maxTargets or 5
-                mdFrame:SetWidth(v)
-                for i = 1, maxT do
-                    local row = _G["Castborn_MultiDoT_Row" .. i]
-                    if row then row:SetWidth(v - 4) end
-                end
-            end
-        end)
-        mdWidthSlider:SetPoint("TOPLEFT", 0, y)
-
-        db.rowHeight = db.rowHeight or 20
-        local mdRowSlider = CreateSlider(parent, "Row Height", db, "rowHeight", 12, 32, 2, function(v)
-            local mdFrame = _G["Castborn_MultiDoTTracker"]
-            if mdFrame then
-                local maxT = db.maxTargets or 5
-                mdFrame:SetHeight(v * maxT + 18)
-                for i = 1, maxT do
-                    local row = _G["Castborn_MultiDoT_Row" .. i]
-                    if row then
-                        row:SetHeight(v)
-                        row:SetPoint("TOPLEFT", mdFrame, "TOPLEFT", 2, -14 - (i - 1) * v)
-                        if row.urgency then row.urgency:SetHeight(v) end
-                        if row.dots then
-                            for j, dot in ipairs(row.dots) do
-                                dot:SetSize(v - 4, v - 4)
-                                dot:SetPoint("LEFT", row, "LEFT", 5 + (j - 1) * (v - 2), 0)
-                            end
-                        end
-                        if row.name then
-                            row.name:SetPoint("LEFT", row, "LEFT", 5 + 6 * (v - 2), 0)
-                        end
-                    end
-                end
-            end
-        end)
-        mdRowSlider:SetPoint("TOPLEFT", 220, y)
-        y = y - 50
-
-        -- Nameplate Indicators section
-        local npHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        npHeader:SetPoint("TOPLEFT", 0, y)
-        npHeader:SetText("|cff88ddffNameplate Indicators|r")
-        y = y - 20
-
-        local npDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        npDesc:SetPoint("TOPLEFT", 0, y)
-        npDesc:SetWidth(350)
-        npDesc:SetJustifyH("LEFT")
-        npDesc:SetText("Show DoT timer badges on enemy nameplates. Helps identify which mob needs attention when multiple mobs have the same name.")
-        npDesc:SetTextColor(0.7, 0.7, 0.7, 1)
-        y = y - 30
-
-        local npEnableCB = CreateCheckbox(parent, "Show Nameplate Indicators", db, "nameplateIndicators")
-        npEnableCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 30
-
-        db.nameplateIndicatorSize = db.nameplateIndicatorSize or 20
-        local npSizeSlider = CreateSlider(parent, "Indicator Size", db, "nameplateIndicatorSize", 14, 32, 1)
-        npSizeSlider:SetPoint("TOPLEFT", 0, y)
-
-        -- Position dropdown
-        local posLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        posLabel:SetPoint("TOPLEFT", 220, y)
-        posLabel:SetText("Position:")
-        posLabel:SetTextColor(unpack(C.grey))
-
-        local posDropdown = CreateFrame("Frame", "CastbornNPIndicatorPosDropdown", parent, "UIDropDownMenuTemplate")
-        posDropdown:SetPoint("TOPLEFT", 270, y + 6)
-        UIDropDownMenu_SetWidth(posDropdown, 90)
-
-        local positions = { "BOTTOM", "TOP", "LEFT", "RIGHT" }
-        local positionLabels = { BOTTOM = "Bottom", TOP = "Top", LEFT = "Left", RIGHT = "Right" }
-        UIDropDownMenu_Initialize(posDropdown, function(self, level)
-            for _, pos in ipairs(positions) do
-                local info = UIDropDownMenu_CreateInfo()
-                info.text = positionLabels[pos]
-                info.value = pos
-                info.checked = (db.nameplateIndicatorPosition == pos)
-                info.func = function()
-                    db.nameplateIndicatorPosition = pos
-                    UIDropDownMenu_SetText(posDropdown, positionLabels[pos])
-                end
-                UIDropDownMenu_AddButton(info)
-            end
-        end)
-        UIDropDownMenu_SetText(posDropdown, positionLabels[db.nameplateIndicatorPosition or "BOTTOM"])
-        y = y - 10
-
-    elseif key == "armortracker" then
-        local enableCB = CreateCheckbox(parent, "Enable Armour Tracker", db, "enabled")
-        enableCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 30
-
-        db.iconSize = db.iconSize or 50
-        local sizeSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 24, 80, 4, function(v)
-            local f = _G["Castborn_ArmorTracker"]
-            if f then f:SetSize(v, v) end
-        end)
-        sizeSlider:SetPoint("TOPLEFT", 0, y)
-        y = y - 50
-
-        -- Paladin: blessing selection dropdown + RF note
-        local _, optClass = UnitClass("player")
-        if optClass == "PALADIN" then
-            y = y - 10
-            local blessLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            blessLabel:SetPoint("TOPLEFT", 0, y)
-            blessLabel:SetText("Blessing to track:")
-            blessLabel:SetTextColor(unpack(C.grey))
-
-            local blessDropdown = CreateFrame("Frame", "CastbornBlessingDropdown", parent, "UIDropDownMenuTemplate")
-            blessDropdown:SetPoint("TOPLEFT", 110, y + 6)
-            UIDropDownMenu_SetWidth(blessDropdown, 140)
-
-            local blessings = {
-                { key = "might",     label = "Blessing of Might" },
-                { key = "wisdom",    label = "Blessing of Wisdom" },
-                { key = "kings",     label = "Blessing of Kings" },
-                { key = "sanctuary", label = "Blessing of Sanctuary" },
-            }
-            local blessLabelMap = {}
-            for _, b in ipairs(blessings) do blessLabelMap[b.key] = b.label end
-
-            UIDropDownMenu_Initialize(blessDropdown, function(self, level)
-                for _, b in ipairs(blessings) do
-                    local info = UIDropDownMenu_CreateInfo()
-                    info.text = b.label
-                    info.value = b.key
-                    info.checked = (db.selectedBlessing == b.key)
-                    info.func = function()
-                        db.selectedBlessing = b.key
-                        UIDropDownMenu_SetText(blessDropdown, b.label)
-                        if Castborn.ArmorTracker and Castborn.ArmorTracker.RebuildBlessingSlot then
-                            Castborn.ArmorTracker:RebuildBlessingSlot()
-                        end
-                    end
-                    UIDropDownMenu_AddButton(info)
-                end
-            end)
-            UIDropDownMenu_SetText(blessDropdown, blessLabelMap[db.selectedBlessing or "might"])
-            y = y - 40
-
-            local rfNote = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            rfNote:SetPoint("TOPLEFT", 0, y)
-            rfNote:SetText("Righteous Fury is tracked automatically when Improved Righteous Fury is talented.")
-            rfNote:SetTextColor(0.6, 0.6, 0.6)
-            y = y - 20
-        end
-
-        local testBtn = CreateButton(parent, "Test Armour Alert", 120, function()
-            if Castborn.TestArmorTracker then Castborn:TestArmorTracker() end
-        end)
-        testBtn:SetPoint("TOPLEFT", 0, y)
-
-    elseif key == "absorbs" then
-        db.size = db.size or 48
-        local sizeSlider = CreateSlider(parent, "Size", db, "size", 32, 128, 4, function(v)
-            local f = _G["Castborn_AbsorbTracker"]
-            if f then f:SetSize(v, v) end
-        end)
-        sizeSlider:SetPoint("TOPLEFT", 0, y)
-        db.spacing = db.spacing or 4
-        local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
-        spacingSlider:SetPoint("TOPLEFT", 220, y)
-        y = y - 50
-
-        -- Grow direction checkbox
-        local growCB = CreateCheckbox(parent, "Grow Left", db, "growLeft", function(v)
-            db.growDirection = v and "LEFT" or "RIGHT"
-        end)
-        db.growLeft = (db.growDirection == "LEFT")
-        growCB:SetChecked(db.growLeft)
-        growCB:SetPoint("TOPLEFT", 0, y)
-        y = y - 30
-
-        local testBtn = CreateButton(parent, "Test Absorb", 90, function()
-            if Castborn.TestAbsorbTracker then Castborn:TestAbsorbTracker() end
-        end)
-        testBtn:SetPoint("TOPLEFT", 0, y)
+    local builder = moduleBuilders[key]
+    if builder then
+        y = builder(parent, db, y)
     end
 
     -- Set parent height for scroll frame
