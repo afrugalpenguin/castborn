@@ -32,18 +32,45 @@ local testModeActive = false
 -- Helper Functions
 --------------------------------------------------------------------------------
 
--- Helper to find a unitId from a GUID by scanning nameplates
+-- GUID -> nameplate unit token, maintained by NAME_PLATE_UNIT_ADDED/REMOVED.
+-- Avoids probing nameplate1..40 on every lookup; see issue #195.
+local nameplateUnits = {}
+
+local function TrackNameplateUnit(unit)
+    local guid = UnitGUID(unit)
+    if guid then
+        nameplateUnits[guid] = unit
+    end
+end
+
+-- Removal is keyed on the token, not the GUID: by the time
+-- NAME_PLATE_UNIT_REMOVED fires, UnitGUID(unit) may already be nil.
+local function UntrackNameplateUnit(unit)
+    for guid, token in pairs(nameplateUnits) do
+        if token == unit then
+            nameplateUnits[guid] = nil
+        end
+    end
+end
+
+local function WipeNameplateUnits()
+    wipe(nameplateUnits)
+end
+
+-- Helper to find a unitId from a GUID
 local function GetUnitIdFromGUID(guid)
     -- Check target first (most common case)
     if UnitGUID("target") == guid then
         return "target"
     end
     -- Check nameplates (common for multi-dotting)
-    for i = 1, 40 do
-        local unitId = "nameplate" .. i
-        if UnitExists(unitId) and UnitGUID(unitId) == guid then
+    local unitId = nameplateUnits[guid]
+    if unitId then
+        if UnitGUID(unitId) == guid then
             return unitId
         end
+        -- Plate was recycled to another mob without us seeing the events
+        nameplateUnits[guid] = nil
     end
     -- Check focus
     if UnitGUID("focus") == guid then
@@ -55,6 +82,12 @@ local function GetUnitIdFromGUID(guid)
     end
     return nil
 end
+
+-- Exposed for tests
+MultiDoTTracker.GetUnitIdFromGUID = function(self, guid) return GetUnitIdFromGUID(guid) end
+MultiDoTTracker.TrackNameplateUnit = function(self, unit) return TrackNameplateUnit(unit) end
+MultiDoTTracker.UntrackNameplateUnit = function(self, unit) return UntrackNameplateUnit(unit) end
+MultiDoTTracker.WipeNameplateUnits = function(self) return WipeNameplateUnits() end
 
 --------------------------------------------------------------------------------
 -- Nameplate Indicator System
@@ -461,15 +494,12 @@ local function ScanAllDebuffs()
     ScanUnitDebuffs("target")
     -- Scan focus
     ScanUnitDebuffs("focus")
-    -- Only scan nameplates if we have tracked targets
+    -- Only scan nameplates if we have tracked targets. Walking the GUID map
+    -- visits just the plates that are actually up, rather than probing 40 slots.
     if next(trackedTargets) then
-        for i = 1, 40 do
-            local unit = "nameplate" .. i
-            if UnitExists(unit) then
-                local guid = UnitGUID(unit)
-                if guid and trackedTargets[guid] then
-                    ScanUnitDebuffs(unit)
-                end
+        for guid, unit in pairs(nameplateUnits) do
+            if trackedTargets[guid] then
+                ScanUnitDebuffs(unit)
             end
         end
     end
@@ -626,20 +656,25 @@ Castborn:RegisterCallback("READY", function()
         end
     end)
 
-    -- Register for nameplate events to handle cleanup
+    -- Register for nameplate events to maintain the GUID map and handle cleanup
     local nameplateEventFrame = CreateFrame("Frame")
+    nameplateEventFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
     nameplateEventFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
     nameplateEventFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
     nameplateEventFrame:SetScript("OnEvent", function(self, event, unit)
-        if event == "NAME_PLATE_UNIT_REMOVED" then
+        if event == "NAME_PLATE_UNIT_ADDED" then
+            TrackNameplateUnit(unit)
+        elseif event == "NAME_PLATE_UNIT_REMOVED" then
             -- Find and hide indicator for this unit
             local guid = UnitGUID(unit)
             if guid and nameplateIndicators[guid] then
                 nameplateIndicators[guid]:Hide()
                 nameplateIndicators[guid].attachedTo = nil
             end
+            UntrackNameplateUnit(unit)
         elseif event == "PLAYER_LEAVING_WORLD" then
             CleanupAllIndicators()
+            WipeNameplateUnits()
         end
     end)
 end)
