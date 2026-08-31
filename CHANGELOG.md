@@ -1,5 +1,10 @@
 # Changelog
 
+**v6.7.5**
+
+- Multi-DoT tracker now looks up enemy nameplates directly instead of checking all 40 nameplate slots each time, cutting a large amount of repeated work when several enemies are dotted
+- Internal reorganisation of the options code, with no change to any setting
+
 **v6.7.4**
 
 - Updated internal testing and build tooling (no gameplay changes)

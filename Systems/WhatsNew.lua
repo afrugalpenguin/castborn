@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "6.7.5",
+        fixes = {
+            "Multi-DoT tracker now looks up enemy nameplates directly instead of checking all 40 nameplate slots each time, cutting a large amount of repeated work when several enemies are dotted",
+            "Internal reorganisation of the options code, with no change to any setting",
+        },
+    },
+    {
         version = "6.7.4",
         fixes = {
             "Updated internal testing and build tooling (no gameplay changes)",
