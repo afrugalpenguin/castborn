@@ -125,7 +125,7 @@ local auraPaths = {
 APICheck.events = {}
 APICheck.live = {}
 APICheck.eventCounts = {}
-APICheck.cleu = { registered = "no", count = 0 }
+APICheck.cleu = { registered = "not attempted", count = 0 }
 
 local function ProbeKey(path, ...)
     local args = {}
@@ -243,14 +243,8 @@ local eventFrame = CreateFrame("Frame")
 for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_AURA" }) do
     eventFrame:RegisterEvent(event)
 end
-local ok, err = pcall(eventFrame.RegisterEvent, eventFrame, "COMBAT_LOG_EVENT_UNFILTERED")
-if not ok then
-    APICheck.cleu.registered = "error: " .. tostring(err)
-elseif eventFrame:IsEventRegistered("COMBAT_LOG_EVENT_UNFILTERED") then
-    APICheck.cleu.registered = "yes"
-else
-    APICheck.cleu.registered = "no (silently ignored)"
-end
+-- The combat log is not registered: Forever ignored it in two probe runs and it is the
+-- suspected cause of the "UI action blocked" message on login
 eventFrame:SetScript("OnEvent", function(_, event, ...)
     APICheck:OnEvent(event, ...)
 end)
