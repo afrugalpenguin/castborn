@@ -37,6 +37,11 @@ function CB:GetModule(name)
     return self.modules[name]
 end
 
+-- False for option pages whose module this build does not load (set by Compat_Forever.lua)
+function CB:IsOptionAvailable(id)
+    return not (self.unavailableOptions and self.unavailableOptions[id])
+end
+
 --------------------------------------------------------------------------------
 -- Event Bus for Inter-Module Communication
 --------------------------------------------------------------------------------
