@@ -10,6 +10,7 @@ describe("APICheck", function()
         _G.issecretvalue = nil
         _G.C_Test = nil
         _G.UnitCastingInfo = nil
+        _G.InCombatLockdown = nil
     end)
 
     describe("Resolve", function()
@@ -102,6 +103,13 @@ describe("APICheck", function()
             _G.UnitCastingInfo = function() return "Fireball" end
             APICheck:OnEvent("UNIT_SPELLCAST_START", "player")
             assert.are.equal("string", APICheck:Run().events["UnitCastingInfo(player)"])
+        end)
+
+        it("keeps in-combat snapshots separate", function()
+            _G.UnitCastingInfo = function() return "Fireball" end
+            _G.InCombatLockdown = function() return true end
+            APICheck:OnEvent("UNIT_SPELLCAST_START", "player")
+            assert.are.equal("string", APICheck:Run().events["UnitCastingInfo(player) [combat]"])
         end)
 
         it("counts combat log events", function()

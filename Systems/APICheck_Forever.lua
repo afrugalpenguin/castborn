@@ -102,7 +102,9 @@ local function ProbeKey(path, ...)
 end
 
 local function Snapshot(path, ...)
-    APICheck.events[ProbeKey(path, ...)] = APICheck:DescribeCall(path, ...)
+    local key = ProbeKey(path, ...)
+    if InCombatLockdown and InCombatLockdown() then key = key .. " [combat]" end
+    APICheck.events[key] = APICheck:DescribeCall(path, ...)
 end
 
 function APICheck:OnEvent(event, unit)
@@ -177,7 +179,13 @@ for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START",
     eventFrame:RegisterEvent(event)
 end
 local ok, err = pcall(eventFrame.RegisterEvent, eventFrame, "COMBAT_LOG_EVENT_UNFILTERED")
-APICheck.cleu.registered = ok and "yes" or ("error: " .. tostring(err))
+if not ok then
+    APICheck.cleu.registered = "error: " .. tostring(err)
+elseif eventFrame:IsEventRegistered("COMBAT_LOG_EVENT_UNFILTERED") then
+    APICheck.cleu.registered = "yes"
+else
+    APICheck.cleu.registered = "no (silently ignored)"
+end
 eventFrame:SetScript("OnEvent", function(_, event, unit)
     APICheck:OnEvent(event, unit)
 end)
