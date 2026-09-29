@@ -186,6 +186,7 @@ files["tests/**/*.lua"] = {
 files["**/*_Forever.lua"] = {
     globals = {
         "SLASH_CASTBORNAPI1",
+        "GetSpellInfo", "GetSpellSubtext",
     },
     read_globals = {
         "issecretvalue", "GetBuildInfo", "C_Spell", "C_UnitAuras", "C_Item",
