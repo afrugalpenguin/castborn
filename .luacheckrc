@@ -181,3 +181,13 @@ exclude_files = {
 files["tests/**/*.lua"] = {
     std = "+busted",
 }
+
+-- Forever (Mainline API) files only
+files["**/*_Forever.lua"] = {
+    globals = {
+        "SLASH_CASTBORNAPI1",
+    },
+    read_globals = {
+        "issecretvalue", "GetBuildInfo", "C_Spell", "C_UnitAuras", "C_Item",
+    },
+}
