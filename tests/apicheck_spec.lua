@@ -75,4 +75,39 @@ describe("APICheck", function()
             assert.are.equal("number", APICheck:DescribeCall("C_Test.Fn", "player"))
         end)
     end)
+
+    describe("Run", function()
+        before_each(function()
+            _G.CastbornDB = {}
+        end)
+
+        it("saves the report to CastbornDB", function()
+            local report = APICheck:Run()
+            assert.are.equal(report, CastbornDB.apicheck)
+        end)
+
+        it("marks missing APIs", function()
+            local report = APICheck:Run()
+            assert.are.equal("missing", report.names["UnitCastingInfo"])
+        end)
+
+        it("describes live probe results", function()
+            _G.UnitCastingInfo = function() return "Fireball", "", 1 end
+            local report = APICheck:Run()
+            assert.are.equal("function", report.names["UnitCastingInfo"])
+            assert.are.equal("string string number", report.live["UnitCastingInfo(player)"])
+        end)
+
+        it("snapshots cast info when a cast starts", function()
+            _G.UnitCastingInfo = function() return "Fireball" end
+            APICheck:OnEvent("UNIT_SPELLCAST_START", "player")
+            assert.are.equal("string", APICheck:Run().events["UnitCastingInfo(player)"])
+        end)
+
+        it("counts combat log events", function()
+            local before = APICheck.cleu.count
+            APICheck:OnEvent("COMBAT_LOG_EVENT_UNFILTERED")
+            assert.are.equal(before + 1, APICheck:Run().cleu.count)
+        end)
+    end)
 end)
