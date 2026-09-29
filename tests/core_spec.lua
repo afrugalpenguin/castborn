@@ -131,4 +131,20 @@ describe("Core utilities", function()
             CB:FireCallback("NO_LISTENERS_EVENT", "data")
         end)
     end)
+
+    describe("IsOptionAvailable", function()
+        after_each(function()
+            Castborn.unavailableOptions = nil
+        end)
+
+        it("allows every option when nothing is listed", function()
+            assert.is_true(Castborn:IsOptionAvailable("swing"))
+        end)
+
+        it("hides options listed as unavailable", function()
+            Castborn.unavailableOptions = { swing = true }
+            assert.is_false(Castborn:IsOptionAvailable("swing"))
+            assert.is_true(Castborn:IsOptionAvailable("castbars"))
+        end)
+    end)
 end)
