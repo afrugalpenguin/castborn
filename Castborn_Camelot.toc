@@ -8,5 +8,19 @@
 ## IconTexture: Interface\Icons\Spell_Arcane_Arcane04
 
 Core.lua
+Systems/Compat_Forever.lua
 
+Systems/Anchoring.lua
+Systems/Profiles.lua
+Systems/ClassDefaults.lua
+Systems/GridPosition.lua
+Systems/Masque.lua
+
+Modules/CastBars.lua
+Modules/CastBars_Forever.lua
+Modules/FiveSecondRule.lua
+
+Systems/WhatsNew.lua
+Systems/Options.lua
+Systems/Config.lua
 Systems/APICheck_Forever.lua

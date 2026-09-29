@@ -54,4 +54,29 @@ describe("TOC files", function()
         assert.are.equal("Core.lua", tbcFiles[1])
         assert.are.equal("Core.lua", foreverFiles[1])
     end)
+
+    it("loads the compat layer straight after Core.lua on Forever", function()
+        assert.are.equal("Systems/Compat_Forever.lua", foreverFiles[2])
+    end)
+
+    it("never registers the combat log in the Forever build", function()
+        for _, path in ipairs(foreverFiles) do
+            local f = assert(io.open(path, "r"))
+            local source = f:read("*a")
+            f:close()
+            assert.is_nil(source:match('RegisterEvent%(%s*"COMBAT_LOG_EVENT'),
+                path .. " registers the combat log, which Forever blocks")
+        end
+    end)
+
+    it("loads Forever overrides after the file they override", function()
+        local position = {}
+        for i, path in ipairs(foreverFiles) do position[path] = i end
+        for path, i in pairs(position) do
+            local base = path:match("^(.*)_Forever%.lua$")
+            if base and position[base .. ".lua"] then
+                assert.is_true(i > position[base .. ".lua"], path .. " loads before " .. base .. ".lua")
+            end
+        end
+    end)
 end)
