@@ -11,6 +11,8 @@ describe("APICheck", function()
         _G.C_Test = nil
         _G.UnitCastingInfo = nil
         _G.InCombatLockdown = nil
+        _G.C_UnitAuras = nil
+        _G.C_Spell = nil
     end)
 
     describe("Resolve", function()
@@ -77,6 +79,16 @@ describe("APICheck", function()
         end)
     end)
 
+    describe("DescribeValues", function()
+        it("keeps nils in position", function()
+            assert.are.equal("number nil", APICheck:DescribeValues(1, nil))
+        end)
+
+        it("reports no values", function()
+            assert.are.equal("(no returns)", APICheck:DescribeValues())
+        end)
+    end)
+
     describe("Run", function()
         before_each(function()
             _G.CastbornDB = {}
@@ -116,6 +128,49 @@ describe("APICheck", function()
             local before = APICheck.cleu.count
             APICheck:OnEvent("COMBAT_LOG_EVENT_UNFILTERED")
             assert.are.equal(before + 1, APICheck:Run().cleu.count)
+        end)
+
+        it("keeps out-of-combat and in-combat runs", function()
+            _G.UnitCastingInfo = function() return "Fireball" end
+            APICheck:Run()
+            _G.InCombatLockdown = function() return true end
+            local report = APICheck:Run()
+            assert.are.equal("string", report.live["UnitCastingInfo(player)"])
+            assert.are.equal("string", report.live["UnitCastingInfo(player) [combat]"])
+        end)
+
+        it("skips aura probes in combat", function()
+            local calls = 0
+            _G.C_UnitAuras = { GetAuraDataByIndex = function() calls = calls + 1 end }
+            _G.InCombatLockdown = function() return true end
+            local report = APICheck:Run()
+            assert.are.equal("skipped in combat", report.live["C_UnitAuras.GetAuraDataByIndex(player,1,HELPFUL) [combat]"])
+            assert.are.equal(0, calls)
+        end)
+
+        it("does not read auras on UNIT_AURA in combat", function()
+            local calls = 0
+            _G.C_UnitAuras = { GetAuraDataByIndex = function() calls = calls + 1 end }
+            _G.InCombatLockdown = function() return true end
+            APICheck:OnEvent("UNIT_AURA", "target")
+            assert.are.equal(0, calls)
+        end)
+
+        it("counts events", function()
+            local before = APICheck.eventCounts.UNIT_AURA or 0
+            APICheck:OnEvent("UNIT_AURA", "player")
+            assert.are.equal(before + 1, APICheck:Run().eventCounts.UNIT_AURA)
+        end)
+
+        it("records the cast payload", function()
+            APICheck:OnEvent("UNIT_SPELLCAST_START", "target", "guid", 133)
+            assert.are.equal("string number", APICheck:Run().events["UNIT_SPELLCAST_START(target) payload"])
+        end)
+
+        it("records the cooldown of the spell just cast", function()
+            _G.C_Spell = { GetSpellCooldown = function(id) if id == 100 then return { startTime = 1 } end end }
+            APICheck:OnEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", 100)
+            assert.are.equal("{startTime=number}", APICheck:Run().events["C_Spell.GetSpellCooldown(last cast)"])
         end)
     end)
 end)

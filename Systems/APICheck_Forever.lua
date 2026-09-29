@@ -39,10 +39,16 @@ function APICheck:DescribeCall(path, ...)
     if type(fn) ~= "function" then return "missing" end
     local results = pack(pcall(fn, ...))
     if not results[1] then return "error: " .. tostring(results[2]) end
-    if results.n == 1 then return "(no returns)" end
+    return self:DescribeValues(unpack(results, 2, results.n))
+end
+
+-- Describe each value in a vararg list, keeping nils in position
+function APICheck:DescribeValues(...)
+    local n = select("#", ...)
+    if n == 0 then return "(no returns)" end
     local parts = {}
-    for i = 2, results.n do
-        local ok, desc = pcall(self.Describe, self, results[i])
+    for i = 1, n do
+        local ok, desc = pcall(self.Describe, self, (select(i, ...)))
         parts[#parts + 1] = ok and desc or "undescribable"
     end
     return table.concat(parts, " ")
@@ -70,9 +76,12 @@ APICheck.names = {
     "ColorPickerFrame.SetupColorPickerAndShow", "OpacitySliderFrame",
     "UIDropDownMenu_Initialize", "UIDropDownMenu_CreateInfo",
     "issecretvalue",
+    -- Possible Midnight display APIs for secret values (names unconfirmed)
+    "UnitCastingDuration", "UnitChannelDuration", "C_DurationUtil.CreateDuration",
+    "C_Spell.GetSpellCooldownDuration", "C_CurveUtil.CreateCurve",
 }
 
--- Calls made when /cbapi runs; target a mob with your DoT on it and have a buff up first
+-- Calls made when /cbapi runs; have a buff up and target a caster mob first
 APICheck.probes = {
     { "UnitCastingInfo", "player" },
     { "UnitChannelInfo", "player" },
@@ -90,9 +99,32 @@ APICheck.probes = {
     { "UnitHealth", "target" },
     { "C_Container.GetContainerNumSlots", 0 },
     { "GetInventoryItemCooldown", "player", 13 },
+    { "UnitCastingInfo", "target" },
+    { "UnitChannelInfo", "target" },
+    { "C_Spell.GetSpellCooldown", "Charge" },
+    { "C_Spell.GetSpellCooldown", "Battle Shout" },
+}
+
+-- Widget methods that might accept secret values directly
+APICheck.widgetMethods = {
+    { "StatusBar", "SetTimerDuration" },
+    { "StatusBar", "SetMinMaxValues" },
+    { "StatusBar", "SetValue" },
+    { "Cooldown", "SetCooldown" },
+    { "Cooldown", "SetCooldownFromDurationObject" },
+    { "Cooldown", "SetCooldownDuration" },
+}
+
+-- Forever blocks aura reads in combat and blames Castborn, so these only run out of combat
+local auraPaths = {
+    ["UnitBuff"] = true, ["UnitDebuff"] = true, ["UnitAura"] = true,
+    ["C_UnitAuras.GetAuraDataByIndex"] = true,
+    ["C_UnitAuras.GetPlayerAuraBySpellID"] = true,
 }
 
 APICheck.events = {}
+APICheck.live = {}
+APICheck.eventCounts = {}
 APICheck.cleu = { registered = "no", count = 0 }
 
 local function ProbeKey(path, ...)
@@ -101,13 +133,21 @@ local function ProbeKey(path, ...)
     return path .. "(" .. table.concat(args, ",") .. ")"
 end
 
-local function Snapshot(path, ...)
-    local key = ProbeKey(path, ...)
-    if InCombatLockdown and InCombatLockdown() then key = key .. " [combat]" end
-    APICheck.events[key] = APICheck:DescribeCall(path, ...)
+local function InCombat()
+    return InCombatLockdown and InCombatLockdown() and true or false
 end
 
-function APICheck:OnEvent(event, unit)
+local function CombatKey(key)
+    return InCombat() and (key .. " [combat]") or key
+end
+
+local function Snapshot(path, ...)
+    if auraPaths[path] and InCombat() then return end
+    APICheck.events[CombatKey(ProbeKey(path, ...))] = APICheck:DescribeCall(path, ...)
+end
+
+function APICheck:OnEvent(event, unit, ...)
+    self.eventCounts[event] = (self.eventCounts[event] or 0) + 1
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
         self.cleu.count = self.cleu.count + 1
         if not self.cleu.sample then
@@ -115,22 +155,35 @@ function APICheck:OnEvent(event, unit)
         end
     elseif event == "UNIT_SPELLCAST_START" and (unit == "player" or unit == "target") then
         Snapshot("UnitCastingInfo", unit)
+        self.events[CombatKey(event .. "(" .. unit .. ") payload")] = self:DescribeValues(...)
     elseif event == "UNIT_SPELLCAST_CHANNEL_START" and (unit == "player" or unit == "target") then
         Snapshot("UnitChannelInfo", unit)
+        self.events[CombatKey(event .. "(" .. unit .. ") payload")] = self:DescribeValues(...)
+    elseif event == "UNIT_SPELLCAST_SUCCEEDED" and unit == "player" then
+        -- spellID may be secret, so it is never used to build a key
+        local spellID = select(2, ...)
+        self.events[CombatKey("C_Spell.GetSpellCooldown(last cast)")] = self:DescribeCall("C_Spell.GetSpellCooldown", spellID)
     elseif event == "UNIT_AURA" and unit == "target" then
         Snapshot("C_UnitAuras.GetAuraDataByIndex", "target", 1, "HARMFUL")
         Snapshot("UnitDebuff", "target", 1)
     end
 end
 
+-- Throwaway widgets whose methods are checked by Run
+local probeBar = CreateFrame("StatusBar")
+local probeCooldown = CreateFrame("Cooldown")
+local probeWidgets = { StatusBar = probeBar, Cooldown = probeCooldown }
+
 function APICheck:Run()
     local report = {
         time = date and date("%Y-%m-%d %H:%M:%S"),
         canDetectSecrets = issecretvalue ~= nil,
         names = {},
-        live = {},
+        live = self.live,
         events = self.events,
+        eventCounts = self.eventCounts,
         cleu = self.cleu,
+        widgets = {},
     }
     if GetBuildInfo then
         local version, build, _, interface = GetBuildInfo()
@@ -142,7 +195,17 @@ function APICheck:Run()
         report.names[path] = value == nil and "missing" or type(value)
     end
     for _, probe in ipairs(self.probes) do
-        report.live[ProbeKey(unpack(probe))] = self:DescribeCall(unpack(probe))
+        local key = CombatKey(ProbeKey(unpack(probe)))
+        if auraPaths[probe[1]] and InCombat() then
+            report.live[key] = "skipped in combat"
+        else
+            report.live[key] = self:DescribeCall(unpack(probe))
+        end
+    end
+    for _, entry in ipairs(self.widgetMethods) do
+        local widgetType, method = entry[1], entry[2]
+        local fn = probeWidgets[widgetType][method]
+        report.widgets[widgetType .. ":" .. method] = type(fn) == "function" and "function" or "missing"
     end
     CastbornDB.apicheck = report
     return report
@@ -167,6 +230,8 @@ function APICheck:Print(report)
     PrintSorted("Missing APIs", missing)
     PrintSorted("Live calls", report.live)
     PrintSorted("Event snapshots", report.events)
+    PrintSorted("Event counts", report.eventCounts)
+    PrintSorted("Widget methods", report.widgets)
     print("  Combat log: registered=" .. tostring(report.cleu.registered)
         .. ", events=" .. report.cleu.count
         .. ", sample=" .. tostring(report.cleu.sample))
@@ -175,7 +240,7 @@ function APICheck:Print(report)
 end
 
 local eventFrame = CreateFrame("Frame")
-for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_AURA" }) do
+for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_AURA" }) do
     eventFrame:RegisterEvent(event)
 end
 local ok, err = pcall(eventFrame.RegisterEvent, eventFrame, "COMBAT_LOG_EVENT_UNFILTERED")
@@ -186,8 +251,8 @@ elseif eventFrame:IsEventRegistered("COMBAT_LOG_EVENT_UNFILTERED") then
 else
     APICheck.cleu.registered = "no (silently ignored)"
 end
-eventFrame:SetScript("OnEvent", function(_, event, unit)
-    APICheck:OnEvent(event, unit)
+eventFrame:SetScript("OnEvent", function(_, event, ...)
+    APICheck:OnEvent(event, ...)
 end)
 
 SLASH_CASTBORNAPI1 = "/cbapi"
