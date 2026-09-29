@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: Castborn
+## Notes: Castbar addon with DoT tracking, swing timers, and more
+## Author: Lightborn
+## Version: @project-version@
+## SavedVariables: CastbornDB
+## OptionalDeps: Masque, LibSharedMedia-3.0
+## IconTexture: Interface\Icons\Spell_Arcane_Arcane04
+
+Core.lua
+
+Systems/APICheck_Forever.lua
