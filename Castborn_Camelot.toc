@@ -18,7 +18,6 @@ Systems/Masque.lua
 
 Modules/CastBars.lua
 Modules/CastBars_Forever.lua
-Modules/FiveSecondRule.lua
 
 Systems/WhatsNew.lua
 Systems/Options.lua
