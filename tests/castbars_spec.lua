@@ -89,4 +89,52 @@ describe("CastBars seams (TBC behaviour)", function()
                 CB:GetCastDisplayName("Frostbolt", nil, 116, { showSpellRank = true }))
         end)
     end)
+
+    describe("ApplyInterruptShield", function()
+        local function frameWithShield()
+            local f = { shield = {}, bar = {} }
+            f.shield.Show = function() f.shield.shown = true end
+            f.shield.Hide = function() f.shield.shown = false end
+            f.bar.SetStatusBarColor = function(_, r) f.bar.r = r end
+            return f
+        end
+
+        it("shows the shield and dims the bar for uninterruptible casts", function()
+            local f = frameWithShield()
+            CB:ApplyInterruptShield(f, true, { 1, 1, 1, 1 })
+            assert.is_true(f.shield.shown)
+            assert.are.equal(0.6, f.bar.r)
+        end)
+
+        it("hides the shield for interruptible casts", function()
+            local f = frameWithShield()
+            CB:ApplyInterruptShield(f, false, { 1, 1, 1, 1 })
+            assert.is_false(f.shield.shown)
+        end)
+
+        it("does nothing without a shield", function()
+            assert.has_no.errors(function() CB:ApplyInterruptShield({}, true, { 1, 1, 1, 1 }) end)
+        end)
+    end)
+
+    describe("GetLatencyWidth", function()
+        -- The mock does not define GetNetStats, so clearing it restores its state
+        after_each(function() _G.GetNetStats = nil end)
+
+        it("scales latency to the cast length, capped at half the bar", function()
+            _G.GetNetStats = function() return 0, 0, 100, 100 end
+            local frame = { bar = fakeBar(), startTime = 10, endTime = 12 }
+            assert.are.equal(20, CB:GetLatencyWidth(frame))
+            frame.endTime = 10.2
+            assert.are.equal(100, CB:GetLatencyWidth(frame))
+        end)
+    end)
+
+    describe("IsHiddenTradeSkill", function()
+        it("hides tradeskill casts only when the option is on", function()
+            assert.is_truthy(CB:IsHiddenTradeSkill(true, { hideTradeSkills = true }))
+            assert.is_falsy(CB:IsHiddenTradeSkill(true, { hideTradeSkills = false }))
+            assert.is_falsy(CB:IsHiddenTradeSkill(false, { hideTradeSkills = true }))
+        end)
+    end)
 end)

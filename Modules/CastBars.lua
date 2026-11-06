@@ -265,6 +265,30 @@ function CB:GetCastDisplayName(name, text, spellID, cfg)
     return displayName
 end
 
+-- Shield icon and dimmed bar for casts that cannot be interrupted. Forever overrides this.
+function CB:ApplyInterruptShield(frame, notInterruptible, barColor)
+    if not frame.shield then return end
+    if notInterruptible then
+        frame.shield:Show()
+        frame.bar:SetStatusBarColor(barColor[1] * 0.6, barColor[2] * 0.6, barColor[3] * 0.6, barColor[4])
+    else
+        frame.shield:Hide()
+    end
+end
+
+-- Width of the latency overlay for the current cast, or nil to hide it. Forever overrides this.
+function CB:GetLatencyWidth(frame)
+    local _, _, lagHome, lagWorld = GetNetStats()
+    local lag = (lagHome + lagWorld) / 1000
+    local barWidth = frame.bar:GetWidth()
+    return math.min(lag / (frame.endTime - frame.startTime) * barWidth, barWidth * 0.5)
+end
+
+-- True when a tradeskill cast should be skipped. Forever overrides this.
+function CB:IsHiddenTradeSkill(isTradeSkill, cfg)
+    return isTradeSkill and cfg.hideTradeSkills
+end
+
 -- Update castbar appearance during cast
 local function UpdateCastBar(frame, elapsed)
     -- Don't update during test mode (let test values persist)
@@ -322,7 +346,7 @@ local function StartCast(frame, unit)
     if not name then return end
 
     -- Skip tradeskill casts (crafting) if option is enabled
-    if isTradeSkill and cfg.hideTradeSkills then return end
+    if CB:IsHiddenTradeSkill(isTradeSkill, cfg) then return end
 
     frame.casting = true
     frame.channeling = false
@@ -355,25 +379,19 @@ local function StartCast(frame, unit)
     -- Show/hide latency based on setting
     if frame.latency and unit == "player" then
         if cfg.showLatency then
-            local _, _, lagHome, lagWorld = GetNetStats()
-            local lag = (lagHome + lagWorld) / 1000
-            local barWidth = frame.bar:GetWidth()
-            local lagWidth = math.min(lag / (frame.endTime - frame.startTime) * barWidth, barWidth * 0.5)
-            frame.latency:SetWidth(lagWidth)
-            frame.latency:Show()
+            local lagWidth = CB:GetLatencyWidth(frame)
+            if lagWidth then
+                frame.latency:SetWidth(lagWidth)
+                frame.latency:Show()
+            else
+                frame.latency:Hide()
+            end
         else
             frame.latency:Hide()
         end
     end
 
-    if frame.shield then
-        if notInterruptible then
-            frame.shield:Show()
-            frame.bar:SetStatusBarColor(barColor[1] * 0.6, barColor[2] * 0.6, barColor[3] * 0.6, barColor[4])
-        else
-            frame.shield:Hide()
-        end
-    end
+    CB:ApplyInterruptShield(frame, notInterruptible, barColor)
     
     CB:StartCastBar(frame, false)
     frame:SetAlpha(1)
@@ -395,7 +413,7 @@ local function StartChannel(frame, unit)
     if not name then return end
 
     -- Skip tradeskill channels (crafting) if option is enabled
-    if isTradeSkill and cfg.hideTradeSkills then return end
+    if CB:IsHiddenTradeSkill(isTradeSkill, cfg) then return end
 
     frame.casting = false
     frame.channeling = true
@@ -428,14 +446,7 @@ local function StartChannel(frame, unit)
     -- Hide latency for channels
     if frame.latency then frame.latency:Hide() end
 
-    if frame.shield then
-        if notInterruptible then
-            frame.shield:Show()
-            frame.bar:SetStatusBarColor(barColor[1] * 0.6, barColor[2] * 0.6, barColor[3] * 0.6, barColor[4])
-        else
-            frame.shield:Hide()
-        end
-    end
+    CB:ApplyInterruptShield(frame, notInterruptible, barColor)
     
     CB:StartCastBar(frame, true)
     frame:SetAlpha(1)
