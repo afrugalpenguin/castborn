@@ -6,6 +6,7 @@ Before each release:
 - [ ] If Forever has patched, bump `## Interface:` in `Castborn_Camelot.toc` (currently `16001`)
 - [ ] Update `CHANGELOG.md` (use `**vX.Y.Z**` bold text, no `###` subheadings)
 - [ ] Update `Systems/WhatsNew.lua` changelog table
+- [ ] If features or Forever support changed, update `CURSEFORGE.md` and paste it into the CurseForge description
 - [ ] Commit with message: `chore(release): bump version to X.Y.Z`
 - [ ] Create and push tag: `git tag vX.Y.Z && git push origin vX.Y.Z`
 
