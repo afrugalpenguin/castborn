@@ -205,6 +205,10 @@ end
 
 function APICheck:OnEvent(event, unit, ...)
     self.eventCounts[event] = (self.eventCounts[event] or 0) + 1
+    if event == "PLAYER_REGEN_ENABLED" then
+        self.auraDurationTried = nil
+        return
+    end
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
         self.cleu.count = self.cleu.count + 1
         if not self.cleu.sample then
@@ -222,6 +226,17 @@ function APICheck:OnEvent(event, unit, ...)
         -- spellID may be secret, so it is never used to build a key
         local spellID = select(2, ...)
         self.events[CombatKey("C_Spell.GetSpellCooldown(last cast)")] = self:DescribeCall("C_Spell.GetSpellCooldown", spellID)
+    elseif event == "UNIT_AURA" and unit == "player" then
+        local info = ...
+        local added = type(info) == "table" and info.addedAuras and info.addedAuras[1]
+        if added then
+            self.events[CombatKey("UNIT_AURA(player) addedAura")] = self:DescribeValues(added)
+            if InCombat() and not self.auraDurationTried then
+                self.auraDurationTried = true
+                self.events["C_UnitAuras.GetAuraDuration(player) [combat]"] =
+                    self:DescribeCall("C_UnitAuras.GetAuraDuration", "player", added.auraInstanceID)
+            end
+        end
     elseif event == "UNIT_AURA" and unit == "target" then
         Snapshot("C_UnitAuras.GetAuraDataByIndex", "target", 1, "HARMFUL")
         Snapshot("UnitDebuff", "target", 1)
@@ -300,7 +315,7 @@ function APICheck:Print(report)
 end
 
 local eventFrame = CreateFrame("Frame")
-for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_AURA" }) do
+for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_AURA", "PLAYER_REGEN_ENABLED" }) do
     eventFrame:RegisterEvent(event)
 end
 -- The combat log is not registered: Forever ignored it in two probe runs and it is the

@@ -214,5 +214,29 @@ describe("APICheck", function()
                 APICheck:Run().events["UnitCastingDuration(target) object"])
             _G.UnitCastingDuration = nil
         end)
+
+        it("describes the first added aura from the payload in combat", function()
+            _G.InCombatLockdown = function() return true end
+            APICheck:OnEvent("UNIT_AURA", "player", { addedAuras = { { spellId = 1, auraInstanceID = 2 } } })
+            assert.are.equal("{auraInstanceID=number,spellId=number}",
+                APICheck:Run().events["UNIT_AURA(player) addedAura [combat]"])
+        end)
+
+        it("tries the aura duration API once per combat", function()
+            local calls = 0
+            _G.C_UnitAuras = { GetAuraDuration = function() calls = calls + 1 end }
+            _G.InCombatLockdown = function() return true end
+            APICheck.auraDurationTried = nil
+            local info = { addedAuras = { { auraInstanceID = 2 } } }
+            APICheck:OnEvent("UNIT_AURA", "player", info)
+            APICheck:OnEvent("UNIT_AURA", "player", info)
+            assert.are.equal(1, calls)
+        end)
+
+        it("allows another aura duration attempt after combat ends", function()
+            APICheck.auraDurationTried = true
+            APICheck:OnEvent("PLAYER_REGEN_ENABLED")
+            assert.is_nil(APICheck.auraDurationTried)
+        end)
     end)
 end)
