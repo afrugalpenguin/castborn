@@ -37,7 +37,6 @@ Castborn.unavailableOptions = {
     dots = true,
     multidot = true,
     buffs = true,
-    cooldowns = true,
     itemtracker = true,
     interrupt = true,
     totems = true,
