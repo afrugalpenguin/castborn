@@ -62,6 +62,12 @@ local probeTexture = probeBar:CreateTexture()
 local probeText = probeBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 local probeWidgets = { StatusBar = probeBar, Cooldown = probeCooldown, Texture = probeTexture, FontString = probeText }
 
+-- Candidate duration object methods; any that exist are listed in the report
+local durationMethods = {
+    "GetRemainingDuration", "GetElapsedDuration", "GetTotalDuration",
+    "GetStartTime", "GetEndTime", "IsZero",
+}
+
 -- What a cast duration object offers: its methods, the type of its remaining time, and
 -- whether that time survives string.format and SetText (the route to countdown text when secret)
 function APICheck:DescribeDuration(path, unit)
@@ -70,16 +76,16 @@ function APICheck:DescribeDuration(path, unit)
     local ok, obj = pcall(fn, unit)
     if not ok then return "error: " .. tostring(obj) end
     if obj == nil then return "nil" end
+    -- The real object is not a plain table (its metatable hides __index), so look methods up by name
     local methods = {}
-    local mt = getmetatable(obj)
-    local index = type(mt) == "table" and mt.__index
-    if type(index) == "table" then
-        for k in pairs(index) do methods[#methods + 1] = tostring(k) end
+    for _, name in ipairs(durationMethods) do
+        local okM, method = pcall(function() return obj[name] end)
+        if okM and type(method) == "function" then methods[#methods + 1] = name end
     end
-    table.sort(methods)
     local remaining, format = "n/a", "n/a"
-    if type(index) == "table" and type(index.GetRemainingDuration) == "function" then
-        local okR, value = pcall(index.GetRemainingDuration, obj)
+    local okG, getRemaining = pcall(function() return obj.GetRemainingDuration end)
+    if okG and type(getRemaining) == "function" then
+        local okR, value = pcall(getRemaining, obj)
         remaining = okR and self:Describe(value) or ("error: " .. tostring(value))
         if okR then
             local okF, text = pcall(string.format, "%.1f", value)
@@ -90,7 +96,8 @@ function APICheck:DescribeDuration(path, unit)
             end
         end
     end
-    return "methods=" .. table.concat(methods, ",") .. " remaining=" .. remaining .. " format=" .. format
+    return "type=" .. type(obj) .. " methods=" .. table.concat(methods, ",")
+        .. " remaining=" .. remaining .. " format=" .. format
 end
 
 -- APIs Castborn's modules call on TBC, plus their Mainline replacements
@@ -248,6 +255,7 @@ function APICheck:Run()
     local report = {
         time = date and date("%Y-%m-%d %H:%M:%S"),
         canDetectSecrets = issecretvalue ~= nil,
+        inCombat = InCombat(),
         names = {},
         values = {},
         live = self.live,
@@ -312,6 +320,7 @@ function APICheck:Print(report)
         .. ", events=" .. report.cleu.count
         .. ", sample=" .. tostring(report.cleu.sample))
     print("  Can detect secrets: " .. tostring(report.canDetectSecrets))
+    print("  Run in combat: " .. tostring(report.inCombat))
     Castborn:Print("Saved to CastbornDB.apicheck. /reload to write it to disk.")
 end
 

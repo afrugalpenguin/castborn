@@ -99,7 +99,7 @@ describe("APICheck", function()
         it("lists methods and formats the remaining time", function()
             local methods = { GetRemainingDuration = function() return 1.5 end }
             _G.UnitCastingDuration = function() return setmetatable({}, { __index = methods }) end
-            assert.are.equal("methods=GetRemainingDuration remaining=number format=ok",
+            assert.are.equal("type=table methods=GetRemainingDuration remaining=number format=ok",
                 APICheck:DescribeDuration("UnitCastingDuration", "target"))
         end)
     end)
@@ -210,7 +210,7 @@ describe("APICheck", function()
         it("snapshots the target cast duration", function()
             _G.UnitCastingDuration = function() return setmetatable({}, { __index = {} }) end
             APICheck:OnEvent("UNIT_SPELLCAST_START", "target")
-            assert.are.equal("methods= remaining=n/a format=n/a",
+            assert.are.equal("type=table methods= remaining=n/a format=n/a",
                 APICheck:Run().events["UnitCastingDuration(target) object"])
             _G.UnitCastingDuration = nil
         end)
