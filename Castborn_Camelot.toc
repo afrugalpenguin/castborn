@@ -15,6 +15,7 @@ Systems/Profiles.lua
 Systems/ClassDefaults.lua
 Systems/GridPosition.lua
 Systems/Masque.lua
+Data/SpellData.lua
 
 Modules/CastBars.lua
 Modules/CastBars_Forever.lua

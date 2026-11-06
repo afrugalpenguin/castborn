@@ -4,7 +4,17 @@ describe("Compat_Forever", function()
     before_each(function()
         _G.GetSpellInfo = nil
         _G.GetSpellSubtext = nil
+        _G.GetSpellTexture = nil
+        _G.GetItemSpell = nil
+        _G.C_Item = {
+            GetItemSpell = function(id)
+                if id == 19950 then return "Zandalarian Hero Charm", 24658 end
+            end,
+        }
         _G.C_Spell = {
+            GetSpellTexture = function(id)
+                if id == 133 then return 135812 end
+            end,
             GetSpellInfo = function(id)
                 if id == 133 then
                     return { name = "Fireball", iconID = 135812, castTime = 1500,
@@ -22,6 +32,9 @@ describe("Compat_Forever", function()
         _G.C_Spell = nil
         _G.GetSpellInfo = nil
         _G.GetSpellSubtext = nil
+        _G.C_Item = nil
+        _G.GetSpellTexture = nil
+        _G.GetItemSpell = nil
     end)
 
     it("recreates GetSpellInfo with the TBC return order", function()
@@ -41,6 +54,20 @@ describe("Compat_Forever", function()
 
     it("recreates GetSpellSubtext", function()
         assert.are.equal("Rank 1", GetSpellSubtext(133))
+    end)
+
+    it("recreates GetSpellTexture", function()
+        assert.are.equal(135812, GetSpellTexture(133))
+    end)
+
+    it("recreates GetItemSpell", function()
+        local name, id = GetItemSpell(19950)
+        assert.are.equal("Zandalarian Hero Charm", name)
+        assert.are.equal(24658, id)
+    end)
+
+    it("does not recreate GetSpellCooldown, whose times can be secret", function()
+        assert.is_nil(_G.GetSpellCooldown)
     end)
 
     it("keeps an existing global", function()
