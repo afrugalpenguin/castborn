@@ -79,6 +79,8 @@ APICheck.names = {
     -- Possible Midnight display APIs for secret values (names unconfirmed)
     "UnitCastingDuration", "UnitChannelDuration", "C_DurationUtil.CreateDuration",
     "C_Spell.GetSpellCooldownDuration", "C_CurveUtil.CreateCurve",
+    "UnitIsUnit", "C_UnitAuras.GetAuraDuration", "C_UnitAuras.GetAuraDataByAuraInstanceID",
+    "BuffIconCooldownViewer", "BuffBarCooldownViewer", "EssentialCooldownViewer",
 }
 
 -- Tables whose fields are listed in the report (enum names the Forever ports need)
@@ -108,6 +110,16 @@ APICheck.probes = {
     { "UnitChannelInfo", "target" },
     { "C_Spell.GetSpellCooldown", "Charge" },
     { "C_Spell.GetSpellCooldown", "Battle Shout" },
+    { "UnitCastingDuration", "player" },
+    { "UnitCastingDuration", "target" },
+    { "UnitChannelDuration", "target" },
+    { "UnitIsUnit", "target", "player" },
+    { "C_Container.GetContainerItemCooldown", 0, 1 },
+    -- Interrupts; only the player's class answers, the rest report nil
+    { "C_Spell.GetSpellCooldown", "Counterspell" },
+    { "C_Spell.GetSpellCooldown", "Kick" },
+    { "C_Spell.GetSpellCooldown", "Pummel" },
+    { "C_Spell.GetSpellCooldown", "Earth Shock" },
 }
 
 -- Widget methods that might accept secret values directly
@@ -118,6 +130,8 @@ APICheck.widgetMethods = {
     { "Cooldown", "SetCooldown" },
     { "Cooldown", "SetCooldownFromDurationObject" },
     { "Cooldown", "SetCooldownDuration" },
+    { "Texture", "SetAlphaFromBoolean" },
+    { "FontString", "SetFormattedText" },
 }
 
 -- Forever blocks aura reads in combat and blames Castborn, so these only run out of combat
@@ -177,7 +191,9 @@ end
 -- Throwaway widgets whose methods are checked by Run
 local probeBar = CreateFrame("StatusBar")
 local probeCooldown = CreateFrame("Cooldown")
-local probeWidgets = { StatusBar = probeBar, Cooldown = probeCooldown }
+local probeTexture = probeBar:CreateTexture()
+local probeText = probeBar:CreateFontString()
+local probeWidgets = { StatusBar = probeBar, Cooldown = probeCooldown, Texture = probeTexture, FontString = probeText }
 
 function APICheck:Run()
     local report = {

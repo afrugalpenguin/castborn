@@ -70,6 +70,8 @@ local function newMockFrame()
     frame.GetScript = function(self, handler) return self.scripts[handler] end
     frame.GetWidth = function() return 100 end
     frame.GetHeight = function() return 20 end
+    frame.CreateTexture = function() return newMockFrame() end
+    frame.CreateFontString = function() return newMockFrame() end
     setmetatable(frame, { __index = function() return function() end end })
     return frame
 end

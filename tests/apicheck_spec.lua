@@ -181,5 +181,15 @@ describe("APICheck", function()
             assert.are.equal("missing", report.values["Enum.StatusBarInterpolation"])
             _G.Enum = nil
         end)
+
+        it("probes target cast durations and unit identity", function()
+            local report = APICheck:Run()
+            assert.are.equal("missing", report.live["UnitCastingDuration(target)"])
+            assert.are.equal("missing", report.live["UnitIsUnit(target,player)"])
+        end)
+
+        it("checks SetAlphaFromBoolean on textures", function()
+            assert.is_not_nil(APICheck:Run().widgets["Texture:SetAlphaFromBoolean"])
+        end)
     end)
 end)
