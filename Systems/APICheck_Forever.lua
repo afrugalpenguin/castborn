@@ -81,6 +81,11 @@ APICheck.names = {
     "C_Spell.GetSpellCooldownDuration", "C_CurveUtil.CreateCurve",
 }
 
+-- Tables whose fields are listed in the report (enum names the Forever ports need)
+APICheck.values = {
+    "Enum.StatusBarTimerDirection", "Enum.StatusBarInterpolation",
+}
+
 -- Calls made when /cbapi runs; have a buff up and target a caster mob first
 APICheck.probes = {
     { "UnitCastingInfo", "player" },
@@ -179,6 +184,7 @@ function APICheck:Run()
         time = date and date("%Y-%m-%d %H:%M:%S"),
         canDetectSecrets = issecretvalue ~= nil,
         names = {},
+        values = {},
         live = self.live,
         events = self.events,
         eventCounts = self.eventCounts,
@@ -193,6 +199,10 @@ function APICheck:Run()
     for _, path in ipairs(self.names) do
         local value = self:Resolve(path)
         report.names[path] = value == nil and "missing" or type(value)
+    end
+    for _, path in ipairs(self.values) do
+        local value = self:Resolve(path)
+        report.values[path] = value == nil and "missing" or self:Describe(value)
     end
     for _, probe in ipairs(self.probes) do
         local key = CombatKey(ProbeKey(unpack(probe)))
@@ -232,6 +242,7 @@ function APICheck:Print(report)
     PrintSorted("Event snapshots", report.events)
     PrintSorted("Event counts", report.eventCounts)
     PrintSorted("Widget methods", report.widgets)
+    PrintSorted("Values", report.values)
     print("  Combat log: registered=" .. tostring(report.cleu.registered)
         .. ", events=" .. report.cleu.count
         .. ", sample=" .. tostring(report.cleu.sample))

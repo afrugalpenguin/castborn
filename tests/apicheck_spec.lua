@@ -172,5 +172,14 @@ describe("APICheck", function()
             APICheck:OnEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", 100)
             assert.are.equal("{startTime=number}", APICheck:Run().events["C_Spell.GetSpellCooldown(last cast)"])
         end)
+
+        it("describes the fields of listed values", function()
+            _G.Enum = { StatusBarTimerDirection = { ElapsedTime = 0, RemainingTime = 1 } }
+            local report = APICheck:Run()
+            assert.are.equal("{ElapsedTime=number,RemainingTime=number}",
+                report.values["Enum.StatusBarTimerDirection"])
+            assert.are.equal("missing", report.values["Enum.StatusBarInterpolation"])
+            _G.Enum = nil
+        end)
     end)
 end)
