@@ -32,7 +32,6 @@ end
 -- Option pages (and module checkboxes) hidden on Forever, keyed by Options.lua category id.
 -- Remove an entry when its module is ported and added to Castborn_Camelot.toc.
 Castborn.unavailableOptions = {
-    gcd = true,
     fsr = true,  -- mana is a secret value on Forever, so the bar cannot compare it
     swing = true,
     dots = true,
