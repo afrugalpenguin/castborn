@@ -67,4 +67,26 @@ describe("CastBars seams (TBC behaviour)", function()
             assert.is_true(CB:UpdateCastProgress(fakeFrame(false), 12, { showTime = true }))
         end)
     end)
+
+    describe("GetCastDisplayName", function()
+        -- The mock does not define these, so clearing them restores its state
+        after_each(function() _G.GetSpellSubtext = nil; _G.GetSpellInfo = nil end)
+
+        it("prefers the cast text over the name", function()
+            assert.are.equal("Text", CB:GetCastDisplayName("Name", "Text", nil, {}))
+        end)
+
+        it("appends a numeric rank as Rank N", function()
+            _G.GetSpellSubtext = function() return "3" end
+            assert.are.equal("Frostbolt (Rank 3)",
+                CB:GetCastDisplayName("Frostbolt", nil, 116, { showSpellRank = true }))
+        end)
+
+        it("falls back to GetSpellInfo's rank", function()
+            _G.GetSpellSubtext = function() return "" end
+            _G.GetSpellInfo = function() return "Frostbolt", "Rank 2" end
+            assert.are.equal("Frostbolt (Rank 2)",
+                CB:GetCastDisplayName("Frostbolt", nil, 116, { showSpellRank = true }))
+        end)
+    end)
 end)

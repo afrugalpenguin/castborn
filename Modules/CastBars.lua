@@ -240,6 +240,31 @@ function CB:UpdateCastProgress(frame, currentTime, cfg)
     return currentTime >= frame.endTime
 end
 
+-- Spell name as shown on the bar, with rank when enabled. Forever overrides this.
+function CB:GetCastDisplayName(name, text, spellID, cfg)
+    local displayName = text or name
+    -- Add rank if enabled and spellID available
+    if cfg.showSpellRank and spellID then
+        -- Try GetSpellSubtext first (TBC), fall back to GetSpellInfo
+        local rank
+        if GetSpellSubtext then
+            rank = GetSpellSubtext(spellID)
+        end
+        if not rank or rank == "" then
+            local _, r = GetSpellInfo(spellID)
+            rank = r
+        end
+        if rank and rank ~= "" then
+            -- Format as "Rank X" if it's just a number
+            if tonumber(rank) then
+                rank = "Rank " .. rank
+            end
+            displayName = displayName .. " (" .. rank .. ")"
+        end
+    end
+    return displayName
+end
+
 -- Update castbar appearance during cast
 local function UpdateCastBar(frame, elapsed)
     -- Don't update during test mode (let test values persist)
@@ -320,27 +345,7 @@ local function StartCast(frame, unit)
     -- Show/hide spell name based on setting
     if frame.spellText then
         if cfg.showSpellName then
-            local displayName = text or name
-            -- Add rank if enabled and spellID available
-            if cfg.showSpellRank and spellID then
-                -- Try GetSpellSubtext first (TBC), fall back to GetSpellInfo
-                local rank
-                if GetSpellSubtext then
-                    rank = GetSpellSubtext(spellID)
-                end
-                if not rank or rank == "" then
-                    local _, r = GetSpellInfo(spellID)
-                    rank = r
-                end
-                if rank and rank ~= "" then
-                    -- Format as "Rank X" if it's just a number
-                    if tonumber(rank) then
-                        rank = "Rank " .. rank
-                    end
-                    displayName = displayName .. " (" .. rank .. ")"
-                end
-            end
-            frame.spellText:SetText(displayName)
+            frame.spellText:SetText(CB:GetCastDisplayName(name, text, spellID, cfg))
             frame.spellText:Show()
         else
             frame.spellText:Hide()
@@ -413,27 +418,7 @@ local function StartChannel(frame, unit)
     -- Show/hide spell name based on setting
     if frame.spellText then
         if cfg.showSpellName then
-            local displayName = text or name
-            -- Add rank if enabled and spellID available
-            if cfg.showSpellRank and spellID then
-                -- Try GetSpellSubtext first (TBC), fall back to GetSpellInfo
-                local rank
-                if GetSpellSubtext then
-                    rank = GetSpellSubtext(spellID)
-                end
-                if not rank or rank == "" then
-                    local _, r = GetSpellInfo(spellID)
-                    rank = r
-                end
-                if rank and rank ~= "" then
-                    -- Format as "Rank X" if it's just a number
-                    if tonumber(rank) then
-                        rank = "Rank " .. rank
-                    end
-                    displayName = displayName .. " (" .. rank .. ")"
-                end
-            end
-            frame.spellText:SetText(displayName)
+            frame.spellText:SetText(CB:GetCastDisplayName(name, text, spellID, cfg))
             frame.spellText:Show()
         else
             frame.spellText:Hide()
