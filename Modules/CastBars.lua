@@ -211,6 +211,35 @@ function CB:StartCastBar(frame, isChannel)
     frame.bar:SetValue(isChannel and 1 or 0)
 end
 
+-- Move bar, spark and time text to the current time; true once the cast has run its length.
+-- Forever overrides this for casts whose times are secret.
+function CB:UpdateCastProgress(frame, currentTime, cfg)
+    local progress
+    if frame.channeling then
+        progress = (frame.endTime - currentTime) / (frame.endTime - frame.startTime)
+    else
+        progress = (currentTime - frame.startTime) / (frame.endTime - frame.startTime)
+    end
+    progress = math.max(0, math.min(1, progress))
+    frame.bar:SetValue(progress)
+
+    local sparkPos = progress * frame.bar:GetWidth()
+    frame.spark:SetPoint("CENTER", frame.bar, "LEFT", sparkPos, 0)
+    frame.spark:Show()
+
+    if frame.timeText then
+        if cfg.showTime then
+            local remaining = frame.endTime - currentTime
+            frame.timeText:SetText(CB:FormatTime(math.max(0, remaining)))
+            frame.timeText:Show()
+        else
+            frame.timeText:Hide()
+        end
+    end
+
+    return currentTime >= frame.endTime
+end
+
 -- Update castbar appearance during cast
 local function UpdateCastBar(frame, elapsed)
     -- Don't update during test mode (let test values persist)
@@ -231,25 +260,7 @@ local function UpdateCastBar(frame, elapsed)
     local cfg = CB.db[frame.dbKey]
     
     if frame.casting then
-        local progress = (currentTime - frame.startTime) / (frame.endTime - frame.startTime)
-        progress = math.max(0, math.min(1, progress))
-        frame.bar:SetValue(progress)
-        
-        local sparkPos = progress * frame.bar:GetWidth()
-        frame.spark:SetPoint("CENTER", frame.bar, "LEFT", sparkPos, 0)
-        frame.spark:Show()
-        
-        if frame.timeText then
-            if cfg.showTime then
-                local remaining = frame.endTime - currentTime
-                frame.timeText:SetText(CB:FormatTime(math.max(0, remaining)))
-                frame.timeText:Show()
-            else
-                frame.timeText:Hide()
-            end
-        end
-
-        if currentTime >= frame.endTime then
+        if CB:UpdateCastProgress(frame, currentTime, cfg) then
             frame.casting = false
             frame.fadeOut = 0.3
             frame.spark:Hide()
@@ -260,25 +271,7 @@ local function UpdateCastBar(frame, elapsed)
         end
 
     elseif frame.channeling then
-        local progress = (frame.endTime - currentTime) / (frame.endTime - frame.startTime)
-        progress = math.max(0, math.min(1, progress))
-        frame.bar:SetValue(progress)
-        
-        local sparkPos = progress * frame.bar:GetWidth()
-        frame.spark:SetPoint("CENTER", frame.bar, "LEFT", sparkPos, 0)
-        frame.spark:Show()
-        
-        if frame.timeText then
-            if cfg.showTime then
-                local remaining = frame.endTime - currentTime
-                frame.timeText:SetText(CB:FormatTime(math.max(0, remaining)))
-                frame.timeText:Show()
-            else
-                frame.timeText:Hide()
-            end
-        end
-
-        if currentTime >= frame.endTime then
+        if CB:UpdateCastProgress(frame, currentTime, cfg) then
             frame.channeling = false
             frame.fadeOut = 0.3
             frame.spark:Hide()

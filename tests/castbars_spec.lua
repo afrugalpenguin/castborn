@@ -36,4 +36,35 @@ describe("CastBars seams (TBC behaviour)", function()
             assert.are.same({ "SetValue", 1 }, frame.bar.calls[2])
         end)
     end)
+
+    describe("UpdateCastProgress", function()
+        local function fakeFrame(channeling)
+            local text = { shown = false }
+            text.SetText = function(_, t) text.value = t end
+            text.Show = function() text.shown = true end
+            text.Hide = function() text.shown = false end
+            local spark = { Show = function() end, SetPoint = function() end }
+            return { bar = fakeBar(), spark = spark, timeText = text,
+                     startTime = 10, endTime = 12, channeling = channeling }
+        end
+
+        it("fills a cast with elapsed time and shows remaining", function()
+            local frame = fakeFrame(false)
+            local done = CB:UpdateCastProgress(frame, 11, { showTime = true })
+            assert.are.same({ "SetValue", 0.5 }, frame.bar.calls[1])
+            assert.are.equal("1.0", frame.timeText.value)
+            assert.is_false(done)
+        end)
+
+        it("drains a channel", function()
+            local frame = fakeFrame(true)
+            CB:UpdateCastProgress(frame, 11.5, { showTime = false })
+            assert.are.same({ "SetValue", 0.25 }, frame.bar.calls[1])
+            assert.is_false(frame.timeText.shown)
+        end)
+
+        it("reports completion at the end time", function()
+            assert.is_true(CB:UpdateCastProgress(fakeFrame(false), 12, { showTime = true }))
+        end)
+    end)
 end)
