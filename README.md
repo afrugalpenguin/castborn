@@ -1,19 +1,21 @@
 # Castborn
 
 <p align="center">
-  <img src="images/logo.png" width="400">
+  <img src="images/logo.png" width="360" alt="Castborn for TBC Anniversary">
+  <img src="images/logo_forever.png" width="360" alt="Castborn Forever">
 </p>
 
 <p align="center">
   <a href="https://github.com/afrugalpenguin/Castborn/releases"><img src="https://img.shields.io/github/v/tag/afrugalpenguin/Castborn?label=version" alt="Version"></a>
   <a href="https://github.com/afrugalpenguin/Castborn/actions/workflows/luacheck.yml"><img src="https://github.com/afrugalpenguin/Castborn/actions/workflows/luacheck.yml/badge.svg" alt="Luacheck"></a>
   <img src="https://img.shields.io/badge/WoW-TBC%20Classic-blue" alt="WoW TBC Classic">
+  <img src="https://img.shields.io/badge/WoW-Forever-8a3fd1" alt="WoW Forever">
   <a href="https://www.curseforge.com/wow/addons/castborn"><img src="https://img.shields.io/curseforge/dt/1437587?label=downloads&color=orange" alt="CurseForge Downloads"></a>
   <a href="https://github.com/afrugalpenguin/Castborn/issues"><img src="https://img.shields.io/github/issues/afrugalpenguin/Castborn" alt="Issues"></a>
 </p>
 
 <p align="center">
-  <b>A lightweight combat HUD for TBC Classic</b><br>
+  <b>A lightweight combat HUD for TBC Classic and WoW Forever</b><br>
   Clean, minimalist, essential.
 </p>
 
@@ -28,21 +30,33 @@ Castborn gives you everything you need to track casts, cooldowns, DoTs, and proc
 - **Just works** — Smart defaults for every class, guided setup for new users
 - **Fully customisable** — Move anything, resize anything, toggle anything
 
+## WoW Forever
+
+Castborn also runs on World of Warcraft: Forever, from the same download. Forever hides some combat data from addons, so for now it has:
+
+- Player, Target, Focus and Target-of-Target castbars
+- GCD Indicator
+- Cooldown Tracker, including trinket cooldowns
+
+A few details differ on Forever: castbars whose timings are hidden show no spark or latency overlay, short cooldowns can also get the ready glow, and Earth Shield and Water Shield charges are not shown.
+
+Not yet on Forever: Five Second Rule, Swing Timer, DoT and Multi-DoT trackers, Proc Tracker, Interrupt Tracker, Totem Tracker, Absorb Tracker, Armour Tracker and Item Tracker. Their option pages are hidden on Forever, and they keep working as before on TBC.
+
 ## What's Included
 
 ### Castbars
 
-Player, Target, Focus, and Target-of-Target castbars with latency indicators, class colours, and shield icons for uninterruptible spells.
+Player, Target, Focus, and Target-of-Target castbars with latency indicators, class colours, and shield icons for uninterruptible spells. *(TBC and Forever)*
 
 ### Tracking Modules
 
-- **GCD Indicator** — See your global cooldown at a glance
+- **GCD Indicator** — See your global cooldown at a glance *(TBC and Forever)*
 - **Five Second Rule** — Know exactly when your mana regen kicks in
 - **Swing Timer** — Track mainhand, offhand, and ranged auto-attacks
 - **DoT Tracker** — Monitor debuffs on your current target
 - **Multi-DoT Tracker** — Keep DoTs up on multiple mobs simultaneously
 - **Proc Tracker** — Never miss Clearcasting, Nightfall, or trinket procs
-- **Cooldown Tracker** — Track important abilities with per-spell toggles
+- **Cooldown Tracker** — Track important abilities with per-spell toggles *(TBC and Forever)*
 - **Interrupt Tracker** — Know when your kick is ready
 - **Totem Tracker** — Shaman-only: track active totems and party coverage
 - **Absorb Tracker** — Track Ice Barrier, Mana Shield, Power Word: Shield, and all TBC absorb effects with remaining amount and drain visualisation
