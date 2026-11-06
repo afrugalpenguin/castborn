@@ -54,6 +54,44 @@ function APICheck:DescribeValues(...)
     return table.concat(parts, " ")
 end
 
+-- Throwaway widgets whose methods are checked by Run
+local probeBar = CreateFrame("StatusBar")
+local probeCooldown = CreateFrame("Cooldown")
+local probeTexture = probeBar:CreateTexture()
+local probeText = probeBar:CreateFontString()
+local probeWidgets = { StatusBar = probeBar, Cooldown = probeCooldown, Texture = probeTexture, FontString = probeText }
+
+-- What a cast duration object offers: its methods, the type of its remaining time, and
+-- whether that time survives string.format and SetText (the route to countdown text when secret)
+function APICheck:DescribeDuration(path, unit)
+    local fn = self:Resolve(path)
+    if type(fn) ~= "function" then return "missing" end
+    local ok, obj = pcall(fn, unit)
+    if not ok then return "error: " .. tostring(obj) end
+    if obj == nil then return "nil" end
+    local methods = {}
+    local mt = getmetatable(obj)
+    local index = type(mt) == "table" and mt.__index
+    if type(index) == "table" then
+        for k in pairs(index) do methods[#methods + 1] = tostring(k) end
+    end
+    table.sort(methods)
+    local remaining, format = "n/a", "n/a"
+    if type(index) == "table" and type(index.GetRemainingDuration) == "function" then
+        local okR, value = pcall(index.GetRemainingDuration, obj)
+        remaining = okR and self:Describe(value) or ("error: " .. tostring(value))
+        if okR then
+            local okF, text = pcall(string.format, "%.1f", value)
+            format = okF and "ok" or ("error: " .. tostring(text))
+            if okF then
+                local okT, err = pcall(probeText.SetText, probeText, text)
+                if not okT then format = "SetText error: " .. tostring(err) end
+            end
+        end
+    end
+    return "methods=" .. table.concat(methods, ",") .. " remaining=" .. remaining .. " format=" .. format
+end
+
 -- APIs Castborn's modules call on TBC, plus their Mainline replacements
 APICheck.names = {
     "UnitBuff", "UnitDebuff", "UnitAura",
@@ -175,9 +213,11 @@ function APICheck:OnEvent(event, unit, ...)
     elseif event == "UNIT_SPELLCAST_START" and (unit == "player" or unit == "target") then
         Snapshot("UnitCastingInfo", unit)
         self.events[CombatKey(event .. "(" .. unit .. ") payload")] = self:DescribeValues(...)
+        self.events[CombatKey("UnitCastingDuration(" .. unit .. ") object")] = self:DescribeDuration("UnitCastingDuration", unit)
     elseif event == "UNIT_SPELLCAST_CHANNEL_START" and (unit == "player" or unit == "target") then
         Snapshot("UnitChannelInfo", unit)
         self.events[CombatKey(event .. "(" .. unit .. ") payload")] = self:DescribeValues(...)
+        self.events[CombatKey("UnitChannelDuration(" .. unit .. ") object")] = self:DescribeDuration("UnitChannelDuration", unit)
     elseif event == "UNIT_SPELLCAST_SUCCEEDED" and unit == "player" then
         -- spellID may be secret, so it is never used to build a key
         local spellID = select(2, ...)
@@ -187,13 +227,6 @@ function APICheck:OnEvent(event, unit, ...)
         Snapshot("UnitDebuff", "target", 1)
     end
 end
-
--- Throwaway widgets whose methods are checked by Run
-local probeBar = CreateFrame("StatusBar")
-local probeCooldown = CreateFrame("Cooldown")
-local probeTexture = probeBar:CreateTexture()
-local probeText = probeBar:CreateFontString()
-local probeWidgets = { StatusBar = probeBar, Cooldown = probeCooldown, Texture = probeTexture, FontString = probeText }
 
 function APICheck:Run()
     local report = {
