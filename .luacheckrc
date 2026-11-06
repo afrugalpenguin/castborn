@@ -191,5 +191,6 @@ files["**/*_Forever.lua"] = {
     read_globals = {
         "issecretvalue", "GetBuildInfo", "C_Spell", "C_UnitAuras", "C_Item",
         "PlayerCastingBarFrame",
+        "UnitCastingDuration", "UnitChannelDuration",
     },
 }
