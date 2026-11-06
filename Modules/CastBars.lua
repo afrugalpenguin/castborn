@@ -199,6 +199,18 @@ local function CreateCastBar(unit, dbKey)
     return frame
 end
 
+-- Store a cast's start and end (UnitCastingInfo gives milliseconds). Forever overrides this.
+function CB:SetCastTiming(frame, unit, isChannel, startMS, endMS)
+    frame.startTime = startMS / 1000
+    frame.endTime = endMS / 1000
+end
+
+-- Reset the bar for a new cast: casts fill up, channels drain. Forever overrides this.
+function CB:StartCastBar(frame, isChannel)
+    frame.bar:SetMinMaxValues(0, 1)
+    frame.bar:SetValue(isChannel and 1 or 0)
+end
+
 -- Update castbar appearance during cast
 local function UpdateCastBar(frame, elapsed)
     -- Don't update during test mode (let test values persist)
@@ -296,8 +308,7 @@ local function StartCast(frame, unit)
 
     frame.casting = true
     frame.channeling = false
-    frame.startTime = startTime / 1000
-    frame.endTime = endTime / 1000
+    CB:SetCastTiming(frame, unit, false, startTime, endTime)
     frame.fadeOut = 0
 
     local barColor = GetBarColor(frame.dbKey)
@@ -366,8 +377,7 @@ local function StartCast(frame, unit)
         end
     end
     
-    frame.bar:SetMinMaxValues(0, 1)
-    frame.bar:SetValue(0)
+    CB:StartCastBar(frame, false)
     frame:SetAlpha(1)
     frame:Show()
 end
@@ -391,8 +401,7 @@ local function StartChannel(frame, unit)
 
     frame.casting = false
     frame.channeling = true
-    frame.startTime = startTime / 1000
-    frame.endTime = endTime / 1000
+    CB:SetCastTiming(frame, unit, true, startTime, endTime)
     frame.fadeOut = 0
 
     local barColor = GetBarColor(frame.dbKey)
@@ -450,8 +459,7 @@ local function StartChannel(frame, unit)
         end
     end
     
-    frame.bar:SetMinMaxValues(0, 1)
-    frame.bar:SetValue(1)
+    CB:StartCastBar(frame, true)
     frame:SetAlpha(1)
     frame:Show()
 end
@@ -595,16 +603,14 @@ function CB:InitCastBars()
             if frame.casting then
                 local name, text, texture, startTime, endTime = UnitCastingInfo(unit)
                 if name then
-                    frame.startTime = startTime / 1000
-                    frame.endTime = endTime / 1000
+                    CB:SetCastTiming(frame, unit, false, startTime, endTime)
                 end
             end
         elseif event == "UNIT_SPELLCAST_CHANNEL_UPDATE" then
             if frame.channeling then
                 local name, text, texture, startTime, endTime = UnitChannelInfo(unit)
                 if name then
-                    frame.startTime = startTime / 1000
-                    frame.endTime = endTime / 1000
+                    CB:SetCastTiming(frame, unit, true, startTime, endTime)
                 end
             end
         elseif event == "UNIT_SPELLCAST_INTERRUPTIBLE" or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE" then
