@@ -79,6 +79,7 @@ local steps = {
         tip = "Procs pulse with a glow effect to grab your attention when they activate.",
         getFrame = function() return _G["Castborn_ProcTracker"] end,
         configKey = "procs",
+        optionKey = "buffs",  -- the proc options page id differs from its saved variables key
     },
     {
         id = "swing",
@@ -128,6 +129,8 @@ local steps = {
         frame = nil,
     },
 }
+
+Tutorial.steps = steps
 
 -- Human-readable labels for configKey values (used by multi-checkbox merged steps)
 local configKeyLabels = {
@@ -845,6 +848,44 @@ local function HighlightFrame(targetFrames)
 end
 
 -- Show a specific tutorial step
+-- The module keys a step toggles, or nil for steps without checkboxes
+local function StepKeys(step)
+    return step.configKeys or (step.configKey and {step.configKey}) or nil
+end
+
+-- Whether this build loads the module behind a key (every module on TBC; fewer on Forever)
+local function IsKeyAvailable(step, key)
+    return Castborn:IsOptionAvailable(step.optionKey or key)
+end
+
+-- A step is shown if it matches the player's class and at least one of its modules is loaded
+function Tutorial:IsStepShown(stepNum)
+    local step = steps[stepNum]
+    if not step then return false end
+    if step.class then
+        local _, playerClass = UnitClass("player")
+        if step.class ~= playerClass then return false end
+    end
+    local keys = StepKeys(step)
+    if not keys then return true end
+    for _, key in ipairs(keys) do
+        if IsKeyAvailable(step, key) then return true end
+    end
+    return false
+end
+
+-- Position of a step among the shown steps, and how many steps are shown
+function Tutorial:GetStepPosition(stepNum)
+    local position, total = 0, 0
+    for i = 1, #steps do
+        if self:IsStepShown(i) then
+            total = total + 1
+            if i <= stepNum then position = total end
+        end
+    end
+    return position, total
+end
+
 local function ShowStep(stepNum)
     if stepNum < 1 or stepNum > #steps then return end
 
@@ -856,7 +897,7 @@ local function ShowStep(stepNum)
     end
 
     -- Update step counter
-    tutorialFrame.stepText:SetText(string.format("Step %d of %d", stepNum, #steps))
+    tutorialFrame.stepText:SetText(string.format("Step %d of %d", Tutorial:GetStepPosition(stepNum)))
 
     -- Update content
     tutorialFrame.title:SetText(step.title)
@@ -875,7 +916,15 @@ local function ShowStep(stepNum)
     end
 
     -- Handle enable checkboxes (single configKey or merged configKeys)
-    local keys = step.configKeys or (step.configKey and {step.configKey}) or nil
+    -- Only modules this build loads get a checkbox
+    local keys = nil
+    local stepKeys = StepKeys(step)
+    if stepKeys then
+        keys = {}
+        for _, key in ipairs(stepKeys) do
+            if IsKeyAvailable(step, key) then keys[#keys + 1] = key end
+        end
+    end
     local numChecks = keys and #keys or 0
 
     -- Hide all checkboxes first
@@ -884,7 +933,7 @@ local function ShowStep(stepNum)
         tutorialFrame.enableChecks[i].text:Hide()
     end
 
-    if keys then
+    if numChecks > 0 then
         for i, key in ipairs(keys) do
             local cb = tutorialFrame.enableChecks[i]
             local db = CastbornDB[key]
@@ -965,19 +1014,10 @@ function Tutorial:Start()
     Castborn:Print("Tutorial started. Follow the steps to learn about Castborn!")
 end
 
--- Check if a step should be shown for the current player class
-local function ShouldShowStep(stepNum)
-    local step = steps[stepNum]
-    if not step then return false end
-    if not step.class then return true end
-    local _, playerClass = UnitClass("player")
-    return step.class == playerClass
-end
-
 function Tutorial:NextStep()
     local nextStep = currentStep + 1
-    -- Skip steps that don't match the player's class
-    while nextStep <= #steps and not ShouldShowStep(nextStep) do
+    -- Skip steps for another class or for modules this build does not load
+    while nextStep <= #steps and not self:IsStepShown(nextStep) do
         nextStep = nextStep + 1
     end
     if nextStep > #steps then
@@ -989,8 +1029,8 @@ end
 
 function Tutorial:PreviousStep()
     local prevStep = currentStep - 1
-    -- Skip steps that don't match the player's class
-    while prevStep >= 1 and not ShouldShowStep(prevStep) do
+    -- Skip steps for another class or for modules this build does not load
+    while prevStep >= 1 and not self:IsStepShown(prevStep) do
         prevStep = prevStep - 1
     end
     if prevStep < 1 then return end
