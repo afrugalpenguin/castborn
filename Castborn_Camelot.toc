@@ -27,4 +27,3 @@ Modules/CooldownTracker_Forever.lua
 Systems/WhatsNew.lua
 Systems/Options.lua
 Systems/Config.lua
-Systems/APICheck_Forever.lua
