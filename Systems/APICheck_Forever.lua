@@ -58,7 +58,8 @@ end
 local probeBar = CreateFrame("StatusBar")
 local probeCooldown = CreateFrame("Cooldown")
 local probeTexture = probeBar:CreateTexture()
-local probeText = probeBar:CreateFontString()
+-- A font template is required, or SetText errors "Font not set" and the countdown probe misreports
+local probeText = probeBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 local probeWidgets = { StatusBar = probeBar, Cooldown = probeCooldown, Texture = probeTexture, FontString = probeText }
 
 -- What a cast duration object offers: its methods, the type of its remaining time, and
