@@ -1,60 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
   <defs>
-    <!-- Bar gradient: warm gold for the Forever build -->
-    <linearGradient id="barGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#c98a2b"/>
-      <stop offset="100%" style="stop-color:#f0c35a"/>
-    </linearGradient>
-    <!-- Spark glow -->
-    <filter id="strongGlow">
-      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <!-- Soft glow for the FOREVER wordmark -->
-    <filter id="softGlow">
-      <feGaussianBlur stdDeviation="2.5" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
-
-  <!-- Background -->
+    <filter id="strongGlow"><feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softGlow"><feGaussianBlur stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#8a3fd1"/><stop offset="100%" stop-color="#ff8a1f"/></linearGradient></defs>
   <rect width="400" height="400" fill="#15151a"/>
-
-  <!-- Castbar container (border) -->
   <rect x="50" y="146" width="300" height="32" rx="2" fill="#4d4d4d"/>
-
-  <!-- Castbar background (inner dark) -->
   <rect x="52" y="148" width="296" height="28" rx="1" fill="#1a1a1a"/>
-
-  <!-- Cast bar fill -->
-  <rect x="54" y="150" width="216" height="24" fill="url(#barGradient)"/>
-
-  <!-- Spark at end of bar -->
-  <line x1="270" y1="146" x2="270" y2="178" stroke="#ffd98a" stroke-width="8" opacity="0.6" filter="url(#strongGlow)"/>
+  <rect x="54" y="150" width="216" height="24" fill="url(#g)"/>
+  <line x1="270" y1="146" x2="270" y2="178" stroke="#ffb070" stroke-width="8" opacity="0.6" filter="url(#strongGlow)"/>
   <line x1="270" y1="146" x2="270" y2="178" stroke="#ffffff" stroke-width="4" filter="url(#strongGlow)"/>
   <line x1="270" y1="148" x2="270" y2="176" stroke="#ffffff" stroke-width="2"/>
-
-  <!-- Spell name text -->
   <text x="60" y="167" font-family="Arial, sans-serif" font-size="13" fill="#ffffff">Holy Light</text>
-
-  <!-- Cast time text -->
   <text x="342" y="167" font-family="Arial, sans-serif" font-size="13" fill="#ffffff" text-anchor="end">0.7s</text>
-
-  <!-- CASTBORN title -->
-  <text x="200" y="250" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="#ffffff" text-anchor="middle" letter-spacing="3">CASTBORN</text>
-
-  <!-- FOREVER wordmark -->
-  <text x="206" y="282" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#f0c35a" text-anchor="middle" letter-spacing="12" filter="url(#softGlow)">FOREVER</text>
-
-  <!-- Decorative line under title -->
-  <rect x="100" y="300" width="200" height="1" fill="#4d4d4d"/>
-
-  <!-- Subtle tagline -->
-  <text x="200" y="322" font-family="Arial, sans-serif" font-size="12" fill="#666666" text-anchor="middle">WoW Forever Castbars</text>
+<text x="200" y="250" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="#ffffff" text-anchor="middle" letter-spacing="3">CASTBORN</text><text x="200" y="290" font-family="Arial, sans-serif" font-size="16" fill="#c08aff" text-anchor="middle" letter-spacing="10" filter="url(#softGlow)">&#8734; FOREVER &#8734;</text><text x="200" y="322" font-family="Arial, sans-serif" font-size="12" fill="#666666" text-anchor="middle">WoW Forever Castbars</text>
 </svg>
