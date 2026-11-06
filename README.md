@@ -1,8 +1,8 @@
 # Castborn
 
 <p align="center">
-  <img src="images/logo.png" width="360" alt="Castborn for TBC Anniversary">
   <img src="images/logo_forever.png" width="360" alt="Castborn Forever">
+  <img src="images/logo.png" width="360" alt="Castborn for TBC Anniversary">
 </p>
 
 <p align="center">
