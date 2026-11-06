@@ -82,7 +82,10 @@ local function CreateCooldownFrame(parent, index)
     f.glowOuter:SetBlendMode("ADD")
     f.glowOuter:SetPoint("TOPLEFT", -8, 8)
     f.glowOuter:SetPoint("BOTTOMRIGHT", 8, -8)
-    f.glowOuter:SetVertexColor(1, 0.8, 0.3, 0)
+    -- Full vertex alpha and zero region alpha: the retail engine (Forever) multiplies the two,
+    -- so a zero vertex alpha would keep the glow invisible after SetAlpha(0.3)
+    f.glowOuter:SetVertexColor(1, 0.8, 0.3, 1)
+    f.glowOuter:SetAlpha(0)
     f.glow = f.glowOuter  -- Keep reference for existing code
 
     -- Drag shadow effect (hidden by default)
