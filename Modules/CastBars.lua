@@ -199,6 +199,96 @@ local function CreateCastBar(unit, dbKey)
     return frame
 end
 
+-- Store a cast's start and end (UnitCastingInfo gives milliseconds). Forever overrides this.
+function CB:SetCastTiming(frame, unit, isChannel, startMS, endMS)
+    frame.startTime = startMS / 1000
+    frame.endTime = endMS / 1000
+end
+
+-- Reset the bar for a new cast: casts fill up, channels drain. Forever overrides this.
+function CB:StartCastBar(frame, isChannel)
+    frame.bar:SetMinMaxValues(0, 1)
+    frame.bar:SetValue(isChannel and 1 or 0)
+end
+
+-- Move bar, spark and time text to the current time; true once the cast has run its length.
+-- Forever overrides this for casts whose times are secret.
+function CB:UpdateCastProgress(frame, currentTime, cfg)
+    local progress
+    if frame.channeling then
+        progress = (frame.endTime - currentTime) / (frame.endTime - frame.startTime)
+    else
+        progress = (currentTime - frame.startTime) / (frame.endTime - frame.startTime)
+    end
+    progress = math.max(0, math.min(1, progress))
+    frame.bar:SetValue(progress)
+
+    local sparkPos = progress * frame.bar:GetWidth()
+    frame.spark:SetPoint("CENTER", frame.bar, "LEFT", sparkPos, 0)
+    frame.spark:Show()
+
+    if frame.timeText then
+        if cfg.showTime then
+            local remaining = frame.endTime - currentTime
+            frame.timeText:SetText(CB:FormatTime(math.max(0, remaining)))
+            frame.timeText:Show()
+        else
+            frame.timeText:Hide()
+        end
+    end
+
+    return currentTime >= frame.endTime
+end
+
+-- Spell name as shown on the bar, with rank when enabled. Forever overrides this.
+function CB:GetCastDisplayName(name, text, spellID, cfg)
+    local displayName = text or name
+    -- Add rank if enabled and spellID available
+    if cfg.showSpellRank and spellID then
+        -- Try GetSpellSubtext first (TBC), fall back to GetSpellInfo
+        local rank
+        if GetSpellSubtext then
+            rank = GetSpellSubtext(spellID)
+        end
+        if not rank or rank == "" then
+            local _, r = GetSpellInfo(spellID)
+            rank = r
+        end
+        if rank and rank ~= "" then
+            -- Format as "Rank X" if it's just a number
+            if tonumber(rank) then
+                rank = "Rank " .. rank
+            end
+            displayName = displayName .. " (" .. rank .. ")"
+        end
+    end
+    return displayName
+end
+
+-- Shield icon and dimmed bar for casts that cannot be interrupted. Forever overrides this.
+function CB:ApplyInterruptShield(frame, notInterruptible, barColor)
+    if not frame.shield then return end
+    if notInterruptible then
+        frame.shield:Show()
+        frame.bar:SetStatusBarColor(barColor[1] * 0.6, barColor[2] * 0.6, barColor[3] * 0.6, barColor[4])
+    else
+        frame.shield:Hide()
+    end
+end
+
+-- Width of the latency overlay for the current cast, or nil to hide it. Forever overrides this.
+function CB:GetLatencyWidth(frame)
+    local _, _, lagHome, lagWorld = GetNetStats()
+    local lag = (lagHome + lagWorld) / 1000
+    local barWidth = frame.bar:GetWidth()
+    return math.min(lag / (frame.endTime - frame.startTime) * barWidth, barWidth * 0.5)
+end
+
+-- True when a tradeskill cast should be skipped. Forever overrides this.
+function CB:IsHiddenTradeSkill(isTradeSkill, cfg)
+    return isTradeSkill and cfg.hideTradeSkills
+end
+
 -- Update castbar appearance during cast
 local function UpdateCastBar(frame, elapsed)
     -- Don't update during test mode (let test values persist)
@@ -219,25 +309,7 @@ local function UpdateCastBar(frame, elapsed)
     local cfg = CB.db[frame.dbKey]
     
     if frame.casting then
-        local progress = (currentTime - frame.startTime) / (frame.endTime - frame.startTime)
-        progress = math.max(0, math.min(1, progress))
-        frame.bar:SetValue(progress)
-        
-        local sparkPos = progress * frame.bar:GetWidth()
-        frame.spark:SetPoint("CENTER", frame.bar, "LEFT", sparkPos, 0)
-        frame.spark:Show()
-        
-        if frame.timeText then
-            if cfg.showTime then
-                local remaining = frame.endTime - currentTime
-                frame.timeText:SetText(CB:FormatTime(math.max(0, remaining)))
-                frame.timeText:Show()
-            else
-                frame.timeText:Hide()
-            end
-        end
-
-        if currentTime >= frame.endTime then
+        if CB:UpdateCastProgress(frame, currentTime, cfg) then
             frame.casting = false
             frame.fadeOut = 0.3
             frame.spark:Hide()
@@ -248,25 +320,7 @@ local function UpdateCastBar(frame, elapsed)
         end
 
     elseif frame.channeling then
-        local progress = (frame.endTime - currentTime) / (frame.endTime - frame.startTime)
-        progress = math.max(0, math.min(1, progress))
-        frame.bar:SetValue(progress)
-        
-        local sparkPos = progress * frame.bar:GetWidth()
-        frame.spark:SetPoint("CENTER", frame.bar, "LEFT", sparkPos, 0)
-        frame.spark:Show()
-        
-        if frame.timeText then
-            if cfg.showTime then
-                local remaining = frame.endTime - currentTime
-                frame.timeText:SetText(CB:FormatTime(math.max(0, remaining)))
-                frame.timeText:Show()
-            else
-                frame.timeText:Hide()
-            end
-        end
-
-        if currentTime >= frame.endTime then
+        if CB:UpdateCastProgress(frame, currentTime, cfg) then
             frame.channeling = false
             frame.fadeOut = 0.3
             frame.spark:Hide()
@@ -292,12 +346,11 @@ local function StartCast(frame, unit)
     if not name then return end
 
     -- Skip tradeskill casts (crafting) if option is enabled
-    if isTradeSkill and cfg.hideTradeSkills then return end
+    if CB:IsHiddenTradeSkill(isTradeSkill, cfg) then return end
 
     frame.casting = true
     frame.channeling = false
-    frame.startTime = startTime / 1000
-    frame.endTime = endTime / 1000
+    CB:SetCastTiming(frame, unit, false, startTime, endTime)
     frame.fadeOut = 0
 
     local barColor = GetBarColor(frame.dbKey)
@@ -316,27 +369,7 @@ local function StartCast(frame, unit)
     -- Show/hide spell name based on setting
     if frame.spellText then
         if cfg.showSpellName then
-            local displayName = text or name
-            -- Add rank if enabled and spellID available
-            if cfg.showSpellRank and spellID then
-                -- Try GetSpellSubtext first (TBC), fall back to GetSpellInfo
-                local rank
-                if GetSpellSubtext then
-                    rank = GetSpellSubtext(spellID)
-                end
-                if not rank or rank == "" then
-                    local _, r = GetSpellInfo(spellID)
-                    rank = r
-                end
-                if rank and rank ~= "" then
-                    -- Format as "Rank X" if it's just a number
-                    if tonumber(rank) then
-                        rank = "Rank " .. rank
-                    end
-                    displayName = displayName .. " (" .. rank .. ")"
-                end
-            end
-            frame.spellText:SetText(displayName)
+            frame.spellText:SetText(CB:GetCastDisplayName(name, text, spellID, cfg))
             frame.spellText:Show()
         else
             frame.spellText:Hide()
@@ -346,28 +379,21 @@ local function StartCast(frame, unit)
     -- Show/hide latency based on setting
     if frame.latency and unit == "player" then
         if cfg.showLatency then
-            local _, _, lagHome, lagWorld = GetNetStats()
-            local lag = (lagHome + lagWorld) / 1000
-            local barWidth = frame.bar:GetWidth()
-            local lagWidth = math.min(lag / (frame.endTime - frame.startTime) * barWidth, barWidth * 0.5)
-            frame.latency:SetWidth(lagWidth)
-            frame.latency:Show()
+            local lagWidth = CB:GetLatencyWidth(frame)
+            if lagWidth then
+                frame.latency:SetWidth(lagWidth)
+                frame.latency:Show()
+            else
+                frame.latency:Hide()
+            end
         else
             frame.latency:Hide()
         end
     end
 
-    if frame.shield then
-        if notInterruptible then
-            frame.shield:Show()
-            frame.bar:SetStatusBarColor(barColor[1] * 0.6, barColor[2] * 0.6, barColor[3] * 0.6, barColor[4])
-        else
-            frame.shield:Hide()
-        end
-    end
+    CB:ApplyInterruptShield(frame, notInterruptible, barColor)
     
-    frame.bar:SetMinMaxValues(0, 1)
-    frame.bar:SetValue(0)
+    CB:StartCastBar(frame, false)
     frame:SetAlpha(1)
     frame:Show()
 end
@@ -387,12 +413,11 @@ local function StartChannel(frame, unit)
     if not name then return end
 
     -- Skip tradeskill channels (crafting) if option is enabled
-    if isTradeSkill and cfg.hideTradeSkills then return end
+    if CB:IsHiddenTradeSkill(isTradeSkill, cfg) then return end
 
     frame.casting = false
     frame.channeling = true
-    frame.startTime = startTime / 1000
-    frame.endTime = endTime / 1000
+    CB:SetCastTiming(frame, unit, true, startTime, endTime)
     frame.fadeOut = 0
 
     local barColor = GetBarColor(frame.dbKey)
@@ -411,27 +436,7 @@ local function StartChannel(frame, unit)
     -- Show/hide spell name based on setting
     if frame.spellText then
         if cfg.showSpellName then
-            local displayName = text or name
-            -- Add rank if enabled and spellID available
-            if cfg.showSpellRank and spellID then
-                -- Try GetSpellSubtext first (TBC), fall back to GetSpellInfo
-                local rank
-                if GetSpellSubtext then
-                    rank = GetSpellSubtext(spellID)
-                end
-                if not rank or rank == "" then
-                    local _, r = GetSpellInfo(spellID)
-                    rank = r
-                end
-                if rank and rank ~= "" then
-                    -- Format as "Rank X" if it's just a number
-                    if tonumber(rank) then
-                        rank = "Rank " .. rank
-                    end
-                    displayName = displayName .. " (" .. rank .. ")"
-                end
-            end
-            frame.spellText:SetText(displayName)
+            frame.spellText:SetText(CB:GetCastDisplayName(name, text, spellID, cfg))
             frame.spellText:Show()
         else
             frame.spellText:Hide()
@@ -441,17 +446,9 @@ local function StartChannel(frame, unit)
     -- Hide latency for channels
     if frame.latency then frame.latency:Hide() end
 
-    if frame.shield then
-        if notInterruptible then
-            frame.shield:Show()
-            frame.bar:SetStatusBarColor(barColor[1] * 0.6, barColor[2] * 0.6, barColor[3] * 0.6, barColor[4])
-        else
-            frame.shield:Hide()
-        end
-    end
+    CB:ApplyInterruptShield(frame, notInterruptible, barColor)
     
-    frame.bar:SetMinMaxValues(0, 1)
-    frame.bar:SetValue(1)
+    CB:StartCastBar(frame, true)
     frame:SetAlpha(1)
     frame:Show()
 end
@@ -595,16 +592,14 @@ function CB:InitCastBars()
             if frame.casting then
                 local name, text, texture, startTime, endTime = UnitCastingInfo(unit)
                 if name then
-                    frame.startTime = startTime / 1000
-                    frame.endTime = endTime / 1000
+                    CB:SetCastTiming(frame, unit, false, startTime, endTime)
                 end
             end
         elseif event == "UNIT_SPELLCAST_CHANNEL_UPDATE" then
             if frame.channeling then
                 local name, text, texture, startTime, endTime = UnitChannelInfo(unit)
                 if name then
-                    frame.startTime = startTime / 1000
-                    frame.endTime = endTime / 1000
+                    CB:SetCastTiming(frame, unit, true, startTime, endTime)
                 end
             end
         elseif event == "UNIT_SPELLCAST_INTERRUPTIBLE" or event == "UNIT_SPELLCAST_NOT_INTERRUPTIBLE" then

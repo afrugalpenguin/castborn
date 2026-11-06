@@ -3,6 +3,7 @@
 Before each release:
 
 - [ ] Update version in `Core.lua`
+- [ ] If Forever has patched, bump `## Interface:` in `Castborn_Camelot.toc` (currently `16001`)
 - [ ] Update `CHANGELOG.md` (use `**vX.Y.Z**` bold text, no `###` subheadings)
 - [ ] Update `Systems/WhatsNew.lua` changelog table
 - [ ] Commit with message: `chore(release): bump version to X.Y.Z`

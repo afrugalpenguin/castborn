@@ -388,8 +388,9 @@ local function CreateOptionsFrame()
     local y = -8
     local _, playerClass = UnitClass("player")
     for i, cat in ipairs(categories) do
-        -- Skip class-restricted categories for other classes
-        if (cat.class and cat.class ~= playerClass) or (cat.classes and not tContains(cat.classes, playerClass)) then
+        -- Skip class-restricted categories for other classes, and pages this build does not load
+        if (cat.class and cat.class ~= playerClass) or (cat.classes and not tContains(cat.classes, playerClass))
+            or (cat.id and not Castborn:IsOptionAvailable(cat.id)) then
             -- Skip this category
         elseif cat.divider then
             -- Create a horizontal divider line
@@ -598,8 +599,9 @@ function Options:BuildGeneral(parent)
     local startY = y
     local count = 0
     for i, mod in ipairs(modules) do
-        -- Skip class-restricted modules for other classes
-        if (not mod.class and not mod.classes) or (mod.class and mod.class == playerClass) or (mod.classes and tContains(mod.classes, playerClass)) then
+        -- Skip class-restricted modules for other classes, and modules this build does not load
+        if Castborn:IsOptionAvailable(mod.key)
+            and ((not mod.class and not mod.classes) or (mod.class and mod.class == playerClass) or (mod.classes and tContains(mod.classes, playerClass))) then
             count = count + 1
             local dbKey = mod.db or mod.key
             CastbornDB[dbKey] = CastbornDB[dbKey] or {}

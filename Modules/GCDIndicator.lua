@@ -17,16 +17,18 @@ local gcdDuration = 0
 local gcdActive = false
 local testModeActive = false
 
+-- A spell per class that triggers the GCD, used when the GCD spell itself reports nothing
+GCDIndicator.testSpells = {
+    MAGE="Frostbolt", WARLOCK="Shadow Bolt", PRIEST="Smite", DRUID="Wrath",
+    SHAMAN="Lightning Bolt", PALADIN="Holy Light", HUNTER="Arcane Shot",
+    WARRIOR="Heroic Strike", ROGUE="Sinister Strike",
+}
+
 local function DetectGCD()
     local start, duration = GetSpellCooldown(61304)
     if not start or start == 0 then
         local _, class = UnitClass("player")
-        local testSpells = {
-            MAGE="Frostbolt", WARLOCK="Shadow Bolt", PRIEST="Smite", DRUID="Wrath",
-            SHAMAN="Lightning Bolt", PALADIN="Holy Light", HUNTER="Arcane Shot",
-            WARRIOR="Heroic Strike", ROGUE="Sinister Strike",
-        }
-        local testSpell = testSpells[class]
+        local testSpell = GCDIndicator.testSpells[class]
         if testSpell then start, duration = GetSpellCooldown(testSpell) end
     end
     return start, duration
@@ -82,20 +84,8 @@ local function CreateGCDIndicator()
     return frame
 end
 
-local function UpdateGCD(elapsed)
-    -- Don't override test mode display
-    if testModeActive then return end
-
-    local frame = CB.gcdFrame
-    local cfg = CB.db.gcd
-    if not cfg.enabled then frame:Hide() return end
-    
-    if frame.pulseAlpha > 0 then
-        frame.pulseAlpha = frame.pulseAlpha - elapsed * 4
-        if frame.pulseAlpha < 0 then frame.pulseAlpha = 0 end
-        frame.pulse:SetAlpha(frame.pulseAlpha * 0.5)
-    end
-    
+-- Draw the GCD sweep for the current time, or the ready state. Forever overrides this.
+function CB:UpdateGCDBar(frame, cfg)
     if gcdActive then
         local remaining = (gcdStart + gcdDuration) - GetTime()
         if remaining <= 0 then
@@ -119,6 +109,39 @@ local function UpdateGCD(elapsed)
         frame.bar:SetWidth(frame:GetWidth() - 2)
         frame.bar:SetVertexColor(cfg.readyColor[1], cfg.readyColor[2], cfg.readyColor[3], cfg.readyColor[4])
         frame.spark:Hide()
+    end
+end
+
+local function UpdateGCD(elapsed)
+    -- Don't override test mode display
+    if testModeActive then return end
+
+    local frame = CB.gcdFrame
+    local cfg = CB.db.gcd
+    if not cfg.enabled then frame:Hide() return end
+
+    if frame.pulseAlpha > 0 then
+        frame.pulseAlpha = frame.pulseAlpha - elapsed * 4
+        if frame.pulseAlpha < 0 then frame.pulseAlpha = 0 end
+        frame.pulse:SetAlpha(frame.pulseAlpha * 0.5)
+    end
+
+    CB:UpdateGCDBar(frame, cfg)
+end
+
+-- Start the sweep when the GCD is running. Forever overrides this.
+function CB:CheckGCD()
+    local start, duration = DetectGCD()
+    if start and start > 0 and duration and duration > 0 then
+        -- Only update if the GCD is actually still running (not already expired)
+        local remaining = (start + duration) - GetTime()
+        if remaining > 0 then
+            gcdStart = start
+            gcdDuration = duration
+            gcdActive = true
+            local cfg = CB.db.gcd
+            CB.gcdFrame.bar:SetVertexColor(cfg.barColor[1], cfg.barColor[2], cfg.barColor[3], cfg.barColor[4])
+        end
     end
 end
 
@@ -153,18 +176,7 @@ function CB:InitGCD()
         if event == "UNIT_SPELLCAST_SUCCEEDED" or event == "UNIT_SPELLCAST_START" then
             if unit ~= "player" then return end
         end
-        local start, duration = DetectGCD()
-        if start and start > 0 and duration and duration > 0 then
-            -- Only update if the GCD is actually still running (not already expired)
-            local remaining = (start + duration) - GetTime()
-            if remaining > 0 then
-                gcdStart = start
-                gcdDuration = duration
-                gcdActive = true
-                local cfg = CB.db.gcd
-                CB.gcdFrame.bar:SetVertexColor(cfg.barColor[1], cfg.barColor[2], cfg.barColor[3], cfg.barColor[4])
-            end
-        end
+        CB:CheckGCD()
     end)
     
     CB:CreateThrottledUpdater(0.016, UpdateGCD)

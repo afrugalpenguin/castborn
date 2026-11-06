@@ -82,7 +82,10 @@ local function CreateCooldownFrame(parent, index)
     f.glowOuter:SetBlendMode("ADD")
     f.glowOuter:SetPoint("TOPLEFT", -8, 8)
     f.glowOuter:SetPoint("BOTTOMRIGHT", 8, -8)
-    f.glowOuter:SetVertexColor(1, 0.8, 0.3, 0)
+    -- Full vertex alpha and zero region alpha: the retail engine (Forever) multiplies the two,
+    -- so a zero vertex alpha would keep the glow invisible after SetAlpha(0.3)
+    f.glowOuter:SetVertexColor(1, 0.8, 0.3, 1)
+    f.glowOuter:SetAlpha(0)
     f.glow = f.glowOuter  -- Keep reference for existing code
 
     -- Drag shadow effect (hidden by default)
@@ -349,6 +352,21 @@ end
 local lastCooldownDuration = {}
 local testModeActive = false
 
+-- Whether a tracked spell is on a real cooldown (longer than the GCD), whether it is long
+-- enough to earn the ready glow, and its start and duration. Forever overrides this.
+function CooldownTracker:GetSpellCooldownState(spellName)
+    local start, duration = GetSpellCooldown(spellName)
+    if duration and duration > 1.5 then
+        return true, duration > 3, start, duration
+    end
+    return false
+end
+
+-- Draw the cooldown swipe on an icon. Forever overrides this.
+function CooldownTracker:SetIconCooldown(cooldown, spellName, start, duration)
+    cooldown:SetCooldown(start, duration)
+end
+
 local function UpdateCooldowns()
     -- Don't override test mode display
     if testModeActive then return end
@@ -373,7 +391,7 @@ local function UpdateCooldowns()
             local cdFrame = cdFrames[visibleIndex]
             if not cdFrame then break end
 
-            local start, duration, enabled = GetSpellCooldown(spell.name)
+            local onCooldown, isLong, start, duration = CooldownTracker:GetSpellCooldownState(spell.name)
             local icon = GetSpellTexture(spell.name)
 
             -- Position the frame based on visible index (compact layout with row wrapping)
@@ -406,7 +424,7 @@ local function UpdateCooldowns()
 
                 -- Check for charge-based buffs (Earth Shield, Water Shield)
                 local charges = nil
-                if spell.spellId == 974 or spell.spellId == 24398 then
+                if UnitBuff and (spell.spellId == 974 or spell.spellId == 24398) then
                     -- Check if buff is active on player
                     for j = 1, 40 do
                         local name, _, count = UnitBuff("player", j)
@@ -426,13 +444,13 @@ local function UpdateCooldowns()
                     cdFrame.charges:Hide()
                 end
 
-                if duration and duration > 1.5 then
-                    cdFrame.cooldown:SetCooldown(start, duration)
+                if onCooldown then
+                    CooldownTracker:SetIconCooldown(cdFrame.cooldown, spell.name, start, duration)
                     cdFrame.icon:SetDesaturated(true)
                     cdFrame.glow:SetAlpha(0)
-                    -- Track the actual cooldown duration (only if significant)
-                    if duration > 3 then
-                        lastCooldownDuration[spell.spellId] = duration
+                    -- Remember a real cooldown (only if significant) so the ready glow can follow
+                    if isLong then
+                        lastCooldownDuration[spell.spellId] = true
                     end
                     -- Stop edge pulse when on cooldown
                     StopEdgePulse(cdFrame)
