@@ -1,5 +1,13 @@
 # Changelog
 
+**v7.0.0**
+
+- Castborn now supports World of Warcraft: Forever. The same download works on both TBC Anniversary and Forever
+- On Forever: player, target, focus and target-of-target castbars, the GCD indicator, and the cooldown tracker with trinket cooldowns
+- On Forever, Blizzard hides some combat data from addons, so a few things differ: no spark or latency overlay on castbars whose timings are hidden, short cooldowns may also show the ready glow, and Earth Shield and Water Shield charges are not shown
+- Not yet available on Forever: DoT and multi-DoT trackers, swing timer, totems, absorbs, procs, armour reminder, interrupt tracker, item tracker and the five-second rule bar. Their option pages are hidden there. Nothing changes on TBC Anniversary
+- Fixed the cooldown ready glow so it also shows on the Forever client
+
 **v6.7.5**
 
 - Multi-DoT tracker now looks up enemy nameplates directly instead of checking all 40 nameplate slots each time, cutting a large amount of repeated work when several enemies are dotted

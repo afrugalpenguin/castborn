@@ -14,6 +14,17 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.0.0",
+        features = {
+            "Castborn now supports World of Warcraft: Forever. The same download works on both TBC Anniversary and Forever",
+            "On Forever: player, target, focus and target-of-target castbars, the GCD indicator, and the cooldown tracker with trinket cooldowns",
+            "Not yet available on Forever: DoT trackers, swing timer, totems, absorbs, procs, armour reminder, interrupt and item trackers, and the five-second rule bar. Nothing changes on TBC Anniversary",
+        },
+        fixes = {
+            "Fixed the cooldown ready glow so it also shows on the Forever client",
+        },
+    },
+    {
         version = "6.7.5",
         fixes = {
             "Multi-DoT tracker now looks up enemy nameplates directly instead of checking all 40 nameplate slots each time, cutting a large amount of repeated work when several enemies are dotted",
