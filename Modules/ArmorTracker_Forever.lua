@@ -11,6 +11,11 @@ local function isSecret(v)
     return issecretvalue ~= nil and issecretvalue(v)
 end
 
+-- GetTalentInfo is missing on Forever, so talent-gated slots (Improved Righteous Fury) stay off
+function ArmorTracker:HasTalent()
+    return false
+end
+
 function ArmorTracker:CanReadAuras()
     return not (InCombatLockdown() or UnitAffectingCombat("player"))
 end

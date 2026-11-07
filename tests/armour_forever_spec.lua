@@ -47,6 +47,13 @@ describe("Armour reminder on Forever", function()
         end)
     end)
 
+    it("reports no talent without calling GetTalentInfo, which Forever lacks", function()
+        _G.GetTalentInfo = nil
+        local result
+        assert.has_no.errors(function() result = AT:HasTalent(2, 7) end)
+        assert.is_false(result)
+    end)
+
     describe("FindPlayerBuff", function()
         it("finds a tracked buff through C_UnitAuras", function()
             auras = { { spellId = 1126 }, { spellId = 7302 } }

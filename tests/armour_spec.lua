@@ -25,4 +25,20 @@ describe("Armour reminder seams (TBC behaviour)", function()
         _G.UnitBuff = function() return nil end
         assert.is_nil(AT:FindPlayerBuff({ [7302] = true }))
     end)
+
+    describe("HasTalent", function()
+        after_each(function() _G.GetTalentInfo = nil end)
+
+        it("is true when the talent has points", function()
+            _G.GetTalentInfo = function(tab, index)
+                if tab == 2 and index == 7 then return "Improved Righteous Fury", nil, 1, 2, 2, 3 end
+            end
+            assert.is_true(AT:HasTalent(2, 7))
+        end)
+
+        it("is false with no points spent", function()
+            _G.GetTalentInfo = function() return "Improved Righteous Fury", nil, 1, 2, 0, 3 end
+            assert.is_false(AT:HasTalent(2, 7))
+        end)
+    end)
 end)

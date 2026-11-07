@@ -198,10 +198,15 @@ local function BuildSpellIdLookup(entry)
     return lookup
 end
 
+-- Whether the talent at tab/index has points; ArmorTracker_Forever.lua overrides it
+function ArmorTracker:HasTalent(tab, index)
+    local _, _, _, _, rank = GetTalentInfo(tab, index)
+    return type(rank) == "number" and rank > 0
+end
+
 local function HasImprovedRF(entry)
     if not entry.talentTab or not entry.talentIndex then return false end
-    local _, _, _, _, rank = GetTalentInfo(entry.talentTab, entry.talentIndex)
-    return type(rank) == "number" and rank > 0
+    return ArmorTracker:HasTalent(entry.talentTab, entry.talentIndex)
 end
 
 local function DestroySlot(index)
