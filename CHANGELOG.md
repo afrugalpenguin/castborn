@@ -1,5 +1,10 @@
 # Changelog
 
+**v7.2.0**
+
+- The item tracker now works on Forever, showing counts and cooldowns for your tracked potions, gems and other items
+- On Forever, /cbapi reports which game data addons can read, to help with testing
+
 **v7.1.0**
 
 - The interrupt tracker now works on Forever, showing your interrupt cooldown on its bar and on the target and focus castbars

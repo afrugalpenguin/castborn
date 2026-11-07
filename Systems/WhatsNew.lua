@@ -14,6 +14,12 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.2.0",
+        features = {
+            "The item tracker now works on Forever, showing counts and cooldowns for your tracked potions, gems and other items",
+        },
+    },
+    {
         version = "7.1.0",
         features = {
             "The interrupt tracker now works on Forever, showing your interrupt cooldown on its bar and on the target and focus castbars",
