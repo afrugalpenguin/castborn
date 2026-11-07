@@ -1,5 +1,11 @@
 # Changelog
 
+**v7.6.1**
+
+- Fixed the Seal Tracker on Forever hiding your seal, and showing the no-seal warning, after each Judgement. Judgement does not consume the seal on Forever
+- Fixed the Seal Tracker icon size setting having no effect when Masque skins the icon
+- The Forever tutorial no longer mentions Blessing of Sanctuary, which Forever does not have
+
 **v7.6.0**
 
 - The tutorial now works on Forever (/cb tutorial)

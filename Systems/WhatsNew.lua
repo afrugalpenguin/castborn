@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.6.1",
+        fixes = {
+            "Seal Tracker on Forever no longer hides your seal after Judgement",
+            "Seal Tracker icon size now works with Masque",
+        },
+    },
+    {
         version = "7.6.0",
         features = {
             "The tutorial now works on Forever (/cb tutorial)",
