@@ -29,6 +29,10 @@ describe("Cooldown seams (TBC behaviour)", function()
         assert.is_false(isLong)
     end)
 
+    it("uses the stored name for a tracked spell", function()
+        assert.are.equal("Icy Veins", CT:GetTrackedSpellName({ spellId = 12472, name = "Icy Veins" }))
+    end)
+
     it("draws the cooldown swipe from start and duration", function()
         local got
         local cooldown = { SetCooldown = function(_, s, d) got = { s, d } end }
