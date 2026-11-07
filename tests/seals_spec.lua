@@ -81,6 +81,44 @@ describe("Seal tracker (TBC behaviour)", function()
         assert.is_nil(ST.state.spellId)
     end)
 
+    describe("ResizeIcon", function()
+        local function recorder()
+            local r = { calls = {} }
+            setmetatable(r, { __index = function(_, k)
+                return function(_, ...) r.calls[k] = { ... } end
+            end })
+            return r
+        end
+
+        after_each(function() Castborn.Masque = nil end)
+
+        it("resizes the button and the warning text", function()
+            local f = recorder()
+            f.warning = recorder()
+            ST:ResizeIcon(f, 60)
+            assert.are.same({ 60, 60 }, f.calls.SetSize)
+            assert.are.equal(24, f.warning.calls.SetFont[2])
+        end)
+
+        it("re-skins the seal icon with Masque so the new size shows", function()
+            local skinned
+            Castborn.Masque = { enabled = true, ReSkin = function(_, group) skinned = group end }
+            local f = recorder()
+            f.warning = recorder()
+            ST:ResizeIcon(f, 60)
+            assert.are.equal("seals", skinned)
+        end)
+
+        it("does not touch Masque when it is not in use", function()
+            local skinned
+            Castborn.Masque = { enabled = false, ReSkin = function(_, group) skinned = group end }
+            local f = recorder()
+            f.warning = recorder()
+            ST:ResizeIcon(f, 60)
+            assert.is_nil(skinned)
+        end)
+    end)
+
     describe("no-seal warning", function()
         local dead, inCombat
 
