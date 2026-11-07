@@ -29,6 +29,8 @@ Modules/InterruptTracker_Forever.lua
 Modules/ItemTracker.lua
 Modules/ArmorTracker.lua
 Modules/ArmorTracker_Forever.lua
+Modules/SealTracker.lua
+Modules/SealTracker_Forever.lua
 
 Systems/WhatsNew.lua
 Systems/Options.lua
