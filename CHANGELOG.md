@@ -1,5 +1,14 @@
 # Changelog
 
+**v7.7.0**
+
+- New option in Options > Armour: "Always remind me about Righteous Fury", for paladins who tank without Improved Righteous Fury or are still levelling
+- On Forever the Righteous Fury reminder now appears when Improved Righteous Fury is talented
+- Fixed the Armour icon size setting: it now resizes every alert icon, scales the warning mark, and works with Masque
+- Fixed cooldowns on Forever showing under the wrong name (Cold Snap, Ice Block, Death Wish, Sweeping Strikes, Lightning Mastery)
+- Fixed the druid interrupt tracker on Forever, which now tracks Feral Charge
+- On Forever, Blessing of Sanctuary is no longer offered in the armour reminder, because Forever does not have it
+
 **v7.6.1**
 
 - Fixed the Seal Tracker on Forever hiding your seal, and showing the no-seal warning, after each Judgement. Judgement does not consume the seal on Forever

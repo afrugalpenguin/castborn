@@ -14,6 +14,19 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.7.0",
+        features = {
+            "New option: always remind paladins about Righteous Fury, even without Improved Righteous Fury",
+            "Righteous Fury reminder now works on Forever when Improved Righteous Fury is talented",
+        },
+        fixes = {
+            "Armour icon size now resizes every alert icon and works with Masque",
+            "Cooldowns on Forever now show under the right spell names",
+            "Druid interrupt tracker now works on Forever (Feral Charge)",
+            "Blessing of Sanctuary is no longer offered on Forever",
+        },
+    },
+    {
         version = "7.6.1",
         fixes = {
             "Seal Tracker on Forever no longer hides your seal after Judgement",
