@@ -114,6 +114,8 @@ APICheck.names = {
     "C_Container.GetContainerNumSlots", "C_Container.GetContainerItemInfo",
     "C_Container.GetContainerItemCooldown",
     "GetInventoryItemCooldown", "GetItemSpell", "C_Item.GetItemSpell",
+    "GetItemInfo", "C_Item.GetItemInfo", "GetItemCount", "C_Item.GetItemCount",
+    "GetCursorInfo", "ClearCursor",
     "GetTotemInfo", "UnitAttackSpeed", "UnitRangedDamage", "GetWeaponEnchantInfo",
     "UnitPower", "UnitPowerMax", "UnitHealth",
     "GetShapeshiftForm", "GetNetStats",
@@ -161,6 +163,8 @@ APICheck.probes = {
     { "UnitChannelDuration", "target" },
     { "UnitIsUnit", "target", "player" },
     { "C_Container.GetContainerItemCooldown", 0, 1 },
+    { "C_Item.GetItemCount", 6948 },     -- Hearthstone
+    { "C_Item.GetItemInfo", 6948 },
     -- Interrupts; only the player's class answers, the rest report nil
     { "C_Spell.GetSpellCooldown", "Counterspell" },
     { "C_Spell.GetSpellCooldown", "Kick" },

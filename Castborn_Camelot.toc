@@ -25,6 +25,7 @@ Modules/CooldownTracker.lua
 Modules/CooldownTracker_Forever.lua
 Modules/InterruptTracker.lua
 Modules/InterruptTracker_Forever.lua
+Modules/ItemTracker.lua
 
 Systems/WhatsNew.lua
 Systems/Options.lua
