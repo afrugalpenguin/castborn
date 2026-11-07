@@ -11,8 +11,13 @@ local function isSecret(v)
     return issecretvalue ~= nil and issecretvalue(v)
 end
 
--- GetTalentInfo is missing on Forever, so talent-gated slots (Improved Righteous Fury) stay off
-function ArmorTracker:HasTalent()
+-- GetTalentInfo is missing on Forever, so ask IsPlayerSpell about the talent's rank spell IDs.
+-- Unverified in game: if IsPlayerSpell cannot see talents, the slot simply stays hidden.
+function ArmorTracker:HasTalent(entry)
+    if not IsPlayerSpell or not entry.talentSpellIds then return false end
+    for _, id in ipairs(entry.talentSpellIds) do
+        if IsPlayerSpell(id) then return true end
+    end
     return false
 end
 

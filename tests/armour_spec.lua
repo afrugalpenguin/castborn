@@ -84,12 +84,16 @@ describe("Armour reminder seams (TBC behaviour)", function()
             _G.GetTalentInfo = function(tab, index)
                 if tab == 2 and index == 7 then return "Improved Righteous Fury", nil, 1, 2, 2, 3 end
             end
-            assert.is_true(AT:HasTalent(2, 7))
+            assert.is_true(AT:HasTalent({ talentTab = 2, talentIndex = 7 }))
         end)
 
         it("is false with no points spent", function()
             _G.GetTalentInfo = function() return "Improved Righteous Fury", nil, 1, 2, 0, 3 end
-            assert.is_false(AT:HasTalent(2, 7))
+            assert.is_false(AT:HasTalent({ talentTab = 2, talentIndex = 7 }))
+        end)
+
+        it("is false for an entry with no talent position", function()
+            assert.is_false(AT:HasTalent({}))
         end)
     end)
 end)

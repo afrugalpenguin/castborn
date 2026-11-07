@@ -616,7 +616,8 @@ SpellData.armors = {
                       25899, 27169} },                                           -- greater (ranks 1-2)
         { name = "Righteous Fury",         category = "rf", key = "rf",
           spellIds = {25780},                                                    -- single rank, same cast and buff ID
-          talentTab = 2, talentIndex = 7 },                                     -- Protection tree, Improved RF
+          talentTab = 2, talentIndex = 7,                                       -- Protection tree, Improved RF
+          talentSpellIds = {20468, 20469, 20470} },                              -- Improved RF ranks 1-3 (Forever check)
         { name = "Aura",                   category = "aura", key = "aura",
           spellIds = {7294, 10298, 10299, 10300, 27150,                         -- Retribution Aura (ranks 1-5)
                       19746,                                                     -- Concentration Aura
