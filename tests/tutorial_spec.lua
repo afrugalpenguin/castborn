@@ -54,8 +54,8 @@ describe("Tutorial steps", function()
 
         it("shows only steps for modules Forever loads", function()
             assert.are.same({
-                "welcome", "player_castbar", "castbar_companions", "cooldowns",
-                "other_castbars", "customise", "complete",
+                "welcome", "player_castbar", "castbar_companions", "cooldowns", "items",
+                "other_castbars", "interrupt", "absorbs", "customise", "complete",
             }, shownIds(Castborn.Tutorial))
         end)
 
@@ -72,8 +72,21 @@ describe("Tutorial steps", function()
         it("numbers the steps out of those shown", function()
             local T = Castborn.Tutorial
             local position, total = T:GetStepPosition(indexOf(T, "other_castbars"))
-            assert.are.equal(5, position)
-            assert.are.equal(7, total)
+            assert.are.equal(6, position)
+            assert.are.equal(10, total)
+        end)
+
+        it("describes the interrupt tracker without the lockout", function()
+            local step = Castborn.Tutorial.steps[indexOf(Castborn.Tutorial, "interrupt")]
+            assert.is_nil(step.description:lower():find("lockout"))
+            assert.is_nil(step.tip:lower():find("locked out"))
+        end)
+
+        it("turns the defensive step into the armour reminder", function()
+            local step = Castborn.Tutorial.steps[indexOf(Castborn.Tutorial, "absorbs")]
+            assert.are.equal("Armour Tracker", step.title)
+            assert.are.same({ "armortracker" }, step.configKeys)
+            assert.is_nil(step.description:find("Absorb"))
         end)
     end)
 end)

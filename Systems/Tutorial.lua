@@ -733,9 +733,11 @@ local function ShowTestFrame(frameId)
         if not iFrame then
             iFrame = CreateMockupInterruptTracker()
         end
-        -- Show a mockup lockout indicator if the real one isn't visible
+        -- Show a mockup lockout indicator if the real one isn't visible (and the build has one)
+        local hasLockout = Castborn:IsOptionAvailable("interrupt.lockout")
+        if iFrame.lockout then iFrame.lockout:SetShown(hasLockout) end
         local realLockout = _G["Castborn_Lockout"]
-        if not (realLockout and realLockout:IsShown()) and not iFrame.tutorialLockout then
+        if hasLockout and not (realLockout and realLockout:IsShown()) and not iFrame.tutorialLockout then
             local lo = CreateFrame("Frame", nil, iFrame)
             lo:SetSize(80, 20)
             lo:SetPoint("LEFT", iFrame, "RIGHT", 10, 0)
@@ -749,7 +751,7 @@ local function ShowTestFrame(frameId)
             lo.text:SetTextColor(0.5, 0.5, 1.0, 1)
             iFrame.tutorialLockout = lo
         end
-        if iFrame.tutorialLockout then iFrame.tutorialLockout:Show() end
+        if iFrame.tutorialLockout then iFrame.tutorialLockout:SetShown(hasLockout) end
         return iFrame
     elseif frameId == "totems" then
         if CB.TestTotemTracker then CB:TestTotemTracker() end
