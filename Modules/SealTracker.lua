@@ -182,6 +182,11 @@ function SealTracker:Refresh()
     self:Render(db)
 end
 
+-- Size of the "!" warning text for an icon size
+local function WarningFontSize(size)
+    return math.max(14, math.floor(size * 0.4))
+end
+
 local function CreateSealFrame()
     local db = CB.db.seals
     local masqueGroup = Castborn.Masque and Castborn.Masque.enabled and Castborn.Masque.groups.seals or nil
@@ -192,8 +197,8 @@ local function CreateSealFrame()
     -- "!" shown over the icon when no seal is up
     local size = db.iconSize or 40
     local warning = f:CreateFontString(nil, "OVERLAY")
-    warning:SetFont(Castborn:GetBarFont(), math.max(14, math.floor(size * 0.4)), "OUTLINE")
-    Castborn:RegisterFontString(warning, math.max(14, math.floor(size * 0.4)), "OUTLINE")
+    warning:SetFont(Castborn:GetBarFont(), WarningFontSize(size), "OUTLINE")
+    Castborn:RegisterFontString(warning, WarningFontSize(size), "OUTLINE")
     warning:SetPoint("CENTER", 0, 0)
     warning:SetText("!")
     warning:SetTextColor(1, 0.2, 0.2, 1)
@@ -209,11 +214,22 @@ local function CreateSealFrame()
     return f
 end
 
--- Called by the options page when the countdown setting changes
+-- Resize the icon. Masque sizes the icon, border and swipe when it skins the button,
+-- so the group is re-skinned or the new size would not show.
+function SealTracker:ResizeIcon(f, size)
+    f:SetSize(size, size)
+    f.warning:SetFont(Castborn:GetBarFont(), WarningFontSize(size), "OUTLINE")
+    Castborn:RegisterFontString(f.warning, WarningFontSize(size), "OUTLINE")
+    if Castborn.Masque and Castborn.Masque.enabled then
+        Castborn.Masque:ReSkin("seals")
+    end
+end
+
+-- Called by the options page when any seal setting changes
 function SealTracker:ApplySettings()
     local db = CB.db.seals
     if not frame then return end
-    frame:SetSize(db.iconSize or 40, db.iconSize or 40)
+    self:ResizeIcon(frame, db.iconSize or 40)
     frame.cooldown:SetHideCountdownNumbers(db.showCountdown == false)
     frame.shownSpellId, frame.shownWarning = nil, nil  -- redraw the icon and swipe
     self:Refresh()
