@@ -2277,6 +2277,19 @@ function moduleBuilders.seals(parent, db, y)
     countdownCB:SetPoint("TOPLEFT", 0, y)
     y = y - 30
 
+    if db.warnNoSeal == nil then db.warnNoSeal = true end
+    local combatOnlyCB = CreateCheckbox(parent, "Only warn in combat", db, "warnInCombatOnly", apply)
+    local warnCB = CreateCheckbox(parent, "Warn when no seal is up", db, "warnNoSeal", function(checked)
+        if checked then combatOnlyCB:Show() else combatOnlyCB:Hide() end
+        apply()
+    end)
+    warnCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    combatOnlyCB:SetPoint("TOPLEFT", 20, y)
+    if db.warnNoSeal == false then combatOnlyCB:Hide() end
+    y = y - 30
+
     local testBtn = CreateButton(parent, "Test Seal", 90, function()
         if Castborn.TestSealTracker then Castborn:TestSealTracker() end
     end)
