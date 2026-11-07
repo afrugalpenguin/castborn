@@ -14,6 +14,19 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.5.0",
+        features = {
+            "The Seal Tracker now warns when no seal is up, including before a pull. You can turn it off or limit it to combat in Options > Seals",
+        },
+    },
+    {
+        version = "7.4.0",
+        features = {
+            "New Seal Tracker for paladins: shows your active seal with a swipe for its remaining time. Configure it in Options > Seals",
+            "Works on TBC Anniversary and Forever, including Forever's new Seal of Fury",
+        },
+    },
+    {
         version = "7.3.0",
         features = {
             "The armour reminder now works on Forever. It checks your buffs out of combat and keeps its state during a fight",

@@ -1,5 +1,15 @@
 # Changelog
 
+**v7.5.0**
+
+- The Seal Tracker now warns when no seal is up: the icon turns red with a "!" so you can reseal, including before a pull
+- New options on the Seals page: turn the warning off, or only warn in combat
+
+**v7.4.0**
+
+- New Seal Tracker for paladins: shows your active seal as an icon with a swipe and countdown for its remaining time, and hides when no seal is up. Configure it in Options > Seals
+- Works on TBC Anniversary and Forever, including Forever's new Seal of Fury. On Forever it follows your seal and Judgement casts during combat, because Blizzard hides buff data from addons there
+
 **v7.3.0**
 
 - The armour reminder now works on Forever. It checks your buffs out of combat and keeps its state during a fight, because Blizzard hides buff data from addons in combat there

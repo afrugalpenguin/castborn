@@ -222,6 +222,13 @@ describe("APICheck", function()
                 APICheck:Run().events["UNIT_AURA(player) addedAura [combat]"])
         end)
 
+        it("records whether the player's cast spell ID is secret", function()
+            _G.InCombatLockdown = function() return true end
+            APICheck:OnEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "guid", 20154)
+            assert.are.equal("number",
+                APICheck:Run().events["UNIT_SPELLCAST_SUCCEEDED(player) spellID [combat]"])
+        end)
+
         it("counts each player UNIT_AURA payload shape in combat", function()
             _G.InCombatLockdown = function() return true end
             local key = "UNIT_AURA(player) payload {isFullUpdate=boolean} [combat]"

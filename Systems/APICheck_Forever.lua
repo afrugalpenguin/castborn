@@ -239,6 +239,8 @@ function APICheck:OnEvent(event, unit, ...)
     elseif event == "UNIT_SPELLCAST_SUCCEEDED" and unit == "player" then
         -- spellID may be secret, so it is never used to build a key
         local spellID = select(2, ...)
+        -- The seal tracker follows casts in combat, so it needs this to be plain
+        self.events[CombatKey("UNIT_SPELLCAST_SUCCEEDED(player) spellID")] = self:Describe(spellID)
         self.events[CombatKey("C_Spell.GetSpellCooldown(last cast)")] = self:DescribeCall("C_Spell.GetSpellCooldown", spellID)
     elseif event == "UNIT_AURA" and unit == "player" then
         local info = ...
