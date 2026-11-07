@@ -41,11 +41,18 @@ local function GetSlotTexture(slot)
     return nil
 end
 
-local function ScanForBuff(slot)
+-- Seams over aura reads, which Forever blocks in combat; ArmorTracker_Forever.lua overrides them.
+
+function ArmorTracker:CanReadAuras()
+    return true
+end
+
+-- Returns the spell ID of the first player buff found in the spellIds lookup, or nil
+function ArmorTracker:FindPlayerBuff(spellIds)
     for i = 1, 40 do
         local name, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", i)
         if not name then break end
-        if spellId and slot.spellIds[spellId] then
+        if spellId and spellIds[spellId] then
             return spellId
         end
     end
@@ -67,7 +74,9 @@ local function UpdateSlotState(slot)
     if slot.checkFn then
         isActive = slot.checkFn()
     else
-        local activeSpellId = ScanForBuff(slot)
+        -- When auras cannot be read (Forever in combat) the slot keeps its current state
+        if not ArmorTracker:CanReadAuras() then return end
+        local activeSpellId = ArmorTracker:FindPlayerBuff(slot.spellIds)
         if activeSpellId then
             slot.lastSpellId = activeSpellId
         end
@@ -189,10 +198,15 @@ local function BuildSpellIdLookup(entry)
     return lookup
 end
 
+-- Whether the talent at tab/index has points; ArmorTracker_Forever.lua overrides it
+function ArmorTracker:HasTalent(tab, index)
+    local _, _, _, _, rank = GetTalentInfo(tab, index)
+    return type(rank) == "number" and rank > 0
+end
+
 local function HasImprovedRF(entry)
     if not entry.talentTab or not entry.talentIndex then return false end
-    local _, _, _, _, rank = GetTalentInfo(entry.talentTab, entry.talentIndex)
-    return rank and rank > 0
+    return ArmorTracker:HasTalent(entry.talentTab, entry.talentIndex)
 end
 
 local function DestroySlot(index)

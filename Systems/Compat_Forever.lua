@@ -49,5 +49,4 @@ Castborn.unavailableOptions = {
     ["interrupt.lockout"] = true,  -- the lockout needs the combat log, which Forever blocks
     totems = true,
     absorbs = true,
-    armortracker = true,
 }

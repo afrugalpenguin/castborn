@@ -110,6 +110,10 @@ describe("Compat_Forever", function()
         assert.is_nil(Castborn.unavailableOptions.itemtracker)
     end)
 
+    it("shows the armour reminder page", function()
+        assert.is_nil(Castborn.unavailableOptions.armortracker)
+    end)
+
     it("shows the interrupt page but hides its lockout option", function()
         assert.is_nil(Castborn.unavailableOptions.interrupt)
         assert.is_true(Castborn.unavailableOptions["interrupt.lockout"])
