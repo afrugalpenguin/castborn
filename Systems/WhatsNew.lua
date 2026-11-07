@@ -14,6 +14,12 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.3.0",
+        features = {
+            "The armour reminder now works on Forever. It checks your buffs out of combat and keeps its state during a fight",
+        },
+    },
+    {
         version = "7.2.0",
         features = {
             "The item tracker now works on Forever, showing counts and cooldowns for your tracked potions, gems and other items",
