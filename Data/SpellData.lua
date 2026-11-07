@@ -648,9 +648,6 @@ SpellData.seals = {
     { key = "fury",          spellIds = {1311649} },   -- WoW Forever only (30s)
 }
 
--- Judgement consumes the active seal
-SpellData.judgementSpellIds = {20271}
-
 -- Spells that share a seal's name but are not a seal cast (Seal of Command's proc hit)
 SpellData.sealIgnoreSpellIds = { [20424] = true }
 

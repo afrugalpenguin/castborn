@@ -41,7 +41,7 @@ describe("Seal tracker (TBC behaviour)", function()
         assert.is_true(ST:IsSeal("Seal of Righteousness"))
         assert.is_true(ST:IsSeal("Seal of Command"))
         assert.is_false(ST:IsSeal("Blessing of Might"))
-        assert.is_true(ST:IsJudgement("Judgement"))
+        assert.is_false(ST:IsSeal("Judgement"))
     end)
 
     it("can always read auras", function()

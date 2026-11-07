@@ -2,8 +2,9 @@
     Castborn - seal tracker on Forever
     Aura reads are blocked in combat and the UNIT_AURA payload is secret, but the player's
     UNIT_SPELLCAST_SUCCEEDED spell ID stays plain. So out of combat the seal buff is read as
-    on TBC, and in combat the tracker follows casts: a seal starts its timer, Judgement
-    consumes it. Leaving combat re-reads the buff to correct any drift.
+    on TBC, and in combat the tracker follows casts: a seal starts its timer. Judgement does
+    not consume the seal on Forever, so it is ignored. Leaving combat re-reads the buff to
+    correct any drift.
     Loaded only by Castborn_Camelot.toc, after SealTracker.lua.
 ]]
 
@@ -51,7 +52,5 @@ function SealTracker:OnPlayerCast(spellId)
     if self:IsSeal(name) then
         local duration = self.knownDurations[name] or DEFAULT_DURATION
         self:SetState(spellId, GetTime() + duration, duration)
-    elseif self:IsJudgement(name) then
-        self:SetState(nil)
     end
 end

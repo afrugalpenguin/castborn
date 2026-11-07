@@ -10,7 +10,6 @@ local frame = nil
 local testModeActive = false
 
 local sealNames = {}
-local judgementNames = {}
 local ignoredSpellIds = {}
 
 -- What the icon shows: { spellId, expirationTime, duration }, all nil when no seal is up
@@ -45,7 +44,6 @@ end
 
 function SealTracker:BuildNames()
     wipe(sealNames)
-    wipe(judgementNames)
     fallbackSpellId = nil
     local data = Castborn.SpellData
     if not data or not data.seals then return end
@@ -56,17 +54,11 @@ function SealTracker:BuildNames()
             fallbackSpellId = fallbackSpellId or id
         end
     end
-    local judgement = FirstKnownName(data.judgementSpellIds or {})
-    if judgement then judgementNames[judgement] = true end
     ignoredSpellIds = data.sealIgnoreSpellIds or {}
 end
 
 function SealTracker:IsSeal(name)
     return name ~= nil and sealNames[name] == true
-end
-
-function SealTracker:IsJudgement(name)
-    return name ~= nil and judgementNames[name] == true
 end
 
 function SealTracker:IsIgnoredSpell(spellId)

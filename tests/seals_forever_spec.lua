@@ -98,10 +98,10 @@ describe("Seal tracker on Forever", function()
             assert.are.equal(20375, ST.state.spellId)
         end)
 
-        it("clears the seal on Judgement", function()
+        it("keeps the seal through Judgement, which does not consume it on Forever", function()
             ST:OnPlayerCast(21082)
             ST:OnPlayerCast(20271)
-            assert.is_nil(ST.state.spellId)
+            assert.are.same({ spellId = 21082, expirationTime = 130, duration = 30 }, ST.state)
         end)
 
         it("does not restart the timer on a Seal of Command proc", function()
