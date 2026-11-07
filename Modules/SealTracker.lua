@@ -23,16 +23,22 @@ local defaults = {
     xPct = -0.05,
     yPct = -0.185,
     showCountdown = true,
+    warnNoSeal = true,
+    warnInCombatOnly = false,
 }
+
+-- Icon for the no-seal warning before any seal has been seen
+local fallbackSpellId = nil
 
 --------------------------------------------------------------------------------
 -- Seal names
 --------------------------------------------------------------------------------
 
+-- Returns the name and ID of the first spell in the list the client knows
 local function FirstKnownName(spellIds)
     for _, id in ipairs(spellIds) do
         local name = GetSpellInfo(id)
-        if name then return name end
+        if name then return name, id end
     end
     return nil
 end
@@ -40,11 +46,15 @@ end
 function SealTracker:BuildNames()
     wipe(sealNames)
     wipe(judgementNames)
+    fallbackSpellId = nil
     local data = Castborn.SpellData
     if not data or not data.seals then return end
     for _, seal in ipairs(data.seals) do
-        local name = FirstKnownName(seal.spellIds)
-        if name then sealNames[name] = true end
+        local name, id = FirstKnownName(seal.spellIds)
+        if name then
+            sealNames[name] = true
+            fallbackSpellId = fallbackSpellId or id
+        end
     end
     local judgement = FirstKnownName(data.judgementSpellIds or {})
     if judgement then judgementNames[judgement] = true end
@@ -96,6 +106,21 @@ function SealTracker:SetState(spellId, expirationTime, duration)
     s.spellId = spellId
     s.expirationTime = spellId and expirationTime or nil
     s.duration = spellId and duration or nil
+    if spellId then self.lastSpellId = spellId end
+end
+
+-- "active" while a seal is up, "warning" when none is (and the warning is on), else "hidden"
+function SealTracker:GetDisplayMode(db)
+    if self.state.spellId then return "active" end
+    if db.warnNoSeal == false then return "hidden" end
+    if UnitIsDeadOrGhost("player") then return "hidden" end
+    if db.warnInCombatOnly and not UnitAffectingCombat("player") then return "hidden" end
+    return "warning"
+end
+
+-- Icon for the warning: the last seal seen, else the first seal the client knows
+function SealTracker:GetWarningSpellId()
+    return self.lastSpellId or fallbackSpellId
 end
 
 function SealTracker:UpdateState()
@@ -108,15 +133,41 @@ function SealTracker:UpdateState()
     end
 end
 
-function SealTracker:Render()
+-- Red-tinted, greyed icon with "!" for the warning; plain icon for an active seal
+local function SetWarningLook(on)
+    frame.icon:SetDesaturated(on)
+    if on then
+        frame.icon:SetVertexColor(1, 0.3, 0.3, 1)
+        frame.warning:Show()
+    else
+        frame.icon:SetVertexColor(1, 1, 1, 1)
+        frame.warning:Hide()
+    end
+end
+
+function SealTracker:Render(db)
     if not frame or testModeActive then return end
-    local s = self.state
-    if not s.spellId then
-        frame.shownSpellId, frame.shownExpiration = nil, nil
+    local mode = self:GetDisplayMode(db)
+    if mode == "hidden" then
+        frame.shownSpellId, frame.shownExpiration, frame.shownWarning = nil, nil, nil
         frame:Hide()
         return
     end
-    if frame.shownSpellId ~= s.spellId or frame.shownExpiration ~= s.expirationTime then
+    if mode == "warning" then
+        local spellId = self:GetWarningSpellId()
+        if not frame.shownWarning or frame.shownSpellId ~= spellId then
+            frame.icon:SetTexture(spellId and GetSpellTexture(spellId) or nil)
+            frame.cooldown:Clear()
+            SetWarningLook(true)
+            frame.shownWarning, frame.shownSpellId, frame.shownExpiration = true, spellId, nil
+        end
+        frame:Show()
+        return
+    end
+    local s = self.state
+    if frame.shownWarning or frame.shownSpellId ~= s.spellId or frame.shownExpiration ~= s.expirationTime then
+        SetWarningLook(false)
+        frame.shownWarning = nil
         frame.icon:SetTexture(GetSpellTexture(s.spellId))
         if s.duration and s.duration > 0 and s.expirationTime then
             frame.cooldown:SetCooldown(s.expirationTime - s.duration, s.duration)
@@ -136,7 +187,7 @@ function SealTracker:Refresh()
         return
     end
     self:UpdateState()
-    self:Render()
+    self:Render(db)
 end
 
 local function CreateSealFrame()
@@ -145,6 +196,17 @@ local function CreateSealFrame()
     local f = Castborn:CreateMasqueButton(UIParent, "Castborn_SealTracker", db.iconSize or 40, masqueGroup)
     f:SetFrameStrata("MEDIUM")
     f.cooldown:SetHideCountdownNumbers(db.showCountdown == false)
+
+    -- "!" shown over the icon when no seal is up
+    local size = db.iconSize or 40
+    local warning = f:CreateFontString(nil, "OVERLAY")
+    warning:SetFont(Castborn:GetBarFont(), math.max(14, math.floor(size * 0.4)), "OUTLINE")
+    Castborn:RegisterFontString(warning, math.max(14, math.floor(size * 0.4)), "OUTLINE")
+    warning:SetPoint("CENTER", 0, 0)
+    warning:SetText("!")
+    warning:SetTextColor(1, 0.2, 0.2, 1)
+    warning:Hide()
+    f.warning = warning
 
     if Castborn.Anchoring then
         Castborn.Anchoring:MakeDraggable(f, db, nil, "Seal Tracker")
@@ -161,7 +223,7 @@ function SealTracker:ApplySettings()
     if not frame then return end
     frame:SetSize(db.iconSize or 40, db.iconSize or 40)
     frame.cooldown:SetHideCountdownNumbers(db.showCountdown == false)
-    frame.shownSpellId = nil  -- redraw the swipe
+    frame.shownSpellId, frame.shownWarning = nil, nil  -- redraw the icon and swipe
     self:Refresh()
 end
 
@@ -214,9 +276,10 @@ end)
 function CB:TestSealTracker()
     if not frame then return end
     testModeActive = true
+    SetWarningLook(false)
     frame.icon:SetTexture(GetSpellTexture(20154) or "Interface\\Icons\\Ability_ThunderBolt")
     frame.cooldown:SetCooldown(GetTime(), 30)
-    frame.shownSpellId = nil
+    frame.shownSpellId, frame.shownWarning = nil, nil
     frame:Show()
 end
 

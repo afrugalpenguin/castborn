@@ -80,4 +80,65 @@ describe("Seal tracker (TBC behaviour)", function()
         ST:OnPlayerCast(20375)
         assert.is_nil(ST.state.spellId)
     end)
+
+    describe("no-seal warning", function()
+        local dead, inCombat
+
+        before_each(function()
+            dead, inCombat = false, false
+            _G.UnitIsDeadOrGhost = function() return dead end
+            _G.UnitAffectingCombat = function() return inCombat end
+        end)
+
+        after_each(function()
+            _G.UnitIsDeadOrGhost = nil
+            _G.UnitAffectingCombat = nil
+        end)
+
+        it("warns out of combat by default, for pre-pull", function()
+            assert.are.equal("warning", ST:GetDisplayMode({ warnNoSeal = true }))
+        end)
+
+        it("does not warn out of combat when set to combat only", function()
+            assert.are.equal("hidden", ST:GetDisplayMode({ warnNoSeal = true, warnInCombatOnly = true }))
+        end)
+
+        it("warns in combat when set to combat only", function()
+            inCombat = true
+            assert.are.equal("warning", ST:GetDisplayMode({ warnNoSeal = true, warnInCombatOnly = true }))
+        end)
+
+        it("shows the seal while one is up", function()
+            ST:SetState(27170, 125, 30)
+            assert.are.equal("active", ST:GetDisplayMode({ warnNoSeal = true }))
+        end)
+
+        it("warns when no seal is up", function()
+            assert.are.equal("warning", ST:GetDisplayMode({ warnNoSeal = true }))
+        end)
+
+        it("warns by default when the setting has never been saved", function()
+            assert.are.equal("warning", ST:GetDisplayMode({}))
+        end)
+
+        it("hides instead when the warning is turned off", function()
+            assert.are.equal("hidden", ST:GetDisplayMode({ warnNoSeal = false }))
+        end)
+
+        it("does not warn while dead or a ghost", function()
+            dead = true
+            assert.are.equal("hidden", ST:GetDisplayMode({ warnNoSeal = true }))
+        end)
+
+        it("remembers the last seal for the warning icon", function()
+            ST:SetState(27170, 125, 30)
+            ST:SetState(nil)
+            assert.are.equal(27170, ST:GetWarningSpellId())
+        end)
+
+        it("falls back to the first seal the client knows", function()
+            ST.lastSpellId = nil
+            assert.are.equal(20154, ST:GetWarningSpellId())
+        end)
+    end)
 end)
