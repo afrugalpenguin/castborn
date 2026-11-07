@@ -170,3 +170,13 @@ describe("Interrupt tracker on Forever", function()
         assert.is_nil(f.events.COMBAT_LOG_EVENT_UNFILTERED)
     end)
 end)
+
+describe("Interrupt spell data on Forever", function()
+    it("uses the Forever Feral Charge talent for druids and leaves other classes alone", function()
+        dofile("Data/SpellData.lua")
+        local pummel = Castborn.SpellData.interrupts.WARRIOR.spellId
+        dofile("Modules/InterruptTracker_Forever.lua")
+        assert.are.equal(1238122, Castborn.SpellData.interrupts.DRUID.spellId)
+        assert.are.equal(pummel, Castborn.SpellData.interrupts.WARRIOR.spellId)
+    end)
+end)

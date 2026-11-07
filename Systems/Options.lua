@@ -52,6 +52,7 @@ local categories = {
     { id = "totems", name = "Totems", class = "SHAMAN" },
     { id = "absorbs", name = "Absorbs", class = "MAGE" },
     { id = "armortracker", name = "Armour", classes = {"MAGE", "WARLOCK", "PRIEST", "PALADIN"} },
+    { id = "seals", name = "Seals", class = "PALADIN" },
     { divider = true },
     { id = "lookfeel", name = "Look & Feel" },
     { id = "profiles", name = "Profiles" },
@@ -591,6 +592,7 @@ function Options:BuildGeneral(parent)
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
         { key = "absorbs", label = "Absorb Tracker" },
         { key = "armortracker", label = "Armour Tracker", classes = {"MAGE", "WARLOCK", "PRIEST", "PALADIN"} },
+        { key = "seals", label = "Seal Tracker", class = "PALADIN" },
         { key = "interrupt", label = "Interrupt Tracker" },
         { key = "multidot", label = "Multi-DoT Tracker" },
     }
@@ -1321,6 +1323,7 @@ local moduleTitles = {
     totems = "Totem Tracker",
     absorbs = "Absorb Tracker",
     armortracker = "Armour Tracker",
+    seals = "Seal Tracker",
 }
 
 -- Per-module option builders. Each receives the content frame, the module's
@@ -1584,7 +1587,9 @@ function moduleBuilders.cooldowns(parent, db, y)
             row:SetPoint("TOPRIGHT", 0, listY)
 
             -- Checkbox
-            local displayName = spell.custom and (spell.name .. " |cff888888(Custom)|r") or spell.name
+            local CT = Castborn.CooldownTracker
+            local spellName = CT and CT:GetTrackedSpellName(spell) or spell.name
+            local displayName = spell.custom and (spellName .. " |cff888888(Custom)|r") or spellName
             local cb = CreateCheckbox(row, displayName, spell, "enabled")
             cb:SetPoint("LEFT", 0, 0)
 
@@ -2192,8 +2197,9 @@ function moduleBuilders.armortracker(parent, db, y)
 
     db.iconSize = db.iconSize or 50
     local sizeSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 24, 80, 4, function(v)
-        local f = _G["Castborn_ArmorTracker"]
-        if f then f:SetSize(v, v) end
+        if Castborn.ArmorTracker and Castborn.ArmorTracker.ApplyIconSize then
+            Castborn.ArmorTracker:ApplyIconSize(v)
+        end
     end)
     sizeSlider:SetPoint("TOPLEFT", 0, y)
     y = y - 50
@@ -2211,21 +2217,33 @@ function moduleBuilders.armortracker(parent, db, y)
         blessDropdown:SetPoint("TOPLEFT", 110, y + 6)
         UIDropDownMenu_SetWidth(blessDropdown, 140)
 
-        local blessings = {
+        local allBlessings = {
             { key = "might",     label = "Blessing of Might" },
             { key = "wisdom",    label = "Blessing of Wisdom" },
             { key = "kings",     label = "Blessing of Kings" },
             { key = "sanctuary", label = "Blessing of Sanctuary" },
         }
+        -- Only blessings this build has (no Sanctuary on Forever)
+        local blessings = {}
+        for _, b in ipairs(allBlessings) do
+            if Castborn:IsOptionAvailable("armortracker." .. b.key) then
+                blessings[#blessings + 1] = b
+            end
+        end
         local blessLabelMap = {}
         for _, b in ipairs(blessings) do blessLabelMap[b.key] = b.label end
+
+        local function TrackedBlessing()
+            local AT = Castborn.ArmorTracker
+            return AT and AT:GetSelectedBlessing(db) or db.selectedBlessing or "might"
+        end
 
         UIDropDownMenu_Initialize(blessDropdown, function(self, level)
             for _, b in ipairs(blessings) do
                 local info = UIDropDownMenu_CreateInfo()
                 info.text = b.label
                 info.value = b.key
-                info.checked = (db.selectedBlessing == b.key)
+                info.checked = (TrackedBlessing() == b.key)
                 info.func = function()
                     db.selectedBlessing = b.key
                     UIDropDownMenu_SetText(blessDropdown, b.label)
@@ -2236,7 +2254,7 @@ function moduleBuilders.armortracker(parent, db, y)
                 UIDropDownMenu_AddButton(info)
             end
         end)
-        UIDropDownMenu_SetText(blessDropdown, blessLabelMap[db.selectedBlessing or "might"])
+        UIDropDownMenu_SetText(blessDropdown, blessLabelMap[TrackedBlessing()])
         y = y - 40
 
         local rfNote = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -2248,6 +2266,47 @@ function moduleBuilders.armortracker(parent, db, y)
 
     local testBtn = CreateButton(parent, "Test Armour Alert", 120, function()
         if Castborn.TestArmorTracker then Castborn:TestArmorTracker() end
+    end)
+    testBtn:SetPoint("TOPLEFT", 0, y)
+
+    return y
+end
+
+function moduleBuilders.seals(parent, db, y)
+    local function apply()
+        if Castborn.SealTracker and Castborn.SealTracker.ApplySettings then
+            Castborn.SealTracker:ApplySettings()
+        end
+    end
+
+    local enableCB = CreateCheckbox(parent, "Enable Seal Tracker", db, "enabled", apply)
+    enableCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    db.iconSize = db.iconSize or 40
+    local sizeSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 24, 80, 4, apply)
+    sizeSlider:SetPoint("TOPLEFT", 0, y)
+    y = y - 50
+
+    local countdownCB = CreateCheckbox(parent, "Show Countdown Number", db, "showCountdown", apply)
+    countdownCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    if db.warnNoSeal == nil then db.warnNoSeal = true end
+    local combatOnlyCB = CreateCheckbox(parent, "Only warn in combat", db, "warnInCombatOnly", apply)
+    local warnCB = CreateCheckbox(parent, "Warn when no seal is up", db, "warnNoSeal", function(checked)
+        if checked then combatOnlyCB:Show() else combatOnlyCB:Hide() end
+        apply()
+    end)
+    warnCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    combatOnlyCB:SetPoint("TOPLEFT", 20, y)
+    if db.warnNoSeal == false then combatOnlyCB:Hide() end
+    y = y - 30
+
+    local testBtn = CreateButton(parent, "Test Seal", 90, function()
+        if Castborn.TestSealTracker then Castborn:TestSealTracker() end
     end)
     testBtn:SetPoint("TOPLEFT", 0, y)
 

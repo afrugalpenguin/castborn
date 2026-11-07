@@ -29,6 +29,13 @@ function CooldownTracker:GetSpellCooldownState(spellName)
     return false
 end
 
+-- Several TBC spell IDs are different spells on Forever (12472 is Cold Snap, 11958 Ice Block,
+-- 12292/12328 swap Sweeping Strikes and Death Wish), so name each entry after what its ID is
+-- on this client. Unknown IDs (custom entries) keep their stored name.
+function CooldownTracker:GetTrackedSpellName(spell)
+    return GetSpellInfo(spell.spellId) or spell.name
+end
+
 function CooldownTracker:SetIconCooldown(cooldown, spellName, start, duration)
     if isSecret(start) or isSecret(duration) then
         local durationObject = C_Spell.GetSpellCooldownDuration(spellName)

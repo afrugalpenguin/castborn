@@ -7,7 +7,8 @@ local CB = Castborn
 
 function CB:ResetPositions()
     local positionKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd",
-                          "interrupt", "procs", "cooldowns", "multidot", "totems", "absorbs", "armortracker"}
+                          "interrupt", "procs", "cooldowns", "multidot", "totems", "absorbs", "armortracker",
+                          "seals"}
 
     for _, key in ipairs(positionKeys) do
         local def = CB.defaults[key]

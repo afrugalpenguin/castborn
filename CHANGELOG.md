@@ -1,5 +1,27 @@
 # Changelog
 
+**v7.6.1**
+
+- Fixed the Seal Tracker on Forever hiding your seal, and showing the no-seal warning, after each Judgement. Judgement does not consume the seal on Forever
+- Fixed the Seal Tracker icon size setting having no effect when Masque skins the icon
+- The Forever tutorial no longer mentions Blessing of Sanctuary, which Forever does not have
+
+**v7.6.0**
+
+- The tutorial now works on Forever (/cb tutorial)
+- The tutorial only shows the modules your class and game version can use, and the step counter counts only those steps
+- New tutorial step for the Seal Tracker, and separate steps for the Absorb and Armour trackers
+
+**v7.5.0**
+
+- The Seal Tracker now warns when no seal is up: the icon turns red with a "!" so you can reseal, including before a pull
+- New options on the Seals page: turn the warning off, or only warn in combat
+
+**v7.4.0**
+
+- New Seal Tracker for paladins: shows your active seal as an icon with a swipe and countdown for its remaining time, and hides when no seal is up. Configure it in Options > Seals
+- Works on TBC Anniversary and Forever, including Forever's new Seal of Fury. On Forever it follows your seal and Judgement casts during combat, because Blizzard hides buff data from addons there
+
 **v7.3.0**
 
 - The armour reminder now works on Forever. It checks your buffs out of combat and keeps its state during a fight, because Blizzard hides buff data from addons in combat there

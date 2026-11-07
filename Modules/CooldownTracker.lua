@@ -362,6 +362,12 @@ function CooldownTracker:GetSpellCooldownState(spellName)
     return false
 end
 
+-- Name used to read a tracked spell's cooldown and icon. Forever overrides this, because
+-- several TBC spell IDs are different spells there.
+function CooldownTracker:GetTrackedSpellName(spell)
+    return spell.name
+end
+
 -- Draw the cooldown swipe on an icon. Forever overrides this.
 function CooldownTracker:SetIconCooldown(cooldown, spellName, start, duration)
     cooldown:SetCooldown(start, duration)
@@ -391,8 +397,9 @@ local function UpdateCooldowns()
             local cdFrame = cdFrames[visibleIndex]
             if not cdFrame then break end
 
-            local onCooldown, isLong, start, duration = CooldownTracker:GetSpellCooldownState(spell.name)
-            local icon = GetSpellTexture(spell.name)
+            local spellName = CooldownTracker:GetTrackedSpellName(spell)
+            local onCooldown, isLong, start, duration = CooldownTracker:GetSpellCooldownState(spellName)
+            local icon = GetSpellTexture(spellName)
 
             -- Position the frame based on visible index (compact layout with row wrapping)
             local size = db.iconSize or 32
@@ -445,7 +452,7 @@ local function UpdateCooldowns()
                 end
 
                 if onCooldown then
-                    CooldownTracker:SetIconCooldown(cdFrame.cooldown, spell.name, start, duration)
+                    CooldownTracker:SetIconCooldown(cdFrame.cooldown, spellName, start, duration)
                     cdFrame.icon:SetDesaturated(true)
                     cdFrame.glow:SetAlpha(0)
                     -- Remember a real cooldown (only if significant) so the ready glow can follow

@@ -106,6 +106,11 @@ end
 -- Frame Creation
 --------------------------------------------------------------------------------
 
+-- Size of the "!" warning text for an icon size
+local function WarningFontSize(size)
+    return math.max(14, math.floor(size * 0.4))
+end
+
 local function CreateSlotFrame(index)
     local db = CB.db.armortracker
     local size = db.iconSize or 50
@@ -159,8 +164,8 @@ local function CreateSlotFrame(index)
 
     -- "!" warning text overlay
     local warning = f:CreateFontString(nil, "OVERLAY")
-    warning:SetFont(Castborn:GetBarFont(), math.max(14, math.floor(size * 0.4)), "OUTLINE")
-    Castborn:RegisterFontString(warning, math.max(14, math.floor(size * 0.4)), "OUTLINE")
+    warning:SetFont(Castborn:GetBarFont(), WarningFontSize(size), "OUTLINE")
+    Castborn:RegisterFontString(warning, WarningFontSize(size), "OUTLINE")
     warning:SetPoint("CENTER", 0, 0)
     warning:SetText("!")
     warning:SetTextColor(1, 0.2, 0.2, 1)
@@ -198,6 +203,16 @@ local function BuildSpellIdLookup(entry)
     return lookup
 end
 
+-- The paladin blessing to track: the saved choice, or Might if this build lacks it
+-- (Blessing of Sanctuary is not on Forever)
+function ArmorTracker:GetSelectedBlessing(db)
+    local key = db.selectedBlessing or "might"
+    if not Castborn:IsOptionAvailable("armortracker." .. key) then
+        return "might"
+    end
+    return key
+end
+
 -- Whether the SpellData entry's talent has points; ArmorTracker_Forever.lua overrides it
 function ArmorTracker:HasTalent(entry)
     if not entry.talentTab or not entry.talentIndex then return false end
@@ -230,7 +245,7 @@ local function BuildSlots()
 
     if playerClass == "PALADIN" then
         -- Blessing slot: only the selected blessing's spell IDs
-        local selectedKey = db.selectedBlessing or "might"
+        local selectedKey = ArmorTracker:GetSelectedBlessing(db)
         for _, entry in ipairs(armorSpellList) do
             if entry.category == "blessing" and entry.key == selectedKey then
                 local slot = {
@@ -335,11 +350,31 @@ local function BuildSlots()
     end
 end
 
+-- Resize one alert icon and its "!" warning text
+function ArmorTracker:ResizeSlotFrame(f, size)
+    f:SetSize(size, size)
+    if f.warning then
+        f.warning:SetFont(Castborn:GetBarFont(), WarningFontSize(size), "OUTLINE")
+        Castborn:RegisterFontString(f.warning, WarningFontSize(size), "OUTLINE")
+    end
+end
+
+-- Resize every alert icon (called by the options slider). Masque sizes the icon and border
+-- when it skins a button, so the group is re-skinned or the new size would not show.
+function ArmorTracker:ApplyIconSize(size)
+    for _, slot in ipairs(slots) do
+        if slot.frame then self:ResizeSlotFrame(slot.frame, size) end
+    end
+    if Castborn.Masque and Castborn.Masque.enabled then
+        Castborn.Masque:ReSkin("armor")
+    end
+end
+
 --- Rebuild just the blessing slot's spell ID lookup (called when dropdown changes).
 function ArmorTracker:RebuildBlessingSlot()
     if playerClass ~= "PALADIN" then return end
     local db = CB.db.armortracker
-    local selectedKey = db.selectedBlessing or "might"
+    local selectedKey = ArmorTracker:GetSelectedBlessing(db)
 
     for _, slot in ipairs(slots) do
         if slot.category == "blessing" then
