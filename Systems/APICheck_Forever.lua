@@ -240,6 +240,9 @@ function APICheck:OnEvent(event, unit, ...)
         self.events[CombatKey("C_Spell.GetSpellCooldown(last cast)")] = self:DescribeCall("C_Spell.GetSpellCooldown", spellID)
     elseif event == "UNIT_AURA" and unit == "player" then
         local info = ...
+        -- Count payload shapes, so a combat full update (no addedAuras) still leaves a trace
+        local shapeKey = CombatKey("UNIT_AURA(player) payload " .. self:DescribeValues(info))
+        self.events[shapeKey] = (self.events[shapeKey] or 0) + 1
         local added = type(info) == "table" and info.addedAuras and info.addedAuras[1]
         if added then
             self.events[CombatKey("UNIT_AURA(player) addedAura")] = self:DescribeValues(added)

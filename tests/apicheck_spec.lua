@@ -222,6 +222,15 @@ describe("APICheck", function()
                 APICheck:Run().events["UNIT_AURA(player) addedAura [combat]"])
         end)
 
+        it("counts each player UNIT_AURA payload shape in combat", function()
+            _G.InCombatLockdown = function() return true end
+            local key = "UNIT_AURA(player) payload {isFullUpdate=boolean} [combat]"
+            local before = APICheck.events[key] or 0
+            APICheck:OnEvent("UNIT_AURA", "player", { isFullUpdate = true })
+            APICheck:OnEvent("UNIT_AURA", "player", { isFullUpdate = true })
+            assert.are.equal(before + 2, APICheck:Run().events[key])
+        end)
+
         it("tries the aura duration API once per combat", function()
             local calls = 0
             _G.C_UnitAuras = { GetAuraDuration = function() calls = calls + 1 end }
