@@ -16,12 +16,8 @@ for _, step in ipairs(Castborn.Tutorial.steps) do
         -- The lockout needs the combat log, which Forever blocks
         step.description = "Track your interrupt ability's cooldown. The bar turns yellow when your target or focus is casting something you can interrupt."
         step.tip = "Shows when your kick or counterspell is ready."
-    elseif step.id == "absorbs" then
-        -- Absorbs are not on Forever, so this step covers only the armour reminder
-        step.title = "Armour Tracker"
-        step.description = "Shows an alert icon when your class buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.\n\nPaladins get an alert for your chosen |cff88ddffBlessing|r (Might, Wisdom, Kings, or Sanctuary) and for your |cff88ddffAura|r.\n\nBuffs are checked out of combat, so the reminder holds its state during a fight."
-        step.tip = "Paladins can choose which blessing to track in Options > Armour."
-        step.getFrame = function() return _G["Castborn_ArmorTracker"] end
-        step.configKeys = { "armortracker" }
+    elseif step.id == "armour" then
+        -- Buffs are only readable out of combat, and the Righteous Fury talent check is unavailable
+        step.description = "Shows an alert icon when your class buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.\n\nPaladins get alerts for your chosen |cff88ddffBlessing|r (Might, Wisdom, Kings, or Sanctuary) and your |cff88ddffAura|r.\n\nBuffs are checked out of combat, so the reminder holds its state during a fight."
     end
 end
