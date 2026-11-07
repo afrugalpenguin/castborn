@@ -63,6 +63,29 @@ describe("Cooldowns on Forever", function()
         assert.are.equal(dur, got)
     end)
 
+    describe("GetTrackedSpellName", function()
+        local originalGetSpellInfo
+
+        before_each(function()
+            originalGetSpellInfo = _G.GetSpellInfo
+            -- On Forever these TBC IDs are different spells
+            local names = { [12472] = "Cold Snap", [11958] = "Ice Block", [12292] = "Sweeping Strikes" }
+            _G.GetSpellInfo = function(id) return names[id] end
+        end)
+
+        after_each(function() _G.GetSpellInfo = originalGetSpellInfo end)
+
+        it("names a tracked spell after what its ID is on this client", function()
+            assert.are.equal("Cold Snap", CT:GetTrackedSpellName({ spellId = 12472, name = "Icy Veins" }))
+            assert.are.equal("Ice Block", CT:GetTrackedSpellName({ spellId = 11958, name = "Cold Snap" }))
+            assert.are.equal("Sweeping Strikes", CT:GetTrackedSpellName({ spellId = 12292, name = "Death Wish" }))
+        end)
+
+        it("keeps the stored name when the client does not know the ID", function()
+            assert.are.equal("Custom Spell", CT:GetTrackedSpellName({ spellId = 999999, name = "Custom Spell" }))
+        end)
+    end)
+
     it("draws plain cooldowns with SetCooldown", function()
         local got
         local cooldown = { SetCooldown = function(_, s, d) got = { s, d } end }

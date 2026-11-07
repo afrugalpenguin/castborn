@@ -1587,7 +1587,9 @@ function moduleBuilders.cooldowns(parent, db, y)
             row:SetPoint("TOPRIGHT", 0, listY)
 
             -- Checkbox
-            local displayName = spell.custom and (spell.name .. " |cff888888(Custom)|r") or spell.name
+            local CT = Castborn.CooldownTracker
+            local spellName = CT and CT:GetTrackedSpellName(spell) or spell.name
+            local displayName = spell.custom and (spellName .. " |cff888888(Custom)|r") or spellName
             local cb = CreateCheckbox(row, displayName, spell, "enabled")
             cb:SetPoint("LEFT", 0, 0)
 
