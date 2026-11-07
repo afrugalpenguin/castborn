@@ -23,6 +23,8 @@ Modules/GCDIndicator.lua
 Modules/GCDIndicator_Forever.lua
 Modules/CooldownTracker.lua
 Modules/CooldownTracker_Forever.lua
+Modules/InterruptTracker.lua
+Modules/InterruptTracker_Forever.lua
 
 Systems/WhatsNew.lua
 Systems/Options.lua

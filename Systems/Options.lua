@@ -2002,9 +2002,11 @@ function moduleBuilders.interrupt(parent, db, y)
     heightSlider:SetPoint("TOPLEFT", 220, y)
     y = y - 60
 
-    local lockoutCB = CreateCheckbox(parent, "Show Lockout", db, "showLockout")
-    lockoutCB:SetPoint("TOPLEFT", 0, y)
-    y = y - 30
+    if Castborn:IsOptionAvailable("interrupt.lockout") then
+        local lockoutCB = CreateCheckbox(parent, "Show Lockout", db, "showLockout")
+        lockoutCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
+    end
 
     local targetCB = CreateCheckbox(parent, "Track Target", db, "trackTarget")
     targetCB:SetPoint("TOPLEFT", 0, y)

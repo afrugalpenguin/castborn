@@ -207,10 +207,9 @@ local function UpdateAttachedIcons()
 
             if tracked and castbarVisible then
                 btn:Show()
-                local start, duration = GetSpellCooldown(btn.interruptInfo.spellId)
-                local onCooldown = duration and duration > 1.5
+                local onCooldown, start, duration = InterruptTracker:GetCooldownState(btn.interruptInfo.spellId)
                 if onCooldown then
-                    btn.cooldown:SetCooldown(start, duration)
+                    InterruptTracker:SetIconCooldown(btn.cooldown, btn.interruptInfo.spellId, start, duration)
                     btn.icon:SetDesaturated(true)
                     if btn.glow then btn.glow:SetAlpha(0) end
                 else
@@ -247,14 +246,63 @@ local function OnCombatLogEvent(self, event, ...)
     end
 end
 
+-- Seams over values that are secret on Forever; InterruptTracker_Forever.lua overrides them.
+
+-- Returns onCooldown, start, duration. A GCD-length cooldown counts as ready.
+function InterruptTracker:GetCooldownState(spellId)
+    local start, duration = GetSpellCooldown(spellId)
+    if duration and duration > 1.5 then
+        return true, start, duration
+    end
+    return false
+end
+
+function InterruptTracker:SetIconCooldown(cooldown, spellId, start, duration)
+    cooldown:SetCooldown(start, duration)
+end
+
 -- Check if a unit is casting something interruptible
-local function IsUnitCastingInterruptible(unit)
+function InterruptTracker:IsUnitCastingInterruptible(unit)
     if not UnitExists(unit) then return false end
     local name, _, _, _, _, _, _, notInterruptible = UnitCastingInfo(unit)
     if name and not notInterruptible then return true end
     name, _, _, _, _, _, notInterruptible = UnitChannelInfo(unit)
     if name and not notInterruptible then return true end
     return false
+end
+
+function InterruptTracker:ShowCooldownProgress(frame, start, duration)
+    local remaining = (start + duration) - GetTime()
+    if frame.bar then
+        frame.bar:SetMinMaxValues(0, duration)
+        frame.bar:SetValue(remaining)
+        frame.bar:SetStatusBarColor(0.8, 0.3, 0.3, 1)
+    end
+    frame.time:SetText(string.format("%.1f", remaining))
+    frame.time:Show()
+    frame.ready:Hide()
+    frame.icon:SetDesaturated(true)
+end
+
+function InterruptTracker:ShowReadyState(frame, hasInterruptOpportunity)
+    if frame.bar then
+        frame.bar:SetMinMaxValues(0, 1)
+        frame.bar:SetValue(1)
+        -- Highlight yellow when there's an interrupt opportunity
+        if hasInterruptOpportunity then
+            frame.bar:SetStatusBarColor(1, 0.8, 0.2, 1)
+        else
+            frame.bar:SetStatusBarColor(0.2, 0.8, 0.2, 1)
+        end
+    end
+    frame.time:Hide()
+    frame.ready:Show()
+    frame.icon:SetDesaturated(false)
+end
+
+function InterruptTracker:RegisterLockoutEvents(eventFrame)
+    eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    eventFrame:SetScript("OnEvent", OnCombatLogEvent)
 end
 
 local function UpdateInterruptCooldown()
@@ -270,13 +318,12 @@ local function UpdateInterruptCooldown()
     end
 
     -- Check for interruptible casts on target/focus
-    local targetInterruptible = db.trackTarget ~= false and IsUnitCastingInterruptible("target")
-    local focusInterruptible = db.trackFocus ~= false and IsUnitCastingInterruptible("focus")
+    local targetInterruptible = db.trackTarget ~= false and InterruptTracker:IsUnitCastingInterruptible("target")
+    local focusInterruptible = db.trackFocus ~= false and InterruptTracker:IsUnitCastingInterruptible("focus")
     local hasInterruptOpportunity = targetInterruptible or focusInterruptible
 
     -- Only show when in combat or when interrupt is on cooldown
-    local start, duration = GetSpellCooldown(frame.interruptInfo.spellId)
-    local onCooldown = duration and duration > 1.5
+    local onCooldown, start, duration = InterruptTracker:GetCooldownState(frame.interruptInfo.spellId)
     local inCombat = UnitAffectingCombat("player")
 
     if not onCooldown and not inCombat and not hasInterruptOpportunity then
@@ -286,31 +333,10 @@ local function UpdateInterruptCooldown()
 
     frame:Show()
 
-    if duration and duration > 1.5 then
-        local remaining = (start + duration) - GetTime()
-        if frame.bar then
-            frame.bar:SetMinMaxValues(0, duration)
-            frame.bar:SetValue(remaining)
-            frame.bar:SetStatusBarColor(0.8, 0.3, 0.3, 1)
-        end
-        frame.time:SetText(string.format("%.1f", remaining))
-        frame.time:Show()
-        frame.ready:Hide()
-        frame.icon:SetDesaturated(true)
+    if onCooldown then
+        InterruptTracker:ShowCooldownProgress(frame, start, duration)
     else
-        if frame.bar then
-            frame.bar:SetMinMaxValues(0, 1)
-            frame.bar:SetValue(1)
-            -- Highlight yellow when there's an interrupt opportunity
-            if hasInterruptOpportunity then
-                frame.bar:SetStatusBarColor(1, 0.8, 0.2, 1)
-            else
-                frame.bar:SetStatusBarColor(0.2, 0.8, 0.2, 1)
-            end
-        end
-        frame.time:Hide()
-        frame.ready:Show()
-        frame.icon:SetDesaturated(false)
+        InterruptTracker:ShowReadyState(frame, hasInterruptOpportunity)
     end
 end
 
@@ -334,9 +360,7 @@ Castborn:RegisterCallback("READY", function()
     CreateLockoutDisplay()
     InterruptTracker:UpdateAttachMode()
 
-    local eventFrame = CreateFrame("Frame")
-    eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-    eventFrame:SetScript("OnEvent", OnCombatLogEvent)
+    InterruptTracker:RegisterLockoutEvents(CreateFrame("Frame"))
 
     local updateFrame = CreateFrame("Frame")
     local elapsed = 0

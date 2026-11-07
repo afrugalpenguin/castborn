@@ -60,12 +60,23 @@ describe("TOC files", function()
     end)
 
     it("never registers the combat log in the Forever build", function()
+        -- Shared files whose registration sits in a seam their _Forever file replaces
+        -- (each override is pinned by its own spec)
+        local overridden = {
+            ["Modules/InterruptTracker.lua"] = "Modules/InterruptTracker_Forever.lua",
+        }
+        local loaded = {}
+        for _, path in ipairs(foreverFiles) do loaded[path] = true end
         for _, path in ipairs(foreverFiles) do
             local f = assert(io.open(path, "r"))
             local source = f:read("*a")
             f:close()
-            assert.is_nil(source:match('RegisterEvent%(%s*"COMBAT_LOG_EVENT'),
-                path .. " registers the combat log, which Forever blocks")
+            if overridden[path] then
+                assert.is_true(loaded[overridden[path]], path .. " needs " .. overridden[path])
+            else
+                assert.is_nil(source:match('RegisterEvent%(%s*"COMBAT_LOG_EVENT'),
+                    path .. " registers the combat log, which Forever blocks")
+            end
         end
     end)
 
