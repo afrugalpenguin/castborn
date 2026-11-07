@@ -14,6 +14,12 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.5.0",
+        features = {
+            "The Seal Tracker now warns when no seal is up, including before a pull. You can turn it off or limit it to combat in Options > Seals",
+        },
+    },
+    {
         version = "7.4.0",
         features = {
             "New Seal Tracker for paladins: shows your active seal with a swipe for its remaining time. Configure it in Options > Seals",

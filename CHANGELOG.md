@@ -1,5 +1,10 @@
 # Changelog
 
+**v7.5.0**
+
+- The Seal Tracker now warns when no seal is up: the icon turns red with a "!" so you can reseal, including before a pull
+- New options on the Seals page: turn the warning off, or only warn in combat
+
 **v7.4.0**
 
 - New Seal Tracker for paladins: shows your active seal as an icon with a swipe and countdown for its remaining time, and hides when no seal is up. Configure it in Options > Seals
