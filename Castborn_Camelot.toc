@@ -9,6 +9,7 @@
 
 Core.lua
 Systems/Compat_Forever.lua
+Systems/APICheck_Forever.lua
 
 Systems/Anchoring.lua
 Systems/Profiles.lua
@@ -25,6 +26,7 @@ Modules/CooldownTracker.lua
 Modules/CooldownTracker_Forever.lua
 Modules/InterruptTracker.lua
 Modules/InterruptTracker_Forever.lua
+Modules/ItemTracker.lua
 
 Systems/WhatsNew.lua
 Systems/Options.lua

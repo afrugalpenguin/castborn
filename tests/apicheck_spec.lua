@@ -222,6 +222,25 @@ describe("APICheck", function()
                 APICheck:Run().events["UNIT_AURA(player) addedAura [combat]"])
         end)
 
+        it("counts each player UNIT_AURA payload shape in combat", function()
+            _G.InCombatLockdown = function() return true end
+            local key = "UNIT_AURA(player) payload {isFullUpdate=boolean} [combat]"
+            local before = APICheck.events[key] or 0
+            APICheck:OnEvent("UNIT_AURA", "player", { isFullUpdate = true })
+            APICheck:OnEvent("UNIT_AURA", "player", { isFullUpdate = true })
+            assert.are.equal(before + 2, APICheck:Run().events[key])
+        end)
+
+        it("does not index a secret addedAuras list", function()
+            local secretList = setmetatable({}, { __index = function() error("indexed a secret") end })
+            _G.issecretvalue = function(v) return v == secretList end
+            _G.InCombatLockdown = function() return true end
+            assert.has_no.errors(function()
+                APICheck:OnEvent("UNIT_AURA", "player", { addedAuras = secretList })
+            end)
+            _G.issecretvalue = nil
+        end)
+
         it("tries the aura duration API once per combat", function()
             local calls = 0
             _G.C_UnitAuras = { GetAuraDuration = function() calls = calls + 1 end }

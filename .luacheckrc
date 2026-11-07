@@ -187,6 +187,7 @@ files["**/*_Forever.lua"] = {
     globals = {
         "SLASH_CASTBORNAPI1",
         "GetSpellInfo", "GetSpellSubtext", "GetSpellTexture", "GetItemSpell",
+        "GetItemInfo", "GetItemCount",
     },
     read_globals = {
         "issecretvalue", "GetBuildInfo", "C_Spell", "C_UnitAuras", "C_Item",

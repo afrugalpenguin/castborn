@@ -114,6 +114,8 @@ APICheck.names = {
     "C_Container.GetContainerNumSlots", "C_Container.GetContainerItemInfo",
     "C_Container.GetContainerItemCooldown",
     "GetInventoryItemCooldown", "GetItemSpell", "C_Item.GetItemSpell",
+    "GetItemInfo", "C_Item.GetItemInfo", "GetItemCount", "C_Item.GetItemCount",
+    "GetCursorInfo", "ClearCursor",
     "GetTotemInfo", "UnitAttackSpeed", "UnitRangedDamage", "GetWeaponEnchantInfo",
     "UnitPower", "UnitPowerMax", "UnitHealth",
     "GetShapeshiftForm", "GetNetStats",
@@ -161,6 +163,8 @@ APICheck.probes = {
     { "UnitChannelDuration", "target" },
     { "UnitIsUnit", "target", "player" },
     { "C_Container.GetContainerItemCooldown", 0, 1 },
+    { "C_Item.GetItemCount", 6948 },     -- Hearthstone
+    { "C_Item.GetItemInfo", 6948 },
     -- Interrupts; only the player's class answers, the rest report nil
     { "C_Spell.GetSpellCooldown", "Counterspell" },
     { "C_Spell.GetSpellCooldown", "Kick" },
@@ -236,7 +240,13 @@ function APICheck:OnEvent(event, unit, ...)
         self.events[CombatKey("C_Spell.GetSpellCooldown(last cast)")] = self:DescribeCall("C_Spell.GetSpellCooldown", spellID)
     elseif event == "UNIT_AURA" and unit == "player" then
         local info = ...
-        local added = type(info) == "table" and info.addedAuras and info.addedAuras[1]
+        -- Count payload shapes, so a combat full update (no addedAuras) still leaves a trace
+        local shapeKey = CombatKey("UNIT_AURA(player) payload " .. self:DescribeValues(info))
+        self.events[shapeKey] = (self.events[shapeKey] or 0) + 1
+        -- In combat the whole payload is secret (addedAuras included), so never index it then
+        local addedAuras = type(info) == "table" and info.addedAuras
+        if issecretvalue and issecretvalue(addedAuras) then return end
+        local added = addedAuras and addedAuras[1]
         if added then
             self.events[CombatKey("UNIT_AURA(player) addedAura")] = self:DescribeValues(added)
             if InCombat() and not self.auraDurationTried then
