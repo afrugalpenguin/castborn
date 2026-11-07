@@ -123,6 +123,12 @@ describe("Tutorial steps", function()
             assert.is_nil(step.tip:lower():find("locked out"))
         end)
 
+        it("does not tell Forever paladins that Judgement ends the seal", function()
+            local T = load("PALADIN", true)
+            local step = T.steps[indexOf(T, "seals")]
+            assert.is_nil(step.description:find("Judgement"))
+        end)
+
         it("says the armour reminder checks out of combat", function()
             local T = load("MAGE", true)
             local step = T.steps[indexOf(T, "armour")]
