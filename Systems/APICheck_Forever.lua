@@ -243,7 +243,10 @@ function APICheck:OnEvent(event, unit, ...)
         -- Count payload shapes, so a combat full update (no addedAuras) still leaves a trace
         local shapeKey = CombatKey("UNIT_AURA(player) payload " .. self:DescribeValues(info))
         self.events[shapeKey] = (self.events[shapeKey] or 0) + 1
-        local added = type(info) == "table" and info.addedAuras and info.addedAuras[1]
+        -- In combat the whole payload is secret (addedAuras included), so never index it then
+        local addedAuras = type(info) == "table" and info.addedAuras
+        if issecretvalue and issecretvalue(addedAuras) then return end
+        local added = addedAuras and addedAuras[1]
         if added then
             self.events[CombatKey("UNIT_AURA(player) addedAura")] = self:DescribeValues(added)
             if InCombat() and not self.auraDurationTried then
