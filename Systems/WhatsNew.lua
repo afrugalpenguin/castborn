@@ -14,6 +14,25 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.3.0",
+        features = {
+            "The armour reminder now works on Forever. It checks your buffs out of combat and keeps its state during a fight",
+        },
+    },
+    {
+        version = "7.2.0",
+        features = {
+            "The item tracker now works on Forever, showing counts and cooldowns for your tracked potions, gems and other items",
+        },
+    },
+    {
+        version = "7.1.0",
+        features = {
+            "The interrupt tracker now works on Forever, showing your interrupt cooldown on its bar and on the target and focus castbars",
+            "On Forever the interrupt lockout timer is not shown, because Blizzard blocks the combat log there",
+        },
+    },
+    {
         version = "7.0.0",
         features = {
             "Castborn now supports World of Warcraft: Forever. The same download works on both TBC Anniversary and Forever",

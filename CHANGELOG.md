@@ -1,5 +1,21 @@
 # Changelog
 
+**v7.3.0**
+
+- The armour reminder now works on Forever. It checks your buffs out of combat and keeps its state during a fight, because Blizzard hides buff data from addons in combat there
+- On Forever the paladin Righteous Fury reminder is not shown yet, because the talent check it needs is not available
+
+**v7.2.0**
+
+- The item tracker now works on Forever, showing counts and cooldowns for your tracked potions, gems and other items
+- On Forever, /cbapi reports which game data addons can read, to help with testing
+
+**v7.1.0**
+
+- The interrupt tracker now works on Forever, showing your interrupt cooldown on its bar and on the target and focus castbars
+- On Forever the interrupt lockout timer is not shown, because Blizzard blocks the combat log there, and its option is hidden
+- On Forever, if a cast's interruptibility is hidden, the bar turns yellow for any cast. The castbar's shield still shows whether it can be interrupted
+
 **v7.0.0**
 
 - Castborn now supports World of Warcraft: Forever. The same download works on both TBC Anniversary and Forever

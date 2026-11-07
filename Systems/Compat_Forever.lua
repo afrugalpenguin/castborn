@@ -26,6 +26,15 @@ if not GetItemSpell and C_Item and C_Item.GetItemSpell then
     GetItemSpell = C_Item.GetItemSpell
 end
 
+-- C_Item keeps the TBC return order and arguments
+if not GetItemInfo and C_Item and C_Item.GetItemInfo then
+    GetItemInfo = C_Item.GetItemInfo
+end
+
+if not GetItemCount and C_Item and C_Item.GetItemCount then
+    GetItemCount = C_Item.GetItemCount
+end
+
 -- GetSpellCooldown is deliberately not recreated: in combat its times are secret, and the
 -- TBC code compares them. The GCD and cooldown modules read C_Spell through their _Forever files.
 
@@ -37,9 +46,7 @@ Castborn.unavailableOptions = {
     dots = true,
     multidot = true,
     buffs = true,
-    itemtracker = true,
-    interrupt = true,
+    ["interrupt.lockout"] = true,  -- the lockout needs the combat log, which Forever blocks
     totems = true,
     absorbs = true,
-    armortracker = true,
 }
