@@ -52,6 +52,7 @@ local categories = {
     { id = "totems", name = "Totems", class = "SHAMAN" },
     { id = "absorbs", name = "Absorbs", class = "MAGE" },
     { id = "armortracker", name = "Armour", classes = {"MAGE", "WARLOCK", "PRIEST", "PALADIN"} },
+    { id = "seals", name = "Seals", class = "PALADIN" },
     { divider = true },
     { id = "lookfeel", name = "Look & Feel" },
     { id = "profiles", name = "Profiles" },
@@ -591,6 +592,7 @@ function Options:BuildGeneral(parent)
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
         { key = "absorbs", label = "Absorb Tracker" },
         { key = "armortracker", label = "Armour Tracker", classes = {"MAGE", "WARLOCK", "PRIEST", "PALADIN"} },
+        { key = "seals", label = "Seal Tracker", class = "PALADIN" },
         { key = "interrupt", label = "Interrupt Tracker" },
         { key = "multidot", label = "Multi-DoT Tracker" },
     }
@@ -1321,6 +1323,7 @@ local moduleTitles = {
     totems = "Totem Tracker",
     absorbs = "Absorb Tracker",
     armortracker = "Armour Tracker",
+    seals = "Seal Tracker",
 }
 
 -- Per-module option builders. Each receives the content frame, the module's
@@ -2248,6 +2251,34 @@ function moduleBuilders.armortracker(parent, db, y)
 
     local testBtn = CreateButton(parent, "Test Armour Alert", 120, function()
         if Castborn.TestArmorTracker then Castborn:TestArmorTracker() end
+    end)
+    testBtn:SetPoint("TOPLEFT", 0, y)
+
+    return y
+end
+
+function moduleBuilders.seals(parent, db, y)
+    local function apply()
+        if Castborn.SealTracker and Castborn.SealTracker.ApplySettings then
+            Castborn.SealTracker:ApplySettings()
+        end
+    end
+
+    local enableCB = CreateCheckbox(parent, "Enable Seal Tracker", db, "enabled", apply)
+    enableCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    db.iconSize = db.iconSize or 40
+    local sizeSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 24, 80, 4, apply)
+    sizeSlider:SetPoint("TOPLEFT", 0, y)
+    y = y - 50
+
+    local countdownCB = CreateCheckbox(parent, "Show Countdown Number", db, "showCountdown", apply)
+    countdownCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    local testBtn = CreateButton(parent, "Test Seal", 90, function()
+        if Castborn.TestSealTracker then Castborn:TestSealTracker() end
     end)
     testBtn:SetPoint("TOPLEFT", 0, y)
 

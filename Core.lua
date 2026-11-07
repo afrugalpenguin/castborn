@@ -362,6 +362,15 @@ CB.defaults = {
         yPct = -0.185,
         selectedBlessing = "might",
     },
+
+    seals = {
+        enabled = true,
+        iconSize = 40,
+        point = "CENTER",
+        xPct = -0.05,
+        yPct = -0.185,
+        showCountdown = true,
+    },
 }
 
 -- Initialize saved variables
@@ -858,7 +867,8 @@ mainFrame:SetScript("OnEvent", function(self, event, arg1)
         -- Migrate legacy pixel positions to percentages
         if Castborn.Anchoring then
             local positionKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd",
-                                  "interrupt", "cooldowns", "multidot", "procs", "totems", "absorbs", "armortracker"}
+                                  "interrupt", "cooldowns", "multidot", "procs", "totems", "absorbs", "armortracker",
+                                  "seals"}
             for _, key in ipairs(positionKeys) do
                 if CB.db[key] then
                     Castborn.Anchoring:MigratePosition(CB.db[key])

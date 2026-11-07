@@ -633,6 +633,26 @@ function SpellData:GetClassArmors(class)
     return self.armors[class]
 end
 
+-- Paladin seals for the seal tracker. Seals are matched by spell name (resolved from any ID
+-- the client knows), so each lists one or two known IDs rather than every rank.
+SpellData.seals = {
+    { key = "righteousness", spellIds = {21084, 20154} },
+    { key = "command",       spellIds = {20375} },
+    { key = "crusader",      spellIds = {21082} },
+    { key = "justice",       spellIds = {20164} },
+    { key = "light",         spellIds = {20165} },
+    { key = "wisdom",        spellIds = {20166} },
+    { key = "vengeance",     spellIds = {31801} },
+    { key = "blood",         spellIds = {31892} },
+    { key = "martyr",        spellIds = {348700} },
+}
+
+-- Judgement consumes the active seal
+SpellData.judgementSpellIds = {20271}
+
+-- Spells that share a seal's name but are not a seal cast (Seal of Command's proc hit)
+SpellData.sealIgnoreSpellIds = { [20424] = true }
+
 function SpellData:GetAbsorbInfo(spellId)
     return self.absorbs[spellId]
 end
