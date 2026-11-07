@@ -2195,8 +2195,9 @@ function moduleBuilders.armortracker(parent, db, y)
 
     db.iconSize = db.iconSize or 50
     local sizeSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 24, 80, 4, function(v)
-        local f = _G["Castborn_ArmorTracker"]
-        if f then f:SetSize(v, v) end
+        if Castborn.ArmorTracker and Castborn.ArmorTracker.ApplyIconSize then
+            Castborn.ArmorTracker:ApplyIconSize(v)
+        end
     end)
     sizeSlider:SetPoint("TOPLEFT", 0, y)
     y = y - 50

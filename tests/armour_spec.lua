@@ -26,6 +26,40 @@ describe("Armour reminder seams (TBC behaviour)", function()
         assert.is_nil(AT:FindPlayerBuff({ [7302] = true }))
     end)
 
+    describe("icon size", function()
+        local function recorder()
+            local r = { calls = {} }
+            setmetatable(r, { __index = function(_, k)
+                return function(_, ...) r.calls[k] = { ... } end
+            end })
+            return r
+        end
+
+        after_each(function() Castborn.Masque = nil end)
+
+        it("resizes an alert icon and its warning text", function()
+            local f = recorder()
+            f.warning = recorder()
+            AT:ResizeSlotFrame(f, 60)
+            assert.are.same({ 60, 60 }, f.calls.SetSize)
+            assert.are.equal(24, f.warning.calls.SetFont[2])
+        end)
+
+        it("re-skins the armour icons with Masque so the new size shows", function()
+            local skinned
+            Castborn.Masque = { enabled = true, ReSkin = function(_, group) skinned = group end }
+            AT:ApplyIconSize(60)
+            assert.are.equal("armor", skinned)
+        end)
+
+        it("does not touch Masque when it is not in use", function()
+            local skinned
+            Castborn.Masque = { enabled = false, ReSkin = function(_, group) skinned = group end }
+            AT:ApplyIconSize(60)
+            assert.is_nil(skinned)
+        end)
+    end)
+
     describe("HasTalent", function()
         after_each(function() _G.GetTalentInfo = nil end)
 
