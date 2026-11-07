@@ -40,6 +40,7 @@ Castborn also runs on World of Warcraft: Forever, from the same download. Foreve
 - Interrupt Tracker (cooldown only, no lockout timer)
 - Item Tracker
 - Armour Tracker (checks out of combat only)
+- Seal Tracker
 
 A few details differ on Forever: castbars whose timings are hidden show no spark or latency overlay, short cooldowns can also get the ready glow, and Earth Shield and Water Shield charges are not shown.
 
@@ -64,6 +65,7 @@ Player, Target, Focus, and Target-of-Target castbars with latency indicators, cl
 - **Totem Tracker** — Shaman-only: track active totems and party coverage
 - **Absorb Tracker** — Track Ice Barrier, Mana Shield, Power Word: Shield, and all TBC absorb effects with remaining amount and drain visualisation
 - **Armour Tracker** — Mage and Warlock only: warns when your armour self-buff (Frost/Ice/Mage/Molten or Demon/Fel Armor) is missing
+- **Seal Tracker** — Paladin-only: shows your active seal with a swipe for its remaining time *(TBC and Forever)*
 
 ## Screenshots
 
