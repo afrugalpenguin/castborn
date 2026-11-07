@@ -1,5 +1,11 @@
 # Changelog
 
+**v7.6.0**
+
+- The tutorial now works on Forever (/cb tutorial)
+- The tutorial only shows the modules your class and game version can use, and the step counter counts only those steps
+- New tutorial step for the Seal Tracker, and separate steps for the Absorb and Armour trackers
+
 **v7.5.0**
 
 - The Seal Tracker now warns when no seal is up: the icon turns red with a "!" so you can reseal, including before a pull

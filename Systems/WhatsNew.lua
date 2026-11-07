@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.6.0",
+        features = {
+            "The tutorial now works on Forever (/cb tutorial)",
+            "The tutorial only shows the modules your class and game version can use",
+            "New tutorial step for the Seal Tracker",
+        },
+    },
+    {
         version = "7.5.0",
         features = {
             "The Seal Tracker now warns when no seal is up, including before a pull. You can turn it off or limit it to combat in Options > Seals",
