@@ -645,6 +645,7 @@ SpellData.seals = {
     { key = "vengeance",     spellIds = {31801} },
     { key = "blood",         spellIds = {31892} },
     { key = "martyr",        spellIds = {348700} },
+    { key = "fury",          spellIds = {1311649} },   -- WoW Forever only (30s)
 }
 
 -- Judgement consumes the active seal

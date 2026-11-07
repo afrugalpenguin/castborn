@@ -134,6 +134,22 @@ describe("Seal tracker on Forever", function()
         assert.are.equal(20293, ST.state.spellId)
     end)
 
+    it("tracks Seal of Fury, which is new on Forever", function()
+        local found = false
+        for _, seal in ipairs(Castborn.SpellData.seals) do
+            for _, id in ipairs(seal.spellIds) do
+                if id == 1311649 then found = true end
+            end
+        end
+        assert.is_true(found)
+        spellNames[1311649] = "Seal of Fury"
+        ST:BuildNames()
+        inCombat = true
+        ST:OnPlayerCast(1311649)
+        spellNames[1311649] = nil
+        assert.are.equal(1311649, ST.state.spellId)
+    end)
+
     it("skips auras whose name is secret", function()
         auras = { { name = secret() }, { name = "Seal of Command", spellId = 20375, duration = 30, expirationTime = 120 } }
         assert.has_no.errors(function() ST:UpdateState() end)
