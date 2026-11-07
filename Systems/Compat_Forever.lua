@@ -47,6 +47,7 @@ Castborn.unavailableOptions = {
     multidot = true,
     buffs = true,
     ["interrupt.lockout"] = true,  -- the lockout needs the combat log, which Forever blocks
+    ["armortracker.sanctuary"] = true,  -- Blessing of Sanctuary is not on Forever
     totems = true,
     absorbs = true,
 }
