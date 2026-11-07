@@ -39,10 +39,11 @@ Castborn also runs on World of Warcraft: Forever, from the same download. Foreve
 - Cooldown Tracker, including trinket cooldowns
 - Interrupt Tracker (cooldown only, no lockout timer)
 - Item Tracker
+- Armour Tracker (checks out of combat only)
 
 A few details differ on Forever: castbars whose timings are hidden show no spark or latency overlay, short cooldowns can also get the ready glow, and Earth Shield and Water Shield charges are not shown.
 
-Not yet on Forever: Five Second Rule, Swing Timer, DoT and Multi-DoT trackers, Proc Tracker, Totem Tracker, Absorb Tracker and Armour Tracker. Their option pages are hidden on Forever, and they keep working as before on TBC.
+Not yet on Forever: Five Second Rule, Swing Timer, DoT and Multi-DoT trackers, Proc Tracker, Totem Tracker and Absorb Tracker. Their option pages are hidden on Forever, and they keep working as before on TBC.
 
 ## What's Included
 

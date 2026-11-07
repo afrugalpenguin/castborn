@@ -115,7 +115,7 @@ APICheck.names = {
     "C_Container.GetContainerItemCooldown",
     "GetInventoryItemCooldown", "GetItemSpell", "C_Item.GetItemSpell",
     "GetItemInfo", "C_Item.GetItemInfo", "GetItemCount", "C_Item.GetItemCount",
-    "GetCursorInfo", "ClearCursor",
+    "GetCursorInfo", "ClearCursor", "GetTalentInfo",
     "GetTotemInfo", "UnitAttackSpeed", "UnitRangedDamage", "GetWeaponEnchantInfo",
     "UnitPower", "UnitPowerMax", "UnitHealth",
     "GetShapeshiftForm", "GetNetStats",
@@ -165,6 +165,7 @@ APICheck.probes = {
     { "C_Container.GetContainerItemCooldown", 0, 1 },
     { "C_Item.GetItemCount", 6948 },     -- Hearthstone
     { "C_Item.GetItemInfo", 6948 },
+    { "GetTalentInfo", 2, 7 },            -- Improved Righteous Fury, as in SpellData (rank is 5th)
     -- Interrupts; only the player's class answers, the rest report nil
     { "C_Spell.GetSpellCooldown", "Counterspell" },
     { "C_Spell.GetSpellCooldown", "Kick" },
