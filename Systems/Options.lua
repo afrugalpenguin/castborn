@@ -1587,7 +1587,9 @@ function moduleBuilders.cooldowns(parent, db, y)
             row:SetPoint("TOPRIGHT", 0, listY)
 
             -- Checkbox
-            local displayName = spell.custom and (spell.name .. " |cff888888(Custom)|r") or spell.name
+            local CT = Castborn.CooldownTracker
+            local spellName = CT and CT:GetTrackedSpellName(spell) or spell.name
+            local displayName = spell.custom and (spellName .. " |cff888888(Custom)|r") or spellName
             local cb = CreateCheckbox(row, displayName, spell, "enabled")
             cb:SetPoint("LEFT", 0, 0)
 
@@ -2215,21 +2217,33 @@ function moduleBuilders.armortracker(parent, db, y)
         blessDropdown:SetPoint("TOPLEFT", 110, y + 6)
         UIDropDownMenu_SetWidth(blessDropdown, 140)
 
-        local blessings = {
+        local allBlessings = {
             { key = "might",     label = "Blessing of Might" },
             { key = "wisdom",    label = "Blessing of Wisdom" },
             { key = "kings",     label = "Blessing of Kings" },
             { key = "sanctuary", label = "Blessing of Sanctuary" },
         }
+        -- Only blessings this build has (no Sanctuary on Forever)
+        local blessings = {}
+        for _, b in ipairs(allBlessings) do
+            if Castborn:IsOptionAvailable("armortracker." .. b.key) then
+                blessings[#blessings + 1] = b
+            end
+        end
         local blessLabelMap = {}
         for _, b in ipairs(blessings) do blessLabelMap[b.key] = b.label end
+
+        local function TrackedBlessing()
+            local AT = Castborn.ArmorTracker
+            return AT and AT:GetSelectedBlessing(db) or db.selectedBlessing or "might"
+        end
 
         UIDropDownMenu_Initialize(blessDropdown, function(self, level)
             for _, b in ipairs(blessings) do
                 local info = UIDropDownMenu_CreateInfo()
                 info.text = b.label
                 info.value = b.key
-                info.checked = (db.selectedBlessing == b.key)
+                info.checked = (TrackedBlessing() == b.key)
                 info.func = function()
                     db.selectedBlessing = b.key
                     UIDropDownMenu_SetText(blessDropdown, b.label)
@@ -2240,7 +2254,7 @@ function moduleBuilders.armortracker(parent, db, y)
                 UIDropDownMenu_AddButton(info)
             end
         end)
-        UIDropDownMenu_SetText(blessDropdown, blessLabelMap[db.selectedBlessing or "might"])
+        UIDropDownMenu_SetText(blessDropdown, blessLabelMap[TrackedBlessing()])
         y = y - 40
 
         local rfNote = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")

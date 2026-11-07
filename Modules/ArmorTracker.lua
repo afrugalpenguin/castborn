@@ -203,6 +203,16 @@ local function BuildSpellIdLookup(entry)
     return lookup
 end
 
+-- The paladin blessing to track: the saved choice, or Might if this build lacks it
+-- (Blessing of Sanctuary is not on Forever)
+function ArmorTracker:GetSelectedBlessing(db)
+    local key = db.selectedBlessing or "might"
+    if not Castborn:IsOptionAvailable("armortracker." .. key) then
+        return "might"
+    end
+    return key
+end
+
 -- Whether the talent at tab/index has points; ArmorTracker_Forever.lua overrides it
 function ArmorTracker:HasTalent(tab, index)
     local _, _, _, _, rank = GetTalentInfo(tab, index)
@@ -235,7 +245,7 @@ local function BuildSlots()
 
     if playerClass == "PALADIN" then
         -- Blessing slot: only the selected blessing's spell IDs
-        local selectedKey = db.selectedBlessing or "might"
+        local selectedKey = ArmorTracker:GetSelectedBlessing(db)
         for _, entry in ipairs(armorSpellList) do
             if entry.category == "blessing" and entry.key == selectedKey then
                 local slot = {
@@ -364,7 +374,7 @@ end
 function ArmorTracker:RebuildBlessingSlot()
     if playerClass ~= "PALADIN" then return end
     local db = CB.db.armortracker
-    local selectedKey = db.selectedBlessing or "might"
+    local selectedKey = ArmorTracker:GetSelectedBlessing(db)
 
     for _, slot in ipairs(slots) do
         if slot.category == "blessing" then

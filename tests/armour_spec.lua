@@ -60,6 +60,23 @@ describe("Armour reminder seams (TBC behaviour)", function()
         end)
     end)
 
+    describe("GetSelectedBlessing", function()
+        after_each(function() Castborn.unavailableOptions = nil end)
+
+        it("returns the saved blessing", function()
+            assert.are.equal("sanctuary", AT:GetSelectedBlessing({ selectedBlessing = "sanctuary" }))
+        end)
+
+        it("defaults to Might", function()
+            assert.are.equal("might", AT:GetSelectedBlessing({}))
+        end)
+
+        it("falls back to Might when the build lacks the saved blessing", function()
+            Castborn.unavailableOptions = { ["armortracker.sanctuary"] = true }
+            assert.are.equal("might", AT:GetSelectedBlessing({ selectedBlessing = "sanctuary" }))
+        end)
+    end)
+
     describe("HasTalent", function()
         after_each(function() _G.GetTalentInfo = nil end)
 
