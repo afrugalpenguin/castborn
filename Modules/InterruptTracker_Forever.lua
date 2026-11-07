@@ -8,6 +8,12 @@
 
 local InterruptTracker = Castborn.InterruptTracker
 
+-- Feral Charge is a Feral talent with a new ID on Forever; the TBC ID 16979 does not exist
+local interrupts = Castborn.SpellData and Castborn.SpellData.interrupts
+if interrupts and interrupts.DRUID then
+    interrupts.DRUID.spellId = 1238122
+end
+
 local function isSecret(v)
     return issecretvalue ~= nil and issecretvalue(v)
 end
