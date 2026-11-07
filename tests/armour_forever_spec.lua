@@ -47,11 +47,45 @@ describe("Armour reminder on Forever", function()
         end)
     end)
 
-    it("reports no talent without calling GetTalentInfo, which Forever lacks", function()
-        _G.GetTalentInfo = nil
-        local result
-        assert.has_no.errors(function() result = AT:HasTalent(2, 7) end)
-        assert.is_false(result)
+    describe("HasTalent", function()
+        local known
+        local entry = { talentTab = 2, talentIndex = 7, talentSpellIds = { 20468, 20469, 20470 } }
+
+        before_each(function()
+            _G.GetTalentInfo = nil
+            known = {}
+            _G.IsPlayerSpell = function(id) return known[id] == true end
+        end)
+
+        after_each(function() _G.IsPlayerSpell = nil end)
+
+        it("detects any rank of the talent with IsPlayerSpell", function()
+            known[20469] = true
+            assert.is_true(AT:HasTalent(entry))
+        end)
+
+        it("is false when no rank is known", function()
+            assert.is_false(AT:HasTalent(entry))
+        end)
+
+        it("is false for an entry without talent spell IDs", function()
+            known[20468] = true
+            assert.is_false(AT:HasTalent({ talentTab = 2, talentIndex = 7 }))
+        end)
+
+        it("is false when IsPlayerSpell is missing", function()
+            _G.IsPlayerSpell = nil
+            assert.is_false(AT:HasTalent(entry))
+        end)
+    end)
+
+    it("lists the Improved Righteous Fury ranks in SpellData", function()
+        dofile("Data/SpellData.lua")
+        for _, e in ipairs(Castborn.SpellData:GetClassArmors("PALADIN")) do
+            if e.category == "rf" then
+                assert.are.same({ 20468, 20469, 20470 }, e.talentSpellIds)
+            end
+        end
     end)
 
     describe("FindPlayerBuff", function()
