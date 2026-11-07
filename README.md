@@ -37,10 +37,11 @@ Castborn also runs on World of Warcraft: Forever, from the same download. Foreve
 - Player, Target, Focus and Target-of-Target castbars
 - GCD Indicator
 - Cooldown Tracker, including trinket cooldowns
+- Interrupt Tracker (cooldown only, no lockout timer)
 
 A few details differ on Forever: castbars whose timings are hidden show no spark or latency overlay, short cooldowns can also get the ready glow, and Earth Shield and Water Shield charges are not shown.
 
-Not yet on Forever: Five Second Rule, Swing Timer, DoT and Multi-DoT trackers, Proc Tracker, Interrupt Tracker, Totem Tracker, Absorb Tracker, Armour Tracker and Item Tracker. Their option pages are hidden on Forever, and they keep working as before on TBC.
+Not yet on Forever: Five Second Rule, Swing Timer, DoT and Multi-DoT trackers, Proc Tracker, Totem Tracker, Absorb Tracker, Armour Tracker and Item Tracker. Their option pages are hidden on Forever, and they keep working as before on TBC.
 
 ## What's Included
 
@@ -57,7 +58,7 @@ Player, Target, Focus, and Target-of-Target castbars with latency indicators, cl
 - **Multi-DoT Tracker** — Keep DoTs up on multiple mobs simultaneously
 - **Proc Tracker** — Never miss Clearcasting, Nightfall, or trinket procs
 - **Cooldown Tracker** — Track important abilities with per-spell toggles *(TBC and Forever)*
-- **Interrupt Tracker** — Know when your kick is ready
+- **Interrupt Tracker** — Know when your kick is ready *(TBC and Forever; no lockout timer on Forever)*
 - **Totem Tracker** — Shaman-only: track active totems and party coverage
 - **Absorb Tracker** — Track Ice Barrier, Mana Shield, Power Word: Shield, and all TBC absorb effects with remaining amount and drain visualisation
 - **Armour Tracker** — Mage and Warlock only: warns when your armour self-buff (Frost/Ice/Mage/Molten or Demon/Fel Armor) is missing

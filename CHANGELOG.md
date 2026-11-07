@@ -1,5 +1,11 @@
 # Changelog
 
+**v7.1.0**
+
+- The interrupt tracker now works on Forever, showing your interrupt cooldown on its bar and on the target and focus castbars
+- On Forever the interrupt lockout timer is not shown, because Blizzard blocks the combat log there, and its option is hidden
+- On Forever, if a cast's interruptibility is hidden, the bar turns yellow for any cast. The castbar's shield still shows whether it can be interrupted
+
 **v7.0.0**
 
 - Castborn now supports World of Warcraft: Forever. The same download works on both TBC Anniversary and Forever

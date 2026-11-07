@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.1.0",
+        features = {
+            "The interrupt tracker now works on Forever, showing your interrupt cooldown on its bar and on the target and focus castbars",
+            "On Forever the interrupt lockout timer is not shown, because Blizzard blocks the combat log there",
+        },
+    },
+    {
         version = "7.0.0",
         features = {
             "Castborn now supports World of Warcraft: Forever. The same download works on both TBC Anniversary and Forever",
