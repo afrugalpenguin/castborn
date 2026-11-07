@@ -17,8 +17,8 @@ for _, step in ipairs(Castborn.Tutorial.steps) do
         step.description = "Track your interrupt ability's cooldown. The bar turns yellow when your target or focus is casting something you can interrupt."
         step.tip = "Shows when your kick or counterspell is ready."
     elseif step.id == "armour" then
-        -- Buffs are only readable out of combat, and the Righteous Fury talent check is unavailable
-        step.description = "Shows an alert icon when your class buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.\n\nPaladins get alerts for your chosen |cff88ddffBlessing|r (Might, Wisdom, or Kings) and your |cff88ddffAura|r.\n\nBuffs are checked out of combat, so the reminder holds its state during a fight."
+        -- Buffs are only readable out of combat, and there is no Blessing of Sanctuary
+        step.description = "Shows an alert icon when your class buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.\n\nPaladins get alerts for your chosen |cff88ddffBlessing|r (Might, Wisdom, or Kings), your |cff88ddffAura|r, and |cff88ddffRighteous Fury|r if Improved RF is talented (or always, if you turn it on).\n\nBuffs are checked out of combat, so the reminder holds its state during a fight."
     elseif step.id == "seals" then
         -- Judgement does not consume the seal on Forever
         step.description = "Shows your active seal with a swipe for its remaining time, so you know when to reseal.\n\nWhen no seal is up, the icon turns red with a |cffff3333!|r so you can reseal, for example before a pull."

@@ -21,6 +21,7 @@ local defaults = {
     xPct = 0.05,
     yPct = -0.185,
     selectedBlessing = "might",
+    alwaysTrackRF = false,
 }
 
 --------------------------------------------------------------------------------
@@ -220,8 +221,13 @@ function ArmorTracker:HasTalent(entry)
     return type(rank) == "number" and rank > 0
 end
 
-local function HasImprovedRF(entry)
-    return ArmorTracker:HasTalent(entry)
+-- Righteous Fury gets a reminder automatically when Improved Righteous Fury is talented
+-- (a sign of tanking), or for any paladin who knows it when "always" is turned on
+function ArmorTracker:ShouldTrackRighteousFury(entry, db)
+    if self:HasTalent(entry) then return true end
+    if not db.alwaysTrackRF then return false end
+    local spellId = entry.spellIds and entry.spellIds[1]
+    return spellId ~= nil and Castborn:IsSpellKnown(spellId) == true
 end
 
 local function DestroySlot(index)
@@ -262,7 +268,7 @@ local function BuildSlots()
 
         -- RF slot: only if Improved Righteous Fury is talented
         for _, entry in ipairs(armorSpellList) do
-            if entry.category == "rf" and HasImprovedRF(entry) then
+            if entry.category == "rf" and ArmorTracker:ShouldTrackRighteousFury(entry, db) then
                 local slot = {
                     spellIds = BuildSpellIdLookup(entry),
                     frame = nil,
@@ -368,6 +374,13 @@ function ArmorTracker:ApplyIconSize(size)
     if Castborn.Masque and Castborn.Masque.enabled then
         Castborn.Masque:ReSkin("armor")
     end
+end
+
+-- Rebuild every slot (called when the "always remind about Righteous Fury" option changes)
+function ArmorTracker:RebuildSlots()
+    if not armorSpellList then return end
+    BuildSlots()
+    UpdateAllSlots()
 end
 
 --- Rebuild just the blessing slot's spell ID lookup (called when dropdown changes).

@@ -96,4 +96,42 @@ describe("Armour reminder seams (TBC behaviour)", function()
             assert.is_false(AT:HasTalent({}))
         end)
     end)
+
+    describe("ShouldTrackRighteousFury", function()
+        local rf = { spellIds = { 25780 }, talentTab = 2, talentIndex = 7 }
+        local talented, knowsRF
+
+        before_each(function()
+            talented, knowsRF = false, true
+            _G.GetTalentInfo = function() return "Improved Righteous Fury", nil, 1, 2, talented and 1 or 0, 3 end
+            _G.IsSpellKnown = function(id) return knowsRF and id == 25780 end
+            _G.IsPlayerSpell = function() return false end
+            _G.GetSpellInfo = function() return nil end
+        end)
+
+        after_each(function()
+            _G.GetTalentInfo = nil
+            _G.IsSpellKnown = nil
+            _G.IsPlayerSpell = nil
+            _G.GetSpellInfo = nil
+        end)
+
+        it("tracks it automatically when Improved Righteous Fury is talented", function()
+            talented = true
+            assert.is_true(AT:ShouldTrackRighteousFury(rf, {}))
+        end)
+
+        it("does not track it untalented by default", function()
+            assert.is_false(AT:ShouldTrackRighteousFury(rf, {}))
+        end)
+
+        it("tracks it untalented when the option is on", function()
+            assert.is_true(AT:ShouldTrackRighteousFury(rf, { alwaysTrackRF = true }))
+        end)
+
+        it("does not track it before Righteous Fury is learned, even with the option on", function()
+            knowsRF = false
+            assert.is_false(AT:ShouldTrackRighteousFury(rf, { alwaysTrackRF = true }))
+        end)
+    end)
 end)
