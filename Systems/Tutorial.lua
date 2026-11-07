@@ -79,6 +79,7 @@ local steps = {
         tip = "Procs pulse with a glow effect to grab your attention when they activate.",
         getFrame = function() return _G["Castborn_ProcTracker"] end,
         configKey = "procs",
+        optionKey = "buffs",  -- the proc options page id differs from its saved variables key
     },
     {
         id = "swing",
@@ -103,15 +104,30 @@ local steps = {
         tip = "Mouseover a totem bar to see which party members are NOT in range.",
         getFrame = function() return _G["Castborn_TotemTracker"] end,
         configKey = "totems",
-        class = "SHAMAN",
     },
     {
         id = "absorbs",
-        title = "Defensive Trackers",
-        description = "|cff88ddffAbsorb Tracker|r \226\128\148 tracks absorb shields like Ice Barrier, Power Word: Shield, and Fire/Shadow Ward. Shows remaining absorb with a drain effect; multiple shields display as a row of icons.\n\n|cff88ddffArmour Tracker|r \226\128\148 shows an alert icon when your class armour buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.\n\nPaladins get two alert icons: one for your chosen |cff88ddffBlessing|r (Might, Wisdom, Kings, or Sanctuary) and one for |cff88ddffRighteous Fury|r if Improved RF is talented.",
-        tip = "Paladins can choose which blessing to track in Options > Armour.",
+        title = "Absorb Tracker",
+        description = "Tracks absorb shields like Ice Barrier, Power Word: Shield, and Fire/Shadow Ward. Shows the remaining absorb with a drain effect; multiple shields display as a row of icons.",
+        tip = "Watch the drain to know when your shield is about to break.",
         getFrame = function() return _G["Castborn_AbsorbTracker"] end,
-        configKeys = {"absorbs", "armortracker"},
+        configKey = "absorbs",
+    },
+    {
+        id = "armour",
+        title = "Armour Tracker",
+        description = "Shows an alert icon when your class buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.\n\nPaladins get alerts for your chosen |cff88ddffBlessing|r (Might, Wisdom, Kings, or Sanctuary), your |cff88ddffAura|r, and |cff88ddffRighteous Fury|r if Improved RF is talented.",
+        tip = "Paladins can choose which blessing to track in Options > Armour.",
+        getFrame = function() return _G["Castborn_ArmorTracker"] end,
+        configKey = "armortracker",
+    },
+    {
+        id = "seals",
+        title = "Seal Tracker",
+        description = "Shows your active seal with a swipe for its remaining time, so you know when to reseal.\n\nWhen no seal is up, the icon turns red with a |cffff3333!|r so you can reseal before a pull or after Judgement.",
+        tip = "Turn the warning off, or limit it to combat, in Options > Seals.",
+        getFrame = function() return _G["Castborn_SealTracker"] end,
+        configKey = "seals",
     },
     {
         id = "customise",
@@ -129,6 +145,8 @@ local steps = {
     },
 }
 
+Tutorial.steps = steps
+
 -- Human-readable labels for configKey values (used by multi-checkbox merged steps)
 local configKeyLabels = {
     gcd = "GCD Indicator",
@@ -140,6 +158,37 @@ local configKeyLabels = {
     multidot = "Multi-DoT Tracker",
     absorbs = "Absorb Tracker",
     armortracker = "Armour Tracker",
+    seals = "Seal Tracker",
+}
+
+-- Whether a module is any use to a class. Modules not listed suit every class.
+local function SpellDataHasClass(tbl, class)
+    for _, info in pairs(tbl or {}) do
+        if info.class == class then return true end
+    end
+    return false
+end
+
+local keyForClass = {
+    fsr = function(class)
+        local defaults = Castborn.ClassDefaults and Castborn.ClassDefaults:GetDefaults(class) or {}
+        return defaults.fiveSecondRule ~= false
+    end,
+    swing = function(class)
+        local defaults = Castborn.ClassDefaults and Castborn.ClassDefaults:GetDefaults(class) or {}
+        return defaults.swingTimer ~= false
+    end,
+    interrupt = function(class)
+        return Castborn.SpellData ~= nil and Castborn.SpellData:GetInterrupt(class) ~= nil
+    end,
+    totems = function(class) return class == "SHAMAN" end,
+    absorbs = function(class)
+        return Castborn.SpellData ~= nil and SpellDataHasClass(Castborn.SpellData.absorbs, class)
+    end,
+    armortracker = function(class)
+        return Castborn.SpellData ~= nil and Castborn.SpellData:GetClassArmors(class) ~= nil
+    end,
+    seals = function(class) return class == "PALADIN" end,
 }
 
 -- Create a highlight frame that surrounds a target element
@@ -730,9 +779,11 @@ local function ShowTestFrame(frameId)
         if not iFrame then
             iFrame = CreateMockupInterruptTracker()
         end
-        -- Show a mockup lockout indicator if the real one isn't visible
+        -- Show a mockup lockout indicator if the real one isn't visible (and the build has one)
+        local hasLockout = Castborn:IsOptionAvailable("interrupt.lockout")
+        if iFrame.lockout then iFrame.lockout:SetShown(hasLockout) end
         local realLockout = _G["Castborn_Lockout"]
-        if not (realLockout and realLockout:IsShown()) and not iFrame.tutorialLockout then
+        if hasLockout and not (realLockout and realLockout:IsShown()) and not iFrame.tutorialLockout then
             local lo = CreateFrame("Frame", nil, iFrame)
             lo:SetSize(80, 20)
             lo:SetPoint("LEFT", iFrame, "RIGHT", 10, 0)
@@ -746,31 +797,44 @@ local function ShowTestFrame(frameId)
             lo.text:SetTextColor(0.5, 0.5, 1.0, 1)
             iFrame.tutorialLockout = lo
         end
-        if iFrame.tutorialLockout then iFrame.tutorialLockout:Show() end
+        if iFrame.tutorialLockout then iFrame.tutorialLockout:SetShown(hasLockout) end
         return iFrame
     elseif frameId == "totems" then
         if CB.TestTotemTracker then CB:TestTotemTracker() end
         local frame = _G["Castborn_TotemTracker"]
         if frame then return frame end
     elseif frameId == "absorbs" then
-        local frames = {}
         if CastbornDB.absorbs and CastbornDB.absorbs.enabled then
             if CB.TestAbsorbTracker then CB:TestAbsorbTracker() end
             local f = _G["Castborn_AbsorbTracker"]
-            if f then tinsert(frames, f) end
-        else
-            if CB.EndTestAbsorbTracker then CB:EndTestAbsorbTracker() end
+            if f then return f end
+        elseif CB.EndTestAbsorbTracker then
+            CB:EndTestAbsorbTracker()
         end
+    elseif frameId == "armour" then
+        local frames = {}
         if CastbornDB.armortracker and CastbornDB.armortracker.enabled then
             if CB.TestArmorTracker then CB:TestArmorTracker() end
-            local f = _G["Castborn_ArmorTracker"]
-            if f then tinsert(frames, f) end
-            local f2 = _G["Castborn_ArmorTracker2"]
-            if f2 and f2:IsShown() then tinsert(frames, f2) end
-        else
-            if CB.EndTestArmorTracker then CB:EndTestArmorTracker() end
+            -- Paladins can have up to three alert icons
+            for _, name in ipairs({ "Castborn_ArmorTracker", "Castborn_ArmorTracker2", "Castborn_ArmorTracker3" }) do
+                local f = _G[name]
+                if f and f:IsShown() then tinsert(frames, f) end
+            end
+        elseif CB.EndTestArmorTracker then
+            CB:EndTestArmorTracker()
         end
-        if #frames > 0 then return frames end
+        if #frames > 0 then
+            frames.grouped = true
+            return frames
+        end
+    elseif frameId == "seals" then
+        if CastbornDB.seals and CastbornDB.seals.enabled then
+            if CB.TestSealTracker then CB:TestSealTracker() end
+            local f = _G["Castborn_SealTracker"]
+            if f then return f end
+        elseif CB.EndTestSealTracker then
+            CB:EndTestSealTracker()
+        end
     elseif frameId == "customise" then
         -- No specific frame to highlight — this step explains commands
         return nil
@@ -845,6 +909,60 @@ local function HighlightFrame(targetFrames)
 end
 
 -- Show a specific tutorial step
+-- The module keys a step toggles, or nil for steps without checkboxes
+local function StepKeys(step)
+    return step.configKeys or (step.configKey and {step.configKey}) or nil
+end
+
+-- Whether this build loads the module behind a key (every module on TBC; fewer on Forever)
+-- and the module is any use to the player's class
+local function IsKeyAvailable(step, key)
+    if not Castborn:IsOptionAvailable(step.optionKey or key) then return false end
+    local forClass = keyForClass[key]
+    if not forClass then return true end
+    local _, playerClass = UnitClass("player")
+    return forClass(playerClass) == true
+end
+
+-- The keys of a step that get a checkbox: those this build loads and the class can use
+function Tutorial:GetShownKeys(step)
+    local stepKeys = StepKeys(step)
+    if not stepKeys then return nil end
+    local keys = {}
+    for _, key in ipairs(stepKeys) do
+        if IsKeyAvailable(step, key) then keys[#keys + 1] = key end
+    end
+    return keys
+end
+
+-- A step is shown if it matches the player's class and at least one of its modules is loaded
+function Tutorial:IsStepShown(stepNum)
+    local step = steps[stepNum]
+    if not step then return false end
+    if step.class then
+        local _, playerClass = UnitClass("player")
+        if step.class ~= playerClass then return false end
+    end
+    local keys = StepKeys(step)
+    if not keys then return true end
+    for _, key in ipairs(keys) do
+        if IsKeyAvailable(step, key) then return true end
+    end
+    return false
+end
+
+-- Position of a step among the shown steps, and how many steps are shown
+function Tutorial:GetStepPosition(stepNum)
+    local position, total = 0, 0
+    for i = 1, #steps do
+        if self:IsStepShown(i) then
+            total = total + 1
+            if i <= stepNum then position = total end
+        end
+    end
+    return position, total
+end
+
 local function ShowStep(stepNum)
     if stepNum < 1 or stepNum > #steps then return end
 
@@ -856,7 +974,7 @@ local function ShowStep(stepNum)
     end
 
     -- Update step counter
-    tutorialFrame.stepText:SetText(string.format("Step %d of %d", stepNum, #steps))
+    tutorialFrame.stepText:SetText(string.format("Step %d of %d", Tutorial:GetStepPosition(stepNum)))
 
     -- Update content
     tutorialFrame.title:SetText(step.title)
@@ -875,7 +993,8 @@ local function ShowStep(stepNum)
     end
 
     -- Handle enable checkboxes (single configKey or merged configKeys)
-    local keys = step.configKeys or (step.configKey and {step.configKey}) or nil
+    -- Only modules this build loads, and the class can use, get a checkbox
+    local keys = Tutorial:GetShownKeys(step)
     local numChecks = keys and #keys or 0
 
     -- Hide all checkboxes first
@@ -884,7 +1003,7 @@ local function ShowStep(stepNum)
         tutorialFrame.enableChecks[i].text:Hide()
     end
 
-    if keys then
+    if numChecks > 0 then
         for i, key in ipairs(keys) do
             local cb = tutorialFrame.enableChecks[i]
             local db = CastbornDB[key]
@@ -965,19 +1084,10 @@ function Tutorial:Start()
     Castborn:Print("Tutorial started. Follow the steps to learn about Castborn!")
 end
 
--- Check if a step should be shown for the current player class
-local function ShouldShowStep(stepNum)
-    local step = steps[stepNum]
-    if not step then return false end
-    if not step.class then return true end
-    local _, playerClass = UnitClass("player")
-    return step.class == playerClass
-end
-
 function Tutorial:NextStep()
     local nextStep = currentStep + 1
-    -- Skip steps that don't match the player's class
-    while nextStep <= #steps and not ShouldShowStep(nextStep) do
+    -- Skip steps for another class or for modules this build does not load
+    while nextStep <= #steps and not self:IsStepShown(nextStep) do
         nextStep = nextStep + 1
     end
     if nextStep > #steps then
@@ -989,8 +1099,8 @@ end
 
 function Tutorial:PreviousStep()
     local prevStep = currentStep - 1
-    -- Skip steps that don't match the player's class
-    while prevStep >= 1 and not ShouldShowStep(prevStep) do
+    -- Skip steps for another class or for modules this build does not load
+    while prevStep >= 1 and not self:IsStepShown(prevStep) do
         prevStep = prevStep - 1
     end
     if prevStep < 1 then return end
@@ -1018,6 +1128,7 @@ function Tutorial:End()
     if CB.EndTestTotemTracker then CB:EndTestTotemTracker() end
     if CB.EndTestAbsorbTracker then CB:EndTestAbsorbTracker() end
     if CB.EndTestArmorTracker then CB:EndTestArmorTracker() end
+    if CB.EndTestSealTracker then CB:EndTestSealTracker() end
     if CB.EndTestItems then CB:EndTestItems() end
 
     if tutorialFrame then

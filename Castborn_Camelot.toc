@@ -35,3 +35,5 @@ Modules/SealTracker_Forever.lua
 Systems/WhatsNew.lua
 Systems/Options.lua
 Systems/Config.lua
+Systems/Tutorial.lua
+Systems/Tutorial_Forever.lua
