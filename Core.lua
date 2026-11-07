@@ -361,6 +361,7 @@ CB.defaults = {
         xPct = 0.05,
         yPct = -0.185,
         selectedBlessing = "might",
+        alwaysTrackRF = false,
     },
 
     seals = {

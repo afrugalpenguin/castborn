@@ -116,7 +116,7 @@ local steps = {
     {
         id = "armour",
         title = "Armour Tracker",
-        description = "Shows an alert icon when your class buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.\n\nPaladins get alerts for your chosen |cff88ddffBlessing|r (Might, Wisdom, Kings, or Sanctuary), your |cff88ddffAura|r, and |cff88ddffRighteous Fury|r if Improved RF is talented.",
+        description = "Shows an alert icon when your class buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.\n\nPaladins get alerts for your chosen |cff88ddffBlessing|r (Might, Wisdom, Kings, or Sanctuary), your |cff88ddffAura|r, and |cff88ddffRighteous Fury|r if Improved RF is talented (or always, if you turn it on).",
         tip = "Paladins can choose which blessing to track in Options > Armour.",
         getFrame = function() return _G["Castborn_ArmorTracker"] end,
         configKey = "armortracker",

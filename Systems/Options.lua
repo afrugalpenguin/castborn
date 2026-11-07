@@ -2261,7 +2261,15 @@ function moduleBuilders.armortracker(parent, db, y)
         rfNote:SetPoint("TOPLEFT", 0, y)
         rfNote:SetText("Righteous Fury is tracked automatically when Improved Righteous Fury is talented.")
         rfNote:SetTextColor(0.6, 0.6, 0.6)
-        y = y - 20
+        y = y - 24
+
+        local rfCB = CreateCheckbox(parent, "Always remind me about Righteous Fury", db, "alwaysTrackRF", function()
+            if Castborn.ArmorTracker and Castborn.ArmorTracker.RebuildSlots then
+                Castborn.ArmorTracker:RebuildSlots()
+            end
+        end)
+        rfCB:SetPoint("TOPLEFT", 0, y)
+        y = y - 30
     end
 
     local testBtn = CreateButton(parent, "Test Armour Alert", 120, function()
