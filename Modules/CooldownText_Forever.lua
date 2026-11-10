@@ -40,6 +40,7 @@ CooldownText.defaults = {
     longColor = { 1, 1, 1, 1 },          -- a minute or more
     mediumColor = { 1, 0.85, 0.3, 1 },   -- under a minute
     shortColor = { 1, 0.3, 0.25, 1 },    -- under five seconds
+    finishEffect = "pulse",              -- none, pulse, burst or flash (CooldownFinish_Forever.lua)
 }
 
 -- cooldown frame -> { kind = "actionbar" | "castborn", button = action button, duration = captured }
