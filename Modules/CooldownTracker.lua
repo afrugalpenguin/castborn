@@ -61,6 +61,7 @@ local function CreateCooldownFrame(parent, index)
     f.cooldown:SetHideCountdownNumbers(false)
     f.cooldown:EnableMouse(false)
     f.Cooldown = f.cooldown  -- Masque alias
+    Castborn:FireCallback("COOLDOWN_FRAME_CREATED", f.cooldown)  -- styled by CooldownText_Forever.lua
 
     f.time = f:CreateFontString(nil, "OVERLAY")
     f.time:SetFont(Castborn:GetBarFont(), 11, "OUTLINE")
@@ -157,6 +158,7 @@ local function CreateTrinketFrame(parent, index)
     f.cooldown:SetHideCountdownNumbers(false)
     f.cooldown:EnableMouse(false)
     f.Cooldown = f.cooldown
+    Castborn:FireCallback("COOLDOWN_FRAME_CREATED", f.cooldown)  -- styled by CooldownText_Forever.lua
 
     f.time = f:CreateFontString(nil, "OVERLAY")
     f.time:SetFont(Castborn:GetBarFont(), 11, "OUTLINE")
