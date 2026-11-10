@@ -28,7 +28,6 @@ Theme.media = {
 Theme.fonts = {
     display = FONTS .. "CormorantGaramond-Bold.ttf",
     heading = FONTS .. "CormorantGaramond-SemiBold.ttf",
-    subtitle = FONTS .. "CormorantGaramond-SemiBoldItalic.ttf",
     body = FONTS .. "SourceSans3-Regular.ttf",
     strong = FONTS .. "SourceSans3-SemiBold.ttf",
 }
@@ -77,7 +76,7 @@ end
 local ROLES = {
     display = { "display", "title" },
     heading = { "heading", "heading" },
-    subtitle = { "subtitle", "muted" },
+    subtitle = { "heading", "muted" },  -- upright, in the muted colour
     body = { "body", "text" },
     strong = { "strong", "title" },
 }
