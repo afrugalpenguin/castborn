@@ -1,5 +1,16 @@
 # Changelog
 
+**v8.0.0**
+
+- A completely redesigned options window: a dark, gilded "book of settings" with cut-corner controls, a gold bookmark ribbon for the page you're on, and a title and short description on every page
+- New fonts bundled with Castborn (Cormorant Garamond and Source Sans 3), so the options look the same on every client
+- Restyled checkboxes (click the label too), sliders with a diamond knob, gold and red buttons, framed colour swatches, dropdowns, text boxes and scrollbars
+- The Castbars page now has Player, Target, Focus and Target of Target tabs instead of one long page
+- Creating, copying, deleting and importing profiles now uses a Castborn dialog instead of Blizzard's pop-ups
+- Tidier spell and item lists, with dividers, gold arrows to reorder and a red cross to remove
+- Fixed the Add box on the Item Tracker page being cut off at the left
+- New project page and screenshots
+
 **v7.9.2**
 
 - Fixed test previews started from an options page (such as Test Seal) staying on screen after the options window is closed

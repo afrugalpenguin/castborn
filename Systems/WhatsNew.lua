@@ -14,6 +14,16 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.0.0",
+        features = {
+            "A completely redesigned options window: a dark, gilded book of settings",
+            "New bundled fonts, cut-corner controls and a gold bookmark for the open page",
+            "Castbars page tabs: Player, Target, Focus and Target of Target",
+            "Profiles now use a Castborn dialog for new, copy, delete and import",
+            "Tidier spell and item lists with reorder arrows",
+        },
+    },
+    {
         version = "7.9.2",
         fixes = {
             "Test previews from an options page (such as Test Seal) no longer stay on screen after closing options",
