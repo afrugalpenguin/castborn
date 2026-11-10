@@ -274,16 +274,20 @@ local function CreateColorPicker(parent, label, dbTable, dbKey, onChange)
                 UpdateSwatch()
                 if onChange then onChange(dbTable[dbKey]) end
             end
-            ColorPickerFrame:SetupColorPickerAndShow({
-                r = r, g = g, b = b, opacity = a, hasOpacity = true,
-                swatchFunc = SetColor,
-                opacityFunc = SetColor,
-                cancelFunc = function()
-                    dbTable[dbKey] = {r, g, b, a}
-                    UpdateSwatch()
-                    if onChange then onChange(dbTable[dbKey]) end
-                end,
-            })
+            -- Open on the next frame: the picker closes on any GLOBAL_MOUSE_DOWN outside itself,
+            -- and the click that opened it could otherwise arrive after it is shown
+            C_Timer.After(0, function()
+                ColorPickerFrame:SetupColorPickerAndShow({
+                    r = r, g = g, b = b, opacity = a, hasOpacity = true,
+                    swatchFunc = SetColor,
+                    opacityFunc = SetColor,
+                    cancelFunc = function()
+                        dbTable[dbKey] = {r, g, b, a}
+                        UpdateSwatch()
+                        if onChange then onChange(dbTable[dbKey]) end
+                    end,
+                })
+            end)
             return
         end
 
