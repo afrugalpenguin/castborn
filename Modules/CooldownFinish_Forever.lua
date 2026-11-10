@@ -1,9 +1,10 @@
 --[[
     Castborn - cooldown finish effect on Forever
     Plays a pulse, burst or flash on a button when its cooldown comes back. Detection uses
-    plain values only (whether a cooldown is active, and GetTime), so it works in combat:
-    events find cooldowns that start, a ticker watches only those, and an effect fires when
-    one ends after running longer than the minimum duration (so never for the GCD).
+    plain values only (isActive, isOnGCD and GetTime), so it works in combat: action buttons
+    are picked up on SPELL_UPDATE_COOLDOWN when active and not just on the GCD (chained GCDs
+    otherwise look like one long cooldown), a ticker watches only those, and an effect fires
+    when one ends after running longer than the minimum duration.
     Shares the buttons registered by CooldownText_Forever.lua.
     Loaded only by Castborn_Camelot.toc, after CooldownText_Forever.lua.
 ]]
@@ -14,7 +15,7 @@ local Finish = {}
 CooldownText.Finish = Finish
 
 local TICK = 0.1
-local SCAN_EVERY = 5            -- ticks between full scans, as a fallback to the events
+local SCAN_EVERY = 5            -- ticks between scans for Castborn icons, as a fallback to the events
 local GCD_GUARD = 1.6           -- seconds; even with "hide under" at 0, the GCD never fires
 local STANDARD_BUTTON = 45      -- Blizzard's button size the proc burst art is drawn for
 local BURST_SIZE = 150
@@ -35,21 +36,42 @@ local function DB()
     return CB.db and CB.db.cooldowntext
 end
 
--- true / false when known, nil when the client will not say (secret or no data)
-function Finish:IsCooling(cooldown, entry)
-    if entry.kind ~= "actionbar" then
-        return cooldown:IsShown() == true
-    end
-    local button, info = entry.button, nil
+-- An action button's SpellCooldownInfo, or nil
+local function CooldownInfo(button)
+    local info
     if button.GetCooldownInfo then
         info = button:GetCooldownInfo()  -- LibActionButton (Bartender4)
     elseif type(button.action) == "number" and C_ActionBar and C_ActionBar.GetActionCooldown then
         info = C_ActionBar.GetActionCooldown(button.action)
     end
     if type(info) ~= "table" or isSecret(info) then return nil end
-    local active = info.isActive
+    return info
+end
+
+-- true / false when known, nil when the client will not say (secret or no data)
+function Finish:IsCooling(cooldown, entry)
+    if entry.kind ~= "actionbar" then
+        return cooldown:IsShown() == true
+    end
+    local info = CooldownInfo(entry.button)
+    local active = info and info.isActive
     if active == nil or isSecret(active) then return nil end
     return active == true
+end
+
+-- Whether a cooldown is a real one worth watching, not just the GCD. isOnGCD is never
+-- secret but only trustworthy while handling SPELL_UPDATE_COOLDOWN, so action buttons are
+-- only picked up from that event (trusted); Castborn icons never show the GCD.
+function Finish:IsRealCooldown(cooldown, entry, trusted)
+    if entry.kind ~= "actionbar" then
+        return cooldown:IsShown() == true
+    end
+    if not trusted then return false end
+    local info = CooldownInfo(entry.button)
+    if not info or info.isActive ~= true then return false end
+    local onGCD = info.isOnGCD
+    if isSecret(onGCD) then return false end
+    return onGCD ~= true
 end
 
 function Finish:Threshold()
@@ -66,11 +88,12 @@ local function Watchable(cooldown, entry)
     return owner ~= nil and owner:IsVisible()
 end
 
--- Find cooldowns that have started
-function Finish:Scan()
+-- Find cooldowns that have started. trusted: called while handling SPELL_UPDATE_COOLDOWN
+function Finish:Scan(trusted)
     local now = GetTime()
     for cooldown, entry in pairs(CooldownText.entries) do
-        if not self.cooling[cooldown] and Watchable(cooldown, entry) and self:IsCooling(cooldown, entry) == true then
+        if not self.cooling[cooldown] and Watchable(cooldown, entry)
+            and self:IsRealCooldown(cooldown, entry, trusted) then
             self.cooling[cooldown] = now
         end
     end
@@ -232,8 +255,8 @@ CB:RegisterCallback("READY", function()
     events:RegisterEvent("SPELL_UPDATE_COOLDOWN")
     events:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN")
     events:RegisterEvent("BAG_UPDATE_COOLDOWN")
-    events:SetScript("OnEvent", function()
-        if Finish:IsOn() then Finish:Scan() end
+    events:SetScript("OnEvent", function(_, event)
+        if Finish:IsOn() then Finish:Scan(event == "SPELL_UPDATE_COOLDOWN") end
     end)
 
     local ticks = 0
