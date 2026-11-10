@@ -90,10 +90,10 @@ describe("Tutorial steps", function()
             }, shownIds(load("MAGE", true)))
         end)
 
-        it("shows a paladin the seal tracker", function()
+        it("shows a paladin the swing timer and seal tracker", function()
             assert.are.same({
                 "welcome", "player_castbar", "castbar_companions", "cooldowns", "items",
-                "other_castbars", "armour", "seals", "customise", "complete",
+                "other_castbars", "swing", "armour", "seals", "customise", "complete",
             }, shownIds(load("PALADIN", true)))
         end)
 
