@@ -224,7 +224,7 @@ function GridPosition:EnterPositioningMode(gridSize)
     end
 
     self:ShowGrid(gridSize)
-    Castborn:Print("Grid mode enabled. Drag frames to position. |cff88ddff/cb grid|r to exit.")
+    Castborn:Print("Grid mode enabled. Drag frames to position. |cfff0cf7a/cb grid|r to exit.")
 end
 
 -- Exit full positioning mode: hides grid AND locks frames (for /cb grid command)
@@ -261,76 +261,41 @@ end
 function GridPosition:CreateControlPanel()
     if self.controlPanel then return end
 
-    local panel = CreateFrame("Frame", "CastbornGridControlPanel", UIParent, "BackdropTemplate")
-    panel:SetSize(200, 160)
-    panel:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -220, -100)
-    panel:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 2,
+    local Theme = Castborn.Theme
+    local panel = Theme:CreatePanel({
+        name = "CastbornGridControlPanel",
+        width = 240,
+        height = 214,
+        title = "Grid",
+        titleSize = 22,
     })
-    panel:SetBackdropColor(0.1, 0.1, 0.15, 0.95)
-    panel:SetBackdropBorderColor(0.3, 0.5, 0.8, 1)
-    panel:SetFrameStrata("FULLSCREEN_DIALOG")
-    panel:SetMovable(true)
-    panel:EnableMouse(true)
-    panel:RegisterForDrag("LeftButton")
-    panel:SetScript("OnDragStart", panel.StartMoving)
-    panel:SetScript("OnDragStop", panel.StopMovingOrSizing)
+    panel:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -220, -100)
+    local inner = panel.inner
 
-    -- Title
-    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("TOP", 0, -8)
-    title:SetText("|cff88ddffGrid Positioning|r")
-
-    -- Grid size label
-    local sizeLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    sizeLabel:SetPoint("TOPLEFT", 12, -30)
-    sizeLabel:SetText("Grid Size:")
-
-    -- Grid size slider
-    local slider = CreateFrame("Slider", "CastbornGridSizeSlider", panel, "OptionsSliderTemplate")
-    slider:SetPoint("TOPLEFT", 12, -48)
-    slider:SetSize(176, 16)
-    slider:SetMinMaxValues(4, 64)
-    slider:SetValueStep(4)
-    slider:SetObeyStepOnDrag(true)
-    slider:SetValue(self.gridSize)
-    slider.Low:SetText("4")
-    slider.High:SetText("64")
-    slider.Text:SetText(self.gridSize .. "px")
-
-    slider:SetScript("OnValueChanged", function(self, value)
-        value = math.floor(value / 4 + 0.5) * 4
-        self.Text:SetText(value .. "px")
+    local size = Theme:CreateSlider(inner, "Grid size", self, "gridSize", 4, 64, 4, function(value)
         GridPosition:SetGridSize(value)
-    end)
+    end, function(value) return value .. "px" end)
+    size:SetPoint("TOPLEFT", 20, -58)
+    size:SetPoint("TOPRIGHT", -20, -58)
 
-    -- Snap to grid checkbox (positioned below slider with room for slider labels)
-    local snap = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
-    snap:SetSize(24, 24)
-    snap:SetPoint("TOPLEFT", 8, -78)
+    local snap = Theme:CreateCheckbox(inner, "Snap to grid", nil, nil, function(checked)
+        CastbornDB.snapToGrid = checked
+    end)
+    snap:SetPoint("TOPLEFT", 16, -110)
     snap:SetChecked(CastbornDB.snapToGrid ~= false)
-    local snapText = snap:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    snapText:SetPoint("LEFT", snap, "RIGHT", 2, 0)
-    snapText:SetText("Snap to Grid")
-    snap:SetScript("OnClick", function(self)
-        CastbornDB.snapToGrid = self:GetChecked()
-    end)
 
-    -- Coordinate display (below checkbox)
-    panel.coords = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    panel.coords:SetPoint("TOPLEFT", 12, -108)
-    panel.coords:SetText("Drag a frame...")
+    local hint = inner:CreateFontString(nil, "OVERLAY")
+    Theme:Font(hint, "body", 12)
+    hint:SetTextColor(Theme:Color("muted"))
+    hint:SetPoint("TOPLEFT", 20, -142)
+    hint:SetPoint("TOPRIGHT", -20, -142)
+    hint:SetJustifyH("LEFT")
+    hint:SetText("Drag any frame by its label.")
 
-    -- Done button
-    local doneBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    doneBtn:SetSize(80, 22)
-    doneBtn:SetPoint("BOTTOM", 0, 12)
-    doneBtn:SetText("Done")
-    doneBtn:SetScript("OnClick", function()
+    local doneBtn = Theme:CreateButton(inner, "Done", 100, function()
         GridPosition:ExitPositioningMode()
-    end)
+    end, "primary")
+    doneBtn:SetPoint("BOTTOM", 0, 14)
 
     panel:Hide()
     self.controlPanel = panel
