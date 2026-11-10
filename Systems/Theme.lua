@@ -22,7 +22,7 @@ Theme.media = {
     diamond = TEXTURES .. "Diamond",
     tick = TEXTURES .. "Tick",
     chevron = TEXTURES .. "Chevron",
-    pageBackground = TEXTURES .. "PageBackground",
+    glow = TEXTURES .. "Glow",
 }
 
 Theme.fonts = {
@@ -46,6 +46,8 @@ Theme.colors = {
     frame = hex("#100D09"),
     navA = hex("#0B0906"),
     navB = hex("#16120C"),
+    pageA = hex("#2A2216"),
+    pageB = hex("#19140D"),
     text = hex("#ECE2CC"),
     title = hex("#F7ECD2"),
     muted = hex("#B9AB8C"),
