@@ -142,10 +142,15 @@ function CooldownText:Recolour(cooldown)
     if not duration then return end
     local fs = cooldown:GetCountdownFontString()
     local ok, colour = pcall(duration.EvaluateRemainingDuration, duration, self.curve)
-    if ok and colour then fs:SetTextColor(colour:GetRGBA()) end
+    if ok and colour then
+        fs:SetTextColor(colour:GetRGBA())
+    elseif not ok then
+        self.lastError = tostring(colour)  -- reported by /cbcdt
+    end
 end
 
 function CooldownText:RecolourAll()
+    self.ticks = (self.ticks or 0) + 1
     for cooldown in pairs(self.entries) do
         if cooldown:IsVisible() then self:Recolour(cooldown) end
     end
@@ -240,9 +245,12 @@ CB:RegisterCallback("INIT", function()
 end)
 
 CB:RegisterCallback("READY", function()
+    CooldownText.readyStage = "started"
     CooldownText:RegisterActionButtons()
+    CooldownText.readyStage = "buttons registered"
     CooldownText.ready = true
     CooldownText:Apply()
+    CooldownText.readyStage = "applied"
 
     local events = CreateFrame("Frame")
     events:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -253,6 +261,70 @@ CB:RegisterCallback("READY", function()
     CB:CreateThrottledUpdater(RECOLOUR_INTERVAL, function()
         CooldownText:RecolourAll()
     end)
+    CooldownText.readyStage = "ticker running"
 end)
+
+-- Diagnostics: run /cbcdt while an action button is cooling down, then /reload to save.
+local function Describe(v)
+    if CB.APICheck then return CB.APICheck:Describe(v) end
+    if isSecret(v) then return "secret" end
+    return type(v)
+end
+
+local function Attempt(fn, ...)
+    local ok, result = pcall(fn, ...)
+    if not ok then return false, "error: " .. tostring(result) end
+    return true, result
+end
+
+function CooldownText:Diagnose()
+    local r = {
+        readyStage = tostring(self.readyStage),
+        ticks = self.ticks or 0,
+        lastError = self.lastError or "none",
+        curveUtil = C_CurveUtil and "yes" or "no",
+        createColor = CreateColor and "yes" or "no",
+        luaCurveType = (Enum and Enum.LuaCurveType) and "yes" or "no",
+    }
+    local count = 0
+    for _ in pairs(self.entries) do count = count + 1 end
+    r.entries = count
+    local ok, err = Attempt(self.BuildCurve, self)
+    r.buildCurve = ok and (self.curve and "ok" or "ok, but no curve") or err
+
+    -- Walk the colour chain on the first visible action button cooldown
+    r.button = "none visible"
+    for cooldown, entry in pairs(self.entries) do
+        if entry.kind == "actionbar" and cooldown:IsVisible() then
+            r.button = entry.button.GetName and entry.button:GetName() or "?"
+            r.action = Describe(entry.button.action)
+            local okS, errS = Attempt(self.Style, self, cooldown)
+            r.style = okS and "ok" or errS
+            local okD, duration = Attempt(self.DurationFor, self, entry)
+            r.duration = okD and Describe(duration) or duration
+            if okD and duration and self.curve then
+                local okE, colour = Attempt(duration.EvaluateRemainingDuration, duration, self.curve)
+                r.evaluate = okE and Describe(colour) or colour
+                if okE and colour then
+                    local okC, errC = Attempt(function()
+                        cooldown:GetCountdownFontString():SetTextColor(colour:GetRGBA())
+                    end)
+                    r.setTextColor = okC and "ok" or errC
+                end
+            end
+            break
+        end
+    end
+
+    CastbornDB.cooldowntextDebug = r
+    CB:Print("Cooldown text diagnostics (saved to CastbornDB.cooldowntextDebug, /reload to write):")
+    local keys = {}
+    for k in pairs(r) do keys[#keys + 1] = k end
+    table.sort(keys)
+    for _, k in ipairs(keys) do print("  " .. k .. " = " .. tostring(r[k])) end
+end
+
+SLASH_CASTBORNCDT1 = "/cbcdt"
+SlashCmdList["CASTBORNCDT"] = function() CooldownText:Diagnose() end
 
 CB:RegisterModule("CooldownText", CooldownText)
