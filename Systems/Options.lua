@@ -35,6 +35,16 @@ MakeFont("CastbornOptionsSmall", "body", 12):SetTextColor(Theme:Color("muted"))
 MakeFont("CastbornOptionsLarge", "heading", 19)
 
 local LOGO_PATH = "Interface\\Icons\\Spell_Arcane_Arcane04"
+
+-- Previews started from a page's Test button, ended when the window closes: EndTest name -> true
+local openPreviews = {}
+
+local function StartPreview(startName, endName)
+    if Castborn[startName] then
+        Castborn[startName](Castborn)
+        openPreviews[endName] = true
+    end
+end
 local optionsFrame = nil
 local contentFrames = {}
 local currentCategory = "general"
@@ -548,9 +558,14 @@ local function CreateOptionsFrame()
             Castborn:LockFrames()
             Castborn:Print("Frames locked")
         end
-        -- End any per-module test previews started from options buttons
-        if Castborn.EndTestArmorTracker then Castborn:EndTestArmorTracker() end
-        if Castborn.EndTestAbsorbTracker then Castborn:EndTestAbsorbTracker() end
+        -- End the previews started from the pages' Test buttons, unless full test mode
+        -- (/cb test) is running, which keeps its own previews until it ends
+        if not (Castborn.TestManager and Castborn.TestManager:IsActive()) then
+            for endName in pairs(openPreviews) do
+                if Castborn[endName] then Castborn[endName](Castborn) end
+            end
+        end
+        wipe(openPreviews)
     end)
 
     -- Sidebar: the window's own fill is its background
@@ -1562,7 +1577,7 @@ function moduleBuilders.gcd(parent, db, y)
     alwaysCB:SetPoint("TOPLEFT", 0, y)
     y = y - 30
     local testBtn = CreateButton(parent, "Test GCD", 80, function()
-        if Castborn.TestGCD then Castborn:TestGCD() end
+        StartPreview("TestGCD", "EndTestGCD")
     end)
     testBtn:SetPoint("TOPLEFT", 0, y)
 
@@ -1602,7 +1617,7 @@ end
 
 function moduleBuilders.swing(parent, db, y)
     local testBtn = CreateButton(parent, "Test Swing", 90, function()
-        if Castborn.TestSwingTimers then Castborn:TestSwingTimers() end
+        StartPreview("TestSwingTimers", "EndTestSwingTimers")
     end)
     testBtn:SetPoint("TOPLEFT", 0, y)
 
@@ -2285,7 +2300,7 @@ function moduleBuilders.totems(parent, db, y)
     y = y - 30
 
     local testBtn = CreateButton(parent, "Test Totems", 100, function()
-        if Castborn.TestTotemTracker then Castborn:TestTotemTracker() end
+        StartPreview("TestTotemTracker", "EndTestTotemTracker")
     end)
     testBtn:SetPoint("TOPLEFT", 0, y)
 
@@ -2480,7 +2495,7 @@ function moduleBuilders.armortracker(parent, db, y)
     end
 
     local testBtn = CreateButton(parent, "Test Armour Alert", 120, function()
-        if Castborn.TestArmorTracker then Castborn:TestArmorTracker() end
+        StartPreview("TestArmorTracker", "EndTestArmorTracker")
     end)
     testBtn:SetPoint("TOPLEFT", 0, y)
 
@@ -2521,7 +2536,7 @@ function moduleBuilders.seals(parent, db, y)
     y = y - 30
 
     local testBtn = CreateButton(parent, "Test Seal", 90, function()
-        if Castborn.TestSealTracker then Castborn:TestSealTracker() end
+        StartPreview("TestSealTracker", "EndTestSealTracker")
     end)
     testBtn:SetPoint("TOPLEFT", 0, y)
 
@@ -2637,7 +2652,7 @@ function moduleBuilders.absorbs(parent, db, y)
     y = y - 30
 
     local testBtn = CreateButton(parent, "Test Absorb", 90, function()
-        if Castborn.TestAbsorbTracker then Castborn:TestAbsorbTracker() end
+        StartPreview("TestAbsorbTracker", "EndTestAbsorbTracker")
     end)
     testBtn:SetPoint("TOPLEFT", 0, y)
     return y
