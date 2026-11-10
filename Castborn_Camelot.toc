@@ -11,6 +11,7 @@ Core.lua
 Systems/Compat_Forever.lua
 Systems/APICheck_Forever.lua
 
+Systems/Theme.lua
 Systems/Anchoring.lua
 Systems/Profiles.lua
 Systems/ClassDefaults.lua
