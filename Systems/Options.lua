@@ -15,8 +15,6 @@ local SIDEBAR_WIDTH = 168
 
 -- Older page code colours text with these; they map onto the Gilded palette
 local C = {
-    bgInput = { Theme:Color("inputBg") },
-    borderDark = { Theme:Color("rule") },
     gold = { Theme:Color("heading") },
     white = { Theme:Color("title") },
     grey = { Theme:Color("muted") },
@@ -38,6 +36,9 @@ local LOGO_PATH = "Interface\\Icons\\Spell_Arcane_Arcane04"
 
 -- Previews started from a page's Test button, ended when the window closes: EndTest name -> true
 local openPreviews = {}
+
+-- The Castborn dialog shown over the options window (see ShowDialog)
+local dialog
 
 local function StartPreview(startName, endName)
     if Castborn[startName] then
@@ -463,6 +464,51 @@ local function SkinDropdown(dropdown)
     end
 end
 
+-- Tabs: a row of chamfered buttons with the open one in gold. Returns the row frame and a
+-- function that opens a tab by index (calling onSelect with it).
+local function CreateTabs(parent, labels, onSelect)
+    local row = CreateFrame("Frame", nil, parent)
+    row:SetHeight(28)
+    local tabs, x = {}, 0
+
+    local function Paint(tab, hover)
+        local edge = tab.open and nil or (hover and "accent" or "rule")
+        Theme:SetChamferColors(tab, tab.open and "ribbonB" or "raised", edge)
+        tab:GetFontString():SetTextColor(Theme:Color(tab.open and "onAccent" or (hover and "title" or "navText")))
+    end
+
+    local function Open(index)
+        for i, tab in ipairs(tabs) do
+            tab.open = i == index
+            Paint(tab)
+        end
+        onSelect(index)
+    end
+
+    for i, label in ipairs(labels) do
+        local tab = CreateFrame("Button", nil, row)
+        tab:SetHeight(28)
+        Theme:Chamfer(tab, { cut = 6 })
+        local text = tab:CreateFontString(nil, "OVERLAY")
+        Theme:Font(text, "strong", 13)
+        text:SetPoint("CENTER", 0, 0)
+        tab:SetFontString(text)
+        tab:SetText(label)
+        tab:SetWidth(text:GetStringWidth() + 32)
+        tab:SetPoint("TOPLEFT", x, 0)
+        x = x + tab:GetWidth() + 6
+        tab:SetScript("OnEnter", function(self) Paint(self, true) end)
+        tab:SetScript("OnLeave", function(self) Paint(self) end)
+        tab:SetScript("OnClick", function()
+            Open(i)
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        end)
+        tabs[i] = tab
+    end
+    row:SetWidth(x)
+    return row, Open
+end
+
 -- Long lists: a quiet divider under each row
 local function StyleListRow(row)
     local line = row:CreateTexture(nil, "BACKGROUND")
@@ -566,6 +612,7 @@ local function CreateOptionsFrame()
             end
         end
         wipe(openPreviews)
+        if dialog then dialog:Hide() end
     end)
 
     -- Sidebar: the window's own fill is its background
@@ -889,10 +936,10 @@ local function ApplyCastbarHeight(barKey, v)
 end
 
 local castbarDefs = {
-    { key = "player", frameKey = "player", label = "Player Castbar" },
-    { key = "target", frameKey = "target", label = "Target Castbar" },
-    { key = "focus", frameKey = "focus", label = "Focus Castbar" },
-    { key = "targettarget", frameKey = "targettarget", label = "Target-of-Target Castbar" },
+    { key = "player", frameKey = "player", label = "Player Castbar", tab = "Player" },
+    { key = "target", frameKey = "target", label = "Target Castbar", tab = "Target" },
+    { key = "focus", frameKey = "focus", label = "Focus Castbar", tab = "Focus" },
+    { key = "targettarget", frameKey = "targettarget", label = "Target-of-Target Castbar", tab = "Target of Target" },
 }
 
 function Options:BuildCastbars(parent)
@@ -921,18 +968,29 @@ function Options:BuildCastbars(parent)
     globalPicker:SetPoint("TOPLEFT", 250, y)
     y = y - 36
 
+    -- One tab per castbar; each castbar's settings sit on their own panel
+    local panels, labels = {}, {}
+    for i, def in ipairs(castbarDefs) do labels[i] = def.tab end
+    local tabRow, openTab = CreateTabs(parent, labels, function(index)
+        for i, panel in ipairs(panels) do panel:SetShown(i == index) end
+    end)
+    tabRow:SetPoint("TOPLEFT", 0, y)
+    y = y - 44
+    local panelTop, tallest = y, 0
+
     for _, def in ipairs(castbarDefs) do
         local dbKey = def.key
         local frameKey = def.frameKey
 
-        local header = CreateHeader(parent, def.label)
-        header:SetPoint("TOPLEFT", 0, y)
-        header:SetPoint("TOPRIGHT", 0, y)
-        y = y - 30
+        local panel = CreateFrame("Frame", nil, parent)
+        panel:SetPoint("TOPLEFT", 0, panelTop)
+        panel:SetPoint("TOPRIGHT", 0, panelTop)
+        panels[#panels + 1] = panel
+        local y = 0  -- each panel lays out from its own top
 
         CastbornDB[dbKey] = CastbornDB[dbKey] or {}
 
-        local iconCB = CreateCheckbox(parent, "Show Icon", CastbornDB[dbKey], "showIcon", function(checked)
+        local iconCB = CreateCheckbox(panel, "Show Icon", CastbornDB[dbKey], "showIcon", function(checked)
             local bar = Castborn.castbars and Castborn.castbars[frameKey]
             if bar and bar.iconFrame then
                 if checked then
@@ -943,7 +1001,7 @@ function Options:BuildCastbars(parent)
             end
         end)
         iconCB:SetPoint("TOPLEFT", 0, y)
-        local timeCB = CreateCheckbox(parent, "Show Time", CastbornDB[dbKey], "showTime", function(checked)
+        local timeCB = CreateCheckbox(panel, "Show Time", CastbornDB[dbKey], "showTime", function(checked)
             local bar = Castborn.castbars and Castborn.castbars[frameKey]
             if bar and bar.timeText then
                 if checked then
@@ -957,7 +1015,7 @@ function Options:BuildCastbars(parent)
         y = y - 26
 
         if def.key == "player" then
-            local spellNameCB = CreateCheckbox(parent, "Show Spell Name", CastbornDB[dbKey], "showSpellName", function(checked)
+            local spellNameCB = CreateCheckbox(panel, "Show Spell Name", CastbornDB[dbKey], "showSpellName", function(checked)
                 local bar = Castborn.castbars and Castborn.castbars[frameKey]
                 if bar and bar.spellText then
                     if checked then
@@ -968,7 +1026,7 @@ function Options:BuildCastbars(parent)
                 end
             end)
             spellNameCB:SetPoint("TOPLEFT", 0, y)
-            local latencyCB = CreateCheckbox(parent, "Show Latency", CastbornDB[dbKey], "showLatency", function(checked)
+            local latencyCB = CreateCheckbox(panel, "Show Latency", CastbornDB[dbKey], "showLatency", function(checked)
                 local bar = Castborn.castbars and Castborn.castbars[frameKey]
                 if bar and bar.latency then
                     if checked then
@@ -981,11 +1039,11 @@ function Options:BuildCastbars(parent)
             latencyCB:SetPoint("TOPLEFT", 150, y)
             y = y - 26
 
-            local rankCB = CreateCheckbox(parent, "Show Spell Rank", CastbornDB[dbKey], "showSpellRank")
+            local rankCB = CreateCheckbox(panel, "Show Spell Rank", CastbornDB[dbKey], "showSpellRank")
             rankCB:SetPoint("TOPLEFT", 0, y)
             y = y - 26
 
-            local blizzCB = CreateCheckbox(parent, "Hide Blizzard Castbar", CastbornDB[dbKey], "hideBlizzardCastBar", function(checked)
+            local blizzCB = CreateCheckbox(panel, "Hide Blizzard Castbar", CastbornDB[dbKey], "hideBlizzardCastBar", function(checked)
                 if checked then
                     Castborn:HideBlizzardCastBar()
                 else
@@ -993,39 +1051,42 @@ function Options:BuildCastbars(parent)
                 end
             end)
             blizzCB:SetPoint("TOPLEFT", 0, y)
-            local tradeCB = CreateCheckbox(parent, "Hide Tradeskill Casts", CastbornDB[dbKey], "hideTradeSkills")
+            local tradeCB = CreateCheckbox(panel, "Hide Tradeskill Casts", CastbornDB[dbKey], "hideTradeSkills")
             tradeCB:SetPoint("TOPLEFT", 150, y)
             y = y - 36
         else
             y = y - 10
         end
 
-        local widthSlider = CreateSlider(parent, "Width", CastbornDB[dbKey], "width", 100, 400, 10, function(v)
+        local widthSlider = CreateSlider(panel, "Width", CastbornDB[dbKey], "width", 100, 400, 10, function(v)
             if Castborn.castbars and Castborn.castbars[frameKey] then
                 Castborn.castbars[frameKey]:SetWidth(v)
             end
         end)
         widthSlider:SetPoint("TOPLEFT", 0, y)
 
-        local heightSlider = CreateSlider(parent, "Height", CastbornDB[dbKey], "height", 10, 40, 2, function(v)
+        local heightSlider = CreateSlider(panel, "Height", CastbornDB[dbKey], "height", 10, 40, 2, function(v)
             ApplyCastbarHeight(frameKey, v)
         end)
         heightSlider:SetPoint("TOPLEFT", 220, y)
         y = y - 60
 
-        local barPicker = CreateColorPicker(parent, "Bar Colour", CastbornDB[dbKey], "barColor", function()
+        local barPicker = CreateColorPicker(panel, "Bar Colour", CastbornDB[dbKey], "barColor", function()
             if Castborn.RefreshCastbarColors then Castborn:RefreshCastbarColors() end
         end)
         barPicker:SetPoint("TOPLEFT", 0, y)
 
-        local bgPicker = CreateColorPicker(parent, "Background Colour", CastbornDB[dbKey], "bgColor", function()
+        local bgPicker = CreateColorPicker(panel, "Background Colour", CastbornDB[dbKey], "bgColor", function()
             if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
         end)
         bgPicker:SetPoint("TOPLEFT", 220, y)
         y = y - 30
+        panel:SetHeight(math.abs(y))
+        tallest = math.max(tallest, math.abs(y))
     end
 
-    parent:SetHeight(math.abs(y) + 20)
+    openTab(1)
+    parent:SetHeight(math.abs(panelTop) + tallest + 20)
 end
 
 function Options:BuildLookFeel(parent)
@@ -1195,6 +1256,108 @@ function Options:BuildLookFeel(parent)
     end)
 end
 
+-- A Castborn dialog over the options window, in place of Blizzard's popups: a chamfered gold
+-- plaque with a title, a message, an optional name box and confirm / cancel buttons.
+-- opts: title, text, input (true to ask for a name), confirm (button label),
+-- danger (true for a red confirm button), onConfirm(name)
+local function ShowDialog(opts)
+    if not dialog then
+        dialog = CreateFrame("Frame", nil, optionsFrame)
+        dialog:SetAllPoints(optionsFrame)
+        dialog:SetFrameLevel(optionsFrame:GetFrameLevel() + 50)
+        dialog:EnableMouse(true)  -- blocks clicks on the page underneath
+        Theme:Chamfer(dialog, { cut = 10, fill = { 0, 0, 0, 0.6 } })
+
+        local plaque = CreateFrame("Frame", nil, dialog)
+        plaque:SetWidth(400)
+        plaque:SetPoint("CENTER")
+        Theme:Chamfer(plaque, { cut = 14, fill = "raised", edge = "accent" })
+        local inner = CreateFrame("Frame", nil, plaque)
+        inner:SetPoint("TOPLEFT", 4, -4)
+        inner:SetPoint("BOTTOMRIGHT", -4, 4)
+        Theme:Chamfer(inner, { cut = 11, fill = "pageB", edge = "rule" })
+        dialog.plaque = plaque
+
+        local title = inner:CreateFontString(nil, "OVERLAY")
+        Theme:Font(title, "display", 26)
+        title:SetPoint("TOP", 0, -20)
+        dialog.title = title
+
+        local diamond = inner:CreateTexture(nil, "ARTWORK")
+        diamond:SetTexture(Theme.media.diamond)
+        diamond:SetVertexColor(Theme:Color("accent"))
+        diamond:SetSize(9, 9)
+        diamond:SetPoint("TOP", title, "BOTTOM", 0, -8)
+        for _, side in ipairs({ -1, 1 }) do
+            local line = inner:CreateTexture(nil, "ARTWORK")
+            line:SetColorTexture(Theme:Color("rule"))
+            line:SetSize(70, 1)
+            if side < 0 then
+                line:SetPoint("RIGHT", diamond, "LEFT", -4, 0)
+            else
+                line:SetPoint("LEFT", diamond, "RIGHT", 4, 0)
+            end
+        end
+
+        local text = inner:CreateFontString(nil, "OVERLAY")
+        Theme:Font(text, "body", 15)
+        text:SetWidth(340)
+        text:SetJustifyH("CENTER")
+        text:SetPoint("TOP", diamond, "BOTTOM", 0, -12)
+        dialog.text = text
+
+        local input = CreateFrame("EditBox", nil, inner)
+        input:SetSize(240, 26)
+        input:SetAutoFocus(false)
+        input:SetFontObject("CastbornOptionsText")
+        input:SetTextColor(Theme:Color("title"))
+        input:SetTextInsets(8, 6, 0, 0)
+        input:SetMaxLetters(40)
+        Theme:Chamfer(input, { cut = 6, fill = "inputBg", edge = "accent" })
+        dialog.input = input
+
+        local function Confirm()
+            local name = strtrim(input:GetText() or "")
+            if dialog.needsName and name == "" then return end
+            dialog:Hide()
+            if dialog.onConfirm then dialog.onConfirm(name) end
+        end
+        input:SetScript("OnEnterPressed", Confirm)
+        input:SetScript("OnEscapePressed", function() dialog:Hide() end)
+
+        dialog.cancel = CreateButton(inner, "Cancel", 90, function() dialog:Hide() end)
+        dialog.confirm = CreateButton(inner, "", 90, Confirm, "primary")
+        dialog.confirmDanger = CreateButton(inner, "", 90, Confirm, "danger")
+        for _, btn in ipairs({ dialog.confirm, dialog.confirmDanger }) do
+            btn:SetPoint("BOTTOMRIGHT", inner, "BOTTOM", -6, 18)
+        end
+        dialog.cancel:SetPoint("BOTTOMLEFT", inner, "BOTTOM", 6, 18)
+    end
+
+    dialog.title:SetText(opts.title)
+    dialog.text:SetText(opts.text or "")
+    dialog.onConfirm = opts.onConfirm
+    dialog.needsName = opts.input and true or false
+    dialog.confirm:SetShown(not opts.danger)
+    dialog.confirmDanger:SetShown(opts.danger and true or false)
+    local confirm = opts.danger and dialog.confirmDanger or dialog.confirm
+    confirm:SetText(opts.confirm or "OK")
+
+    local height = 96 + dialog.text:GetStringHeight() + 64
+    dialog.input:ClearAllPoints()
+    if opts.input then
+        dialog.input:SetPoint("TOP", dialog.text, "BOTTOM", 0, -14)
+        dialog.input:SetText(opts.default or "")
+        dialog.input:Show()
+        height = height + 40
+    else
+        dialog.input:Hide()
+    end
+    dialog.plaque:SetHeight(height)
+    dialog:Show()
+    if opts.input then dialog.input:SetFocus() end
+end
+
 function Options:BuildProfiles(parent)
     local y = 0
     local Profiles = Castborn.Profiles
@@ -1249,12 +1412,34 @@ function Options:BuildProfiles(parent)
 
     -- Profile action buttons
     local newBtn = CreateButton(parent, "New", 70, function()
-        StaticPopup_Show("CASTBORN_NEW_PROFILE")
-    end)
+        ShowDialog({
+            title = "New profile",
+            text = "Name the new profile. You'll switch to it straight away.",
+            input = true,
+            confirm = "Create",
+            onConfirm = function(name)
+                Profiles:CreateProfile(name)
+                Profiles:SetCurrentProfile(name)
+                RefreshDropdown()
+                Castborn:Print("Created and switched to profile: " .. name)
+            end,
+        })
+    end, "primary")
     newBtn:SetPoint("TOPLEFT", 0, y)
 
     local copyBtn = CreateButton(parent, "Copy", 70, function()
-        StaticPopup_Show("CASTBORN_COPY_PROFILE")
+        local current = Profiles:GetCurrentProfileName()
+        ShowDialog({
+            title = "Copy profile",
+            text = "Name the copy of " .. current .. ".",
+            input = true,
+            confirm = "Copy",
+            onConfirm = function(name)
+                Profiles:CopyProfile(current, name)
+                RefreshDropdown()
+                Castborn:Print("Copied profile '" .. current .. "' to '" .. name .. "'")
+            end,
+        })
     end)
     copyBtn:SetPoint("LEFT", newBtn, "RIGHT", 6, 0)
 
@@ -1264,8 +1449,19 @@ function Options:BuildProfiles(parent)
             Castborn:Print("Cannot delete the Default profile")
             return
         end
-        StaticPopup_Show("CASTBORN_DELETE_PROFILE", currentProfile)
-    end)
+        ShowDialog({
+            title = "Delete profile?",
+            text = "The profile " .. currentProfile .. " will be removed for every character. This cannot be undone.",
+            confirm = "Delete",
+            danger = true,
+            onConfirm = function()
+                Profiles:DeleteProfile(currentProfile)
+                Profiles:SetCurrentProfile("Default")
+                RefreshDropdown()
+                Castborn:Print("Deleted profile: " .. currentProfile)
+            end,
+        })
+    end, "danger")
     deleteBtn:SetPoint("LEFT", copyBtn, "RIGHT", 6, 0)
 
     local saveBtn = CreateButton(parent, "Save", 70, function()
@@ -1304,24 +1500,32 @@ function Options:BuildProfiles(parent)
             Castborn:Print("Paste profile data into the text box first")
             return
         end
-        StaticPopup_Show("CASTBORN_IMPORT_PROFILE", nil, nil, data)
+        ShowDialog({
+            title = "Import profile",
+            text = "Name the imported profile.",
+            input = true,
+            confirm = "Import",
+            onConfirm = function(name)
+                local success, err = Profiles:ImportProfile(name, data)
+                if success then
+                    RefreshDropdown()
+                    Castborn:Print("Imported profile: " .. name)
+                else
+                    Castborn:Print("Import failed: " .. (err or "unknown error"))
+                end
+            end,
+        })
     end)
     importBtn:SetPoint("LEFT", exportBtn, "RIGHT", 6, 0)
 
     y = y - 32
 
     -- Multi-line edit box for import/export data
-    local editBoxContainer = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    local editBoxContainer = CreateFrame("Frame", nil, parent)
     editBoxContainer:SetPoint("TOPLEFT", 0, y)
     editBoxContainer:SetPoint("TOPRIGHT", 0, y)
     editBoxContainer:SetHeight(100)
-    editBoxContainer:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    editBoxContainer:SetBackdropColor(unpack(C.bgInput))
-    editBoxContainer:SetBackdropBorderColor(unpack(C.borderDark))
+    Theme:Chamfer(editBoxContainer, { cut = 8, fill = "inputBg", edge = "rule" })
 
     local scrollFrame = CreateFrame("ScrollFrame", "CastbornProfileExportScroll", editBoxContainer, "UIPanelScrollFrameTemplate")
     SkinScrollBar(scrollFrame)
@@ -1331,143 +1535,12 @@ function Options:BuildProfiles(parent)
     local editBox = CreateFrame("EditBox", "CastbornProfileExportEditBox", scrollFrame)
     editBox:SetMultiLine(true)
     editBox:SetAutoFocus(false)
-    editBox:SetFontObject(GameFontHighlightSmall)
+    editBox:SetFontObject("CastbornOptionsSmall")
+    editBox:SetTextColor(Theme:Color("text"))
     editBox:SetWidth(scrollFrame:GetWidth() or 350)
     editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     scrollFrame:SetScrollChild(editBox)
     parent.exportEditBox = editBox
-
-    -- Register StaticPopup dialogs
-    if not StaticPopupDialogs["CASTBORN_NEW_PROFILE"] then
-        StaticPopupDialogs["CASTBORN_NEW_PROFILE"] = {
-            text = "Enter new profile name:",
-            button1 = "Create",
-            button2 = "Cancel",
-            hasEditBox = true,
-            editBoxWidth = 200,
-            OnAccept = function(self)
-                local name = self.EditBox:GetText()
-                if name and name ~= "" then
-                    Profiles:CreateProfile(name)
-                    Profiles:SetCurrentProfile(name)
-                    RefreshDropdown()
-                    Castborn:Print("Created and switched to profile: " .. name)
-                end
-            end,
-            OnShow = function(self)
-                self.EditBox:SetText("")
-                self.EditBox:SetFocus()
-            end,
-            EditBoxOnEnterPressed = function(self)
-                local parent = self:GetParent()
-                local name = self:GetText()
-                if name and name ~= "" then
-                    Profiles:CreateProfile(name)
-                    Profiles:SetCurrentProfile(name)
-                    RefreshDropdown()
-                    Castborn:Print("Created and switched to profile: " .. name)
-                end
-                parent:Hide()
-            end,
-            timeout = 0,
-            whileDead = true,
-            hideOnEscape = true,
-        }
-
-        StaticPopupDialogs["CASTBORN_COPY_PROFILE"] = {
-            text = "Enter name for the copy:",
-            button1 = "Copy",
-            button2 = "Cancel",
-            hasEditBox = true,
-            editBoxWidth = 200,
-            OnAccept = function(self)
-                local name = self.EditBox:GetText()
-                if name and name ~= "" then
-                    local current = Profiles:GetCurrentProfileName()
-                    Profiles:CopyProfile(current, name)
-                    RefreshDropdown()
-                    Castborn:Print("Copied profile '" .. current .. "' to '" .. name .. "'")
-                end
-            end,
-            OnShow = function(self)
-                self.EditBox:SetText("")
-                self.EditBox:SetFocus()
-            end,
-            EditBoxOnEnterPressed = function(self)
-                local parent = self:GetParent()
-                local name = self:GetText()
-                if name and name ~= "" then
-                    local current = Profiles:GetCurrentProfileName()
-                    Profiles:CopyProfile(current, name)
-                    RefreshDropdown()
-                    Castborn:Print("Copied profile '" .. current .. "' to '" .. name .. "'")
-                end
-                parent:Hide()
-            end,
-            timeout = 0,
-            whileDead = true,
-            hideOnEscape = true,
-        }
-
-        StaticPopupDialogs["CASTBORN_DELETE_PROFILE"] = {
-            text = "Delete profile '%s'?",
-            button1 = "Delete",
-            button2 = "Cancel",
-            OnAccept = function(self, data)
-                local profileName = Profiles:GetCurrentProfileName()
-                Profiles:DeleteProfile(profileName)
-                Profiles:SetCurrentProfile("Default")
-                RefreshDropdown()
-                Castborn:Print("Deleted profile: " .. profileName)
-            end,
-            timeout = 0,
-            whileDead = true,
-            hideOnEscape = true,
-            showAlert = true,
-        }
-
-        StaticPopupDialogs["CASTBORN_IMPORT_PROFILE"] = {
-            text = "Enter name for imported profile:",
-            button1 = "Import",
-            button2 = "Cancel",
-            hasEditBox = true,
-            editBoxWidth = 200,
-            OnAccept = function(self, data)
-                local name = self.EditBox:GetText()
-                if name and name ~= "" and data then
-                    local success, err = Profiles:ImportProfile(name, data)
-                    if success then
-                        RefreshDropdown()
-                        Castborn:Print("Imported profile: " .. name)
-                    else
-                        Castborn:Print("Import failed: " .. (err or "unknown error"))
-                    end
-                end
-            end,
-            OnShow = function(self)
-                self.EditBox:SetText("")
-                self.EditBox:SetFocus()
-            end,
-            EditBoxOnEnterPressed = function(self)
-                local parent = self:GetParent()
-                local name = self:GetText()
-                local data = parent.data
-                if name and name ~= "" and data then
-                    local success, err = Profiles:ImportProfile(name, data)
-                    if success then
-                        RefreshDropdown()
-                        Castborn:Print("Imported profile: " .. name)
-                    else
-                        Castborn:Print("Import failed: " .. (err or "unknown error"))
-                    end
-                end
-                parent:Hide()
-            end,
-            timeout = 0,
-            whileDead = true,
-            hideOnEscape = true,
-        }
-    end
 end
 
 function Options:BuildChangelog(parent)
