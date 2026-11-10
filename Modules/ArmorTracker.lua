@@ -103,6 +103,26 @@ local function UpdateAllSlots()
     end
 end
 
+-- Buffs are always readable on TBC, so casts are not needed there; ArmorTracker_Forever.lua overrides it
+function ArmorTracker:OnPlayerCast(spellId)
+end
+
+-- The player just cast this spell: hide the alert of any slot it buffs. Used while auras
+-- cannot be read; the next readable aura check corrects the slot either way.
+function ArmorTracker:MarkBuffCast(spellId)
+    for _, slot in ipairs(slots) do
+        if not slot.checkFn and slot.spellIds[spellId] then
+            slot.lastSpellId = spellId
+            if slot.frame and not testModeActive then slot.frame:Hide() end
+        end
+    end
+end
+
+-- Test seam: the slots list, which is otherwise local to this file
+function ArmorTracker:GetSlots()
+    return slots
+end
+
 --------------------------------------------------------------------------------
 -- Frame Creation
 --------------------------------------------------------------------------------
@@ -431,9 +451,12 @@ CB:RegisterCallback("READY", function()
     -- Listen for aura changes
     eventFrame = CreateFrame("Frame")
     eventFrame:RegisterEvent("UNIT_AURA")
-    eventFrame:SetScript("OnEvent", function(_, event, unit)
+    eventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    eventFrame:SetScript("OnEvent", function(_, event, unit, _, spellId)
         if event == "UNIT_AURA" and unit == "player" then
             UpdateAllSlots()
+        elseif event == "UNIT_SPELLCAST_SUCCEEDED" and unit == "player" then
+            ArmorTracker:OnPlayerCast(spellId)
         elseif event == "UNIT_PET" and unit == "player" then
             UpdateAllSlots()
         elseif event == "PLAYER_TALENT_UPDATE" then

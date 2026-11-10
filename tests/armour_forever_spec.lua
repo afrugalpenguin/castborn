@@ -88,6 +88,61 @@ describe("Armour reminder on Forever", function()
         end
     end)
 
+    describe("OnPlayerCast", function()
+        local hidden
+
+        local function addSlot(spellIds, checkFn)
+            local slot = { spellIds = spellIds, checkFn = checkFn }
+            slot.frame = { Hide = function() hidden[slot] = true end }
+            table.insert(AT:GetSlots(), slot)
+            return slot
+        end
+
+        before_each(function()
+            hidden = {}
+            wipe(AT:GetSlots())
+        end)
+
+        after_each(function() wipe(AT:GetSlots()) end)
+
+        it("hides the alert when its buff is cast in combat", function()
+            _G.InCombatLockdown = function() return true end
+            local armour = addSlot({ [7302] = true })
+            AT:OnPlayerCast(7302)
+            assert.is_true(hidden[armour])
+            assert.are.equal(7302, armour.lastSpellId)
+        end)
+
+        it("hides the blessing alert on any cast of the blessing", function()
+            _G.InCombatLockdown = function() return true end
+            local blessing = addSlot({ [19740] = true })
+            local rf = addSlot({ [25780] = true })
+            AT:OnPlayerCast(19740)
+            assert.is_true(hidden[blessing])
+            assert.is_nil(hidden[rf])
+        end)
+
+        it("ignores casts out of combat, where the buff read is exact", function()
+            local armour = addSlot({ [7302] = true })
+            AT:OnPlayerCast(7302)
+            assert.is_nil(hidden[armour])
+        end)
+
+        it("ignores a secret spell ID", function()
+            _G.InCombatLockdown = function() return true end
+            local armour = addSlot({ [7302] = true })
+            assert.has_no.errors(function() AT:OnPlayerCast(secret()) end)
+            assert.is_nil(hidden[armour])
+        end)
+
+        it("leaves slots with their own check, like the warlock pet, alone", function()
+            _G.InCombatLockdown = function() return true end
+            local pet = addSlot({ [18708] = true }, function() return false end)
+            AT:OnPlayerCast(18708)
+            assert.is_nil(hidden[pet])
+        end)
+    end)
+
     describe("FindPlayerBuff", function()
         it("finds a tracked buff through C_UnitAuras", function()
             auras = { { spellId = 1126 }, { spellId = 7302 } }

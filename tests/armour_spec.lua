@@ -26,6 +26,16 @@ describe("Armour reminder seams (TBC behaviour)", function()
         assert.is_nil(AT:FindPlayerBuff({ [7302] = true }))
     end)
 
+    it("ignores casts, because the buff read is exact", function()
+        local hidden = false
+        local slot = { spellIds = { [7302] = true }, frame = { Hide = function() hidden = true end } }
+        table.insert(AT:GetSlots(), slot)
+        AT:OnPlayerCast(7302)
+        wipe(AT:GetSlots())
+        assert.is_false(hidden)
+        assert.is_nil(slot.lastSpellId)
+    end)
+
     describe("icon size", function()
         local function recorder()
             local r = { calls = {} }
