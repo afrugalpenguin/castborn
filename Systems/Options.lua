@@ -6,6 +6,9 @@
 local Options = {}
 Castborn.Options = Options
 
+local Theme = Castborn.Theme
+local SIDEBAR_WIDTH = 168
+
 --------------------------------------------------------------------------------
 -- Style Constants (WeakAuras-inspired)
 --------------------------------------------------------------------------------
@@ -68,6 +71,29 @@ local categories = {
     { id = "lookfeel", name = "Look & Feel" },
     { id = "profiles", name = "Profiles" },
     { id = "changelog", name = "Changelog" },
+}
+
+-- One line under each page title
+local pageSubtitles = {
+    general = "Lock and test your frames, and the essentials.",
+    castbars = "Your castbar and those of your target, their target and your focus.",
+    gcd = "A sweep that shows the global cooldown.",
+    fsr = "The five-second rule for mana regeneration.",
+    swing = "When your next auto attack lands.",
+    dots = "Your damage over time on your target.",
+    multidot = "Your damage over time across every enemy.",
+    buffs = "Procs and buffs worth reacting to.",
+    cooldowns = "The spells you want to watch, in the order they appear.",
+    itemtracker = "Potions, trinkets and other usable items.",
+    interrupt = "Your interrupt, and when it is ready.",
+    cooldowntext = "Countdown numbers on your action bars and Castborn icons.",
+    totems = "Your totems and how long they have left.",
+    absorbs = "Your absorb shields and what they have left.",
+    armortracker = "A reminder when your self-buff is missing.",
+    seals = "Your active seal and its time left.",
+    lookfeel = "The texture and font every Castborn bar uses.",
+    profiles = "Save a set of settings and share it between characters.",
+    changelog = "What changed in each version.",
 }
 
 --------------------------------------------------------------------------------
@@ -351,17 +377,10 @@ end
 --------------------------------------------------------------------------------
 
 local function CreateOptionsFrame()
-    local frame = CreateFrame("Frame", "CastbornOptionsFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(800, 450)
+    local frame = CreateFrame("Frame", "CastbornOptionsFrame", UIParent)
+    frame:SetSize(900, 640)
     frame:SetPoint("CENTER")
-    frame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 14,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 },
-    })
-    frame:SetBackdropColor(unpack(C.bgMain))
-    frame:SetBackdropBorderColor(0.6, 0.6, 0.6, 1)
+    Theme:Chamfer(frame, { cut = 10, fill = "navA", edge = "rule" })
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
@@ -387,48 +406,52 @@ local function CreateOptionsFrame()
         wipe(openPreviews)
     end)
 
-    -- Title bar
-    local titleBar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    titleBar:SetHeight(28)
-    titleBar:SetPoint("TOPLEFT", 4, -4)
-    titleBar:SetPoint("TOPRIGHT", -4, -4)
-    titleBar:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-    })
-    titleBar:SetBackdropColor(0.15, 0.15, 0.15, 1)
-
-    -- Logo
-    local logo = titleBar:CreateTexture(nil, "ARTWORK")
-    logo:SetSize(20, 20)
-    logo:SetPoint("LEFT", 8, 0)
-    logo:SetTexture(LOGO_PATH)
-
-    -- Title
-    local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("LEFT", logo, "RIGHT", 8, 0)
-    title:SetText("|cffFFCC00Castborn|r Options")
-
-    -- Close button
-    local closeBtn = CreateFrame("Button", nil, titleBar, "UIPanelCloseButton")
-    closeBtn:SetPoint("RIGHT", -2, 0)
-    closeBtn:SetScript("OnClick", function() frame:Hide() end)
-
-    -- Sidebar
-    local sidebar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    sidebar:SetWidth(130)
-    sidebar:SetPoint("TOPLEFT", 6, -36)
-    sidebar:SetPoint("BOTTOMLEFT", 6, 6)
-    sidebar:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    sidebar:SetBackdropColor(unpack(C.bgSection))
-    sidebar:SetBackdropBorderColor(unpack(C.borderDark))
+    -- Sidebar: the window's own fill is its background
+    local sidebar = CreateFrame("Frame", nil, frame)
+    sidebar:SetWidth(SIDEBAR_WIDTH)
+    sidebar:SetPoint("TOPLEFT", 0, 0)
+    sidebar:SetPoint("BOTTOMLEFT", 0, 0)
     frame.sidebar = sidebar
 
+    local wordmark = sidebar:CreateFontString(nil, "OVERLAY")
+    Theme:Font(wordmark, "display", 26)
+    wordmark:SetPoint("TOPLEFT", 18, -20)
+    wordmark:SetText("Castborn")
+
+    local tagline = sidebar:CreateFontString(nil, "OVERLAY")
+    Theme:Font(tagline, "body", 10)
+    tagline:SetTextColor(Theme:Color("muted"))
+    tagline:SetPoint("TOPLEFT", wordmark, "BOTTOMLEFT", 1, -2)
+    tagline:SetText("BOOK OF SETTINGS")
+
+    -- Page panel, with a soft glow that fades out before its cut corners
+    local page = CreateFrame("Frame", nil, frame)
+    page:SetPoint("TOPLEFT", SIDEBAR_WIDTH, -6)
+    page:SetPoint("BOTTOMRIGHT", -6, 6)
+    Theme:Chamfer(page, { cut = 8, fill = "pageB", edge = "divider" })
+    local glow = page:CreateTexture(nil, "BACKGROUND", nil, 2)
+    glow:SetTexture(Theme.media.glow)
+    glow:SetVertexColor(Theme:Color("pageA"))
+    glow:SetSize(440, 300)
+    glow:SetPoint("CENTER", page, "TOPLEFT", 220, -150)
+    frame.page = page
+
+    -- Close button: a small chamfered plate with a gold cross
+    local closeBtn = CreateFrame("Button", nil, page)
+    closeBtn:SetSize(26, 26)
+    closeBtn:SetPoint("TOPRIGHT", -12, -12)
+    Theme:Chamfer(closeBtn, { cut = 4, fill = "knob" })
+    local cross = closeBtn:CreateFontString(nil, "OVERLAY")
+    Theme:Font(cross, "strong", 16)
+    cross:SetTextColor(Theme:Color("heading"))
+    cross:SetPoint("CENTER", 0, 1)
+    cross:SetText("×")
+    closeBtn:SetScript("OnEnter", function(self) Theme:SetChamferColors(self, "rule") end)
+    closeBtn:SetScript("OnLeave", function(self) Theme:SetChamferColors(self, "knob") end)
+    closeBtn:SetScript("OnClick", function() frame:Hide() end)
+
     -- Category buttons
-    local y = -8
+    local y = -78
     local _, playerClass = UnitClass("player")
     for i, cat in ipairs(categories) do
         -- Skip class-restricted categories for other classes, and pages this build does not load
@@ -437,36 +460,38 @@ local function CreateOptionsFrame()
             or (cat.module and not Castborn[cat.module]) then
             -- Skip this category
         elseif cat.divider then
-            -- Create a horizontal divider line
-            local divider = sidebar:CreateTexture(nil, "ARTWORK")
-            divider:SetHeight(1)
-            divider:SetPoint("TOPLEFT", 10, y - 6)
-            divider:SetPoint("TOPRIGHT", -10, y - 6)
-            divider:SetColorTexture(unpack(C.borderDark))
-            y = y - 14
+            local dots = sidebar:CreateFontString(nil, "OVERLAY")
+            Theme:Font(dots, "subtitle", 14)
+            dots:SetPoint("TOP", sidebar, "TOP", 0, y - 4)
+            dots:SetText("· · ·")
+            y = y - 24
         else
+            -- The open page is marked by a gold bookmark ribbon running into the page
             local btn = CreateFrame("Button", nil, sidebar)
-            btn:SetSize(120, 22)
-            btn:SetPoint("TOPLEFT", 5, y)
+            btn:SetHeight(26)
+            btn:SetPoint("TOPLEFT", 0, y)
+            btn:SetPoint("TOPRIGHT", sidebar, "TOPRIGHT", 1, y)
 
-            btn.bg = btn:CreateTexture(nil, "BACKGROUND")
-            btn.bg:SetAllPoints()
-            btn.bg:SetColorTexture(0, 0, 0, 0)
+            btn.ribbon = btn:CreateTexture(nil, "BACKGROUND")
+            btn.ribbon:SetAllPoints()
+            btn.ribbon:SetTexture(Theme.media.ribbon)
+            btn.ribbon:Hide()
 
-            btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-            btn.text:SetPoint("LEFT", 8, 0)
+            btn.text = btn:CreateFontString(nil, "OVERLAY")
+            Theme:Font(btn.text, "body", 14)
+            btn.text:SetTextColor(Theme:Color("navText"))
+            btn.text:SetPoint("LEFT", 18, 0)
             btn.text:SetText(cat.name)
-            btn.text:SetTextColor(unpack(C.grey))
 
             btn:SetScript("OnEnter", function(self)
                 if currentCategory ~= cat.id then
-                    self.bg:SetColorTexture(1, 1, 1, 0.1)
+                    self.text:SetTextColor(Theme:Color("title"))
                 end
             end)
 
             btn:SetScript("OnLeave", function(self)
                 if currentCategory ~= cat.id then
-                    self.bg:SetColorTexture(0, 0, 0, 0)
+                    self.text:SetTextColor(Theme:Color("navText"))
                 end
             end)
 
@@ -476,30 +501,56 @@ local function CreateOptionsFrame()
             end)
 
             cat.button = btn
-            y = y - 22
+            y = y - 26
         end
     end
 
-    -- Content area
-    local content = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    content:SetPoint("TOPLEFT", sidebar, "TOPRIGHT", 6, 0)
-    content:SetPoint("BOTTOMRIGHT", -6, 6)
-    content:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    content:SetBackdropColor(unpack(C.bgSection))
-    content:SetBackdropBorderColor(unpack(C.borderDark))
-    frame.content = content
-
-    -- Inner content with padding
-    local inner = CreateFrame("Frame", nil, content)
-    inner:SetPoint("TOPLEFT", 12, -12)
-    inner:SetPoint("BOTTOMRIGHT", -12, 12)
+    -- Page content, inset from the panel's edges
+    local inner = CreateFrame("Frame", nil, page)
+    inner:SetPoint("TOPLEFT", 26, -22)
+    inner:SetPoint("BOTTOMRIGHT", -20, 16)
     frame.contentInner = inner
 
     return frame
+end
+
+-- Page title, italic subtitle and an ornamental rule; returns the frame the page builds into
+local function CreatePageHeader(content, catId)
+    local name = catId
+    for _, cat in ipairs(categories) do
+        if cat.id == catId then name = cat.name break end
+    end
+
+    local title = content:CreateFontString(nil, "OVERLAY")
+    Theme:Font(title, "display", 32)
+    title:SetPoint("TOPLEFT", 0, 0)
+    title:SetText(name)
+
+    local subtitle = content:CreateFontString(nil, "OVERLAY")
+    Theme:Font(subtitle, "subtitle", 16)
+    subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
+    subtitle:SetText(pageSubtitles[catId] or "")
+
+    local diamond = content:CreateTexture(nil, "ARTWORK")
+    diamond:SetTexture(Theme.media.diamond)
+    diamond:SetVertexColor(Theme:Color("accent"))
+    diamond:SetSize(10, 10)
+    diamond:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 120, -10)
+    for _, side in ipairs({ -1, 1 }) do
+        local line = content:CreateTexture(nil, "ARTWORK")
+        line:SetColorTexture(Theme:Color("rule"))
+        line:SetSize(112, 1)
+        if side < 0 then
+            line:SetPoint("RIGHT", diamond, "LEFT", -4, 0)
+        else
+            line:SetPoint("LEFT", diamond, "RIGHT", 4, 0)
+        end
+    end
+
+    local body = CreateFrame("Frame", nil, content)
+    body:SetPoint("TOPLEFT", 0, -92)
+    body:SetPoint("BOTTOMRIGHT", 0, 0)
+    return body
 end
 
 --------------------------------------------------------------------------------
@@ -512,13 +563,10 @@ function Options:ShowCategory(catId)
     -- Update sidebar buttons
     for _, cat in ipairs(categories) do
         if cat.button then  -- Skip dividers
-            if cat.id == catId then
-                cat.button.bg:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], 0.3)
-                cat.button.text:SetTextColor(unpack(C.white))
-            else
-                cat.button.bg:SetColorTexture(0, 0, 0, 0)
-                cat.button.text:SetTextColor(unpack(C.grey))
-            end
+            local open = cat.id == catId
+            cat.button.ribbon:SetShown(open)
+            Theme:Font(cat.button.text, open and "strong" or "body", 14)
+            cat.button.text:SetTextColor(Theme:Color(open and "onAccent" or "navText"))
         end
     end
 
@@ -537,21 +585,22 @@ end
 function Options:CreateContent(catId)
     local content = CreateFrame("Frame", nil, optionsFrame.contentInner)
     content:SetAllPoints()
+    local body = CreatePageHeader(content, catId)
 
     if catId == "general" then
-        self:BuildGeneral(content)
+        self:BuildGeneral(body)
     elseif catId == "castbars" then
-        local scrollChild = CreateScrollableContent(content)
+        local scrollChild = CreateScrollableContent(body)
         self:BuildCastbars(scrollChild)
     elseif catId == "lookfeel" then
-        self:BuildLookFeel(content)
+        self:BuildLookFeel(body)
     elseif catId == "profiles" then
-        self:BuildProfiles(content)
+        self:BuildProfiles(body)
     elseif catId == "changelog" then
-        self:BuildChangelog(content)
+        self:BuildChangelog(body)
     else
         -- Module pages use a scroll frame for overflow
-        local scrollChild = CreateScrollableContent(content)
+        local scrollChild = CreateScrollableContent(body)
         self:BuildModule(scrollChild, catId)
     end
 
@@ -1352,23 +1401,6 @@ function Options:BuildChangelog(parent)
     -- Set scroll child height
     scrollChild:SetHeight(math.abs(contentY) + 20)
 end
-
-local moduleTitles = {
-    gcd = "GCD Indicator",
-    fsr = "5 Second Rule",
-    swing = "Swing Timer",
-    dots = "DoT Tracker",
-    multidot = "Multi-DoT Tracker",
-    buffs = "Proc Tracker",
-    cooldowns = "Cooldown Tracker",
-    itemtracker = "Item Tracker",
-    interrupt = "Interrupt Tracker",
-    totems = "Totem Tracker",
-    absorbs = "Absorb Tracker",
-    armortracker = "Armour Tracker",
-    seals = "Seal Tracker",
-    cooldowntext = "Cooldown Text",
-}
 
 -- Per-module option builders. Each receives the content frame, the module's
 -- settings table, and the running y offset, and returns the updated offset.
@@ -2480,12 +2512,7 @@ function moduleBuilders.absorbs(parent, db, y)
 end
 
 function Options:BuildModule(parent, key)
-    local y = 0
-
-    local header = CreateHeader(parent, moduleTitles[key] or key)
-    header:SetPoint("TOPLEFT", 0, y)
-    header:SetPoint("TOPRIGHT", 0, y)
-    y = y - 30
+    local y = 0  -- the page header (CreatePageHeader) already names the page
 
     CastbornDB[key] = CastbornDB[key] or {}
     local db = CastbornDB[key]
