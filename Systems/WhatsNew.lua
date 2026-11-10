@@ -14,6 +14,12 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.9.2",
+        fixes = {
+            "Test previews from an options page (such as Test Seal) no longer stay on screen after closing options",
+        },
+    },
+    {
         version = "7.9.1",
         fixes = {
             "Colour pickers in the options now open on Forever",
