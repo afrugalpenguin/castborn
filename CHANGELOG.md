@@ -1,5 +1,11 @@
 # Changelog
 
+**v7.8.0**
+
+- Swing timer on Forever: main-hand, off-hand and ranged bars driven by the game's own swing event, with a glowing spark, a flash when each swing lands and a soft fade when it ends
+- On Forever, swing bars dim and their text turns red when your target is out of auto-attack range
+- On Forever, a running swing adjusts to haste changes and restarts when you swap weapons
+
 **v7.7.0**
 
 - New option in Options > Armour: "Always remind me about Righteous Fury", for paladins who tank without Improved Righteous Fury or are still levelling

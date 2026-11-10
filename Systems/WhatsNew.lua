@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.8.0",
+        features = {
+            "Swing timer on Forever, with a glowing spark, a flash on each swing and a soft fade",
+            "Forever swing bars dim when your target is out of range",
+            "Forever swing timer adjusts to haste changes and weapon swaps",
+        },
+    },
+    {
         version = "7.7.0",
         features = {
             "New option: always remind paladins about Righteous Fury, even without Improved Righteous Fury",
