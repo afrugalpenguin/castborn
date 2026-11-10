@@ -62,6 +62,109 @@ local probeTexture = probeBar:CreateTexture()
 local probeText = probeBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 local probeWidgets = { StatusBar = probeBar, Cooldown = probeCooldown, Texture = probeTexture, FontString = probeText }
 
+local function InCombat()
+    return InCombatLockdown and InCombatLockdown() and true or false
+end
+
+local function CombatKey(key)
+    return InCombat() and (key .. " [combat]") or key
+end
+
+local function isSecret(v)
+    return issecretvalue ~= nil and issecretvalue(v)
+end
+
+-- Rendering probes (issue #236). Once per combat, the first cast with a cooldown duration
+-- tries each secret-safe display path the graphics research found, and records what happened.
+local renderCooldown = CreateFrame("Cooldown", nil, UIParent)
+renderCooldown:SetSize(1, 1)
+renderCooldown:SetPoint("CENTER")
+renderCooldown:SetAlpha(0)
+renderCooldown:SetScript("OnCooldownDone", function() APICheck:OnRenderCooldownDone() end)
+local renderTexture = probeBar:CreateTexture()
+local renderText = probeBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+
+function APICheck:OnRenderCooldownDone()
+    self.events[CombatKey("Cooldown OnCooldownDone")] = "fired"
+end
+
+-- Evaluate a colour (or number) curve against the duration and feed the result to a texture
+function APICheck:TryCurve(duration, colour)
+    if not (C_CurveUtil and CreateColor) then return "missing" end
+    local ok, desc = pcall(function()
+        if colour then
+            local curve = C_CurveUtil.CreateColorCurve()
+            curve:AddPoint(0, CreateColor(1, 0, 0, 1))
+            curve:AddPoint(1, CreateColor(0, 1, 0, 1))
+            local c = duration:EvaluateRemainingPercent(curve)
+            renderTexture:SetVertexColor(c:GetRGBA())
+            if isSecret(c) then return "secret" end
+            return "r=" .. self:Describe(c.r)
+        end
+        local curve = C_CurveUtil.CreateCurve()
+        curve:AddPoint(0, 0)
+        curve:AddPoint(1, 1)
+        local a = duration:EvaluateRemainingPercent(curve)
+        renderTexture:SetAlpha(a)
+        return self:Describe(a)
+    end)
+    if not ok then return "error: " .. tostring(desc) end
+    return "ok " .. desc
+end
+
+function APICheck:RecordBoundText()
+    local ok, text = pcall(renderText.GetText, renderText)
+    local desc
+    if not ok then
+        desc = "error: " .. tostring(text)
+    elseif type(text) == "string" and not isSecret(text) then
+        desc = "string '" .. text .. "'"
+    else
+        desc = self:Describe(text)
+    end
+    self.events[CombatKey("Duration text binding text")] = desc
+end
+
+-- Bind a font string to the duration; the text is read back half a second later
+function APICheck:TryTextBinding(duration)
+    if not (C_DurationUtil and C_DurationUtil.CreateDurationTextBinding) then return "missing" end
+    local ok, err = pcall(function()
+        local binding = C_DurationUtil.CreateDurationTextBinding()
+        binding:SetFontString(renderText)
+        if C_StringUtil and C_StringUtil.CreateSecondsFormatter then
+            binding:SetFormatter(C_StringUtil.CreateSecondsFormatter())
+        end
+        binding:SetDuration(duration)
+        if binding.SetEnabled then binding:SetEnabled(true) elseif binding.Enable then binding:Enable() end
+        self.textBinding = binding  -- keep it alive until the text is read
+    end)
+    if not ok then return "error: " .. tostring(err) end
+    if C_Timer then C_Timer.After(0.5, function() self:RecordBoundText() end) end
+    return "ok"
+end
+
+function APICheck:ProbeRendering(duration)
+    local ok, err = pcall(renderCooldown.SetCooldownFromDurationObject, renderCooldown, duration)
+    self.events[CombatKey("Cooldown armed from duration")] = ok and "ok" or ("error: " .. tostring(err))
+    self.events[CombatKey("Curve colour into SetVertexColor")] = self:TryCurve(duration, true)
+    self.events[CombatKey("Curve number into SetAlpha")] = self:TryCurve(duration, false)
+    self.events[CombatKey("Duration text binding")] = self:TryTextBinding(duration)
+end
+
+-- The spell ID may be secret; GetSpellCooldownDuration then errors inside pcall and is skipped
+function APICheck:MaybeProbeRendering(spellID)
+    if self.renderProbed or not InCombat() then return end
+    local fn = C_Spell and C_Spell.GetSpellCooldownDuration
+    if not fn then return end
+    local ok, duration = pcall(fn, spellID)
+    if not ok or duration == nil then return end
+    -- A zero duration would never finish, so wait for a cast that has one
+    local zeroOk, zero = pcall(duration.IsZero, duration)
+    if zeroOk and not isSecret(zero) and zero == true then return end
+    self.renderProbed = true
+    self:ProbeRendering(duration)
+end
+
 -- Candidate duration object methods; any that exist are listed in the report
 local durationMethods = {
     "GetRemainingDuration", "GetElapsedDuration", "GetTotalDuration",
@@ -198,19 +301,12 @@ APICheck.events = {}
 APICheck.live = {}
 APICheck.eventCounts = {}
 APICheck.cleu = { registered = "not attempted", count = 0 }
+APICheck.overlaySpells = {}
 
 local function ProbeKey(path, ...)
     local args = {}
     for i = 1, select("#", ...) do args[i] = tostring((select(i, ...))) end
     return path .. "(" .. table.concat(args, ",") .. ")"
-end
-
-local function InCombat()
-    return InCombatLockdown and InCombatLockdown() and true or false
-end
-
-local function CombatKey(key)
-    return InCombat() and (key .. " [combat]") or key
 end
 
 local function Snapshot(path, ...)
@@ -222,6 +318,7 @@ function APICheck:OnEvent(event, unit, ...)
     self.eventCounts[event] = (self.eventCounts[event] or 0) + 1
     if event == "PLAYER_REGEN_ENABLED" then
         self.auraDurationTried = nil
+        self.renderProbed = nil
         return
     end
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
@@ -243,6 +340,7 @@ function APICheck:OnEvent(event, unit, ...)
         -- The seal tracker follows casts in combat, so it needs this to be plain
         self.events[CombatKey("UNIT_SPELLCAST_SUCCEEDED(player) spellID")] = self:Describe(spellID)
         self.events[CombatKey("C_Spell.GetSpellCooldown(last cast)")] = self:DescribeCall("C_Spell.GetSpellCooldown", spellID)
+        self:MaybeProbeRendering(spellID)
     elseif event == "UNIT_AURA" and unit == "player" then
         local info = ...
         -- Count payload shapes, so a combat full update (no addedAuras) still leaves a trace
@@ -259,6 +357,17 @@ function APICheck:OnEvent(event, unit, ...)
                 self.events["C_UnitAuras.GetAuraDuration(player) [combat]"] =
                     self:DescribeCall("C_UnitAuras.GetAuraDuration", "player", added.auraInstanceID)
             end
+        end
+    elseif event == "SPELL_ACTIVATION_OVERLAY_GLOW_SHOW" or event == "SPELL_ACTIVATION_OVERLAY_GLOW_HIDE" then
+        -- No unit argument: the first value is the spell ID. A proc tracker would need it plain.
+        local spellID = unit
+        self.events[CombatKey(event .. " spellID")] = self:Describe(spellID)
+        if event == "SPELL_ACTIVATION_OVERLAY_GLOW_SHOW" and not isSecret(spellID) and type(spellID) == "number" then
+            self.overlaySpells[spellID] = true
+            local ids = {}
+            for id in pairs(self.overlaySpells) do ids[#ids + 1] = id end
+            table.sort(ids)
+            self.events["SPELL_ACTIVATION_OVERLAY_GLOW_SHOW spells seen"] = table.concat(ids, ",")
         end
     elseif event == "PLAYER_SWING" then
         -- No unit argument: the first value is swingDuration. The swing timer needs it plain.
@@ -343,7 +452,8 @@ function APICheck:Print(report)
 end
 
 local eventFrame = CreateFrame("Frame")
-for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_AURA", "PLAYER_REGEN_ENABLED", "PLAYER_SWING" }) do
+for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_AURA", "PLAYER_REGEN_ENABLED", "PLAYER_SWING",
+        "SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", "SPELL_ACTIVATION_OVERLAY_GLOW_HIDE" }) do
     eventFrame:RegisterEvent(event)
 end
 -- The combat log is not registered: Forever ignored it in two probe runs and it is the

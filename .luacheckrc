@@ -193,5 +193,6 @@ files["**/*_Forever.lua"] = {
         "issecretvalue", "GetBuildInfo", "C_Spell", "C_UnitAuras", "C_Item",
         "PlayerCastingBarFrame",
         "UnitCastingDuration", "UnitChannelDuration", "C_SwingTimer",
+        "C_CurveUtil", "C_DurationUtil", "C_StringUtil", "CreateColor",
     },
 }
