@@ -292,29 +292,42 @@ function CooldownText:Diagnose()
     local ok, err = Attempt(self.BuildCurve, self)
     r.buildCurve = ok and (self.curve and "ok" or "ok, but no curve") or err
 
-    -- Walk the colour chain on the first visible action button cooldown
-    r.button = "none visible"
+    -- Walk the colour chain on every visible cooldown, so short and long ones can be compared
+    local visible = 0
     for cooldown, entry in pairs(self.entries) do
-        if entry.kind == "actionbar" and cooldown:IsVisible() then
-            r.button = entry.button.GetName and entry.button:GetName() or "?"
-            r.action = Describe(entry.button.action)
-            local okS, errS = Attempt(self.Style, self, cooldown)
-            r.style = okS and "ok" or errS
+        if cooldown:IsVisible() then
+            visible = visible + 1
+            local name = entry.button and entry.button.GetName and entry.button:GetName()
+                or (entry.kind .. visible)
+            local parts = { "kind=" .. entry.kind }
+            if entry.button then parts[#parts + 1] = "action=" .. Describe(entry.button.action) end
             local okD, duration = Attempt(self.DurationFor, self, entry)
-            r.duration = okD and Describe(duration) or duration
-            if okD and duration and self.curve then
-                local okE, colour = Attempt(duration.EvaluateRemainingDuration, duration, self.curve)
-                r.evaluate = okE and Describe(colour) or colour
-                if okE and colour then
-                    local okC, errC = Attempt(function()
-                        cooldown:GetCountdownFontString():SetTextColor(colour:GetRGBA())
-                    end)
-                    r.setTextColor = okC and "ok" or errC
+            parts[#parts + 1] = "duration=" .. (okD and Describe(duration) or duration)
+            if okD and duration then
+                local okT, total = Attempt(duration.GetTotalDuration, duration)
+                parts[#parts + 1] = "total=" .. (okT and Describe(total) or total)
+                if okT and type(total) == "number" and not isSecret(total) then
+                    parts[#parts + 1] = string.format("(%.1fs)", total)
+                end
+                if self.curve then
+                    local okE, colour = Attempt(duration.EvaluateRemainingDuration, duration, self.curve)
+                    parts[#parts + 1] = "evaluate=" .. (okE and Describe(colour) or colour)
+                    if okE and colour and not isSecret(colour) then
+                        local okR, red, green, blue = pcall(colour.GetRGB, colour)
+                        if okR and not isSecret(red) and type(red) == "number" then
+                            parts[#parts + 1] = string.format("rgb=%.2f,%.2f,%.2f", red, green, blue)
+                        end
+                    end
+                    local okRem, remaining = Attempt(duration.GetRemainingDuration, duration)
+                    if okRem and type(remaining) == "number" and not isSecret(remaining) then
+                        parts[#parts + 1] = string.format("remaining=%.1fs", remaining)
+                    end
                 end
             end
-            break
+            r["cooling " .. name] = table.concat(parts, " ")
         end
     end
+    r.visibleCooldowns = visible
 
     CastbornDB.cooldowntextDebug = r
     CB:Print("Cooldown text diagnostics (saved to CastbornDB.cooldowntextDebug, /reload to write):")
