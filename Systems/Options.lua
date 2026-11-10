@@ -2372,7 +2372,40 @@ function moduleBuilders.cooldowntext(parent, db, y)
     y = y - 30
     local shortPicker = CreateColorPicker(parent, "Under 5 seconds", db, "shortColor", apply)
     shortPicker:SetPoint("TOPLEFT", 0, y)
-    y = y - 30
+    y = y - 40
+
+    -- Finish effect (CooldownFinish_Forever.lua)
+    local finish = Castborn.CooldownText and Castborn.CooldownText.Finish
+    if finish then
+        local finishLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        finishLabel:SetPoint("TOPLEFT", 0, y)
+        finishLabel:SetText("When a Cooldown Finishes:")
+        finishLabel:SetTextColor(unpack(C.grey))
+
+        local dropdown = CreateFrame("Frame", "CastbornCooldownFinishDropdown", parent, "UIDropDownMenuTemplate")
+        dropdown:SetPoint("TOPLEFT", 160, y + 6)
+        UIDropDownMenu_SetWidth(dropdown, 100)
+        UIDropDownMenu_SetText(dropdown, finish.labels[db.finishEffect or "pulse"])
+        UIDropDownMenu_Initialize(dropdown, function()
+            for _, key in ipairs(finish.effects) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = finish.labels[key]
+                info.value = key
+                info.checked = (db.finishEffect or "pulse") == key
+                info.func = function()
+                    db.finishEffect = key
+                    UIDropDownMenu_SetText(dropdown, finish.labels[key])
+                    CloseDropDownMenus()
+                    finish:Preview()
+                end
+                UIDropDownMenu_AddButton(info)
+            end
+        end)
+
+        local previewBtn = CreateButton(parent, "Preview", 80, function() finish:Preview() end)
+        previewBtn:SetPoint("TOPLEFT", 320, y + 2)
+        y = y - 34
+    end
 
     return y
 end
