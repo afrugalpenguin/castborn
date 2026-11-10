@@ -1,5 +1,9 @@
 # Changelog
 
+**v7.9.2**
+
+- Fixed test previews started from an options page (such as Test Seal) staying on screen after the options window is closed
+
 **v7.9.1**
 
 - Fixed colour pickers in the options erroring or not opening on Forever
