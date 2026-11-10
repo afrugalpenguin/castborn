@@ -1,6 +1,5 @@
 require("tests.mocks.wow_api")
 _G.RAID_CLASS_COLORS = {}
-_G.SlashCmdList = _G.SlashCmdList or {}
 dofile("Core.lua")
 dofile("Modules/CooldownText_Forever.lua")
 

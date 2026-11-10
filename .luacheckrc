@@ -185,7 +185,7 @@ files["tests/**/*.lua"] = {
 -- Forever (Mainline API) files only
 files["**/*_Forever.lua"] = {
     globals = {
-        "SLASH_CASTBORNAPI1", "SLASH_CASTBORNCDT1",
+        "SLASH_CASTBORNAPI1",
         "GetSpellInfo", "GetSpellSubtext", "GetSpellTexture", "GetItemSpell",
         "GetItemInfo", "GetItemCount",
     },

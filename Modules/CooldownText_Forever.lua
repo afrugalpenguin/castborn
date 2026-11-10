@@ -146,15 +146,10 @@ function CooldownText:Recolour(cooldown)
     if not duration then return end
     local fs = cooldown:GetCountdownFontString()
     local ok, colour = pcall(duration.EvaluateRemainingDuration, duration, self.curve)
-    if ok and colour then
-        fs:SetTextColor(colour:GetRGBA())
-    elseif not ok then
-        self.lastError = tostring(colour)  -- reported by /cbcdt
-    end
+    if ok and colour then fs:SetTextColor(colour:GetRGBA()) end
 end
 
 function CooldownText:RecolourAll()
-    self.ticks = (self.ticks or 0) + 1
     for cooldown in pairs(self.entries) do
         if cooldown:IsVisible() then self:Recolour(cooldown) end
     end
@@ -264,13 +259,10 @@ CB:RegisterCallback("INIT", function()
 end)
 
 CB:RegisterCallback("READY", function()
-    CooldownText.readyStage = "started"
     CooldownText:RegisterActionButtons()
     CooldownText:RegisterLibActionButtons()
-    CooldownText.readyStage = "buttons registered"
     CooldownText.ready = true
     CooldownText:Apply()
-    CooldownText.readyStage = "applied"
 
     local events = CreateFrame("Frame")
     events:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -281,83 +273,6 @@ CB:RegisterCallback("READY", function()
     CB:CreateThrottledUpdater(RECOLOUR_INTERVAL, function()
         CooldownText:RecolourAll()
     end)
-    CooldownText.readyStage = "ticker running"
 end)
-
--- Diagnostics: run /cbcdt while an action button is cooling down, then /reload to save.
-local function Describe(v)
-    if CB.APICheck then return CB.APICheck:Describe(v) end
-    if isSecret(v) then return "secret" end
-    return type(v)
-end
-
-local function Attempt(fn, ...)
-    local ok, result = pcall(fn, ...)
-    if not ok then return false, "error: " .. tostring(result) end
-    return true, result
-end
-
-function CooldownText:Diagnose()
-    local r = {
-        readyStage = tostring(self.readyStage),
-        ticks = self.ticks or 0,
-        lastError = self.lastError or "none",
-        curveUtil = C_CurveUtil and "yes" or "no",
-        createColor = CreateColor and "yes" or "no",
-        luaCurveType = (Enum and Enum.LuaCurveType) and "yes" or "no",
-    }
-    local count = 0
-    for _ in pairs(self.entries) do count = count + 1 end
-    r.entries = count
-    local ok, err = Attempt(self.BuildCurve, self)
-    r.buildCurve = ok and (self.curve and "ok" or "ok, but no curve") or err
-
-    -- Walk the colour chain on every visible cooldown, so short and long ones can be compared
-    local visible = 0
-    for cooldown, entry in pairs(self.entries) do
-        if cooldown:IsVisible() then
-            visible = visible + 1
-            local name = entry.button and entry.button.GetName and entry.button:GetName()
-                or (entry.kind .. visible)
-            local parts = { "kind=" .. entry.kind }
-            if entry.button then parts[#parts + 1] = "action=" .. Describe(entry.button.action) end
-            local okD, duration = Attempt(self.DurationFor, self, entry)
-            parts[#parts + 1] = "duration=" .. (okD and Describe(duration) or duration)
-            if okD and duration then
-                local okT, total = Attempt(duration.GetTotalDuration, duration)
-                parts[#parts + 1] = "total=" .. (okT and Describe(total) or total)
-                if okT and type(total) == "number" and not isSecret(total) then
-                    parts[#parts + 1] = string.format("(%.1fs)", total)
-                end
-                if self.curve then
-                    local okE, colour = Attempt(duration.EvaluateRemainingDuration, duration, self.curve)
-                    parts[#parts + 1] = "evaluate=" .. (okE and Describe(colour) or colour)
-                    if okE and colour and not isSecret(colour) then
-                        local okR, red, green, blue = pcall(colour.GetRGB, colour)
-                        if okR and not isSecret(red) and type(red) == "number" then
-                            parts[#parts + 1] = string.format("rgb=%.2f,%.2f,%.2f", red, green, blue)
-                        end
-                    end
-                    local okRem, remaining = Attempt(duration.GetRemainingDuration, duration)
-                    if okRem and type(remaining) == "number" and not isSecret(remaining) then
-                        parts[#parts + 1] = string.format("remaining=%.1fs", remaining)
-                    end
-                end
-            end
-            r["cooling " .. name] = table.concat(parts, " ")
-        end
-    end
-    r.visibleCooldowns = visible
-
-    CastbornDB.cooldowntextDebug = r
-    CB:Print("Cooldown text diagnostics (saved to CastbornDB.cooldowntextDebug, /reload to write):")
-    local keys = {}
-    for k in pairs(r) do keys[#keys + 1] = k end
-    table.sort(keys)
-    for _, k in ipairs(keys) do print("  " .. k .. " = " .. tostring(r[k])) end
-end
-
-SLASH_CASTBORNCDT1 = "/cbcdt"
-SlashCmdList["CASTBORNCDT"] = function() CooldownText:Diagnose() end
 
 CB:RegisterModule("CooldownText", CooldownText)
