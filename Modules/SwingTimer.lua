@@ -74,6 +74,7 @@ local function CreateSwingBar(swingType, dbKey)
     frame:Hide()
     return frame
 end
+SwingTimer.CreateSwingBar = CreateSwingBar  -- reused by SwingTimer_Forever.lua
 
 local function GetWeaponSpeeds()
     local mainSpeed, offSpeed = UnitAttackSpeed("player")
@@ -140,6 +141,7 @@ local function CreateSwingContainer()
     container:Hide()  -- Start hidden, will show when swings are active
     return container
 end
+SwingTimer.CreateSwingContainer = CreateSwingContainer  -- reused by SwingTimer_Forever.lua
 
 function CB:InitSwingTimers()
     local cfg = CB.db.swing

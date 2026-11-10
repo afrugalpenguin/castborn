@@ -64,6 +64,7 @@ describe("TOC files", function()
         -- (each override is pinned by its own spec)
         local overridden = {
             ["Modules/InterruptTracker.lua"] = "Modules/InterruptTracker_Forever.lua",
+            ["Modules/SwingTimer.lua"] = "Modules/SwingTimer_Forever.lua",
         }
         local loaded = {}
         for _, path in ipairs(foreverFiles) do loaded[path] = true end

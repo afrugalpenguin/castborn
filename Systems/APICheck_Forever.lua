@@ -129,11 +129,12 @@ APICheck.names = {
     "C_Spell.GetSpellCooldownDuration", "C_CurveUtil.CreateCurve",
     "UnitIsUnit", "C_UnitAuras.GetAuraDuration", "C_UnitAuras.GetAuraDataByAuraInstanceID",
     "BuffIconCooldownViewer", "BuffBarCooldownViewer", "EssentialCooldownViewer",
+    "C_SwingTimer.EnableRangeCheck", "C_SwingTimer.IsTargetWithinSwingRange",
 }
 
 -- Tables whose fields are listed in the report (enum names the Forever ports need)
 APICheck.values = {
-    "Enum.StatusBarTimerDirection", "Enum.StatusBarInterpolation",
+    "Enum.StatusBarTimerDirection", "Enum.StatusBarInterpolation", "Enum.PlayerSwingType",
 }
 
 -- Calls made when /cbapi runs; have a buff up and target a caster mob first
@@ -259,6 +260,9 @@ function APICheck:OnEvent(event, unit, ...)
                     self:DescribeCall("C_UnitAuras.GetAuraDuration", "player", added.auraInstanceID)
             end
         end
+    elseif event == "PLAYER_SWING" then
+        -- No unit argument: the first value is swingDuration. The swing timer needs it plain.
+        self.events[CombatKey("PLAYER_SWING payload")] = self:DescribeValues(unit, ...)
     elseif event == "UNIT_AURA" and unit == "target" then
         Snapshot("C_UnitAuras.GetAuraDataByIndex", "target", 1, "HARMFUL")
         Snapshot("UnitDebuff", "target", 1)
@@ -339,7 +343,7 @@ function APICheck:Print(report)
 end
 
 local eventFrame = CreateFrame("Frame")
-for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_AURA", "PLAYER_REGEN_ENABLED" }) do
+for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_AURA", "PLAYER_REGEN_ENABLED", "PLAYER_SWING" }) do
     eventFrame:RegisterEvent(event)
 end
 -- The combat log is not registered: Forever ignored it in two probe runs and it is the

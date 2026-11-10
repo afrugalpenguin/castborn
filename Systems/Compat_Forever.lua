@@ -42,7 +42,6 @@ end
 -- Remove an entry when its module is ported and added to Castborn_Camelot.toc.
 Castborn.unavailableOptions = {
     fsr = true,  -- mana is a secret value on Forever, so the bar cannot compare it
-    swing = true,
     dots = true,
     multidot = true,
     buffs = true,

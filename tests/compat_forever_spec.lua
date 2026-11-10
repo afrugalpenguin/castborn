@@ -102,8 +102,12 @@ describe("Compat_Forever", function()
     end)
 
     it("lists option pages for modules not in the Forever build", function()
-        assert.is_true(Castborn.unavailableOptions.swing)
+        assert.is_true(Castborn.unavailableOptions.dots)
         assert.is_nil(Castborn.unavailableOptions.castbars)
+    end)
+
+    it("shows the swing timer page", function()
+        assert.is_nil(Castborn.unavailableOptions.swing)
     end)
 
     it("shows the item tracker page", function()
