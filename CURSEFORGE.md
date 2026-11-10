@@ -35,11 +35,13 @@ The options window is a dark, gilded spellbook: every module on its own page, a 
 
 Player, target, focus and target-of-target castbars with latency, class colours, spell icons and a shield for casts you can't interrupt. Size, colour and anchor each one separately.
 
-![Castborn castbars](https://github.com/afrugalpenguin/castborn/blob/main/images/castbars.png?raw=true)
+![Castborn castbar casting Holy Light](https://github.com/afrugalpenguin/castborn/blob/main/images/castbars.png?raw=true)
 
 ## Cooldowns, at a glance
 
 Track the abilities and trinkets that matter, with a ready glow when they come back. On Forever, Castborn also puts countdown numbers on your action bars, colour-coded by time left (white, then yellow under a minute, red under five seconds), and plays a pulse, burst or flash when a cooldown finishes. It works with Blizzard's bars and Bartender4.
+
+![Cooldown numbers on action buttons, coloured by time left](https://github.com/afrugalpenguin/castborn/blob/main/images/cooldowntext.png?raw=true)
 
 ![Cooldown and trinket tracking](https://github.com/afrugalpenguin/castborn/blob/main/images/cooldownstrinkets.png?raw=true)
 
@@ -47,11 +49,13 @@ Track the abilities and trinkets that matter, with a ready glow when they come b
 
 Main hand, off hand and ranged swing bars with a glowing spark, a flash when each swing lands, and a dimmed bar when your target is out of range. Haste changes and weapon swaps are handled mid-swing.
 
+![Main hand, off hand and ranged swing bars](https://github.com/afrugalpenguin/castborn/blob/main/images/swing.png?raw=true)
+
 ## Reminders
 
 The Armour Reminder flags a missing self-buff (mage and warlock armours, Inner Fire, paladin blessings, auras and Righteous Fury), and the Seal Tracker shows your active seal with its time left.
 
-![Armour reminder](https://github.com/afrugalpenguin/castborn/blob/main/images/armour.png?raw=true)
+![Seal tracker counting down, with two armour reminders](https://github.com/afrugalpenguin/castborn/blob/main/images/reminders.png?raw=true)
 
 ## More from TBC Anniversary
 

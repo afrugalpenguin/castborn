@@ -42,13 +42,6 @@ The same files run on WoW Forever and TBC Anniversary. Forever hides some combat
 
 ## Highlights
 
-<!-- New screenshots to capture in game for 8.0 (save in images/ and swap in below):
-     images/options.png       - the redesigned options window (Castbars or Cooldown Text page)
-     images/cooldowntext.png  - action bar with coloured cooldown numbers and a finish pulse
-     images/swing.png         - swing timer under the player castbar in combat
-     images/castbars.png      - castbars in combat (replace the old shot)
--->
-
 ### A book of settings
 
 The options window is a dark, gilded spellbook: every module on its own page, a bookmark ribbon for the page you're on, and live previews as you change things. Everything is grouped, labelled and explained in plain English.
@@ -59,11 +52,13 @@ The options window is a dark, gilded spellbook: every module on its own page, a 
 
 Player, target, focus and target-of-target castbars with latency, class colours, spell icons and a shield for casts you can't interrupt. Size, colour and anchor each one separately.
 
-<p align="center"><img src="images/castbars.png" width="700" alt="Castborn castbars"></p>
+<p align="center"><img src="images/castbars.png" width="687" alt="Castborn castbar casting Holy Light"></p>
 
 ### Cooldowns, at a glance
 
 Track the abilities and trinkets that matter, with a ready glow when they come back. On Forever, Castborn also puts countdown numbers on your action bars, colour-coded by time left (white, then yellow under a minute, red under five seconds), and plays a pulse, burst or flash when a cooldown finishes. It works with Blizzard's bars and Bartender4.
+
+<p align="center"><img src="images/cooldowntext.png" width="289" alt="Cooldown numbers on action buttons, coloured by time left"></p>
 
 <p align="center"><img src="images/cooldownstrinkets.png" width="700" alt="Cooldown and trinket tracking"></p>
 
@@ -71,11 +66,13 @@ Track the abilities and trinkets that matter, with a ready glow when they come b
 
 Main hand, off hand and ranged swing bars with a glowing spark, a flash when each swing lands, and a dimmed bar when your target is out of range. Haste changes and weapon swaps are handled mid-swing.
 
+<p align="center"><img src="images/swing.png" width="328" alt="Main hand, off hand and ranged swing bars"></p>
+
 ### Reminders
 
 The Armour Reminder flags a missing self-buff (mage and warlock armours, Inner Fire, paladin blessings, auras and Righteous Fury), and the Seal Tracker shows your active seal with its time left.
 
-<p align="center"><img src="images/armour.png" width="420" alt="Armour reminder"></p>
+<p align="center"><img src="images/reminders.png" width="644" alt="Seal tracker counting down, with two armour reminders"></p>
 
 ## More from TBC Anniversary
 
