@@ -229,6 +229,12 @@ describe("APICheck", function()
                 APICheck:Run().events["UNIT_SPELLCAST_SUCCEEDED(player) spellID [combat]"])
         end)
 
+        it("records the PLAYER_SWING payload, which has no unit argument", function()
+            _G.InCombatLockdown = function() return true end
+            APICheck:OnEvent("PLAYER_SWING", 2.6, 0)
+            assert.are.equal("number number", APICheck:Run().events["PLAYER_SWING payload [combat]"])
+        end)
+
         it("counts each player UNIT_AURA payload shape in combat", function()
             _G.InCombatLockdown = function() return true end
             local key = "UNIT_AURA(player) payload {isFullUpdate=boolean} [combat]"

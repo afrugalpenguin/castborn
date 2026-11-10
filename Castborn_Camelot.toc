@@ -31,6 +31,8 @@ Modules/ArmorTracker.lua
 Modules/ArmorTracker_Forever.lua
 Modules/SealTracker.lua
 Modules/SealTracker_Forever.lua
+Modules/SwingTimer.lua
+Modules/SwingTimer_Forever.lua
 
 Systems/WhatsNew.lua
 Systems/Options.lua
