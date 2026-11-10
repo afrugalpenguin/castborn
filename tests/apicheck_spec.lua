@@ -372,6 +372,34 @@ describe("APICheck", function()
             assert.matches("^error: .*not allowed", APICheck:TryCurve(duration, false))
         end)
 
+        it("passes the remaining time straight to SetFormattedText", function()
+            local duration = { GetRemainingDuration = function() return 3.2 end }
+            assert.matches("^ok, text ", APICheck:TryFormattedText(duration))
+        end)
+
+        it("reports a SetFormattedText fallback error instead of raising it", function()
+            local duration = { GetRemainingDuration = function() error("secret refused") end }
+            assert.matches("^error: .*secret refused", APICheck:TryFormattedText(duration))
+        end)
+
+        it("lists the text binding methods and records what the binding computed", function()
+            local calls = {}
+            local binding = setmetatable({}, { __index = function(_, name)
+                if name == "GetFormattedText" then return function() return "2.9" end end
+                if name == "SetTextFormat" or name == "Enable" or name == "IsEnabled" then return nil end
+                return function() calls[name] = true end
+            end })
+            _G.C_DurationUtil = { CreateDurationTextBinding = function() return binding end }
+            assert.are.equal("ok", APICheck:TryTextBinding({}))
+            assert.is_true(calls.SetUpdateInterval)
+            assert.is_true(calls.SetEnabled)
+            local events = APICheck:Run().events
+            assert.are.equal("SetFontString,SetDuration,SetFormatter,SetUpdateInterval,SetEnabled,GetFormattedText",
+                events["Duration text binding methods"])
+            APICheck:RecordBoundText("2s")
+            assert.are.equal("string '2.9'", APICheck:Run().events["Duration text binding GetFormattedText 2s"])
+        end)
+
         it("reports missing curve and text binding APIs", function()
             assert.are.equal("missing", APICheck:TryCurve({}, true))
             assert.are.equal("missing", APICheck:TryTextBinding({}))

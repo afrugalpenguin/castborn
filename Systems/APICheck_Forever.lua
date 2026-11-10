@@ -76,13 +76,30 @@ end
 
 -- Rendering probes (issue #236). Once per combat, the first cast with a cooldown duration
 -- tries each secret-safe display path the graphics research found, and records what happened.
+-- Set up like the GCD watcher, which already relies on OnCooldownDone: visible, nothing drawn.
+-- The first probe used alpha 0 and the callback never fired (#238).
 local renderCooldown = CreateFrame("Cooldown", nil, UIParent)
 renderCooldown:SetSize(1, 1)
 renderCooldown:SetPoint("CENTER")
-renderCooldown:SetAlpha(0)
+renderCooldown:SetDrawSwipe(false)
+renderCooldown:SetDrawEdge(false)
+renderCooldown:SetDrawBling(false)
 renderCooldown:SetScript("OnCooldownDone", function() APICheck:OnRenderCooldownDone() end)
 local renderTexture = probeBar:CreateTexture()
 local renderText = probeBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+local fallbackText = probeBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+
+-- Text binding methods worth knowing about; the report lists which exist
+local bindingMethods = {
+    "SetFontString", "SetDuration", "SetFormatter", "SetTextFormat", "SetUpdateInterval",
+    "SetEnabled", "Enable", "IsEnabled", "GetFormattedText",
+}
+
+local function DescribeText(self, ok, text)
+    if not ok then return "error: " .. tostring(text) end
+    if type(text) == "string" and not isSecret(text) then return "string '" .. text .. "'" end
+    return self:Describe(text)
+end
 
 function APICheck:OnRenderCooldownDone()
     self.events[CombatKey("Cooldown OnCooldownDone")] = "fired"
@@ -112,35 +129,50 @@ function APICheck:TryCurve(duration, colour)
     return "ok " .. desc
 end
 
-function APICheck:RecordBoundText()
-    local ok, text = pcall(renderText.GetText, renderText)
-    local desc
-    if not ok then
-        desc = "error: " .. tostring(text)
-    elseif type(text) == "string" and not isSecret(text) then
-        desc = "string '" .. text .. "'"
-    else
-        desc = self:Describe(text)
+function APICheck:RecordBoundText(label)
+    local key = "Duration text binding text" .. (label and (" " .. label) or "")
+    self.events[CombatKey(key)] = DescribeText(self, pcall(renderText.GetText, renderText))
+    local binding = self.textBinding
+    if binding and binding.GetFormattedText then
+        self.events[CombatKey("Duration text binding GetFormattedText" .. (label and (" " .. label) or ""))] =
+            DescribeText(self, pcall(binding.GetFormattedText, binding))
     end
-    self.events[CombatKey("Duration text binding text")] = desc
 end
 
--- Bind a font string to the duration; the text is read back half a second later
+-- Bind a font string to the duration; the text is read back after 0.5s and 2s
 function APICheck:TryTextBinding(duration)
     if not (C_DurationUtil and C_DurationUtil.CreateDurationTextBinding) then return "missing" end
     local ok, err = pcall(function()
         local binding = C_DurationUtil.CreateDurationTextBinding()
+        local present = {}
+        for _, name in ipairs(bindingMethods) do
+            if binding[name] then present[#present + 1] = name end
+        end
+        self.events["Duration text binding methods"] = table.concat(present, ",")
         binding:SetFontString(renderText)
         if C_StringUtil and C_StringUtil.CreateSecondsFormatter then
             binding:SetFormatter(C_StringUtil.CreateSecondsFormatter())
         end
+        if binding.SetUpdateInterval then binding:SetUpdateInterval(0.1) end
         binding:SetDuration(duration)
         if binding.SetEnabled then binding:SetEnabled(true) elseif binding.Enable then binding:Enable() end
         self.textBinding = binding  -- keep it alive until the text is read
     end)
     if not ok then return "error: " .. tostring(err) end
-    if C_Timer then C_Timer.After(0.5, function() self:RecordBoundText() end) end
+    if C_Timer then
+        C_Timer.After(0.5, function() self:RecordBoundText("0.5s") end)
+        C_Timer.After(2, function() self:RecordBoundText("2s") end)
+    end
     return "ok"
+end
+
+-- The fallback for countdown text: pass the (secret) remaining time straight to SetFormattedText
+function APICheck:TryFormattedText(duration)
+    local ok, err = pcall(function()
+        fallbackText:SetFormattedText("%.1f", duration:GetRemainingDuration())
+    end)
+    if not ok then return "error: " .. tostring(err) end
+    return "ok, text " .. DescribeText(self, pcall(fallbackText.GetText, fallbackText))
 end
 
 function APICheck:ProbeRendering(duration)
@@ -149,6 +181,7 @@ function APICheck:ProbeRendering(duration)
     self.events[CombatKey("Curve colour into SetVertexColor")] = self:TryCurve(duration, true)
     self.events[CombatKey("Curve number into SetAlpha")] = self:TryCurve(duration, false)
     self.events[CombatKey("Duration text binding")] = self:TryTextBinding(duration)
+    self.events[CombatKey("SetFormattedText with remaining time")] = self:TryFormattedText(duration)
 end
 
 -- The spell ID may be secret; GetSpellCooldownDuration then errors inside pcall and is skipped
@@ -233,6 +266,8 @@ APICheck.names = {
     "UnitIsUnit", "C_UnitAuras.GetAuraDuration", "C_UnitAuras.GetAuraDataByAuraInstanceID",
     "BuffIconCooldownViewer", "BuffBarCooldownViewer", "EssentialCooldownViewer",
     "C_SwingTimer.EnableRangeCheck", "C_SwingTimer.IsTargetWithinSwingRange",
+    "C_SpellActivationOverlay.IsSpellOverlayed",
+    "C_DurationUtil.CreateDurationTextBinding", "C_StringUtil.CreateSecondsFormatter",
 }
 
 -- Tables whose fields are listed in the report (enum names the Forever ports need)
