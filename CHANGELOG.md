@@ -1,5 +1,14 @@
 # Changelog
 
+**v8.1.0**
+
+- The What's New window, Test Mode and Grid panels now match the gilded options window
+- The changelog (in What's New and on the Changelog page) is easier to read, with New, Changed and Fixed sections
+- Drag labels on unlocked frames are now gold plates
+- The tutorial has been overhauled: a gilded panel that fits each step, progress markers, a gold highlight around each frame, rewritten steps, and Open Options and Test Mode buttons at the end
+- On Forever, the tutorial now covers Cooldown Text
+- Fixed the What's New text stacking on top of itself when the window was opened again
+
 **v8.0.0**
 
 - A completely redesigned options window: a dark, gilded "book of settings" with cut-corner controls, a gold bookmark ribbon for the page you're on, and a title and short description on every page

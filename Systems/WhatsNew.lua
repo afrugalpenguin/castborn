@@ -14,6 +14,19 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.1.0",
+        features = {
+            "The What's New window, Test Mode and Grid panels now match the gilded options window",
+            "A clearer changelog, with New, Changed and Fixed sections",
+            "Gold drag labels on unlocked frames",
+            "An overhauled tutorial: gilded panel, progress markers, gold highlights, rewritten steps, and Open Options and Test Mode buttons at the end",
+            "On Forever, the tutorial now covers Cooldown Text",
+        },
+        fixes = {
+            "What's New text no longer stacks on top of itself when the window is opened again",
+        },
+    },
+    {
         version = "8.0.0",
         features = {
             "A completely redesigned options window: a dark, gilded book of settings",
