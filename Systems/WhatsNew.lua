@@ -14,6 +14,17 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.9.0",
+        features = {
+            "Cooldown text on Forever: styled numbers on your action bars (including Bartender4) and Castborn icons",
+            "Cooldown numbers change colour as they count down: white, yellow under a minute, red under 5 seconds",
+            "Choose a Pulse, Burst or Flash effect for when a cooldown comes back (Options > Cooldown Text)",
+        },
+        fixes = {
+            "Armour reminder on Forever now clears when you rebuff in combat",
+        },
+    },
+    {
         version = "7.8.0",
         features = {
             "Swing timer on Forever, with a glowing spark, a flash on each swing and a soft fade",

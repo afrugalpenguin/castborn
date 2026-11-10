@@ -1,5 +1,12 @@
 # Changelog
 
+**v7.9.0**
+
+- Cooldown text on Forever: styled countdown numbers on your action bars (Blizzard's bars and Bartender4) and on Castborn's cooldown and item icons, scaled to each button, with no number on the GCD
+- Cooldown numbers change colour as they count down: white, then yellow under a minute, then red under 5 seconds (colours can be changed)
+- Choose an effect for when a cooldown comes back: Pulse, Burst or Flash, with a Preview button, in the new Cooldown Text options page
+- Fixed the armour reminder on Forever staying up after you rebuff in combat
+
 **v7.8.0**
 
 - Swing timer on Forever: main-hand, off-hand and ranged bars driven by the game's own swing event, with a glowing spark, a flash when each swing lands and a soft fade when it ends
