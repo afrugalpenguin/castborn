@@ -265,6 +265,32 @@ local function CreateColorPicker(parent, label, dbTable, dbKey, onChange)
         local c = dbTable[dbKey] or {0.1, 0.1, 0.1, 0.8}
         local r, g, b, a = c[1], c[2], c[3], c[4] or 1
 
+        -- Forever's modern client has no SetColorRGB or OpacitySliderFrame; it takes an info
+        -- table, and opacity there is the alpha itself. TBC keeps the path below.
+        if not ColorPickerFrame.SetColorRGB and ColorPickerFrame.SetupColorPickerAndShow then
+            local function SetColor()
+                local nr, ng, nb = ColorPickerFrame:GetColorRGB()
+                dbTable[dbKey] = {nr, ng, nb, ColorPickerFrame:GetColorAlpha()}
+                UpdateSwatch()
+                if onChange then onChange(dbTable[dbKey]) end
+            end
+            -- Open on the next frame: the picker closes on any GLOBAL_MOUSE_DOWN outside itself,
+            -- and the click that opened it could otherwise arrive after it is shown
+            C_Timer.After(0, function()
+                ColorPickerFrame:SetupColorPickerAndShow({
+                    r = r, g = g, b = b, opacity = a, hasOpacity = true,
+                    swatchFunc = SetColor,
+                    opacityFunc = SetColor,
+                    cancelFunc = function()
+                        dbTable[dbKey] = {r, g, b, a}
+                        UpdateSwatch()
+                        if onChange then onChange(dbTable[dbKey]) end
+                    end,
+                })
+            end)
+            return
+        end
+
         ColorPickerFrame:SetColorRGB(r, g, b)
         ColorPickerFrame.hasOpacity = true
         ColorPickerFrame.opacity = 1 - a
