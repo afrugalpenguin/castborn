@@ -1,6 +1,6 @@
 --[[
     Castborn - GUI Options Panel
-    WeakAuras-inspired style
+    Gilded Grimoire style; palette, fonts and the chamfered box come from Systems/Theme.lua
 ]]
 
 local Options = {}
@@ -10,30 +10,29 @@ local Theme = Castborn.Theme
 local SIDEBAR_WIDTH = 168
 
 --------------------------------------------------------------------------------
--- Style Constants (WeakAuras-inspired)
+-- Style Constants
 --------------------------------------------------------------------------------
 
+-- Older page code colours text with these; they map onto the Gilded palette
 local C = {
-    -- Backgrounds
-    bgMain = {0.1, 0.1, 0.1, 0.95},
-    bgSection = {0.15, 0.15, 0.15, 1},
-    bgInput = {0.2, 0.2, 0.2, 1},
-    bgHighlight = {0.25, 0.25, 0.25, 1},
-
-    -- Borders
-    border = {0.4, 0.4, 0.4, 1},
-    borderDark = {0.25, 0.25, 0.25, 1},
-
-    -- Text
-    gold = {1, 0.82, 0, 1},           -- WeakAuras gold
-    white = {1, 1, 1, 1},
-    grey = {0.7, 0.7, 0.7, 1},
-    darkGrey = {0.5, 0.5, 0.5, 1},
-
-    -- Accent
-    accent = {0.3, 0.6, 1, 1},        -- Blue for active states
-    accentDim = {0.2, 0.4, 0.7, 0.5},
+    bgInput = { Theme:Color("inputBg") },
+    borderDark = { Theme:Color("rule") },
+    gold = { Theme:Color("heading") },
+    white = { Theme:Color("title") },
+    grey = { Theme:Color("muted") },
+    darkGrey = { Theme:Color("navText") },
+    accent = { Theme:Color("accent") },
 }
+
+-- Font objects for labels and notes that pages create directly
+local function MakeFont(name, role, size)
+    local font = CreateFont(name)
+    Theme:Font(font, role, size)
+    return font
+end
+MakeFont("CastbornOptionsText", "body", 14)
+MakeFont("CastbornOptionsSmall", "body", 12):SetTextColor(Theme:Color("muted"))
+MakeFont("CastbornOptionsLarge", "heading", 19)
 
 local LOGO_PATH = "Interface\\Icons\\Spell_Arcane_Arcane04"
 
@@ -100,52 +99,70 @@ local pageSubtitles = {
 -- UI Components
 --------------------------------------------------------------------------------
 
--- Section header (gold text with line)
+-- Section heading: serif gold text with a quiet rule running to the right
 local function CreateHeader(parent, text)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetHeight(24)
 
-    local label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local label = frame:CreateFontString(nil, "OVERLAY")
+    Theme:Font(label, "heading", 19)
     label:SetPoint("LEFT", 0, 0)
     label:SetText(text)
-    label:SetTextColor(unpack(C.gold))
 
     local line = frame:CreateTexture(nil, "ARTWORK")
     line:SetHeight(1)
-    line:SetPoint("LEFT", label, "RIGHT", 8, 0)
+    line:SetPoint("LEFT", label, "RIGHT", 10, 0)
     line:SetPoint("RIGHT", frame, "RIGHT", 0, 0)
-    line:SetColorTexture(C.gold[1], C.gold[2], C.gold[3], 0.3)
+    line:SetColorTexture(Theme:Color("divider"))
 
     return frame
 end
 
--- Group box (bordered container)
+-- Group box: a quiet chamfered panel
 local function CreateGroup(parent, title, height)
-    local frame = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", nil, parent)
     frame:SetHeight(height or 100)
-    frame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    frame:SetBackdropColor(unpack(C.bgSection))
-    frame:SetBackdropBorderColor(unpack(C.borderDark))
+    Theme:Chamfer(frame, { cut = 6, fill = "navA", edge = "divider" })
 
     if title then
-        local label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        label:SetPoint("TOPLEFT", 8, 12)
+        local label = frame:CreateFontString(nil, "OVERLAY")
+        Theme:Font(label, "heading", 16)
+        label:SetPoint("TOPLEFT", 8, 14)
         label:SetText(title)
-        label:SetTextColor(unpack(C.gold))
     end
 
     return frame
 end
 
--- Button (WoW-style)
-local function CreateButton(parent, text, width, onClick)
-    local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    btn:SetSize(width or 100, 22)
+-- Buttons: secondary (dark plate, quiet gold edge) unless a variant is given:
+-- "primary" (solid gold) or "danger" (dark red edge, for deleting)
+local BUTTON_STYLES = {
+    primary = { fill = "ribbonB", hoverFill = "accent", text = "onAccent" },
+    secondary = { fill = "raised", edge = "rule", hoverEdge = "accent", text = "text" },
+    danger = { fill = "dangerFill", edge = "dangerEdge", hoverEdge = "dangerText", text = "dangerText" },
+}
+
+local function CreateButton(parent, text, width, onClick, variant)
+    local style = BUTTON_STYLES[variant or "secondary"]
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetSize(width or 100, 24)
+    Theme:Chamfer(btn, { cut = 6, fill = style.fill, edge = style.edge })
+
+    local label = btn:CreateFontString(nil, "OVERLAY")
+    Theme:Font(label, "strong", 13)
+    label:SetTextColor(Theme:Color(style.text))
+    label:SetPoint("CENTER", 0, 0)
+    btn:SetFontString(label)
     btn:SetText(text)
+
+    btn:SetScript("OnEnter", function(self)
+        Theme:SetChamferColors(self, style.hoverFill or style.fill, style.hoverEdge or style.edge)
+    end)
+    btn:SetScript("OnLeave", function(self)
+        Theme:SetChamferColors(self, style.fill, style.edge)
+    end)
+    btn:SetScript("OnDisable", function(self) self:SetAlpha(0.45) end)
+    btn:SetScript("OnEnable", function(self) self:SetAlpha(1) end)
     btn:SetScript("OnClick", function(self)
         if onClick then onClick(self) end
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
@@ -153,24 +170,52 @@ local function CreateButton(parent, text, width, onClick)
     return btn
 end
 
--- Checkbox (WoW-style)
+-- Checkbox: a small chamfered box with a gold tick; the label is part of the click area
 local function CreateCheckbox(parent, label, dbTable, dbKey, onChange)
-    local frame = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
+    local frame = CreateFrame("CheckButton", nil, parent)
     frame:SetSize(26, 26)
 
-    frame.text = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    frame.text:SetPoint("LEFT", frame, "RIGHT", 2, 0)
-    frame.text:SetText(label)
+    local box = CreateFrame("Frame", nil, frame)
+    box:SetSize(18, 18)
+    box:SetPoint("CENTER")
+    Theme:Chamfer(box, { cut = 4 })
 
-    if dbTable and dbKey then
-        frame:SetChecked(dbTable[dbKey])
+    local tick = box:CreateTexture(nil, "OVERLAY")
+    tick:SetTexture(Theme.media.tick)
+    tick:SetVertexColor(Theme:Color("heading"))
+    tick:SetSize(14, 14)
+    tick:SetPoint("CENTER")
+
+    frame.text = frame:CreateFontString(nil, "OVERLAY")
+    Theme:Font(frame.text, "body", 14)
+    frame.text:SetPoint("LEFT", frame, "RIGHT", 4, 0)
+    frame.text:SetText(label)
+    frame:SetHitRectInsets(0, -(frame.text:GetStringWidth() + 8), 0, 0)
+
+    local function Refresh(self, hover)
+        local on = self:GetChecked() and true or false
+        Theme:SetChamferColors(box, on and "knob" or "inputBg", (hover or on) and "accent" or "rule")
+        tick:SetShown(on)
+        self.text:SetTextColor(Theme:Color((hover or on) and "text" or "navText"))
     end
 
+    -- Callers set the state directly too, so keep the look in step with it
+    local setChecked = frame.SetChecked
+    frame.SetChecked = function(self, checked)
+        setChecked(self, checked)
+        Refresh(self)
+    end
+
+    frame:SetChecked(dbTable and dbKey and dbTable[dbKey])
+
+    frame:SetScript("OnEnter", function(self) Refresh(self, true) end)
+    frame:SetScript("OnLeave", function(self) Refresh(self) end)
     frame:SetScript("OnClick", function(self)
         local checked = self:GetChecked() and true or false
         if dbTable and dbKey then
             dbTable[dbKey] = checked
         end
+        Refresh(self, true)
         if onChange then onChange(checked) end
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
     end)
@@ -182,17 +227,18 @@ local function CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step,
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(200, 50)
 
-    local labelText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local labelText = frame:CreateFontString(nil, "OVERLAY")
+    Theme:Font(labelText, "body", 14)
     labelText:SetPoint("TOPLEFT", 0, 0)
     labelText:SetText(label)
-    labelText:SetTextColor(unpack(C.grey))
 
-    local valueText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    local valueText = frame:CreateFontString(nil, "OVERLAY")
+    Theme:Font(valueText, "strong", 14)
     valueText:SetPoint("TOPRIGHT", 0, 0)
 
-    local slider = CreateFrame("Slider", nil, frame, "BackdropTemplate")
-    slider:SetPoint("TOPLEFT", 0, -18)
-    slider:SetPoint("TOPRIGHT", 0, -18)
+    local slider = CreateFrame("Slider", nil, frame)
+    slider:SetPoint("TOPLEFT", 0, -20)
+    slider:SetPoint("TOPRIGHT", 0, -20)
     slider:SetHeight(18)
     slider:SetOrientation("HORIZONTAL")
     slider:SetMinMaxValues(minVal, maxVal)
@@ -200,39 +246,27 @@ local function CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step,
     slider:SetObeyStepOnDrag(true)
     slider:EnableMouse(true)
 
-    -- Track background with subtle rounded look
-    slider:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-        insets = { left = 1, right = 1, top = 1, bottom = 1 },
-    })
-    slider:SetBackdropColor(0.12, 0.12, 0.12, 1)
-    slider:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+    -- A hairline track that fills gold up to the value
+    local track = slider:CreateTexture(nil, "BACKGROUND")
+    track:SetHeight(2)
+    track:SetPoint("LEFT", 0, 0)
+    track:SetPoint("RIGHT", 0, 0)
+    track:SetColorTexture(Theme:Color("rule"))
 
-    -- Fill bar (shows progress)
-    local fill = slider:CreateTexture(nil, "ARTWORK", nil, 1)
-    fill:SetHeight(6)
-    fill:SetPoint("LEFT", 4, 0)
-    fill:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], 0.6)
+    local fill = slider:CreateTexture(nil, "ARTWORK")
+    fill:SetHeight(2)
+    fill:SetPoint("LEFT", 0, 0)
+    fill:SetColorTexture(Theme:Color("accent"))
     slider.fill = fill
 
-    -- Thumb texture - use WoW's slider thumb for better look
+    -- Diamond knob, brighter while hovered
     local thumb = slider:CreateTexture(nil, "OVERLAY")
-    thumb:SetSize(16, 16)
-    thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+    thumb:SetTexture(Theme.media.diamond)
+    thumb:SetVertexColor(Theme:Color("heading"))
+    thumb:SetSize(14, 14)
     slider:SetThumbTexture(thumb)
-
-    -- Min/max labels
-    local minLabel = slider:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    minLabel:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 2, -2)
-    minLabel:SetText(minVal)
-    minLabel:SetTextColor(unpack(C.darkGrey))
-
-    local maxLabel = slider:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    maxLabel:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", -2, -2)
-    maxLabel:SetText(maxVal)
-    maxLabel:SetTextColor(unpack(C.darkGrey))
+    slider:SetScript("OnEnter", function() thumb:SetVertexColor(Theme:Color("title")) end)
+    slider:SetScript("OnLeave", function() thumb:SetVertexColor(Theme:Color("heading")) end)
 
     local currentValue = (dbTable and dbKey and dbTable[dbKey]) or minVal
     slider:SetValue(currentValue)
@@ -243,8 +277,7 @@ local function CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step,
         local range = maxVal - minVal
         if range > 0 then
             local pct = (value - minVal) / range
-            local trackWidth = slider:GetWidth() - 8
-            fill:SetWidth(math.max(1, trackWidth * pct))
+            fill:SetWidth(math.max(1, slider:GetWidth() * pct))
         end
     end
 
@@ -273,22 +306,22 @@ local function CreateColorPicker(parent, label, dbTable, dbKey, onChange)
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetSize(200, 26)
 
-    local labelText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local labelText = frame:CreateFontString(nil, "OVERLAY")
+    Theme:Font(labelText, "body", 14)
     labelText:SetPoint("LEFT", 0, 0)
     labelText:SetText(label)
-    labelText:SetTextColor(unpack(C.grey))
 
+    -- Gilt frame: a chamfered gold-edged plate with the colour set inside it
     local swatch = CreateFrame("Button", nil, frame)
-    swatch:SetSize(20, 20)
-    swatch:SetPoint("LEFT", labelText, "RIGHT", 8, 0)
-
-    local swatchBg = swatch:CreateTexture(nil, "BACKGROUND")
-    swatchBg:SetAllPoints()
-    swatchBg:SetColorTexture(0.1, 0.1, 0.1, 1)
+    swatch:SetSize(26, 26)
+    swatch:SetPoint("LEFT", labelText, "RIGHT", 10, 0)
+    Theme:Chamfer(swatch, { cut = 4, fill = "inputBg", edge = "accent" })
+    swatch:SetScript("OnEnter", function(self) Theme:SetChamferColors(self, "knob", "heading") end)
+    swatch:SetScript("OnLeave", function(self) Theme:SetChamferColors(self, "inputBg", "accent") end)
 
     local swatchColor = swatch:CreateTexture(nil, "ARTWORK")
-    swatchColor:SetPoint("TOPLEFT", 1, -1)
-    swatchColor:SetPoint("BOTTOMRIGHT", -1, 1)
+    swatchColor:SetPoint("TOPLEFT", 5, -5)
+    swatchColor:SetPoint("BOTTOMRIGHT", -5, 5)
     swatch.colorTex = swatchColor
 
     local function UpdateSwatch()
@@ -359,8 +392,137 @@ local function CreateColorPicker(parent, label, dbTable, dbKey, onChange)
     return frame
 end
 
+-- Scrollbars on long pages: the template's arrows and track hidden, a slim gold thumb instead
+local function SkinScrollBar(scrollFrame)
+    local bar = scrollFrame.ScrollBar or (scrollFrame:GetName() and _G[scrollFrame:GetName() .. "ScrollBar"])
+    if not bar then return end
+    for _, key in ipairs({ "ScrollUpButton", "ScrollDownButton" }) do
+        local arrow = bar[key] or (bar:GetName() and _G[bar:GetName() .. key])
+        if arrow then
+            arrow:SetAlpha(0)
+            arrow:EnableMouse(false)
+        end
+    end
+    for _, region in ipairs({ bar:GetRegions() }) do
+        if region:IsObjectType("Texture") and region ~= bar:GetThumbTexture() then
+            region:SetAlpha(0)
+        end
+    end
+    local rail = bar:CreateTexture(nil, "BACKGROUND")
+    rail:SetWidth(1)
+    rail:SetPoint("TOP", 0, 0)
+    rail:SetPoint("BOTTOM", 0, 0)
+    rail:SetColorTexture(Theme:Color("divider"))
+    local thumb = bar:GetThumbTexture()
+    if thumb then
+        thumb:SetColorTexture(Theme:Color("rule"))
+        thumb:SetSize(4, 36)
+    end
+end
+
+-- UIDropDownMenuTemplate: the template's art hidden behind a chamfered box and a gold chevron.
+-- The pop-up list is Blizzard's shared menu and keeps its own look.
+local function SkinDropdown(dropdown)
+    for _, key in ipairs({ "Left", "Middle", "Right" }) do
+        local part = dropdown[key] or _G[(dropdown:GetName() or "") .. key]
+        if part then part:SetAlpha(0) end
+    end
+    local box = CreateFrame("Frame", nil, dropdown)
+    box:SetFrameLevel(math.max(0, dropdown:GetFrameLevel() - 1))
+    box:SetPoint("LEFT", dropdown, "LEFT", 16, 2)
+    local arrow = dropdown.Button or _G[(dropdown:GetName() or "") .. "Button"]
+    if arrow then
+        box:SetPoint("RIGHT", arrow, "RIGHT", 2, 0)
+        for _, setter in ipairs({ "SetNormalTexture", "SetPushedTexture", "SetDisabledTexture", "SetHighlightTexture" }) do
+            arrow[setter](arrow, Theme.media.chevron)
+        end
+        for _, getter in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture" }) do
+            local tex = arrow[getter](arrow)
+            if tex then
+                tex:ClearAllPoints()
+                tex:SetPoint("CENTER")
+                tex:SetSize(12, 12)
+                tex:SetVertexColor(Theme:Color("accent"))
+            end
+        end
+        local glowTex = arrow:GetHighlightTexture()
+        if glowTex then
+            glowTex:ClearAllPoints()
+            glowTex:SetPoint("CENTER")
+            glowTex:SetSize(12, 12)
+            glowTex:SetVertexColor(Theme:Color("title"))
+        end
+    else
+        box:SetPoint("RIGHT", dropdown, "RIGHT", -16, 2)
+    end
+    box:SetHeight(26)
+    Theme:Chamfer(box, { cut = 6, fill = "inputBg", edge = "rule" })
+    local text = dropdown.Text or _G[(dropdown:GetName() or "") .. "Text"]
+    if text then
+        Theme:Font(text, "body", 13)
+    end
+end
+
+-- Long lists: a quiet divider under each row
+local function StyleListRow(row)
+    local line = row:CreateTexture(nil, "BACKGROUND")
+    line:SetHeight(1)
+    line:SetPoint("BOTTOMLEFT", 0, 0)
+    line:SetPoint("BOTTOMRIGHT", 0, 0)
+    line:SetColorTexture(Theme:Color("divider"))
+end
+
+-- Row controls: gold chevrons to move a row up or down, a red cross to remove it
+local function CreateRowButton(parent, kind)
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetSize(18, 18)
+    local mark
+    if kind == "remove" then
+        mark = btn:CreateFontString(nil, "OVERLAY")
+        Theme:Font(mark, "strong", 16)
+        mark:SetText("×")
+        mark:SetPoint("CENTER", 0, 1)
+        mark:SetTextColor(Theme:Color("dangerText"))
+        btn:SetScript("OnEnter", function() mark:SetTextColor(Theme:Color("title")) end)
+        btn:SetScript("OnLeave", function() mark:SetTextColor(Theme:Color("dangerText")) end)
+    else
+        mark = btn:CreateTexture(nil, "ARTWORK")
+        mark:SetTexture(Theme.media.chevron)
+        mark:SetSize(12, 12)
+        mark:SetPoint("CENTER")
+        if kind == "up" then mark:SetTexCoord(0, 1, 1, 0) end
+        mark:SetVertexColor(Theme:Color("accent"))
+        btn:SetScript("OnEnter", function() mark:SetVertexColor(Theme:Color("title")) end)
+        btn:SetScript("OnLeave", function() mark:SetVertexColor(Theme:Color("accent")) end)
+    end
+    btn:SetScript("OnDisable", function(self) self:SetAlpha(0.25) end)
+    btn:SetScript("OnEnable", function(self) self:SetAlpha(1) end)
+    return btn
+end
+
+-- InputBoxTemplate: the template's art hidden behind a chamfered box
+local function SkinInput(editBox)
+    for _, key in ipairs({ "Left", "Middle", "Right" }) do
+        local part = editBox[key] or _G[(editBox:GetName() or "") .. key]
+        if part then part:SetAlpha(0) end
+    end
+    -- Kept within the box's own bounds (scrolling pages clip anything to the left of it);
+    -- the text is padded inward instead
+    local box = CreateFrame("Frame", nil, editBox)
+    box:SetFrameLevel(math.max(0, editBox:GetFrameLevel() - 1))
+    box:SetPoint("TOPLEFT", 0, 3)
+    box:SetPoint("BOTTOMRIGHT", 0, -3)
+    Theme:Chamfer(box, { cut = 6, fill = "inputBg", edge = "rule" })
+    editBox:SetTextInsets(8, 6, 0, 0)
+    Theme:Font(editBox, "body", 13)
+    editBox:SetTextColor(Theme:Color("title"))
+    editBox:HookScript("OnEditFocusGained", function() Theme:SetChamferColors(box, "inputBg", "accent") end)
+    editBox:HookScript("OnEditFocusLost", function() Theme:SetChamferColors(box, "inputBg", "rule") end)
+end
+
 local function CreateScrollableContent(parent)
     local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+    SkinScrollBar(scrollFrame)
     scrollFrame:SetPoint("TOPLEFT", 0, 0)
     scrollFrame:SetPoint("BOTTOMRIGHT", -24, 0)
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
@@ -897,13 +1059,14 @@ function Options:BuildLookFeel(parent)
     y = y - 36
 
     -- Bar Texture dropdown
-    local texLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local texLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     texLabel:SetPoint("TOPLEFT", 0, y)
     texLabel:SetText("Bar Texture")
     texLabel:SetTextColor(unpack(C.grey))
     y = y - 22
 
     local texDropdown = CreateFrame("Frame", "CastbornTextureDropdown", parent, "UIDropDownMenuTemplate")
+    SkinDropdown(texDropdown)
     texDropdown:SetPoint("TOPLEFT", -10, y)
     UIDropDownMenu_SetWidth(texDropdown, 150)
     UIDropDownMenu_SetText(texDropdown, CastbornDB.barTexture or "Blizzard")
@@ -966,13 +1129,14 @@ function Options:BuildLookFeel(parent)
     y = y - 36
 
     -- Bar Font dropdown
-    local fontLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local fontLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     fontLabel:SetPoint("TOPLEFT", 0, y)
     fontLabel:SetText("Bar Font")
     fontLabel:SetTextColor(unpack(C.grey))
     y = y - 22
 
     local fontDropdown = CreateFrame("Frame", "CastbornFontDropdown", parent, "UIDropDownMenuTemplate")
+    SkinDropdown(fontDropdown)
     fontDropdown:SetPoint("TOPLEFT", -10, y)
     UIDropDownMenu_SetWidth(fontDropdown, 150)
     UIDropDownMenu_SetText(fontDropdown, CastbornDB.barFont or "Arial Narrow")
@@ -1043,18 +1207,19 @@ function Options:BuildProfiles(parent)
 
     -- Character label
     local charKey = UnitName("player") .. "-" .. GetRealmName()
-    local charLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    local charLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     charLabel:SetPoint("TOPLEFT", 0, y)
     charLabel:SetText("Character: |cffFFCC00" .. charKey .. "|r")
     y = y - 26
 
     -- Current Profile dropdown
-    local dropdownLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local dropdownLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     dropdownLabel:SetPoint("TOPLEFT", 0, y)
     dropdownLabel:SetText("Current Profile:")
     dropdownLabel:SetTextColor(unpack(C.grey))
 
     local dropdown = CreateFrame("Frame", "CastbornProfileDropdown", parent, "UIDropDownMenuTemplate")
+    SkinDropdown(dropdown)
     dropdown:SetPoint("TOPLEFT", 90, y + 6)
     UIDropDownMenu_SetWidth(dropdown, 150)
 
@@ -1159,6 +1324,7 @@ function Options:BuildProfiles(parent)
     editBoxContainer:SetBackdropBorderColor(unpack(C.borderDark))
 
     local scrollFrame = CreateFrame("ScrollFrame", "CastbornProfileExportScroll", editBoxContainer, "UIPanelScrollFrameTemplate")
+    SkinScrollBar(scrollFrame)
     scrollFrame:SetPoint("TOPLEFT", 6, -6)
     scrollFrame:SetPoint("BOTTOMRIGHT", -26, 6)
 
@@ -1324,7 +1490,7 @@ function Options:BuildChangelog(parent)
 
     for i, entry in ipairs(changelog) do
         -- Version header
-        local versionHeader = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local versionHeader = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
         versionHeader:SetPoint("TOPLEFT", 0, contentY)
         versionHeader:SetWidth(contentWidth)
         versionHeader:SetJustifyH("LEFT")
@@ -1339,13 +1505,13 @@ function Options:BuildChangelog(parent)
 
         -- Features section
         if entry.features and #entry.features > 0 then
-            local featuresLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            local featuresLabel = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
             featuresLabel:SetPoint("TOPLEFT", 8, contentY)
             featuresLabel:SetText("|cff88ddffFeatures:|r")
             contentY = contentY - 14
 
             for _, feature in ipairs(entry.features) do
-                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
                 bullet:SetPoint("TOPLEFT", 16, contentY)
                 bullet:SetWidth(contentWidth - 24)
                 bullet:SetJustifyH("LEFT")
@@ -1358,13 +1524,13 @@ function Options:BuildChangelog(parent)
 
         -- Changes section
         if entry.changes and #entry.changes > 0 then
-            local changesLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            local changesLabel = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
             changesLabel:SetPoint("TOPLEFT", 8, contentY)
             changesLabel:SetText("|cffffcc00Changes:|r")
             contentY = contentY - 14
 
             for _, change in ipairs(entry.changes) do
-                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
                 bullet:SetPoint("TOPLEFT", 16, contentY)
                 bullet:SetWidth(contentWidth - 24)
                 bullet:SetJustifyH("LEFT")
@@ -1377,13 +1543,13 @@ function Options:BuildChangelog(parent)
 
         -- Fixes section
         if entry.fixes and #entry.fixes > 0 then
-            local fixesLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            local fixesLabel = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
             fixesLabel:SetPoint("TOPLEFT", 8, contentY)
             fixesLabel:SetText("|cff88ff88Fixes:|r")
             contentY = contentY - 14
 
             for _, fix in ipairs(entry.fixes) do
-                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
                 bullet:SetPoint("TOPLEFT", 16, contentY)
                 bullet:SetWidth(contentWidth - 24)
                 bullet:SetJustifyH("LEFT")
@@ -1485,7 +1651,7 @@ function moduleBuilders.buffs(parent, db, y)
     y = y - 60
 
     -- Grow Direction dropdown
-    local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local growLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     growLabel:SetPoint("TOPLEFT", 0, y)
     growLabel:SetText("Grow Direction:")
     growLabel:SetTextColor(unpack(C.grey))
@@ -1499,6 +1665,7 @@ function moduleBuilders.buffs(parent, db, y)
     }
 
     local growDropdown = CreateFrame("Frame", "CastbornProcGrowDropdown", parent, "UIDropDownMenuTemplate")
+    SkinDropdown(growDropdown)
     growDropdown:SetPoint("TOPLEFT", 90, y + 6)
     UIDropDownMenu_SetWidth(growDropdown, 140)
 
@@ -1555,7 +1722,7 @@ function moduleBuilders.cooldowns(parent, db, y)
     y = y - 36
 
     -- Grow Direction dropdown
-    local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local growLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     growLabel:SetPoint("TOPLEFT", 0, y)
     growLabel:SetText("Grow Direction:")
     growLabel:SetTextColor(unpack(C.grey))
@@ -1568,6 +1735,7 @@ function moduleBuilders.cooldowns(parent, db, y)
     }
 
     local growDropdown = CreateFrame("Frame", "CastbornCooldownGrowDropdown", parent, "UIDropDownMenuTemplate")
+    SkinDropdown(growDropdown)
     growDropdown:SetPoint("TOPLEFT", 90, y + 6)
     UIDropDownMenu_SetWidth(growDropdown, 140)
 
@@ -1661,6 +1829,7 @@ function moduleBuilders.cooldowns(parent, db, y)
             row:SetHeight(26)
             row:SetPoint("TOPLEFT", 0, listY)
             row:SetPoint("TOPRIGHT", 0, listY)
+            StyleListRow(row)
 
             -- Checkbox
             local CT = Castborn.CooldownTracker
@@ -1670,12 +1839,8 @@ function moduleBuilders.cooldowns(parent, db, y)
             cb:SetPoint("LEFT", 0, 0)
 
             -- Down arrow
-            local downBtn = CreateFrame("Button", nil, row)
-            downBtn:SetSize(14, 14)
+            local downBtn = CreateRowButton(row, "down")
             downBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
-            downBtn:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up")
-            downBtn:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Highlight")
-            downBtn:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Down")
             if i == total then
                 downBtn:SetAlpha(0.3)
                 downBtn:Disable()
@@ -1689,12 +1854,8 @@ function moduleBuilders.cooldowns(parent, db, y)
             end)
 
             -- Up arrow
-            local upBtn = CreateFrame("Button", nil, row)
-            upBtn:SetSize(14, 14)
+            local upBtn = CreateRowButton(row, "up")
             upBtn:SetPoint("RIGHT", downBtn, "LEFT", -2, 0)
-            upBtn:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Up")
-            upBtn:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Highlight")
-            upBtn:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-ScrollUpButton-Down")
             if i == 1 then
                 upBtn:SetAlpha(0.3)
                 upBtn:Disable()
@@ -1709,17 +1870,8 @@ function moduleBuilders.cooldowns(parent, db, y)
 
             -- Remove button for custom spells
             if spell.custom then
-                local removeBtn = CreateFrame("Button", nil, row)
-                removeBtn:SetSize(14, 14)
+                local removeBtn = CreateRowButton(row, "remove")
                 removeBtn:SetPoint("RIGHT", upBtn, "LEFT", -6, 0)
-
-                -- Red X text
-                local xText = removeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-                xText:SetPoint("CENTER", 0, 0)
-                xText:SetText("|cffff4444X|r")
-                xText:SetFont(xText:GetFont(), 12, "OUTLINE")
-
-                removeBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
                 removeBtn:SetScript("OnClick", function()
                     table.remove(db.trackedSpells, i)
                     BuildSpellList()
@@ -1733,24 +1885,23 @@ function moduleBuilders.cooldowns(parent, db, y)
         -- Custom spell input section
         local customY = listY - 10
 
-        local customLabel = spellListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local customLabel = spellListContainer:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
         customLabel:SetPoint("TOPLEFT", 0, customY)
         customLabel:SetText("Add Custom Spell ID")
         customY = customY - 20
 
         local inputBox = CreateFrame("EditBox", nil, spellListContainer, "InputBoxTemplate")
+        SkinInput(inputBox)
         inputBox:SetSize(120, 22)
         inputBox:SetPoint("TOPLEFT", 0, customY)
         inputBox:SetAutoFocus(false)
         inputBox:SetNumeric(true)
         inputBox:SetMaxLetters(6)
 
-        local addBtn = CreateFrame("Button", nil, spellListContainer, "UIPanelButtonTemplate")
-        addBtn:SetSize(60, 22)
-        addBtn:SetPoint("LEFT", inputBox, "RIGHT", 6, 0)
-        addBtn:SetText("Add")
+        local addBtn = CreateButton(spellListContainer, "Add", 60, nil, "primary")
+        addBtn:SetPoint("LEFT", inputBox, "RIGHT", 10, 0)
 
-        local statusText = spellListContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        local statusText = spellListContainer:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
         statusText:SetPoint("LEFT", addBtn, "RIGHT", 8, 0)
         statusText:SetText("")
 
@@ -1840,7 +1991,7 @@ function moduleBuilders.itemtracker(parent, db, y)
     y = y - 36
 
     -- Grow Direction dropdown
-    local growLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local growLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     growLabel:SetPoint("TOPLEFT", 0, y)
     growLabel:SetText("Grow Direction:")
     growLabel:SetTextColor(unpack(C.grey))
@@ -1853,6 +2004,7 @@ function moduleBuilders.itemtracker(parent, db, y)
     }
 
     local growDropdown = CreateFrame("Frame", "CastbornItemGrowDropdown", parent, "UIDropDownMenuTemplate")
+    SkinDropdown(growDropdown)
     growDropdown:SetPoint("TOPLEFT", 90, y + 6)
     UIDropDownMenu_SetWidth(growDropdown, 140)
 
@@ -1925,22 +2077,15 @@ function moduleBuilders.itemtracker(parent, db, y)
             row:SetHeight(26)
             row:SetPoint("TOPLEFT", 0, listY)
             row:SetPoint("TOPRIGHT", 0, listY)
+            StyleListRow(row)
 
             -- Checkbox
             local cb = CreateCheckbox(row, itemName, item, "enabled")
             cb:SetPoint("LEFT", 0, 0)
 
             -- Remove button
-            local removeBtn = CreateFrame("Button", nil, row)
-            removeBtn:SetSize(14, 14)
+            local removeBtn = CreateRowButton(row, "remove")
             removeBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
-
-            local xText = removeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            xText:SetPoint("CENTER", 0, 0)
-            xText:SetText("|cffff4444X|r")
-            xText:SetFont(xText:GetFont(), 12, "OUTLINE")
-
-            removeBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
             removeBtn:SetScript("OnClick", function()
                 table.remove(db.trackedItems, i)
                 BuildItemList()
@@ -1953,12 +2098,13 @@ function moduleBuilders.itemtracker(parent, db, y)
         -- Add item input section
         local customY = listY - 10
 
-        local customLabel = itemListContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local customLabel = itemListContainer:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
         customLabel:SetPoint("TOPLEFT", 0, customY)
         customLabel:SetText("Add Item |cff888888(ID or Drag from Bags)|r")
         customY = customY - 20
 
         local inputBox = CreateFrame("EditBox", nil, itemListContainer, "InputBoxTemplate")
+        SkinInput(inputBox)
         inputBox:SetSize(120, 22)
         inputBox:SetPoint("TOPLEFT", 0, customY)
         inputBox:SetAutoFocus(false)
@@ -1986,12 +2132,10 @@ function moduleBuilders.itemtracker(parent, db, y)
             self:SetFocus()
         end)
 
-        local addBtn = CreateFrame("Button", nil, itemListContainer, "UIPanelButtonTemplate")
-        addBtn:SetSize(60, 22)
-        addBtn:SetPoint("LEFT", inputBox, "RIGHT", 6, 0)
-        addBtn:SetText("Add")
+        local addBtn = CreateButton(itemListContainer, "Add", 60, nil, "primary")
+        addBtn:SetPoint("LEFT", inputBox, "RIGHT", 10, 0)
 
-        local statusText = itemListContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        local statusText = itemListContainer:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
         statusText:SetPoint("LEFT", addBtn, "RIGHT", 8, 0)
         statusText:SetText("")
 
@@ -2214,12 +2358,12 @@ function moduleBuilders.multidot(parent, db, y)
     y = y - 50
 
     -- Nameplate Indicators section
-    local npHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local npHeader = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     npHeader:SetPoint("TOPLEFT", 0, y)
     npHeader:SetText("|cff88ddffNameplate Indicators|r")
     y = y - 20
 
-    local npDesc = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    local npDesc = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
     npDesc:SetPoint("TOPLEFT", 0, y)
     npDesc:SetWidth(350)
     npDesc:SetJustifyH("LEFT")
@@ -2236,12 +2380,13 @@ function moduleBuilders.multidot(parent, db, y)
     npSizeSlider:SetPoint("TOPLEFT", 0, y)
 
     -- Position dropdown
-    local posLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local posLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     posLabel:SetPoint("TOPLEFT", 220, y)
     posLabel:SetText("Position:")
     posLabel:SetTextColor(unpack(C.grey))
 
     local posDropdown = CreateFrame("Frame", "CastbornNPIndicatorPosDropdown", parent, "UIDropDownMenuTemplate")
+    SkinDropdown(posDropdown)
     posDropdown:SetPoint("TOPLEFT", 270, y + 6)
     UIDropDownMenu_SetWidth(posDropdown, 90)
 
@@ -2284,12 +2429,13 @@ function moduleBuilders.armortracker(parent, db, y)
     local _, optClass = UnitClass("player")
     if optClass == "PALADIN" then
         y = y - 10
-        local blessLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local blessLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
         blessLabel:SetPoint("TOPLEFT", 0, y)
         blessLabel:SetText("Blessing to track:")
         blessLabel:SetTextColor(unpack(C.grey))
 
         local blessDropdown = CreateFrame("Frame", "CastbornBlessingDropdown", parent, "UIDropDownMenuTemplate")
+        SkinDropdown(blessDropdown)
         blessDropdown:SetPoint("TOPLEFT", 110, y + 6)
         UIDropDownMenu_SetWidth(blessDropdown, 140)
 
@@ -2333,7 +2479,7 @@ function moduleBuilders.armortracker(parent, db, y)
         UIDropDownMenu_SetText(blessDropdown, blessLabelMap[TrackedBlessing()])
         y = y - 40
 
-        local rfNote = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        local rfNote = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
         rfNote:SetPoint("TOPLEFT", 0, y)
         rfNote:SetText("Righteous Fury is tracked automatically when Improved Righteous Fury is talented.")
         rfNote:SetTextColor(0.6, 0.6, 0.6)
@@ -2413,7 +2559,7 @@ function moduleBuilders.cooldowntext(parent, db, y)
     iconsCB:SetPoint("TOPLEFT", 220, y)
     y = y - 30
 
-    local note = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    local note = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
     note:SetPoint("TOPLEFT", 0, y)
     note:SetWidth(420)
     note:SetJustifyH("LEFT")
@@ -2450,12 +2596,13 @@ function moduleBuilders.cooldowntext(parent, db, y)
     -- Finish effect (CooldownFinish_Forever.lua)
     local finish = Castborn.CooldownText and Castborn.CooldownText.Finish
     if finish then
-        local finishLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local finishLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
         finishLabel:SetPoint("TOPLEFT", 0, y)
         finishLabel:SetText("When a Cooldown Finishes:")
         finishLabel:SetTextColor(unpack(C.grey))
 
         local dropdown = CreateFrame("Frame", "CastbornCooldownFinishDropdown", parent, "UIDropDownMenuTemplate")
+        SkinDropdown(dropdown)
         dropdown:SetPoint("TOPLEFT", 160, y + 6)
         UIDropDownMenu_SetWidth(dropdown, 100)
         UIDropDownMenu_SetText(dropdown, finish.labels[db.finishEffect or "pulse"])
@@ -2772,15 +2919,15 @@ local function CreateInterfacePanel()
     logo:SetPoint("TOPLEFT", 16, -16)
     logo:SetTexture(LOGO_PATH)
 
-    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    local title = panel:CreateFontString(nil, "OVERLAY", "CastbornOptionsLarge")
     title:SetPoint("LEFT", logo, "RIGHT", 10, 0)
     title:SetText("|cffFFCC00Castborn|r")
 
-    local version = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    local version = panel:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
     version:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
     version:SetText("Version " .. (Castborn.version or "?"))
 
-    local desc = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    local desc = panel:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     desc:SetPoint("TOPLEFT", version, "BOTTOMLEFT", 0, -12)
     desc:SetWidth(500)
     desc:SetJustifyH("LEFT")
@@ -2796,7 +2943,7 @@ local function CreateInterfacePanel()
         Options:Show()
     end)
 
-    local hint = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    local hint = panel:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
     hint:SetPoint("TOPLEFT", openBtn, "BOTTOMLEFT", 0, -12)
     hint:SetText("Or type |cffFFCC00/cb|r in chat")
 

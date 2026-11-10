@@ -16,7 +16,7 @@ globals = {
 
 read_globals = {
     -- WoW Frame API
-    "CreateFrame",
+    "CreateFrame", "CreateFont",
     "UIParent",
     "WorldFrame",
     "GameTooltip",
