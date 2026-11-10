@@ -33,6 +33,7 @@ Modules/SealTracker.lua
 Modules/SealTracker_Forever.lua
 Modules/SwingTimer.lua
 Modules/SwingTimer_Forever.lua
+Modules/CooldownText_Forever.lua
 
 Systems/WhatsNew.lua
 Systems/Options.lua

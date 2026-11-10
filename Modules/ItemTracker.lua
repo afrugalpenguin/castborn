@@ -74,6 +74,7 @@ local function CreateItemFrame(parent, index)
     f.cooldown:SetHideCountdownNumbers(false)
     f.cooldown:EnableMouse(false)
     f.Cooldown = f.cooldown  -- Masque alias
+    Castborn:FireCallback("COOLDOWN_FRAME_CREATED", f.cooldown)  -- styled by CooldownText_Forever.lua
 
     -- Count text (bottom-right, like bag slots)
     f.count = f:CreateFontString(nil, "OVERLAY")

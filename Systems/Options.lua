@@ -49,6 +49,7 @@ local categories = {
     { id = "cooldowns", name = "Cooldowns" },
     { id = "itemtracker", name = "Items" },
     { id = "interrupt", name = "Interrupt" },
+    { id = "cooldowntext", name = "Cooldown Text", module = "CooldownText" },  -- Forever only
     { id = "totems", name = "Totems", class = "SHAMAN" },
     { id = "absorbs", name = "Absorbs", class = "MAGE" },
     { id = "armortracker", name = "Armour", classes = {"MAGE", "WARLOCK", "PRIEST", "PALADIN"} },
@@ -391,7 +392,8 @@ local function CreateOptionsFrame()
     for i, cat in ipairs(categories) do
         -- Skip class-restricted categories for other classes, and pages this build does not load
         if (cat.class and cat.class ~= playerClass) or (cat.classes and not tContains(cat.classes, playerClass))
-            or (cat.id and not Castborn:IsOptionAvailable(cat.id)) then
+            or (cat.id and not Castborn:IsOptionAvailable(cat.id))
+            or (cat.module and not Castborn[cat.module]) then
             -- Skip this category
         elseif cat.divider then
             -- Create a horizontal divider line
@@ -1324,6 +1326,7 @@ local moduleTitles = {
     absorbs = "Absorb Tracker",
     armortracker = "Armour Tracker",
     seals = "Seal Tracker",
+    cooldowntext = "Cooldown Text",
 }
 
 -- Per-module option builders. Each receives the content frame, the module's
@@ -2317,6 +2320,59 @@ function moduleBuilders.seals(parent, db, y)
         if Castborn.TestSealTracker then Castborn:TestSealTracker() end
     end)
     testBtn:SetPoint("TOPLEFT", 0, y)
+
+    return y
+end
+
+-- Forever only: the page is listed only when CooldownText_Forever.lua is loaded
+function moduleBuilders.cooldowntext(parent, db, y)
+    local function apply()
+        if Castborn.CooldownText then Castborn.CooldownText:Apply() end
+    end
+
+    local enableCB = CreateCheckbox(parent, "Enable Cooldown Text", db, "enabled", apply)
+    enableCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    local barsCB = CreateCheckbox(parent, "Action Bars", db, "actionBars", apply)
+    barsCB:SetPoint("TOPLEFT", 0, y)
+    local iconsCB = CreateCheckbox(parent, "Castborn Icons", db, "castbornIcons", apply)
+    iconsCB:SetPoint("TOPLEFT", 220, y)
+    y = y - 30
+
+    local note = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    note:SetPoint("TOPLEFT", 0, y)
+    note:SetWidth(420)
+    note:SetJustifyH("LEFT")
+    note:SetText("Action bar numbers turn on the game's \"cooldown numbers\" setting while enabled. Uses the Look & Feel font.")
+    note:SetTextColor(unpack(C.grey))
+    y = y - 30
+
+    local sizeSlider = CreateSlider(parent, "Text Size (% of button)", db, "textScale", 25, 70, 5, apply)
+    sizeSlider:SetPoint("TOPLEFT", 0, y)
+    local outlineCB = CreateCheckbox(parent, "Outline", db, "outline", apply)
+    outlineCB:SetPoint("TOPLEFT", 220, y - 14)
+    y = y - 60
+
+    local minSlider = CreateSlider(parent, "Hide Under (seconds)", db, "minDuration", 0, 5, 0.5, apply)
+    minSlider:SetPoint("TOPLEFT", 0, y)
+    local decimalsSlider = CreateSlider(parent, "Tenths Below (seconds)", db, "decimalsBelow", 0, 10, 1, apply)
+    decimalsSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+
+    local stagesCB = CreateCheckbox(parent, "Colour by Time Left", db, "colorStages", apply)
+    stagesCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 34
+
+    local longPicker = CreateColorPicker(parent, "1 minute or more", db, "longColor", apply)
+    longPicker:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+    local mediumPicker = CreateColorPicker(parent, "Under 1 minute", db, "mediumColor", apply)
+    mediumPicker:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+    local shortPicker = CreateColorPicker(parent, "Under 5 seconds", db, "shortColor", apply)
+    shortPicker:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
 
     return y
 end
