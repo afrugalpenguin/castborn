@@ -105,6 +105,39 @@ describe("Cooldown text on Forever", function()
         end)
     end)
 
+    describe("LibActionButton bars (Bartender4)", function()
+        local created, existing
+
+        before_each(function()
+            existing = { cooldown = fakeCooldown(40) }
+            local lab = {
+                buttonRegistry = { [existing] = true },
+                RegisterCallback = function(_, event, fn) created = { event = event, fn = fn } end,
+            }
+            _G.LibStub = function(name) if name == "LibActionButton-1.0" then return lab end end
+        end)
+
+        after_each(function() _G.LibStub = nil end)
+
+        it("registers the buttons that already exist", function()
+            CT:RegisterLibActionButtons()
+            assert.are.equal("actionbar", CT.entries[existing.cooldown].kind)
+        end)
+
+        it("registers buttons created later", function()
+            CT:RegisterLibActionButtons()
+            assert.are.equal("OnButtonCreated", created.event)
+            local later = { cooldown = fakeCooldown(40) }
+            created.fn("OnButtonCreated", later)
+            assert.is_not_nil(CT.entries[later.cooldown])
+        end)
+
+        it("does nothing without the library", function()
+            _G.LibStub = function() return nil end
+            assert.has_no.errors(function() CT:RegisterLibActionButtons() end)
+        end)
+    end)
+
     describe("countdown CVar", function()
         it("turns the action bar numbers on and remembers the old value", function()
             CT:UpdateCVar()
@@ -171,6 +204,13 @@ describe("Cooldown text on Forever", function()
             CT:Register(cd, "actionbar", { action = 3 })
             assert.has_no.errors(function() CT:RecolourAll() end)
             assert.are.same({ 1, 1, 1, 1 }, cd.fs.color)
+        end)
+
+        it("asks a LibActionButton button for its own duration", function()
+            local cd = fakeCooldown(40)
+            CT:Register(cd, "actionbar", { GetCooldownDuration = function() return duration end })
+            CT:RecolourAll()
+            assert.are.same({ 1, 0.3, 0.25, 1 }, cd.fs.color)
         end)
 
         it("uses the duration captured from a Castborn icon", function()

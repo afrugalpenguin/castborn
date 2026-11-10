@@ -126,6 +126,10 @@ end
 -- The duration object behind a cooldown's countdown, if one can be had
 function CooldownText:DurationFor(entry)
     if entry.kind == "actionbar" then
+        -- LibActionButton buttons (Bartender4) know their own duration
+        if entry.button and entry.button.GetCooldownDuration then
+            return entry.button:GetCooldownDuration()
+        end
         local action = entry.button and entry.button.action
         if type(action) ~= "number" or not (C_ActionBar and C_ActionBar.GetActionCooldownDuration) then
             return nil
@@ -204,6 +208,21 @@ function CooldownText:RegisterActionButtons()
     end
 end
 
+-- Bartender4 and other bar addons build their buttons with LibActionButton-1.0, which keeps a
+-- registry of every button and announces new ones
+function CooldownText:RegisterLibActionButtons()
+    local lab = LibStub and LibStub("LibActionButton-1.0", true)
+    if not lab then return end
+    for button in pairs(lab.buttonRegistry or {}) do
+        if button.cooldown then self:Register(button.cooldown, "actionbar", button) end
+    end
+    if lab.RegisterCallback then
+        lab.RegisterCallback(self, "OnButtonCreated", function(_, button)
+            if button.cooldown then self:Register(button.cooldown, "actionbar", button) end
+        end)
+    end
+end
+
 -- Blizzard shows action bar numbers only while this CVar is on. Remember the player's own
 -- setting and put it back when the feature is turned off. CVars are never touched in combat.
 function CooldownText:UpdateCVar()
@@ -247,6 +266,7 @@ end)
 CB:RegisterCallback("READY", function()
     CooldownText.readyStage = "started"
     CooldownText:RegisterActionButtons()
+    CooldownText:RegisterLibActionButtons()
     CooldownText.readyStage = "buttons registered"
     CooldownText.ready = true
     CooldownText:Apply()
