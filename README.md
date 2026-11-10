@@ -1,87 +1,82 @@
-# Castborn
-
 <p align="center">
-  <img src="images/logo_forever.png" width="360" alt="Castborn Forever">
-  <img src="images/logo.png" width="360" alt="Castborn for TBC Anniversary">
+  <img src="images/banner.png" width="800" alt="Castborn: castbars and combat tracking for WoW Forever and TBC Anniversary">
 </p>
 
 <p align="center">
   <a href="https://github.com/afrugalpenguin/Castborn/releases"><img src="https://img.shields.io/github/v/tag/afrugalpenguin/Castborn?label=version" alt="Version"></a>
   <a href="https://github.com/afrugalpenguin/Castborn/actions/workflows/luacheck.yml"><img src="https://github.com/afrugalpenguin/Castborn/actions/workflows/luacheck.yml/badge.svg" alt="Luacheck"></a>
-  <img src="https://img.shields.io/badge/WoW-TBC%20Classic-blue" alt="WoW TBC Classic">
   <img src="https://img.shields.io/badge/WoW-Forever-8a3fd1" alt="WoW Forever">
+  <img src="https://img.shields.io/badge/WoW-TBC%20Anniversary-blue" alt="WoW TBC Anniversary">
   <a href="https://www.curseforge.com/wow/addons/castborn"><img src="https://img.shields.io/curseforge/dt/1437587?label=downloads&color=orange" alt="CurseForge Downloads"></a>
-  <a href="https://github.com/afrugalpenguin/Castborn/issues"><img src="https://img.shields.io/github/issues/afrugalpenguin/Castborn" alt="Issues"></a>
 </p>
 
 <p align="center">
-  <b>A lightweight combat HUD for TBC Classic and WoW Forever</b><br>
-  Clean, minimalist, essential.
+  <b>Castbars, cooldowns and combat tracking in one addon.</b><br>
+  One download that runs on both WoW Forever and TBC Anniversary.
 </p>
 
 ---
 
-Castborn gives you everything you need to track casts, cooldowns, DoTs, and procs — all in one addon. No dependencies and no bloat.
+Castborn replaces a handful of addons with one: castbars, a GCD sweep, a swing timer, cooldown and item tracking, cooldown numbers on your action bars, and reminders for the buffs you forget. It sets itself up for your class, walks you through everything on first login, and stays out of the way.
 
-## Why Castborn?
+## One addon, two games
 
-- **All-in-one** — Replace 5+ addons with a single, cohesive package
-- **Lightweight** — Minimal memory footprint, no performance impact
-- **Just works** — Smart defaults for every class, guided setup for new users
-- **Fully customisable** — Move anything, resize anything, toggle anything
+The same files run on WoW Forever and TBC Anniversary. Forever hides some combat data from addons, so a few modules are TBC only, and some work slightly differently.
 
-## WoW Forever
+| Module | TBC | Forever | Notes on Forever |
+|---|:---:|:---:|---|
+| Castbars (player, target, focus, target of target) | Yes | Yes | No spark or latency overlay when the game hides a cast's timing |
+| GCD Indicator | Yes | Yes | |
+| Swing Timer | Yes | Yes | Main hand, off hand and ranged, with an out-of-range dim |
+| Cooldown Tracker | Yes | Yes | Short cooldowns can also get the ready glow |
+| Cooldown Text | | Yes | Styled numbers on your action bars (including Bartender4) and Castborn's icons |
+| Interrupt Tracker | Yes | Yes | Cooldown only, no lockout timer |
+| Item Tracker | Yes | Yes | |
+| Armour Reminder | Yes | Yes | Checks your buffs out of combat; clears straight away when you rebuff in combat |
+| Seal Tracker | Yes | Yes | |
+| Five Second Rule | Yes | | |
+| DoT and Multi-DoT Trackers | Yes | | |
+| Proc Tracker | Yes | | |
+| Totem Tracker | Yes | | |
+| Absorb Tracker | Yes | | |
 
-Castborn also runs on World of Warcraft: Forever, from the same download. Forever hides some combat data from addons, so for now it has:
+## Highlights
 
-- Player, Target, Focus and Target-of-Target castbars
-- GCD Indicator
-- Cooldown Tracker, including trinket cooldowns
-- Interrupt Tracker (cooldown only, no lockout timer)
-- Item Tracker
-- Armour Tracker (checks out of combat only)
-- Seal Tracker
+### A book of settings
 
-A few details differ on Forever: castbars whose timings are hidden show no spark or latency overlay, short cooldowns can also get the ready glow, and Earth Shield and Water Shield charges are not shown.
+The options window is a dark, gilded spellbook: every module on its own page, a bookmark ribbon for the page you're on, and live previews as you change things. Everything is grouped, labelled and explained in plain English.
 
-Not yet on Forever: Five Second Rule, Swing Timer, DoT and Multi-DoT trackers, Proc Tracker, Totem Tracker and Absorb Tracker. Their option pages are hidden on Forever, and they keep working as before on TBC.
-
-## What's Included
+<p align="center"><img src="images/options.png" width="700" alt="Castborn options window"></p>
 
 ### Castbars
 
-Player, Target, Focus, and Target-of-Target castbars with latency indicators, class colours, and shield icons for uninterruptible spells. *(TBC and Forever)*
+Player, target, focus and target-of-target castbars with latency, class colours, spell icons and a shield for casts you can't interrupt. Size, colour and anchor each one separately.
 
-### Tracking Modules
+<p align="center"><img src="images/castbars.png" width="687" alt="Castborn castbar casting Holy Light"></p>
 
-- **GCD Indicator** — See your global cooldown at a glance *(TBC and Forever)*
-- **Five Second Rule** — Know exactly when your mana regen kicks in
-- **Swing Timer** — Track mainhand, offhand, and ranged auto-attacks
-- **DoT Tracker** — Monitor debuffs on your current target
-- **Multi-DoT Tracker** — Keep DoTs up on multiple mobs simultaneously
-- **Proc Tracker** — Never miss Clearcasting, Nightfall, or trinket procs
-- **Cooldown Tracker** — Track important abilities with per-spell toggles *(TBC and Forever)*
-- **Interrupt Tracker** — Know when your kick is ready *(TBC and Forever; no lockout timer on Forever)*
-- **Totem Tracker** — Shaman-only: track active totems and party coverage
-- **Absorb Tracker** — Track Ice Barrier, Mana Shield, Power Word: Shield, and all TBC absorb effects with remaining amount and drain visualisation
-- **Armour Tracker** — Mage and Warlock only: warns when your armour self-buff (Frost/Ice/Mage/Molten or Demon/Fel Armor) is missing
-- **Seal Tracker** — Paladin-only: shows your active seal with a swipe for its remaining time *(TBC and Forever)*
+### Cooldowns, at a glance
 
-## Screenshots
+Track the abilities and trinkets that matter, with a ready glow when they come back. On Forever, Castborn also puts countdown numbers on your action bars, colour-coded by time left (white, then yellow under a minute, red under five seconds), and plays a pulse, burst or flash when a cooldown finishes. It works with Blizzard's bars and Bartender4.
+
+<p align="center"><img src="images/cooldowntext.png" width="289" alt="Cooldown numbers on action buttons, coloured by time left"></p>
+
+<p align="center"><img src="images/cooldownstrinkets.png" width="700" alt="Cooldown and trinket tracking"></p>
+
+### Swing timer
+
+Main hand, off hand and ranged swing bars with a glowing spark, a flash when each swing lands, and a dimmed bar when your target is out of range. Haste changes and weapon swaps are handled mid-swing.
+
+<p align="center"><img src="images/swing.png" width="328" alt="Main hand, off hand and ranged swing bars"></p>
+
+### Reminders
+
+The Armour Reminder flags a missing self-buff (mage and warlock armours, Inner Fire, paladin blessings, auras and Righteous Fury), and the Seal Tracker shows your active seal with its time left.
+
+<p align="center"><img src="images/reminders.png" width="644" alt="Seal tracker counting down, with two armour reminders"></p>
+
+## More from TBC Anniversary
 
 <table>
-  <tr>
-    <td width="50%" align="center">
-      <img src="images/castbars.png" width="100%"><br>
-      <b>Deep castbar customisation</b><br>
-      Class colours, global colour, latency, and per-bar sizing
-    </td>
-    <td width="50%" align="center">
-      <img src="images/cooldownstrinkets.png" width="100%"><br>
-      <b>Cooldown &amp; trinket tracking</b><br>
-      Abilities and on-use trinkets with ready glow
-    </td>
-  </tr>
   <tr>
     <td width="50%" align="center">
       <img src="images/procs.png" width="100%"><br>
@@ -98,60 +93,52 @@ Player, Target, Focus, and Target-of-Target castbars with latency indicators, cl
     <td width="50%" align="center">
       <img src="images/totems.png" width="100%"><br>
       <b>Totem tracking</b><br>
-      Durations, pulse pips, and party range checks
+      Durations, pulse pips and party range checks
     </td>
-    <td width="50%" align="center">
-      <img src="images/armour.png" width="100%"><br>
-      <b>Armour reminder</b><br>
-      Flags a missing Mage/Warlock armour buff
-    </td>
-  </tr>
-  <tr>
     <td width="50%" align="center">
       <img src="images/textures.png" width="100%"><br>
-      <b>Look &amp; Feel</b><br>
+      <b>Look and feel</b><br>
       LibSharedMedia bar textures and fonts
-    </td>
-    <td width="50%" align="center">
-      <img src="images/tutorial.png" width="100%"><br>
-      <b>Guided onboarding</b><br>
-      Step-by-step tour of every module
     </td>
   </tr>
 </table>
 
-## Getting Started
+## Getting started
 
-1. Install from CurseForge or extract to `Interface/AddOns/Castborn`
-2. Log in — the guided tour starts automatically
-3. Type `/cb` to open options anytime
+1. Install from [CurseForge](https://www.curseforge.com/wow/addons/castborn), or extract to `Interface/AddOns/Castborn`.
+2. Log in. A short guided tour starts automatically.
+3. Type `/cb` to open the options at any time.
 
-That's it. Castborn comes pre-configured with sensible defaults for your class.
+Castborn comes set up for your class, so most people never need to change much.
 
 ## Commands
 
-- `/cb` — Open options panel
-- `/cb test` — Preview all modules
-- `/cb unlock` — Drag frames to reposition
-- `/cb lock` — Lock frames in place
-- `/cb grid` — Toggle alignment grid
-- `/cb reset` — Reset to default positions
-- `/cb tutorial` — Replay the guided tour
+| Command | What it does |
+|---|---|
+| `/cb` | Open the options |
+| `/cb test` | Preview every module so you can position them |
+| `/cb unlock` / `/cb lock` | Drag frames into place, then lock them |
+| `/cb grid` | Show an alignment grid |
+| `/cb reset` | Put every frame back in its default place |
+| `/cb tutorial` | Replay the guided tour |
 
 ## Features
 
-- **Guided onboarding** — Step-by-step tour introduces each feature
-- **Test mode** — See and position everything without being in combat
-- **Layout grid** — Snap frames for pixel-perfect alignment
-- **Ctrl+Shift hide** — Temporarily hide overlapping modules while positioning
-- **Anchor system** — Modules can follow your player castbar
-- **Profile system** — Save, copy, and share configurations
-- **Masque support** — Skin proc icons with your favourite theme
-- **LibSharedMedia support** — Choose custom bar textures and fonts in the Look & Feel panel
+- **Guided tour**: a step-by-step introduction to each module on first login.
+- **Test mode**: see and move everything without being in combat.
+- **Alignment grid** and **anchoring**: snap frames into place, or attach modules to your castbar.
+- **Profiles**: save, copy and share your setup between characters.
+- **Masque** support for Castborn's icons.
+- **LibSharedMedia** textures and fonts.
+- **Bartender4** support for cooldown numbers on Forever.
 
-## Feedback & Support
+## Feedback and support
 
-Found a bug? Have a suggestion?
+Found a bug or have an idea?
 
-- [CurseForge Issues](https://www.curseforge.com/wow/addons/castborn/issues)
-- [GitHub Issues](https://github.com/afrugalpenguin/castborn/issues)
+- [GitHub issues](https://github.com/afrugalpenguin/castborn/issues)
+- [CurseForge](https://www.curseforge.com/wow/addons/castborn/issues)
+
+## Credits
+
+Castborn ships two typefaces under the [SIL Open Font License](https://openfontlicense.org): **Cormorant Garamond** by Christian Thalmann (Catharsis Fonts) and **Source Sans 3** by Adobe. Their licences are in `Media/Fonts`.
