@@ -68,7 +68,7 @@ describe("Cooldown finish effect on Forever", function()
     describe("finishing", function()
         it("plays the effect when a real cooldown ends", function()
             local cooldown, button = labButton(true)
-            Finish:Scan()
+            Finish:Scan(true)
             now = 130
             button.info.isActive = false
             Finish:Check()
@@ -77,7 +77,7 @@ describe("Cooldown finish effect on Forever", function()
 
         it("never plays for the GCD", function()
             local cooldown, button = labButton(true)
-            Finish:Scan()
+            Finish:Scan(true)
             now = 101.5
             button.info.isActive = false
             Finish:Check()
@@ -88,7 +88,7 @@ describe("Cooldown finish effect on Forever", function()
         it("respects a longer minimum duration", function()
             Castborn.db.cooldowntext.minDuration = 5
             local _, button = labButton(true)
-            Finish:Scan()
+            Finish:Scan(true)
             now = 104
             button.info.isActive = false
             Finish:Check()
@@ -97,7 +97,7 @@ describe("Cooldown finish effect on Forever", function()
 
         it("keeps watching while the state is secret", function()
             local cooldown, button = labButton(true)
-            Finish:Scan()
+            Finish:Scan(true)
             now = 130
             button.info.isActive = secret()
             Finish:Check()
@@ -105,10 +105,49 @@ describe("Cooldown finish effect on Forever", function()
             assert.are.equal(100, Finish.cooling[cooldown])
         end)
 
+        it("does not watch a button that is only on the GCD", function()
+            local cooldown, button = labButton(true)
+            button.info.isOnGCD = true
+            Finish:Scan(true)
+            assert.is_nil(Finish.cooling[cooldown])
+        end)
+
+        it("never plays after chained GCDs, however long the chain", function()
+            local _, button = labButton(true)
+            button.info.isOnGCD = true
+            for _ = 1, 10 do      -- one SPELL_UPDATE_COOLDOWN per GCD, never inactive between
+                Finish:Scan(true)
+                now = now + 1.5
+            end
+            button.info.isActive, button.info.isOnGCD = false, nil
+            Finish:Check()
+            assert.are.equal(0, #played)
+        end)
+
+        it("watches a real cooldown even while the GCD is also running", function()
+            local cooldown, button = labButton(true)
+            button.info.isOnGCD = false
+            Finish:Scan(true)
+            assert.are.equal(100, Finish.cooling[cooldown])
+        end)
+
+        it("only picks up action buttons from SPELL_UPDATE_COOLDOWN", function()
+            local cooldown = labButton(true)
+            Finish:Scan(false)
+            assert.is_nil(Finish.cooling[cooldown])
+        end)
+
+        it("still picks up Castborn icons from any scan", function()
+            local cooldown = { IsShown = function() return true end, GetParent = function() return visible() end }
+            CT.entries[cooldown] = { kind = "castborn" }
+            Finish:Scan(false)
+            assert.are.equal(100, Finish.cooling[cooldown])
+        end)
+
         it("ignores buttons on bars that are turned off", function()
             Castborn.db.cooldowntext.actionBars = false
             labButton(true)
-            Finish:Scan()
+            Finish:Scan(true)
             assert.is_nil(next(Finish.cooling))
         end)
     end)
