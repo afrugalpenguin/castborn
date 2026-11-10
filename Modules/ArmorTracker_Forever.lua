@@ -2,6 +2,8 @@
     Castborn - armour reminder on Forever
     UnitBuff is gone, and in combat every aura read is blocked (the UNIT_AURA payload is secret
     too), so buffs are only checked out of combat and the reminder holds its state in a fight.
+    The player's cast spell ID stays plain in combat, so a rebuff hides its alert straight away.
+    A buff dropping mid-fight still cannot be seen until combat ends.
     Loaded only by Castborn_Camelot.toc, after ArmorTracker.lua.
 ]]
 
@@ -23,6 +25,15 @@ end
 
 function ArmorTracker:CanReadAuras()
     return not (InCombatLockdown() or UnitAffectingCombat("player"))
+end
+
+-- The cast event does not name the target, so a blessing cast on someone else also hides the
+-- blessing alert until combat ends (chosen deliberately, issue #234)
+function ArmorTracker:OnPlayerCast(spellId)
+    if self:CanReadAuras() then return end  -- the buff read is exact out of combat
+    -- Secret first: indexing with a secret value errors
+    if spellId == nil or isSecret(spellId) then return end
+    self:MarkBuffCast(spellId)
 end
 
 function ArmorTracker:FindPlayerBuff(spellIds)
