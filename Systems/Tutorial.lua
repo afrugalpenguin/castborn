@@ -13,70 +13,82 @@ local spotlightOverlay = nil
 local isActive = false
 local originalFrameInfo = {}  -- Store original strata/level for restoration
 
+-- Highlighted words in step text: the options window's heading gold
+local HL = "|cfff0cf7a"
+
 -- Tutorial steps configuration
 -- configKey maps to CastbornDB[key].enabled for the enable checkbox
 -- configKeys is an array of keys for merged steps with multiple toggles
+-- module, if set, names a Castborn module the step needs (skipped when this build lacks it)
 local steps = {
     {
         id = "welcome",
-        title = "Welcome to Castborn!",
-        description = "This tutorial will guide you through all the features of Castborn.\n\nYou can enable or disable each module as we go through them.",
-        tip = "You can replay this tutorial anytime with |cff88ddff/cb tutorial|r",
+        title = "Welcome to Castborn",
+        description = "A quick tour of what Castborn can show you. Each page lights up one part of your screen, and you can switch that part on or off as you go.\n\nIt takes about a minute.",
+        tip = "Replay this tour any time with " .. HL .. "/cb tutorial|r.",
         frame = nil,
     },
     {
         id = "player_castbar",
         title = "Player Castbar",
-        description = "This is your main casting bar. It shows your spell casts and channels with a progress bar, spell name, and remaining time.",
-        tip = "When your cast bar reaches the red part, press your next spell. You'll cast faster.",
+        description = "Your casts and channels, with the spell, its icon and the time left.",
+        tip = "The red end of the bar is your latency. Start your next cast when the bar reaches it and you lose no time between casts.",
         getFrame = function() return Castborn.castbars and Castborn.castbars.player end,
         -- No configKey - player castbar is always enabled
     },
     {
         id = "castbar_companions",
         title = "Castbar Companions",
-        description = "Two thin bars accompany your player castbar:\n\n|cff88ddff5 Second Rule|r \226\128\148 tracks the 5-second mana regeneration window. The bar turns green and pulses when spirit regen resumes.\n\n|cff88ddffGCD Indicator|r \226\128\148 sweeps left-to-right while your Global Cooldown is active, helping you time your next ability.",
-        tip = "Both bars anchor to your player castbar by default.",
+        description = "Two thin bars sit with your castbar.\n\n" .. HL .. "5 Second Rule|r shows the five seconds after you spend mana, while spirit regen is paused. It turns green and pulses once regen is back.\n\n" .. HL .. "GCD Indicator|r sweeps across while your global cooldown runs, so you know when your next ability is ready.",
+        tip = "Both follow your player castbar unless you detach them.",
         getFrame = function() return Castborn.castbars and Castborn.castbars.player end,
         configKeys = {"fsr", "gcd"},
     },
     {
         id = "cooldowns",
         title = "Cooldown Tracker",
-        description = "Track your important cooldowns like trinkets, major abilities, and class cooldowns. Icons show remaining cooldown and glow when ready.\n\nYou can reorder icons by dragging them in test mode.",
-        tip = "Use the up/down arrows in Options > Cooldowns to reorder, or drag icons while in test mode.",
+        description = "Icons for the cooldowns that matter: class spells, trinkets and racials. Each one counts down and glows when it is ready.",
+        tip = "Change the order with the arrows in " .. HL .. "Options > Cooldowns|r, or drag icons in test mode.",
         getFrame = function() return _G["Castborn_CooldownTracker"] end,
         configKey = "cooldowns",
     },
     {
+        id = "cooldowntext",
+        title = "Cooldown Text",
+        description = "Countdown numbers on your action bars (Bartender4 included) and on Castborn's icons. They turn yellow under a minute and red under five seconds.\n\nWhen a cooldown comes back, the button can pulse, burst or flash.",
+        tip = "Pick the colours and the finish effect in " .. HL .. "Options > Cooldown Text|r.",
+        configKey = "cooldowntext",
+        module = "CooldownText",
+    },
+    {
         id = "items",
         title = "Item Tracker",
-        description = "Track your inventory consumables at a glance. Shows item icons with stock counts that update in real time.\n\nIcons desaturate when the item is on cooldown or you've run out, so you always know what's available.",
-        tip = "Add items by ID in Options > Items. Great for arena consumables like Free Action Potions and bandages.",
+        description = "Your consumables at a glance, with how many you carry. An icon greys out while the item is on cooldown or when you run out.",
+        tip = "Add any item by its ID in " .. HL .. "Options > Items|r. Handy for potions, healthstones and bandages.",
         getFrame = function() return _G["Castborn_ItemTracker"] end,
         configKey = "itemtracker",
     },
     {
         id = "other_castbars",
         title = "Other Castbars",
-        description = "Castborn provides castbars for your |cff88ddfftarget|r, |cff88ddfftarget-of-target|r, and |cff88ddfffocus|r.\n\nSee what enemies are casting so you can interrupt, or watch your healer's casts to anticipate incoming heals.",
-        tip = "A shield icon appears on spells that cannot be interrupted.",
+        description = "Castbars for your " .. HL .. "target|r, their " .. HL .. "target|r and your " .. HL .. "focus|r.\n\nSee what an enemy is casting in time to interrupt it, or follow your healer's casts.",
+        tip = "A shield on the icon means the spell cannot be interrupted.",
         getFrame = function() return Castborn.castbars and Castborn.castbars.target end,
         configKeys = {"target", "targettarget", "focus"},
     },
     {
         id = "dots",
         title = "DoT Tracking",
-        description = "Track your damage-over-time effects on your current target with colour-coded urgency bars.\n\nThe |cff88ddffMulti-DoT Tracker|r extends this to multiple enemies, so you can keep them all dotted in AoE fights.",
-        tip = "Red means expiring soon! Refresh your DoTs before they fall off.",
+        description = "Your damage over time on your target, as bars that change colour as they run out.\n\nThe " .. HL .. "Multi-DoT Tracker|r does the same for every enemy you have dotted, for fights with several targets.",
+        tip = "Red means it is about to fall off: refresh it.",
         getFrame = function() return _G["Castborn_DoTTracker"] end,
         configKeys = {"dots", "multidot"},
     },
     {
         id = "procs",
         title = "Proc Tracker",
-        description = "Track important procs and temporary buffs like Clearcasting, Nightfall, and trinket activations.",
-        tip = "Procs pulse with a glow effect to grab your attention when they activate.",
+        description = "Procs and short buffs worth reacting to, such as Clearcasting, Nightfall and trinket procs. They pulse when they appear.",
+        tip = "Choose which procs to show in " .. HL .. "Options > Proc Tracker|r.",
         getFrame = function() return _G["Castborn_ProcTracker"] end,
         configKey = "procs",
         optionKey = "buffs",  -- the proc options page id differs from its saved variables key
@@ -84,63 +96,63 @@ local steps = {
     {
         id = "swing",
         title = "Swing Timer",
-        description = "For melee and hunters, track your auto-attack swing timer. Shows mainhand, offhand, and ranged attack timers.",
-        tip = "Useful for timing abilities between auto-attacks for maximum DPS.",
+        description = "For melee and hunters: when your next main hand, off hand and ranged attacks land.",
+        tip = "Fit your abilities between swings without delaying them.",
         getFrame = function() return _G["Castborn_SwingTimer"] end,
         configKey = "swing",
     },
     {
         id = "interrupt",
         title = "Interrupt Tracker",
-        description = "Track your interrupt ability cooldown and any school lockouts you've applied to enemies.",
-        tip = "Shows when your kick/counterspell is ready and how long the enemy is locked out.",
+        description = "Your interrupt's cooldown, and how long an enemy is locked out of a school of magic after you interrupt them.",
+        tip = "The bar shows " .. HL .. "READY|r when you can interrupt again.",
         getFrame = function() return _G["Castborn_InterruptTracker"] end,
         configKey = "interrupt",
     },
     {
         id = "totems",
         title = "Totem Tracker",
-        description = "Track your active totems with duration bars. Shows Fire, Earth, Water, and Air totems with remaining time.",
-        tip = "Mouseover a totem bar to see which party members are NOT in range.",
+        description = "Your active totems for each element, with the time left on each.",
+        tip = "Hover over a totem bar to see which party members are out of its range.",
         getFrame = function() return _G["Castborn_TotemTracker"] end,
         configKey = "totems",
     },
     {
         id = "absorbs",
         title = "Absorb Tracker",
-        description = "Tracks absorb shields like Ice Barrier, Power Word: Shield, and Fire/Shadow Ward. Shows the remaining absorb with a drain effect; multiple shields display as a row of icons.",
-        tip = "Watch the drain to know when your shield is about to break.",
+        description = "Your absorb shields, such as Ice Barrier, Power Word: Shield and the elemental Wards. Each icon drains as its shield soaks damage.",
+        tip = "When an icon is nearly empty, that shield is about to break.",
         getFrame = function() return _G["Castborn_AbsorbTracker"] end,
         configKey = "absorbs",
     },
     {
         id = "armour",
         title = "Armour Tracker",
-        description = "Shows an alert icon when your class buff is missing (e.g. Mage Armour, Demon Skin). A quick reminder to rebuff after dying or zoning.\n\nPaladins get alerts for your chosen |cff88ddffBlessing|r (Might, Wisdom, Kings, or Sanctuary), your |cff88ddffAura|r, and |cff88ddffRighteous Fury|r if Improved RF is talented (or always, if you turn it on).",
-        tip = "Paladins can choose which blessing to track in Options > Armour.",
+        description = "An alert when your self-buff is missing, such as Mage Armour or Demon Skin, so you rebuff after dying or zoning.\n\nPaladins get alerts for their chosen " .. HL .. "Blessing|r (Might, Wisdom, Kings or Sanctuary), their " .. HL .. "Aura|r, and " .. HL .. "Righteous Fury|r when Improved Righteous Fury is talented (or always, if you choose).",
+        tip = "Paladins choose the blessing to watch in " .. HL .. "Options > Armour|r.",
         getFrame = function() return _G["Castborn_ArmorTracker"] end,
         configKey = "armortracker",
     },
     {
         id = "seals",
         title = "Seal Tracker",
-        description = "Shows your active seal with a swipe for its remaining time, so you know when to reseal.\n\nWhen no seal is up, the icon turns red with a |cffff3333!|r so you can reseal before a pull or after Judgement.",
-        tip = "Turn the warning off, or limit it to combat, in Options > Seals.",
+        description = "Your active seal, with a sweep for the time it has left.\n\nWhen no seal is up, the icon turns red with a |cffff3333!|r so you can reseal before a pull or after Judgement.",
+        tip = "Turn the warning off, or limit it to combat, in " .. HL .. "Options > Seals|r.",
         getFrame = function() return _G["Castborn_SealTracker"] end,
         configKey = "seals",
     },
     {
         id = "customise",
-        title = "Customise & Position",
-        description = "Make Castborn your own!\n\n|cff88ddff/cb|r \226\128\148 Open the options panel to adjust sizes, colours, and behaviours.\n|cff88ddff/cb unlock|r \226\128\148 Drag any frame to reposition it.\n|cff88ddff/cb grid|r \226\128\148 Show a positioning grid overlay.\n\n|cff88ddffCtrl+Shift+Click|r a module header to temporarily hide it when frames overlap.",
-        tip = "Toggle borders globally in |cff88ddffLook & Feel|r, or set per-module background colour in each module's page.",
+        title = "Make It Yours",
+        description = HL .. "/cb|r opens the options, where you can change sizes, colours and textures.\n" .. HL .. "/cb unlock|r lets you drag any frame.\n" .. HL .. "/cb grid|r shows a grid to line frames up.\n\nWhile frames are unlocked, " .. HL .. "Ctrl+Shift+Click|r a frame's label to hide it for now.",
+        tip = HL .. "Look & Feel|r sets the bar texture and font for every Castborn bar.",
         frame = nil,
     },
     {
         id = "complete",
-        title = "Setup Complete!",
-        description = "Castborn's modules are now enabled to your preferences.\n\nTo customise them further, open the options panel with |cff88ddff/cb|r or use |cff88ddff/cb unlock|r to reposition frames.\n\nIf you'd like to configure the layout now:",
-        tip = "I hope you enjoy using Castborn \226\128\148 GLHF!",
+        title = "You're All Set",
+        description = "The modules you picked are switched on. Open the options to fine-tune them, or enter test mode to move everything into place.",
+        tip = "Enjoy, and good luck out there.",
         frame = nil,
     },
 }
@@ -152,13 +164,14 @@ local configKeyLabels = {
     gcd = "GCD Indicator",
     fsr = "5 Second Rule",
     target = "Target Castbar",
-    targettarget = "Target-of-Target",
+    targettarget = "Target of Target",
     focus = "Focus Castbar",
     dots = "DoT Tracker",
     multidot = "Multi-DoT Tracker",
     absorbs = "Absorb Tracker",
     armortracker = "Armour Tracker",
     seals = "Seal Tracker",
+    cooldowntext = "Cooldown Text",
 }
 
 -- Whether a module is any use to a class. Modules not listed suit every class.
@@ -191,58 +204,41 @@ local keyForClass = {
     seals = function(class) return class == "PALADIN" end,
 }
 
--- Create a highlight frame that surrounds a target element
+-- Create a highlight frame that surrounds a target element: a gold chamfered outline with a
+-- soft glow and a diamond at each corner, breathing gently
 local function CreateHighlightFrame(index)
-    local frame = CreateFrame("Frame", "CastbornTutorialHighlight" .. (index or 1), UIParent, "BackdropTemplate")
+    local Theme = Castborn.Theme
+    local frame = CreateFrame("Frame", "CastbornTutorialHighlight" .. (index or 1), UIParent)
     frame:SetFrameStrata("FULLSCREEN_DIALOG")
     frame:SetFrameLevel(100)
 
-    -- Main border
-    frame:SetBackdrop({
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 3,
-    })
-    frame:SetBackdropBorderColor(0.4, 0.8, 1, 1)
+    -- Soft gold light around the target
+    frame.glow = frame:CreateTexture(nil, "BACKGROUND")
+    frame.glow:SetTexture(Theme.media.glow)
+    frame.glow:SetVertexColor(Theme:Color("accent"))
+    frame.glow:SetBlendMode("ADD")
+    frame.glow:SetPoint("TOPLEFT", -26, 26)
+    frame.glow:SetPoint("BOTTOMRIGHT", 26, -26)
 
-    -- Outer glow layer 1
-    frame.glow1 = frame:CreateTexture(nil, "BACKGROUND")
-    frame.glow1:SetPoint("TOPLEFT", -12, 12)
-    frame.glow1:SetPoint("BOTTOMRIGHT", 12, -12)
-    frame.glow1:SetColorTexture(0.3, 0.6, 1, 0.2)
+    -- The outline: an edge-only chamfered box
+    Theme:Chamfer(frame, { cut = 6, edge = "heading", layer = "BORDER" })
 
-    -- Outer glow layer 2 (larger, more subtle)
-    frame.glow2 = frame:CreateTexture(nil, "BACKGROUND", nil, -1)
-    frame.glow2:SetPoint("TOPLEFT", -20, 20)
-    frame.glow2:SetPoint("BOTTOMRIGHT", 20, -20)
-    frame.glow2:SetColorTexture(0.2, 0.5, 1, 0.1)
-
-    -- Corner accents
-    local function CreateCorner(point1, point2, xOff, yOff)
-        local corner = frame:CreateTexture(nil, "OVERLAY")
-        corner:SetColorTexture(0.5, 0.9, 1, 0.9)
-        corner:SetSize(12, 3)
-        corner:SetPoint(point1, frame, point1, xOff, yOff)
-        local corner2 = frame:CreateTexture(nil, "OVERLAY")
-        corner2:SetColorTexture(0.5, 0.9, 1, 0.9)
-        corner2:SetSize(3, 12)
-        corner2:SetPoint(point1, frame, point1, xOff, yOff)
-        return corner, corner2
+    for _, point in ipairs({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }) do
+        local diamond = frame:CreateTexture(nil, "OVERLAY")
+        diamond:SetTexture(Theme.media.diamond)
+        diamond:SetVertexColor(Theme:Color("heading"))
+        diamond:SetSize(11, 11)
+        diamond:SetPoint("CENTER", frame, point, 0, 0)
     end
 
-    CreateCorner("TOPLEFT", "TOPLEFT", -2, 2)
-    CreateCorner("TOPRIGHT", "TOPRIGHT", 2, 2)
-    CreateCorner("BOTTOMLEFT", "BOTTOMLEFT", -2, -2)
-    CreateCorner("BOTTOMRIGHT", "BOTTOMRIGHT", 2, -2)
-
-    -- Pulsing animation
     local elapsed = 0
     frame:SetScript("OnUpdate", function(self, delta)
         elapsed = elapsed + delta
-        local pulse = math.sin(elapsed * 3) * 0.3 + 0.7
-        local glowPulse = math.sin(elapsed * 2) * 0.1 + 0.2
-        self:SetBackdropBorderColor(0.4, 0.8, 1, pulse)
-        self.glow1:SetAlpha(glowPulse + 0.1)
-        self.glow2:SetAlpha(glowPulse * 0.5)
+        local pulse = math.sin(elapsed * 3) * 0.25 + 0.75
+        for _, tex in ipairs(self.chamfer.edge) do
+            tex:SetAlpha(pulse)
+        end
+        self.glow:SetAlpha(math.sin(elapsed * 2) * 0.08 + 0.22)
     end)
 
     frame:Hide()
@@ -465,108 +461,131 @@ local function RestoreAllFrames()
     originalFrameInfo = {}
 end
 
--- Create the tutorial explanation panel
+-- Layout of the tutorial panel
+local PANEL_WIDTH = 480
+local TEXT_WIDTH = 420
+local MAX_PIPS = 20
+
+-- Create the tutorial explanation panel (Gilded Grimoire, like the options window)
 local function CreateTutorialFrame()
-    local frame = CreateFrame("Frame", "CastbornTutorialFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(450, 290)
-    frame:SetPoint("TOP", UIParent, "TOP", 0, -170)
-    frame:SetFrameStrata("FULLSCREEN_DIALOG")
-    frame:SetFrameLevel(101)
-
-    frame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 2,
+    local Theme = Castborn.Theme
+    local frame = Theme:CreatePanel({
+        name = "CastbornTutorialFrame",
+        width = PANEL_WIDTH,
+        height = 300,
+        titleSize = 26,
     })
-    frame:SetBackdropColor(0.08, 0.08, 0.12, 0.95)
-    frame:SetBackdropBorderColor(0.3, 0.5, 0.8, 1)
+    frame:SetPoint("TOP", UIParent, "TOP", 0, -150)
+    frame:SetFrameLevel(101)
+    local inner = frame.inner
 
-    -- Make it movable
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-
-    -- Step counter
-    frame.stepText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    frame.stepText:SetPoint("TOPLEFT", 12, -10)
-    frame.stepText:SetTextColor(0.6, 0.6, 0.6, 1)
-
-    -- Title
-    frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    frame.title:SetPoint("TOP", 0, -28)
-    frame.title:SetTextColor(0.5, 0.8, 1, 1)
+    -- Step counter, small and quiet in the top-left corner
+    frame.stepText = inner:CreateFontString(nil, "OVERLAY")
+    Theme:Font(frame.stepText, "strong", 10)
+    frame.stepText:SetTextColor(Theme:Color("muted"))
+    frame.stepText:SetPoint("TOPLEFT", 16, -12)
 
     -- Description
-    frame.description = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    frame.description:SetPoint("TOPLEFT", 16, -55)
-    frame.description:SetPoint("TOPRIGHT", -16, -55)
+    frame.description = inner:CreateFontString(nil, "OVERLAY")
+    Theme:Font(frame.description, "body", 15)
+    frame.description:SetWidth(TEXT_WIDTH)
+    frame.description:SetPoint("TOP", frame.rule, "BOTTOM", 0, -14)
     frame.description:SetJustifyH("CENTER")
     frame.description:SetJustifyV("TOP")
-    frame.description:SetSpacing(2)
+    frame.description:SetSpacing(3)
 
-    -- Tip section
-    frame.tipIcon = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    frame.tipIcon:SetPoint("BOTTOMLEFT", 16, 52)
-    frame.tipIcon:SetText("|cff88ddffTip:|r")
-
-    frame.tip = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    frame.tip:SetPoint("LEFT", frame.tipIcon, "RIGHT", 6, 0)
-    frame.tip:SetPoint("RIGHT", -16, 0)
+    -- Tip: a quiet inset box with a gold label
+    frame.tipBox = CreateFrame("Frame", nil, inner)
+    frame.tipBox:SetWidth(TEXT_WIDTH)
+    Theme:Chamfer(frame.tipBox, { cut = 6, fill = "navA", edge = "divider" })
+    frame.tipLabel = frame.tipBox:CreateFontString(nil, "OVERLAY")
+    Theme:Font(frame.tipLabel, "strong", 11)
+    frame.tipLabel:SetTextColor(Theme:Color("accent"))
+    frame.tipLabel:SetPoint("TOPLEFT", 12, -10)
+    frame.tipLabel:SetText("TIP")
+    frame.tip = frame.tipBox:CreateFontString(nil, "OVERLAY")
+    Theme:Font(frame.tip, "body", 13)
+    frame.tip:SetTextColor(Theme:Color("muted"))
+    frame.tip:SetPoint("TOPLEFT", 44, -9)
+    frame.tip:SetWidth(TEXT_WIDTH - 56)
     frame.tip:SetJustifyH("LEFT")
-    frame.tip:SetTextColor(0.7, 0.7, 0.7, 1)
+    frame.tip:SetSpacing(2)
 
-    -- Enable checkboxes (pool of 3 for merged steps with multiple toggles)
+    -- Enable checkboxes (pool of 3 for merged steps with multiple toggles); each click
+    -- toggles the key the current step gave it
     frame.enableChecks = {}
     for i = 1, 3 do
-        local cb = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
-        cb:SetSize(26, 26)
-        cb.text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        cb.text:SetPoint("LEFT", cb, "RIGHT", 4, 0)
-        cb.text:SetTextColor(0.9, 0.9, 0.9, 1)
+        local cb = Theme:CreateCheckbox(inner, "", nil, nil, function(checked)
+            Tutorial:OnCheckboxClicked(frame.enableChecks[i], checked)
+        end)
         cb:Hide()
         frame.enableChecks[i] = cb
     end
 
-    -- Buttons
-    frame.skipBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    frame.skipBtn:SetSize(70, 22)
-    frame.skipBtn:SetPoint("BOTTOMLEFT", 12, 12)
-    frame.skipBtn:SetText("Skip")
-    frame.skipBtn:SetScript("OnClick", function()
+    -- Last step: open the options or go straight to test mode
+    frame.optionsBtn = Theme:CreateButton(inner, "Open Options", 130, function()
         Tutorial:End()
+        if Castborn.Options then Castborn.Options:Show() end
     end)
-
-    frame.backBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    frame.backBtn:SetSize(70, 22)
-    frame.backBtn:SetPoint("BOTTOM", -45, 12)
-    frame.backBtn:SetText("Back")
-    frame.backBtn:SetScript("OnClick", function()
-        Tutorial:PreviousStep()
-    end)
-
-    frame.nextBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    frame.nextBtn:SetSize(70, 22)
-    frame.nextBtn:SetPoint("BOTTOM", 45, 12)
-    frame.nextBtn:SetText("Next")
-
-    -- Test Mode button (shown only on final step)
-    frame.testModeBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    frame.testModeBtn:SetSize(100, 22)
-    frame.testModeBtn:SetPoint("TOP", frame.description, "BOTTOM", 0, -8)
-    frame.testModeBtn:SetText("Test Mode")
-    frame.testModeBtn:SetScript("OnClick", function()
+    frame.testModeBtn = Theme:CreateButton(inner, "Test Mode", 130, function()
         Tutorial:End()
         Castborn:EnterTestMode()
     end)
-    frame.testModeBtn:Hide()
-    frame.nextBtn:SetScript("OnClick", function()
-        Tutorial:NextStep()
-    end)
 
-    frame:Hide()
+    -- Footer: a rule, then Skip on the left, progress pips in the middle, Back and Next right
+    local footerRule = inner:CreateTexture(nil, "ARTWORK")
+    footerRule:SetHeight(1)
+    footerRule:SetPoint("BOTTOMLEFT", 16, 48)
+    footerRule:SetPoint("BOTTOMRIGHT", -16, 48)
+    footerRule:SetColorTexture(Theme:Color("divider"))
+
+    frame.skipBtn = Theme:CreateButton(inner, "Skip", 70, function()
+        Tutorial:End()
+    end)
+    frame.skipBtn:SetPoint("BOTTOMLEFT", 14, 14)
+
+    frame.nextBtn = Theme:CreateButton(inner, "Next", 80, function()
+        Tutorial:NextStep()
+    end, "primary")
+    frame.nextBtn:SetPoint("BOTTOMRIGHT", -14, 14)
+
+    frame.backBtn = Theme:CreateButton(inner, "Back", 70, function()
+        Tutorial:PreviousStep()
+    end)
+    frame.backBtn:SetPoint("RIGHT", frame.nextBtn, "LEFT", -8, 0)
+
+    frame.pips = CreateFrame("Frame", nil, inner)
+    frame.pips:SetHeight(12)
+    frame.pips:SetPoint("BOTTOM", 0, 20)
+    for i = 1, MAX_PIPS do
+        local pip = frame.pips:CreateTexture(nil, "ARTWORK")
+        pip:SetTexture(Theme.media.diamond)
+        pip:SetPoint("LEFT", (i - 1) * 13, 0)
+        pip:Hide()
+        frame.pips[i] = pip
+    end
+
     return frame
+end
+
+-- Light the pips up to the current step: done and current in gold, the rest dim
+local function UpdatePips(frame, position, total)
+    local Theme = Castborn.Theme
+    local shown = math.min(total, MAX_PIPS)
+    frame.pips:SetWidth(math.max(1, (shown - 1) * 13 + 11))
+    for i = 1, MAX_PIPS do
+        local pip = frame.pips[i]
+        if i <= shown then
+            local size = (i == position) and 11 or 7
+            pip:SetSize(size, size)
+            pip:SetVertexColor(Theme:Color(i <= position and "heading" or "rule"))
+            pip:ClearAllPoints()
+            pip:SetPoint("CENTER", frame.pips, "LEFT", (i - 1) * 13 + 5.5, 0)
+            pip:Show()
+        else
+            pip:Hide()
+        end
+    end
 end
 
 -- Mockup interrupt tracker for tutorial (when player hasn't learned interrupt yet)
@@ -943,6 +962,7 @@ function Tutorial:IsStepShown(stepNum)
         local _, playerClass = UnitClass("player")
         if step.class ~= playerClass then return false end
     end
+    if step.module and not Castborn[step.module] then return false end
     local keys = StepKeys(step)
     if not keys then return true end
     for _, key in ipairs(keys) do
@@ -972,79 +992,72 @@ local function ShowStep(stepNum)
     if not tutorialFrame then
         tutorialFrame = CreateTutorialFrame()
     end
+    local f = tutorialFrame
 
-    -- Update step counter
-    tutorialFrame.stepText:SetText(string.format("Step %d of %d", Tutorial:GetStepPosition(stepNum)))
+    -- Step counter and progress pips count only the steps this player sees
+    local position, total = Tutorial:GetStepPosition(stepNum)
+    f.stepText:SetText(string.format("STEP %d OF %d", position, total))
+    UpdatePips(f, position, total)
 
-    -- Update content
-    tutorialFrame.title:SetText(step.title)
-    tutorialFrame.description:SetText(step.description)
-    tutorialFrame.tip:SetText(step.tip or "")
-    tutorialFrame.tipIcon:SetShown(step.tip and step.tip ~= "")
+    f.title:SetText(step.title)
+    f.description:SetText(step.description)
 
-    -- Update button states
-    tutorialFrame.backBtn:SetEnabled(stepNum > 1)
-    if stepNum == #steps then
-        tutorialFrame.nextBtn:SetText("Finish")
-        tutorialFrame.testModeBtn:Show()
-    else
-        tutorialFrame.nextBtn:SetText("Next")
-        tutorialFrame.testModeBtn:Hide()
-    end
+    local isLast = stepNum == #steps
+    f.backBtn:SetEnabled(position > 1)
+    f.nextBtn:SetText(isLast and "Finish" or "Next")
 
-    -- Handle enable checkboxes (single configKey or merged configKeys)
+    -- Below the description, top to bottom: enable checkboxes, the last step's buttons, the
+    -- tip. y is the running distance below the description.
+    local y = 0
+
     -- Only modules this build loads, and the class can use, get a checkbox
     local keys = Tutorial:GetShownKeys(step)
     local numChecks = keys and #keys or 0
-
-    -- Hide all checkboxes first
     for i = 1, 3 do
-        tutorialFrame.enableChecks[i]:Hide()
-        tutorialFrame.enableChecks[i].text:Hide()
-    end
-
-    if numChecks > 0 then
-        for i, key in ipairs(keys) do
-            local cb = tutorialFrame.enableChecks[i]
-            local db = CastbornDB[key]
-
-            -- Position: stack from bottom, first key at top
+        local cb = f.enableChecks[i]
+        local key = keys and keys[i]
+        if key then
+            if i == 1 then y = y + 12 end
+            cb.key = key
+            cb.label = configKeyLabels[key] or step.title
+            cb:SetLabel(numChecks == 1 and "Enable this module" or ("Enable " .. (configKeyLabels[key] or key)))
+            cb:SetChecked(CastbornDB[key] and CastbornDB[key].enabled)
             cb:ClearAllPoints()
-            cb:SetPoint("BOTTOMLEFT", 16, 42 + (numChecks - i) * 24)
-
-            -- Set checkbox state based on current setting
-            cb:SetChecked(db and db.enabled)
-
-            -- Label: generic for single-key steps, specific for merged steps
-            if numChecks == 1 then
-                cb.text:SetText("Enable this module")
-            else
-                cb.text:SetText("Enable " .. (configKeyLabels[key] or key))
-            end
-
-            -- Wire up the click handler — toggle setting and refresh the step
-            cb:SetScript("OnClick", function(self)
-                if CastbornDB[key] then
-                    CastbornDB[key].enabled = self:GetChecked()
-                    local label = configKeyLabels[key] or step.title
-                    Castborn:Print(label .. " " .. (self:GetChecked() and "enabled" or "disabled"))
-                    -- Refresh the step to update visible frames and highlights
-                    ShowStep(currentStep)
-                end
-            end)
-
+            cb:SetPoint("TOPLEFT", f.description, "BOTTOMLEFT", -4, -y)
             cb:Show()
-            cb.text:Show()
+            y = y + 28
+        else
+            cb.key = nil
+            cb:Hide()
         end
-
-        -- Adjust tip position based on number of checkboxes
-        tutorialFrame.tipIcon:ClearAllPoints()
-        tutorialFrame.tipIcon:SetPoint("BOTTOMLEFT", 16, 42 + numChecks * 24 + 6)
-    else
-        -- Reset tip position when no checkboxes
-        tutorialFrame.tipIcon:ClearAllPoints()
-        tutorialFrame.tipIcon:SetPoint("BOTTOMLEFT", 16, 52)
     end
+
+    f.optionsBtn:SetShown(isLast)
+    f.testModeBtn:SetShown(isLast)
+    if isLast then
+        y = y + 18
+        f.optionsBtn:ClearAllPoints()
+        f.optionsBtn:SetPoint("TOPRIGHT", f.description, "BOTTOM", -5, -y)
+        f.testModeBtn:ClearAllPoints()
+        f.testModeBtn:SetPoint("TOPLEFT", f.description, "BOTTOM", 5, -y)
+        y = y + 24
+    end
+
+    local hasTip = step.tip and step.tip ~= ""
+    f.tipBox:SetShown(hasTip)
+    if hasTip then
+        y = y + 16
+        f.tip:SetText(step.tip)
+        local tipHeight = math.max(f.tip:GetStringHeight(), 14) + 20
+        f.tipBox:SetHeight(tipHeight)
+        f.tipBox:ClearAllPoints()
+        f.tipBox:SetPoint("TOP", f.description, "BOTTOM", 0, -y)
+        y = y + tipHeight
+    end
+
+    -- Fit the panel: frame inset, title and rule, description, the rows above, the footer
+    local top = 4 + 14 + f.title:GetStringHeight() + 6 + 9 + 14
+    f:SetHeight(math.floor(top + f.description:GetStringHeight() + y + 20 + 52 + 0.5))
 
     -- Show test frame(s) and highlight them
     local targetFrames = nil
@@ -1056,10 +1069,10 @@ local function ShowStep(stepNum)
 
     -- Fall back to getFrame if no test frame was shown
     if not targetFrames and step.getFrame then
-        local f = step.getFrame()
-        if f then
-            f:Show()
-            targetFrames = f
+        local frame = step.getFrame()
+        if frame then
+            frame:Show()
+            targetFrames = frame
         end
     end
 
@@ -1070,7 +1083,16 @@ local function ShowStep(stepNum)
         step.action()
     end
 
-    tutorialFrame:Show()
+    f:Show()
+end
+
+-- An enable checkbox was clicked: switch its module and refresh the step
+function Tutorial:OnCheckboxClicked(cb, checked)
+    local key = cb.key
+    if not key or not CastbornDB[key] then return end
+    CastbornDB[key].enabled = checked
+    Castborn:Print(cb.label .. " " .. (checked and "enabled" or "disabled"))
+    ShowStep(currentStep)
 end
 
 -- Public API
@@ -1081,7 +1103,7 @@ function Tutorial:Start()
 
     -- Show first step (test frames are shown per-step)
     self:NextStep()
-    Castborn:Print("Tutorial started. Follow the steps to learn about Castborn!")
+    Castborn:Print("Tutorial started. Follow the steps to learn about Castborn.")
 end
 
 function Tutorial:NextStep()
@@ -1155,7 +1177,7 @@ function Tutorial:End()
         Castborn.Options:Hide()
     end
 
-    Castborn:Print("Tutorial complete! Use |cff88ddff/cb tutorial|r to replay anytime.")
+    Castborn:Print("Tutorial complete. Use " .. HL .. "/cb tutorial|r to replay it any time.")
 end
 
 function Tutorial:IsActive()

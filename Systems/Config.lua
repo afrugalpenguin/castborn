@@ -211,46 +211,21 @@ function CB:ShowTestModePanel()
         return
     end
 
-    local panel = CreateFrame("Frame", "CastbornTestModePanel", UIParent, "BackdropTemplate")
-    panel:SetSize(160, 90)
-    panel:SetPoint("TOP", UIParent, "TOP", 0, -60)
-    panel:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 2,
+    local Theme = Castborn.Theme
+    local panel = Theme:CreatePanel({
+        name = "CastbornTestModePanel",
+        width = 290,
+        height = 160,
+        title = "Test Mode",
+        titleSize = 22,
     })
-    panel:SetBackdropColor(0.1, 0.1, 0.15, 0.95)
-    panel:SetBackdropBorderColor(0.3, 0.5, 0.8, 1)
-    panel:SetFrameStrata("FULLSCREEN_DIALOG")
-    panel:SetMovable(true)
-    panel:EnableMouse(true)
-    panel:RegisterForDrag("LeftButton")
-    panel:SetScript("OnDragStart", panel.StartMoving)
-    panel:SetScript("OnDragStop", panel.StopMovingOrSizing)
+    panel:SetPoint("TOP", UIParent, "TOP", 0, -60)
+    local inner = panel.inner
 
-    -- Title
-    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("TOP", 0, -8)
-    title:SetText("|cff88ddffTest Mode|r")
-
-    -- Tip text
-    local tip = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    tip:SetPoint("BOTTOM", 0, 8)
-    tip:SetTextColor(0.7, 0.7, 0.7, 1)
-    tip:SetText("|cff88ddffTip:|r Ctrl+Shift+Click a header to temporarily hide it")
-
-    -- Size to fit tip text
-    panel:SetSize(270, 110)
-
-    -- Show Grid button (toggles grid and unlocks frames when showing)
-    local gridBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    gridBtn:SetSize(200, 22)
-    gridBtn:SetPoint("TOP", 0, -28)
-    gridBtn:SetText("Show Grid")
-    gridBtn:SetScript("OnClick", function()
+    -- Show Grid (toggles the grid, and unlocks frames when showing it)
+    local gridBtn = Theme:CreateButton(inner, "Show Grid", 124, function()
         if Castborn.GridPosition then
             if not Castborn.GridPosition.isActive then
-                -- Showing grid - also unlock frames
                 CastbornDB.locked = false
                 if Castborn.Anchoring then
                     Castborn.Anchoring:ShowDragIndicators()
@@ -259,24 +234,26 @@ function CB:ShowTestModePanel()
             Castborn.GridPosition:ToggleGrid()
         end
     end)
+    gridBtn:SetPoint("TOPRIGHT", inner, "TOP", -4, -58)
 
-    -- Done button
-    local doneBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    doneBtn:SetSize(200, 22)
-    doneBtn:SetPoint("TOP", gridBtn, "BOTTOM", 0, -4)
-    doneBtn:SetText("Done")
-    doneBtn:SetScript("OnClick", function()
+    local doneBtn = Theme:CreateButton(inner, "Done", 124, function()
         -- End test mode properly (this handles locking, hiding indicators, etc.)
         CB:EndTestMode()
-        -- Hide grid if active
         if Castborn.GridPosition and Castborn.GridPosition.isActive then
             Castborn.GridPosition:HideGrid()
         end
-        -- Hide test frames
         if CB.HideTestFrames then CB:HideTestFrames() end
         panel:Hide()
         CB:Print("Test mode ended. Frames locked.")
-    end)
+    end, "primary")
+    doneBtn:SetPoint("TOPLEFT", inner, "TOP", 4, -58)
+
+    local tip = inner:CreateFontString(nil, "OVERLAY")
+    Theme:Font(tip, "body", 12)
+    tip:SetTextColor(Theme:Color("muted"))
+    tip:SetWidth(250)
+    tip:SetPoint("TOP", gridBtn, "BOTTOMRIGHT", 4, -14)
+    tip:SetText("Drag a frame by its label. " .. Theme:Code("heading") .. "Ctrl+Shift+Click|r a label to hide that frame for now.")
 
     testModePanel = panel
     panel:Show()

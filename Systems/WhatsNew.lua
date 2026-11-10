@@ -1009,62 +1009,51 @@ function WhatsNew:MarkAsSeen()
 end
 
 --------------------------------------------------------------------------------
--- UI Creation
+-- UI Creation (Gilded Grimoire: Systems/Theme.lua)
 --------------------------------------------------------------------------------
 
+local Theme = Castborn.Theme
+
 local function CreateWhatsNewFrame()
-    local frame = CreateFrame("Frame", "CastbornWhatsNewFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(450, 380)
-    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 50)
-    frame:SetFrameStrata("FULLSCREEN_DIALOG")
-    frame:SetFrameLevel(200)
-
-    -- Dark backdrop
-    frame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 2,
+    local frame = Theme:CreatePanel({
+        name = "CastbornWhatsNewFrame",
+        width = 480,
+        height = 460,
+        title = "What's New",
+        titleSize = 28,
     })
-    frame:SetBackdropColor(0.08, 0.08, 0.12, 0.98)
-    frame:SetBackdropBorderColor(0.4, 0.6, 0.9, 1)
+    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
+    frame:SetFrameLevel(200)
+    local inner = frame.inner
 
-    -- Make it movable
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame.subtitle = inner:CreateFontString(nil, "OVERLAY")
+    Theme:Font(frame.subtitle, "subtitle", 15)
+    frame.subtitle:SetPoint("TOP", frame.rule, "BOTTOM", 0, -6)
 
-    -- Title
-    frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    frame.title:SetPoint("TOP", 0, -16)
-    frame.title:SetText("|cff88ddffWhat's New in Castborn v" .. Castborn.version .. "|r")
-
-    -- Decorative line under title
-    frame.titleLine = frame:CreateTexture(nil, "ARTWORK")
-    frame.titleLine:SetHeight(1)
-    frame.titleLine:SetPoint("TOPLEFT", 20, -42)
-    frame.titleLine:SetPoint("TOPRIGHT", -20, -42)
-    frame.titleLine:SetColorTexture(0.4, 0.6, 0.9, 0.5)
-
-    -- Scroll frame for content
-    local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 16, -52)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -32, 50)
+    -- Scrolling list of versions
+    local scrollFrame = CreateFrame("ScrollFrame", nil, inner, "UIPanelScrollFrameTemplate")
+    Theme:SkinScrollBar(scrollFrame)
+    scrollFrame:SetPoint("TOPLEFT", 24, -92)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -34, 58)
 
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-    scrollChild:SetSize(scrollFrame:GetWidth(), 1) -- Height will be set dynamically
+    scrollChild:SetSize(410, 1) -- height set when the list is drawn
     scrollFrame:SetScrollChild(scrollChild)
+    frame.scrollFrame = scrollFrame
     frame.scrollChild = scrollChild
 
-    -- "Got it!" button
-    frame.gotItBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    frame.gotItBtn:SetSize(100, 26)
-    frame.gotItBtn:SetPoint("BOTTOM", 0, 14)
-    frame.gotItBtn:SetText("Got it!")
-    frame.gotItBtn:SetScript("OnClick", function()
+    -- A quiet rule above the button
+    local rule = inner:CreateTexture(nil, "ARTWORK")
+    rule:SetHeight(1)
+    rule:SetPoint("BOTTOMLEFT", 20, 50)
+    rule:SetPoint("BOTTOMRIGHT", -20, 50)
+    rule:SetColorTexture(Theme:Color("divider"))
+
+    frame.gotItBtn = Theme:CreateButton(inner, "Got it", 120, function()
         WhatsNew:Hide()
-    end)
+    end, "primary")
+    frame.gotItBtn:SetHeight(26)
+    frame.gotItBtn:SetPoint("BOTTOM", 0, 14)
 
     -- Dim overlay behind the frame
     frame.overlay = CreateFrame("Frame", "CastbornWhatsNewOverlay", UIParent)
@@ -1078,8 +1067,6 @@ local function CreateWhatsNewFrame()
     frame.overlay.bg:SetColorTexture(0, 0, 0, 0.7)
 
     frame.overlay:Hide()
-
-    frame:Hide()
     return frame
 end
 
@@ -1111,7 +1098,7 @@ local function CreateCooldownReorderDemo(parent, yOffset)
         icon.border = icon:CreateTexture(nil, "BORDER")
         icon.border:SetPoint("TOPLEFT", -1, 1)
         icon.border:SetPoint("BOTTOMRIGHT", 1, -1)
-        icon.border:SetColorTexture(0.3, 0.3, 0.3, 1)
+        icon.border:SetColorTexture(Theme:Color("rule"))
 
         -- Store home positions (offsets from left)
         icon.homeX = (i - 1) * (iconSize + spacing)
@@ -1140,22 +1127,16 @@ local function CreateCooldownReorderDemo(parent, yOffset)
 
             local step = iconSize + spacing
             -- Icon 3 moves from slot 3 to slot 1
-            local icon3TargetX = 0
-            local icon3StartX = 2 * step
             icons[3]:ClearAllPoints()
-            icons[3]:SetPoint("LEFT", icon3StartX + (icon3TargetX - icon3StartX) * t, 0)
+            icons[3]:SetPoint("LEFT", 2 * step - 2 * step * t, 0)
 
             -- Icon 1 moves from slot 1 to slot 2
-            local icon1TargetX = step
-            local icon1StartX = 0
             icons[1]:ClearAllPoints()
-            icons[1]:SetPoint("LEFT", icon1StartX + (icon1TargetX - icon1StartX) * t, 0)
+            icons[1]:SetPoint("LEFT", step * t, 0)
 
             -- Icon 2 moves from slot 2 to slot 3
-            local icon2TargetX = 2 * step
-            local icon2StartX = step
             icons[2]:ClearAllPoints()
-            icons[2]:SetPoint("LEFT", icon2StartX + (icon2TargetX - icon2StartX) * t, 0)
+            icons[2]:SetPoint("LEFT", step + step * t, 0)
 
             if animElapsed >= animDuration then
                 animElapsed = 0
@@ -1185,86 +1166,98 @@ local widgetBuilders = {
     cooldown_reorder_demo = CreateCooldownReorderDemo,
 }
 
-local function PopulateChangelog(scrollChild)
-    -- Clear existing content
-    for _, child in ipairs({scrollChild:GetChildren()}) do
-        child:Hide()
-        child:SetParent(nil)
+-- Sections of a changelog entry, in the order they are listed
+local SECTIONS = {
+    { key = "features", label = "NEW" },
+    { key = "changes", label = "CHANGED" },
+    { key = "fixes", label = "FIXED" },
+}
+
+-- Draw the version history into `parent` (a scroll child) at `width` pixels wide. Each call
+-- replaces what an earlier call drew. Returns the height used.
+function WhatsNew:RenderChangelog(parent, width)
+    if parent.changelogContent then
+        parent.changelogContent:Hide()
     end
+    local content = CreateFrame("Frame", nil, parent)
+    content:SetPoint("TOPLEFT", 0, 0)
+    content:SetWidth(width)
+    parent.changelogContent = content
 
     local y = 0
-    local contentWidth = scrollChild:GetWidth() - 10
-
     for i, entry in ipairs(changelog) do
-        -- Version header
-        local versionHeader = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        versionHeader:SetPoint("TOPLEFT", 0, y)
-        versionHeader:SetWidth(contentWidth)
-        versionHeader:SetJustifyH("LEFT")
+        if i > 1 then
+            local divider = content:CreateTexture(nil, "ARTWORK")
+            divider:SetHeight(1)
+            divider:SetPoint("TOPLEFT", 0, y)
+            divider:SetPoint("TOPRIGHT", 0, y)
+            divider:SetColorTexture(Theme:Color("divider"))
+            y = y - 14
+        end
+
+        -- Version: serif, gold for the current release
+        local version = content:CreateFontString(nil, "OVERLAY")
+        Theme:Font(version, "heading", 20)
+        version:SetPoint("TOPLEFT", 0, y)
+        version:SetText("v" .. entry.version)
+        if i > 1 then version:SetTextColor(Theme:Color("muted")) end
 
         if i == 1 then
-            versionHeader:SetText("|cffFFCC00Version " .. entry.version .. " (Current)|r")
-        else
-            versionHeader:SetText("|cff888888Version " .. entry.version .. "|r")
+            local tag = CreateFrame("Frame", nil, content)
+            Theme:Chamfer(tag, { cut = 4, fill = "ribbonA", edge = "accent" })
+            local tagText = tag:CreateFontString(nil, "OVERLAY")
+            Theme:Font(tagText, "strong", 10)
+            tagText:SetTextColor(Theme:Color("onAccent"))
+            tagText:SetPoint("CENTER", 0, 0)
+            tagText:SetText("CURRENT")
+            tag:SetSize(tagText:GetStringWidth() + 14, 16)
+            tag:SetPoint("LEFT", version, "RIGHT", 10, 0)
         end
+        y = y - 28
 
-        y = y - 20
+        for _, section in ipairs(SECTIONS) do
+            local items = entry[section.key]
+            if items and #items > 0 then
+                local label = content:CreateFontString(nil, "OVERLAY")
+                Theme:Font(label, "strong", 11)
+                label:SetTextColor(Theme:Color("accent"))
+                label:SetPoint("TOPLEFT", 2, y)
+                label:SetText(section.label)
+                y = y - 17
 
-        -- Features section
-        if entry.features and #entry.features > 0 then
-            local featuresLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            featuresLabel:SetPoint("TOPLEFT", 8, y)
-            featuresLabel:SetText("|cff88ddffFeatures:|r")
-            y = y - 16
+                for _, item in ipairs(items) do
+                    local marker = content:CreateTexture(nil, "ARTWORK")
+                    marker:SetTexture(Theme.media.diamond)
+                    marker:SetVertexColor(Theme:Color("rule"))
+                    marker:SetSize(7, 7)
+                    marker:SetPoint("TOPLEFT", 6, y - 5)
 
-            for _, feature in ipairs(entry.features) do
-                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                bullet:SetPoint("TOPLEFT", 16, y)
-                bullet:SetWidth(contentWidth - 24)
-                bullet:SetJustifyH("LEFT")
-                bullet:SetText("|cffcccccc-|r " .. feature)
-                bullet:SetSpacing(2)
+                    local text = content:CreateFontString(nil, "OVERLAY")
+                    Theme:Font(text, "body", 14)
+                    text:SetPoint("TOPLEFT", 20, y)
+                    text:SetWidth(width - 24)
+                    text:SetJustifyH("LEFT")
+                    text:SetSpacing(2)
+                    text:SetText(item)
+                    if i > 1 then text:SetTextColor(Theme:Color("navText")) end
+                    y = y - text:GetStringHeight() - 6
+                end
+                y = y - 4
+            end
 
-                -- Calculate height based on text wrapping
-                local textHeight = bullet:GetStringHeight()
-                y = y - textHeight - 4
+            -- The animated demo sits under the features
+            if section.key == "features" and entry.widget and widgetBuilders[entry.widget] then
+                local _, widgetHeight = widgetBuilders[entry.widget](content, y)
+                y = y - widgetHeight - 4
             end
         end
 
-        -- Widget (animated demo)
-        if entry.widget and widgetBuilders[entry.widget] then
-            y = y - 4
-            local widgetFrame, widgetHeight = widgetBuilders[entry.widget](scrollChild, y)
-            y = y - widgetHeight - 4
-        end
-
-        -- Fixes section
-        if entry.fixes and #entry.fixes > 0 then
-            local fixesLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            fixesLabel:SetPoint("TOPLEFT", 8, y)
-            fixesLabel:SetText("|cff88ff88Fixes:|r")
-            y = y - 16
-
-            for _, fix in ipairs(entry.fixes) do
-                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                bullet:SetPoint("TOPLEFT", 16, y)
-                bullet:SetWidth(contentWidth - 24)
-                bullet:SetJustifyH("LEFT")
-                bullet:SetText("|cffcccccc-|r " .. fix)
-                bullet:SetSpacing(2)
-
-                -- Calculate height based on text wrapping
-                local textHeight = bullet:GetStringHeight()
-                y = y - textHeight - 4
-            end
-        end
-
-        -- Add spacing between versions
-        y = y - 12
+        y = y - 8
     end
 
-    -- Set scroll child height
-    scrollChild:SetHeight(math.abs(y) + 20)
+    local height = math.abs(y)
+    content:SetHeight(height)
+    return height
 end
 
 --------------------------------------------------------------------------------
@@ -1276,11 +1269,11 @@ function WhatsNew:Show()
         whatsNewFrame = CreateWhatsNewFrame()
     end
 
-    -- Update title with current version
-    whatsNewFrame.title:SetText("|cff88ddffWhat's New in Castborn v" .. Castborn.version .. "|r")
+    whatsNewFrame.subtitle:SetText("Castborn v" .. Castborn.version)
 
-    -- Populate changelog content
-    PopulateChangelog(whatsNewFrame.scrollChild)
+    local scrollChild = whatsNewFrame.scrollChild
+    scrollChild:SetHeight(self:RenderChangelog(scrollChild, scrollChild:GetWidth()) + 10)
+    whatsNewFrame.scrollFrame:SetVerticalScroll(0)
 
     whatsNewFrame.overlay:Show()
     whatsNewFrame:Show()

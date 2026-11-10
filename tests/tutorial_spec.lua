@@ -59,6 +59,15 @@ describe("Tutorial steps", function()
             }, shownIds(load("PALADIN")))
         end)
 
+        it("keeps the highlight colour in step text gold, not the old blue", function()
+            for _, step in ipairs(load("PALADIN").steps) do
+                for _, field in ipairs({ "description", "tip" }) do
+                    local text = step[field] or ""
+                    assert.is_nil(text:lower():find("88ddff"), step.id .. " " .. field)
+                end
+            end
+        end)
+
         it("shows totems only to shamans", function()
             assert.is_true(load("SHAMAN"):IsStepShown(indexOf(Castborn.Tutorial, "totems")))
             assert.is_false(load("MAGE"):IsStepShown(indexOf(Castborn.Tutorial, "totems")))
@@ -127,6 +136,15 @@ describe("Tutorial steps", function()
             local T = load("PALADIN", true)
             local step = T.steps[indexOf(T, "seals")]
             assert.is_nil(step.description:find("Judgement"))
+        end)
+
+        it("shows the Cooldown Text step only when that module is loaded", function()
+            local T = load("MAGE", true)
+            assert.is_false(T:IsStepShown(indexOf(T, "cooldowntext")))
+            Castborn.CooldownText = {}
+            local shown = T:IsStepShown(indexOf(T, "cooldowntext"))
+            Castborn.CooldownText = nil
+            assert.is_true(shown)
         end)
 
         it("says the armour reminder checks out of combat", function()

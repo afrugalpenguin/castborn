@@ -135,172 +135,18 @@ local function CreateGroup(parent, title, height)
     return frame
 end
 
--- Buttons: secondary (dark plate, quiet gold edge) unless a variant is given:
--- "primary" (solid gold) or "danger" (dark red edge, for deleting)
-local BUTTON_STYLES = {
-    primary = { fill = "ribbonB", hoverFill = "accent", text = "onAccent" },
-    secondary = { fill = "raised", edge = "rule", hoverEdge = "accent", text = "text" },
-    danger = { fill = "dangerFill", edge = "dangerEdge", hoverEdge = "dangerText", text = "dangerText" },
-}
-
+-- Buttons and checkboxes are shared with the other Castborn windows (Systems/Theme.lua)
 local function CreateButton(parent, text, width, onClick, variant)
-    local style = BUTTON_STYLES[variant or "secondary"]
-    local btn = CreateFrame("Button", nil, parent)
-    btn:SetSize(width or 100, 24)
-    Theme:Chamfer(btn, { cut = 6, fill = style.fill, edge = style.edge })
-
-    local label = btn:CreateFontString(nil, "OVERLAY")
-    Theme:Font(label, "strong", 13)
-    label:SetTextColor(Theme:Color(style.text))
-    label:SetPoint("CENTER", 0, 0)
-    btn:SetFontString(label)
-    btn:SetText(text)
-
-    btn:SetScript("OnEnter", function(self)
-        Theme:SetChamferColors(self, style.hoverFill or style.fill, style.hoverEdge or style.edge)
-    end)
-    btn:SetScript("OnLeave", function(self)
-        Theme:SetChamferColors(self, style.fill, style.edge)
-    end)
-    btn:SetScript("OnDisable", function(self) self:SetAlpha(0.45) end)
-    btn:SetScript("OnEnable", function(self) self:SetAlpha(1) end)
-    btn:SetScript("OnClick", function(self)
-        if onClick then onClick(self) end
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-    end)
-    return btn
+    return Theme:CreateButton(parent, text, width, onClick, variant)
 end
 
--- Checkbox: a small chamfered box with a gold tick; the label is part of the click area
 local function CreateCheckbox(parent, label, dbTable, dbKey, onChange)
-    local frame = CreateFrame("CheckButton", nil, parent)
-    frame:SetSize(26, 26)
-
-    local box = CreateFrame("Frame", nil, frame)
-    box:SetSize(18, 18)
-    box:SetPoint("CENTER")
-    Theme:Chamfer(box, { cut = 4 })
-
-    local tick = box:CreateTexture(nil, "OVERLAY")
-    tick:SetTexture(Theme.media.tick)
-    tick:SetVertexColor(Theme:Color("heading"))
-    tick:SetSize(14, 14)
-    tick:SetPoint("CENTER")
-
-    frame.text = frame:CreateFontString(nil, "OVERLAY")
-    Theme:Font(frame.text, "body", 14)
-    frame.text:SetPoint("LEFT", frame, "RIGHT", 4, 0)
-    frame.text:SetText(label)
-    frame:SetHitRectInsets(0, -(frame.text:GetStringWidth() + 8), 0, 0)
-
-    local function Refresh(self, hover)
-        local on = self:GetChecked() and true or false
-        Theme:SetChamferColors(box, on and "knob" or "inputBg", (hover or on) and "accent" or "rule")
-        tick:SetShown(on)
-        self.text:SetTextColor(Theme:Color((hover or on) and "text" or "navText"))
-    end
-
-    -- Callers set the state directly too, so keep the look in step with it
-    local setChecked = frame.SetChecked
-    frame.SetChecked = function(self, checked)
-        setChecked(self, checked)
-        Refresh(self)
-    end
-
-    frame:SetChecked(dbTable and dbKey and dbTable[dbKey])
-
-    frame:SetScript("OnEnter", function(self) Refresh(self, true) end)
-    frame:SetScript("OnLeave", function(self) Refresh(self) end)
-    frame:SetScript("OnClick", function(self)
-        local checked = self:GetChecked() and true or false
-        if dbTable and dbKey then
-            dbTable[dbKey] = checked
-        end
-        Refresh(self, true)
-        if onChange then onChange(checked) end
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-    end)
-
-    return frame
+    return Theme:CreateCheckbox(parent, label, dbTable, dbKey, onChange)
 end
 
+-- Slider (Systems/Theme.lua)
 local function CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step, onChange)
-    local frame = CreateFrame("Frame", nil, parent)
-    frame:SetSize(200, 50)
-
-    local labelText = frame:CreateFontString(nil, "OVERLAY")
-    Theme:Font(labelText, "body", 14)
-    labelText:SetPoint("TOPLEFT", 0, 0)
-    labelText:SetText(label)
-
-    local valueText = frame:CreateFontString(nil, "OVERLAY")
-    Theme:Font(valueText, "strong", 14)
-    valueText:SetPoint("TOPRIGHT", 0, 0)
-
-    local slider = CreateFrame("Slider", nil, frame)
-    slider:SetPoint("TOPLEFT", 0, -20)
-    slider:SetPoint("TOPRIGHT", 0, -20)
-    slider:SetHeight(18)
-    slider:SetOrientation("HORIZONTAL")
-    slider:SetMinMaxValues(minVal, maxVal)
-    slider:SetValueStep(step)
-    slider:SetObeyStepOnDrag(true)
-    slider:EnableMouse(true)
-
-    -- A hairline track that fills gold up to the value
-    local track = slider:CreateTexture(nil, "BACKGROUND")
-    track:SetHeight(2)
-    track:SetPoint("LEFT", 0, 0)
-    track:SetPoint("RIGHT", 0, 0)
-    track:SetColorTexture(Theme:Color("rule"))
-
-    local fill = slider:CreateTexture(nil, "ARTWORK")
-    fill:SetHeight(2)
-    fill:SetPoint("LEFT", 0, 0)
-    fill:SetColorTexture(Theme:Color("accent"))
-    slider.fill = fill
-
-    -- Diamond knob, brighter while hovered
-    local thumb = slider:CreateTexture(nil, "OVERLAY")
-    thumb:SetTexture(Theme.media.diamond)
-    thumb:SetVertexColor(Theme:Color("heading"))
-    thumb:SetSize(14, 14)
-    slider:SetThumbTexture(thumb)
-    slider:SetScript("OnEnter", function() thumb:SetVertexColor(Theme:Color("title")) end)
-    slider:SetScript("OnLeave", function() thumb:SetVertexColor(Theme:Color("heading")) end)
-
-    local currentValue = (dbTable and dbKey and dbTable[dbKey]) or minVal
-    slider:SetValue(currentValue)
-    valueText:SetText(currentValue)
-
-    -- Update fill bar width based on value
-    local function UpdateFill(value)
-        local range = maxVal - minVal
-        if range > 0 then
-            local pct = (value - minVal) / range
-            fill:SetWidth(math.max(1, slider:GetWidth() * pct))
-        end
-    end
-
-    slider:SetScript("OnValueChanged", function(self, value)
-        value = math.floor(value / step + 0.5) * step
-        valueText:SetText(value)
-        UpdateFill(value)
-        if dbTable and dbKey then
-            dbTable[dbKey] = value
-        end
-        if onChange then onChange(value) end
-    end)
-
-    -- Initialize fill when slider gets its size
-    slider:SetScript("OnSizeChanged", function(self, width, height)
-        if width and width > 0 then
-            UpdateFill(self:GetValue())
-        end
-    end)
-
-    frame.slider = slider
-    return frame
+    return Theme:CreateSlider(parent, label, dbTable, dbKey, minVal, maxVal, step, onChange)
 end
 
 local function CreateColorPicker(parent, label, dbTable, dbKey, onChange)
@@ -393,32 +239,9 @@ local function CreateColorPicker(parent, label, dbTable, dbKey, onChange)
     return frame
 end
 
--- Scrollbars on long pages: the template's arrows and track hidden, a slim gold thumb instead
+-- Scrollbars on long pages (Systems/Theme.lua)
 local function SkinScrollBar(scrollFrame)
-    local bar = scrollFrame.ScrollBar or (scrollFrame:GetName() and _G[scrollFrame:GetName() .. "ScrollBar"])
-    if not bar then return end
-    for _, key in ipairs({ "ScrollUpButton", "ScrollDownButton" }) do
-        local arrow = bar[key] or (bar:GetName() and _G[bar:GetName() .. key])
-        if arrow then
-            arrow:SetAlpha(0)
-            arrow:EnableMouse(false)
-        end
-    end
-    for _, region in ipairs({ bar:GetRegions() }) do
-        if region:IsObjectType("Texture") and region ~= bar:GetThumbTexture() then
-            region:SetAlpha(0)
-        end
-    end
-    local rail = bar:CreateTexture(nil, "BACKGROUND")
-    rail:SetWidth(1)
-    rail:SetPoint("TOP", 0, 0)
-    rail:SetPoint("BOTTOM", 0, 0)
-    rail:SetColorTexture(Theme:Color("divider"))
-    local thumb = bar:GetThumbTexture()
-    if thumb then
-        thumb:SetColorTexture(Theme:Color("rule"))
-        thumb:SetSize(4, 36)
-    end
+    Theme:SkinScrollBar(scrollFrame)
 end
 
 -- UIDropDownMenuTemplate: the template's art hidden behind a chamfered box and a gold chevron.
@@ -851,7 +674,7 @@ function Options:BuildGeneral(parent)
         GameTooltip:SetText("Test Mode")
         GameTooltip:AddLine("Shows all modules with sample data so you can reposition them.", 1, 1, 1, true)
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Ctrl+Shift+Click a module header to temporarily hide it \226\128\148 useful when frames overlap.", 0.53, 0.87, 1, true)
+        GameTooltip:AddLine("Ctrl+Shift+Click a frame's label to hide it for now, useful when frames overlap.", Theme:Color("heading"))
         GameTooltip:Show()
     end)
     testBtn:SetScript("OnLeave", function()
@@ -1555,90 +1378,10 @@ function Options:BuildChangelog(parent)
     local scrollChild, scrollFrame = CreateScrollableContent(parent)
     scrollFrame:SetPoint("TOPLEFT", 0, y)
 
-    -- Get changelog data from WhatsNew module
-    local changelog = Castborn.WhatsNew and Castborn.WhatsNew:GetChangelog() or {}
-
-    local contentY = 0
-    local contentWidth = 400
-
-    for i, entry in ipairs(changelog) do
-        -- Version header
-        local versionHeader = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
-        versionHeader:SetPoint("TOPLEFT", 0, contentY)
-        versionHeader:SetWidth(contentWidth)
-        versionHeader:SetJustifyH("LEFT")
-
-        if i == 1 then
-            versionHeader:SetText("|cffFFCC00v" .. entry.version .. " (Current)|r")
-        else
-            versionHeader:SetText("|cff888888v" .. entry.version .. "|r")
-        end
-
-        contentY = contentY - 18
-
-        -- Features section
-        if entry.features and #entry.features > 0 then
-            local featuresLabel = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
-            featuresLabel:SetPoint("TOPLEFT", 8, contentY)
-            featuresLabel:SetText("|cff88ddffFeatures:|r")
-            contentY = contentY - 14
-
-            for _, feature in ipairs(entry.features) do
-                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
-                bullet:SetPoint("TOPLEFT", 16, contentY)
-                bullet:SetWidth(contentWidth - 24)
-                bullet:SetJustifyH("LEFT")
-                bullet:SetText("|cffcccccc-|r " .. feature)
-                bullet:SetSpacing(2)
-                local textHeight = bullet:GetStringHeight()
-                contentY = contentY - textHeight - 2
-            end
-        end
-
-        -- Changes section
-        if entry.changes and #entry.changes > 0 then
-            local changesLabel = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
-            changesLabel:SetPoint("TOPLEFT", 8, contentY)
-            changesLabel:SetText("|cffffcc00Changes:|r")
-            contentY = contentY - 14
-
-            for _, change in ipairs(entry.changes) do
-                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
-                bullet:SetPoint("TOPLEFT", 16, contentY)
-                bullet:SetWidth(contentWidth - 24)
-                bullet:SetJustifyH("LEFT")
-                bullet:SetText("|cffcccccc-|r " .. change)
-                bullet:SetSpacing(2)
-                local textHeight = bullet:GetStringHeight()
-                contentY = contentY - textHeight - 2
-            end
-        end
-
-        -- Fixes section
-        if entry.fixes and #entry.fixes > 0 then
-            local fixesLabel = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
-            fixesLabel:SetPoint("TOPLEFT", 8, contentY)
-            fixesLabel:SetText("|cff88ff88Fixes:|r")
-            contentY = contentY - 14
-
-            for _, fix in ipairs(entry.fixes) do
-                local bullet = scrollChild:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
-                bullet:SetPoint("TOPLEFT", 16, contentY)
-                bullet:SetWidth(contentWidth - 24)
-                bullet:SetJustifyH("LEFT")
-                bullet:SetText("|cffcccccc-|r " .. fix)
-                bullet:SetSpacing(2)
-                local textHeight = bullet:GetStringHeight()
-                contentY = contentY - textHeight - 2
-            end
-        end
-
-        -- Spacing between versions
-        contentY = contentY - 10
+    -- The same list the What's New window shows (Systems/WhatsNew.lua)
+    if Castborn.WhatsNew then
+        scrollChild:SetHeight(Castborn.WhatsNew:RenderChangelog(scrollChild, 400) + 20)
     end
-
-    -- Set scroll child height
-    scrollChild:SetHeight(math.abs(contentY) + 20)
 end
 
 -- Per-module option builders. Each receives the content frame, the module's
@@ -2433,7 +2176,7 @@ function moduleBuilders.multidot(parent, db, y)
     -- Nameplate Indicators section
     local npHeader = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     npHeader:SetPoint("TOPLEFT", 0, y)
-    npHeader:SetText("|cff88ddffNameplate Indicators|r")
+    npHeader:SetText(Theme:Code("heading") .. "Nameplate Indicators|r")
     y = y - 20
 
     local npDesc = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
