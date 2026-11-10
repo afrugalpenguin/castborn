@@ -496,11 +496,14 @@ local function SkinInput(editBox)
         local part = editBox[key] or _G[(editBox:GetName() or "") .. key]
         if part then part:SetAlpha(0) end
     end
+    -- Kept within the box's own bounds (scrolling pages clip anything to the left of it);
+    -- the text is padded inward instead
     local box = CreateFrame("Frame", nil, editBox)
     box:SetFrameLevel(math.max(0, editBox:GetFrameLevel() - 1))
-    box:SetPoint("TOPLEFT", -6, 4)
-    box:SetPoint("BOTTOMRIGHT", 2, -4)
+    box:SetPoint("TOPLEFT", 0, 3)
+    box:SetPoint("BOTTOMRIGHT", 0, -3)
     Theme:Chamfer(box, { cut = 6, fill = "inputBg", edge = "rule" })
+    editBox:SetTextInsets(8, 6, 0, 0)
     Theme:Font(editBox, "body", 13)
     editBox:SetTextColor(Theme:Color("title"))
     editBox:HookScript("OnEditFocusGained", function() Theme:SetChamferColors(box, "inputBg", "accent") end)
