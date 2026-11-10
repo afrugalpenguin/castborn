@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "7.9.1",
+        fixes = {
+            "Colour pickers in the options now open on Forever",
+            "Casting spells back to back no longer makes every button play the finish effect",
+        },
+    },
+    {
         version = "7.9.0",
         features = {
             "Cooldown text on Forever: styled numbers on your action bars (including Bartender4) and Castborn icons",

@@ -1,5 +1,10 @@
 # Changelog
 
+**v7.9.1**
+
+- Fixed colour pickers in the options erroring or not opening on Forever
+- Fixed every action button playing the cooldown finish effect at once after casting spells back to back
+
 **v7.9.0**
 
 - Cooldown text on Forever: styled countdown numbers on your action bars (Blizzard's bars and Bartender4) and on Castborn's cooldown and item icons, scaled to each button, with no number on the GCD
