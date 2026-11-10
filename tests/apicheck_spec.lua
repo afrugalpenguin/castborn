@@ -271,4 +271,110 @@ describe("APICheck", function()
             assert.is_nil(APICheck.auraDurationTried)
         end)
     end)
+
+    describe("proc overlay events", function()
+        it("records the spell ID type and the procs seen", function()
+            _G.InCombatLockdown = function() return true end
+            APICheck:OnEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", 16870)
+            APICheck:OnEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", 12536)
+            local events = APICheck:Run().events
+            assert.are.equal("number", events["SPELL_ACTIVATION_OVERLAY_GLOW_SHOW spellID [combat]"])
+            assert.are.equal("12536,16870", events["SPELL_ACTIVATION_OVERLAY_GLOW_SHOW spells seen"])
+        end)
+
+        it("does not keep a secret spell ID", function()
+            _G.issecretvalue = function(v) return v == 99 end
+            assert.has_no.errors(function()
+                APICheck:OnEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", 99)
+            end)
+            assert.are.equal("secret", APICheck:Run().events["SPELL_ACTIVATION_OVERLAY_GLOW_SHOW spellID"])
+            assert.is_nil(APICheck.overlaySpells[99])
+        end)
+    end)
+
+    describe("rendering probes", function()
+        local probed, zero
+        local realProbeRendering = APICheck.ProbeRendering
+
+        local function fakeDuration()
+            return { IsZero = function() return zero end }
+        end
+
+        before_each(function()
+            probed, zero = 0, false
+            APICheck.renderProbed = nil
+            _G.C_Spell = { GetSpellCooldownDuration = function() return fakeDuration() end }
+            APICheck.ProbeRendering = function() probed = probed + 1 end
+        end)
+
+        after_each(function()
+            APICheck.ProbeRendering = realProbeRendering
+            _G.C_CurveUtil = nil
+            _G.CreateColor = nil
+            _G.C_DurationUtil = nil
+        end)
+
+        it("runs once per combat", function()
+            _G.InCombatLockdown = function() return true end
+            APICheck:MaybeProbeRendering(100)
+            APICheck:MaybeProbeRendering(100)
+            assert.are.equal(1, probed)
+        end)
+
+        it("runs again after combat ends", function()
+            _G.InCombatLockdown = function() return true end
+            APICheck:MaybeProbeRendering(100)
+            APICheck:OnEvent("PLAYER_REGEN_ENABLED")
+            APICheck:MaybeProbeRendering(100)
+            assert.are.equal(2, probed)
+        end)
+
+        it("does not run out of combat", function()
+            APICheck:MaybeProbeRendering(100)
+            assert.are.equal(0, probed)
+        end)
+
+        it("waits for a cast with a non-zero duration", function()
+            _G.InCombatLockdown = function() return true end
+            zero = true
+            APICheck:MaybeProbeRendering(100)
+            assert.are.equal(0, probed)
+        end)
+
+        it("skips a cast whose duration lookup errors", function()
+            _G.InCombatLockdown = function() return true end
+            _G.C_Spell = { GetSpellCooldownDuration = function() error("secret argument") end }
+            assert.has_no.errors(function() APICheck:MaybeProbeRendering(100) end)
+            assert.are.equal(0, probed)
+        end)
+
+        it("records OnCooldownDone firing in combat", function()
+            _G.InCombatLockdown = function() return true end
+            APICheck:OnRenderCooldownDone()
+            assert.are.equal("fired", APICheck:Run().events["Cooldown OnCooldownDone [combat]"])
+        end)
+
+        it("feeds a colour curve result to a texture", function()
+            _G.CreateColor = function(r, g, b, a) return { r = r, g = g, b = b, a = a } end
+            _G.C_CurveUtil = { CreateColorCurve = function() return { AddPoint = function() end } end }
+            local duration = {
+                EvaluateRemainingPercent = function()
+                    return { r = 0.5, GetRGBA = function() return 0.5, 0.5, 0, 1 end }
+                end,
+            }
+            assert.are.equal("ok r=number", APICheck:TryCurve(duration, true))
+        end)
+
+        it("reports a curve error instead of raising it", function()
+            _G.CreateColor = function() return {} end
+            _G.C_CurveUtil = { CreateCurve = function() return { AddPoint = function() end } end }
+            local duration = { EvaluateRemainingPercent = function() error("not allowed") end }
+            assert.matches("^error: .*not allowed", APICheck:TryCurve(duration, false))
+        end)
+
+        it("reports missing curve and text binding APIs", function()
+            assert.are.equal("missing", APICheck:TryCurve({}, true))
+            assert.are.equal("missing", APICheck:TryTextBinding({}))
+        end)
+    end)
 end)
