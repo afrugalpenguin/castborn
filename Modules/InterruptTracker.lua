@@ -6,6 +6,7 @@ local frame = nil
 local lockoutFrame = nil
 local testModeActive = false
 local attachedIcons = {}  -- { target = button, focus = button }
+InterruptTracker.attachedIcons = attachedIcons
 
 local defaults = {
     enabled = true,
@@ -44,7 +45,8 @@ local function CreateInterruptBar()
     -- Background
     frame.bg = frame:CreateTexture(nil, "BACKGROUND")
     frame.bg:SetAllPoints()
-    frame.bg:SetColorTexture(0.05, 0.05, 0.05, 0.9)
+    local bgColor = db.bgColor or {0.05, 0.05, 0.05, 0.9}
+    frame.bg:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.9)
 
     -- Status bar
     frame.bar = CreateFrame("StatusBar", nil, frame)
@@ -389,7 +391,8 @@ function Castborn:TestInterrupt()
 
         mockFrame.bg = mockFrame:CreateTexture(nil, "BACKGROUND")
         mockFrame.bg:SetAllPoints()
-        mockFrame.bg:SetColorTexture(0.05, 0.05, 0.05, 0.9)
+        local bgColor = db.bgColor or {0.05, 0.05, 0.05, 0.9}
+        mockFrame.bg:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.9)
 
         mockFrame.bar = CreateFrame("StatusBar", nil, mockFrame)
         mockFrame.bar:SetPoint("TOPLEFT", db.height + 2, -1)
@@ -467,6 +470,23 @@ end
 -- Register with TestManager
 Castborn:RegisterCallback("READY", function()
     Castborn.TestManager:Register("Interrupt", function() Castborn:TestInterrupt() end, function() Castborn:EndTestInterrupt() end)
+end)
+
+-- Repaint after a background picker changes: the tracker's own colour, or (for a castbar's
+-- picker) the interrupt icon attached to that castbar, which copies the castbar's background
+function InterruptTracker:ApplyBackground(key)
+    local db = Castborn.db and Castborn.db[key]
+    if not db then return end
+    if key == "interrupt" then
+        Castborn:PaintBackdrop(_G["Castborn_Interrupt"], db.bgColor)
+        Castborn:PaintBackdrop(_G["Castborn_Interrupt_Mock"], db.bgColor)  -- test mode stand-in
+    elseif attachedIcons[key] then
+        Castborn:PaintBackdrop(attachedIcons[key], db.bgColor)
+    end
+end
+
+Castborn:RegisterCallback("BACKGROUND_CHANGED", function(key)
+    InterruptTracker:ApplyBackground(key)
 end)
 
 Castborn:RegisterModule("InterruptTracker", InterruptTracker)

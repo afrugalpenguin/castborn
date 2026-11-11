@@ -296,6 +296,19 @@ CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function(frame)
     end
 end)
 
+-- Repaint the three swing bars' backgrounds from the saved colour
+function SwingTimer:ApplyBackground()
+    local cfg = CB.db and CB.db.swing
+    if not cfg then return end
+    for _, swingType in ipairs({ "mainhand", "offhand", "ranged" }) do
+        CB:PaintBackdrop(CB.swingTimers[swingType], cfg.bgColor)
+    end
+end
+
+CB:RegisterCallback("BACKGROUND_CHANGED", function(key)
+    if key == "swing" then SwingTimer:ApplyBackground() end
+end)
+
 -- Detach / reattach Swing timer from castbar
 CB:RegisterAnchorCallbacks("SWING", "Swing Timer", function() return CB.swingTimers.container end, "swing", "BOTTOM", -2)
 
