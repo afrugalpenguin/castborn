@@ -218,7 +218,6 @@ describe("Live layout", function()
             it(orientation .. " growing " .. grow, function()
                 configure(orientation, grow, 3)
                 track({ 101, 102, 103, 104, 105 })
-                local sizeBefore = copy(icon(1).size)
                 tick()
 
                 local point, offsets = EXPECTED[orientation][grow][1], EXPECTED[orientation][grow][2]
@@ -229,8 +228,8 @@ describe("Live layout", function()
                 for i = 6, 20 do assert.is_false(icon(i).shown) end
                 assert.are.same(CONTAINER[orientation], container.size)
                 assert.is_true(container.shown)
-                -- Live updates never resize the icons themselves
-                assert.are.same(sizeBefore, icon(1).size)
+                -- Live updates size the icons from the current icon size
+                for i = 1, 5 do assert.are.same({ 30, 30 }, icon(i).size) end
             end)
         end
     end

@@ -499,7 +499,10 @@ function CooldownGroup:Update()
             local onCooldown, isLong, start, duration = tracker:GetSpellCooldownState(spellName)
             local icon = GetSpellTexture(spellName)
 
-            -- Position the frame based on visible index (compact layout with row wrapping)
+            -- Size and position the frame based on visible index (compact layout with row
+            -- wrapping), so a new icon size shows straight away
+            local size = settings.iconSize or 36
+            cdFrame:SetSize(size, size)
             self:PlaceAtSlot(cdFrame, visibleIndex, settings)
 
             if icon then
