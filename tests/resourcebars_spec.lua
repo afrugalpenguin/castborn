@@ -254,6 +254,27 @@ describe("Resource bars (TBC behaviour)", function()
         end)
     end)
 
+    describe("GetTexture", function()
+        after_each(function() Castborn.db.barTexture = nil end)
+
+        it("follows the global Look & Feel texture by default", function()
+            Castborn.db.barTexture = "Smooth"
+            assert.are.equal("GLOBAL", db.barTexture)
+            assert.are.equal(Castborn.builtinTextures.Smooth, RB:GetTexture(db))
+        end)
+
+        it("uses its own texture when one is chosen", function()
+            Castborn.db.barTexture = "Smooth"
+            db.barTexture = "Flat"
+            assert.are.equal(Castborn.builtinTextures.Flat, RB:GetTexture(db))
+        end)
+
+        it("falls back to the Blizzard texture for a name it cannot find", function()
+            db.barTexture = "Gone From LibSharedMedia"
+            assert.are.equal(Castborn.builtinTextures.Blizzard, RB:GetTexture(db))
+        end)
+    end)
+
     describe("frame placement and locking", function()
         local originalApplyPosition
 

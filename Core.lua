@@ -392,6 +392,7 @@ CB.defaults = {
         visibility = "ALWAYS",
         fadeAlpha = 0.4,
         bgColor = { 0.05, 0.05, 0.05, 0.6 },
+        barTexture = "GLOBAL",  -- "GLOBAL" follows Look & Feel, else a texture name
         anchored = false,
         point = "CENTER",
         xPct = 0,
@@ -590,7 +591,11 @@ function CB:RegisterBarFrame(bar)
 end
 
 function CB:GetBarTexture()
-    local name = self.db and self.db.barTexture or "Blizzard"
+    return self:ResolveBarTexture(self.db and self.db.barTexture or "Blizzard")
+end
+
+-- Texture path for a built-in or LibSharedMedia texture name, else the Blizzard bar
+function CB:ResolveBarTexture(name)
     if self.builtinTextures[name] then
         return self.builtinTextures[name]
     end
@@ -605,6 +610,10 @@ function CB:RefreshBarTextures()
     local texture = self:GetBarTexture()
     for bar in pairs(self._barFrames) do
         bar:SetStatusBarTexture(texture)
+    end
+    -- The resource bars may have their own texture, which the global one must not replace
+    if self.ResourceBars and self.ResourceBars.ApplyTexture then
+        self.ResourceBars:ApplyTexture()
     end
 end
 

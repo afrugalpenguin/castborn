@@ -2518,6 +2518,20 @@ function moduleBuilders.resources(parent, db, y)
     powerHeightSlider:SetPoint("TOPLEFT", 220, y)
     y = y - 60
 
+    -- Texture: the global Look & Feel one, or its own (built-in, then LibSharedMedia)
+    local textures = { { value = "GLOBAL", label = "Use Look & Feel" } }
+    local builtinNames = {}
+    for name in pairs(Castborn.builtinTextures) do builtinNames[#builtinNames + 1] = name end
+    table.sort(builtinNames)
+    for _, name in ipairs(builtinNames) do textures[#textures + 1] = { value = name, label = name } end
+    if Castborn.LSM then
+        for _, name in ipairs(Castborn.LSM:List("statusbar") or {}) do
+            if not Castborn.builtinTextures[name] then textures[#textures + 1] = { value = name, label = name } end
+        end
+    end
+    CreateChoice("CastbornResourceTextureDropdown", "Bar Texture:", "barTexture", textures, 0)
+    y = y - 56
+
     -- Colours: each picker shows only in Custom mode
     local colourHeader = CreateHeader(parent, "Colours")
     colourHeader:SetPoint("TOPLEFT", 0, y)

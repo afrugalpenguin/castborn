@@ -254,6 +254,22 @@ function ResourceBars:ApplyBackground()
     end
 end
 
+-- The bars' own texture, or the global Look & Feel one
+function ResourceBars:GetTexture(db)
+    if not db or not db.barTexture or db.barTexture == "GLOBAL" then
+        return CB:GetBarTexture()
+    end
+    return CB:ResolveBarTexture(db.barTexture)
+end
+
+function ResourceBars:ApplyTexture()
+    local f = self.frame
+    if not f then return end
+    local texture = self:GetTexture(GetDB())
+    f.health.bar:SetStatusBarTexture(texture)
+    f.power.bar:SetStatusBarTexture(texture)
+end
+
 function ResourceBars:ApplyFonts()
     local f = self.frame
     local db = GetDB()
@@ -335,6 +351,7 @@ function ResourceBars:ApplySettings()
     if self.testModeActive then self.powerHidden = false end
     self:Layout()
     self:ApplyBackground()
+    self:ApplyTexture()
     self:ApplyFonts()
     self:UpdateHealthColor()
     self:UpdatePowerColor()
