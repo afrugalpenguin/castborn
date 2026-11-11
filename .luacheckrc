@@ -198,5 +198,7 @@ files["**/*_Forever.lua"] = {
         "UnitCastingDuration", "UnitChannelDuration", "C_SwingTimer",
         "C_CurveUtil", "C_DurationUtil", "C_StringUtil", "CreateColor",
         "C_CVar", "C_ActionBar",
+        "UnitHealthPercent", "UnitPowerPercent", "CurveConstants",
+        "AbbreviateNumbers", "AbbreviateLargeNumbers",
     },
 }
