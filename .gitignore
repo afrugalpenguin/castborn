@@ -4,3 +4,5 @@ CLAUDE.md
 luacheck.exe
 castborn.zip
 docs/
+# Saved variables copied in from WoW for in-game test runs (/cbapi reports)
+/Castborn.lua
