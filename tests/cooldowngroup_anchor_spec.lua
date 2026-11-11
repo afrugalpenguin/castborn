@@ -80,3 +80,51 @@ describe("CooldownGroup.GetContainerSize", function()
         s.orientation = nil
     end)
 end)
+
+describe("CooldownGroup.GetSlotAtPoint", function()
+    local GetSlotAnchor = Castborn.CooldownGroup.GetSlotAnchor
+    local GetSlotAtPoint = Castborn.CooldownGroup.GetSlotAtPoint
+    local LEFT, RIGHT, TOP, BOTTOM = 0, 200, 200, 0
+
+    local function settings(grow, orientation)
+        return { iconSize = 30, spacing = 2, iconsPerRow = 3, growDirection = grow, orientation = orientation }
+    end
+
+    -- The centre of a slot, from where GetSlotAnchor places it in a container with these edges
+    local function centre(slot, s)
+        local point, _, x, y = GetSlotAnchor(slot, s)
+        if point == "TOPRIGHT" then return RIGHT + x - 15, TOP + y - 15 end
+        if point == "BOTTOMLEFT" then return LEFT + x + 15, BOTTOM + y + 15 end
+        return LEFT + x + 15, TOP + y - 15
+    end
+
+    for _, orientation in ipairs({ "HORIZONTAL", "VERTICAL" }) do
+        for _, grow in ipairs({ "LEFT", "RIGHT", "UP", "DOWN" }) do
+            it("finds every slot from its centre, " .. orientation .. " growing " .. grow, function()
+                local s = settings(grow, orientation)
+                for slot = 1, 8 do
+                    local x, y = centre(slot, s)
+                    assert.are.equal(slot, GetSlotAtPoint(s, x, y, LEFT, RIGHT, TOP, BOTTOM), "slot " .. slot)
+                end
+            end)
+        end
+    end
+
+    it("counts a point past the middle of a slot along the row as the next slot", function()
+        local s = settings("RIGHT", "HORIZONTAL")
+        assert.are.equal(1, GetSlotAtPoint(s, 15, 185, LEFT, RIGHT, TOP, BOTTOM))
+        assert.are.equal(2, GetSlotAtPoint(s, 17, 185, LEFT, RIGHT, TOP, BOTTOM))
+    end)
+
+    it("does the same down a column when vertical", function()
+        local s = settings("RIGHT", "VERTICAL")
+        assert.are.equal(1, GetSlotAtPoint(s, 15, TOP - 15, LEFT, RIGHT, TOP, BOTTOM))
+        assert.are.equal(2, GetSlotAtPoint(s, 15, TOP - 17, LEFT, RIGHT, TOP, BOTTOM))
+    end)
+
+    it("keeps to the last slot of a row and the first row or column", function()
+        local s = settings("RIGHT", "HORIZONTAL")
+        assert.are.equal(3, GetSlotAtPoint(s, RIGHT - 1, TOP - 1, LEFT, RIGHT, TOP, BOTTOM))
+        assert.are.equal(1, GetSlotAtPoint(s, LEFT - 50, TOP + 50, LEFT, RIGHT, TOP, BOTTOM))
+    end)
+end)
