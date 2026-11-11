@@ -58,6 +58,8 @@ local function augment(f)
     end
     f.GetFrameLevel = function(self) return self.level or 1 end
     f.SetFrameLevel = function(self, level) self.level = level end
+    -- A centre but no edges, so stacking a new group uses its fallback position
+    f.GetCenter = function() return 0, 0 end
     local createTexture = f.CreateTexture
     f.CreateTexture = function(...) return augment(createTexture(...)) end
     return f
