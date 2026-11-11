@@ -947,14 +947,24 @@ function Options:BuildLookFeel(parent)
     borderCB:SetPoint("TOPLEFT", 0, y)
     y = y - 36
 
-    -- Bar skin: Castborn's own, others' registered ones, and Masque's when installed
+    -- Bar skin for the castbars and resource bars. With Masque, they follow Masque's
+    -- Castborn > Bars group; this list is the fallback without Masque or with that group off.
     local BarSkin = Castborn.BarSkin
     if BarSkin then
         local skinLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
         skinLabel:SetPoint("TOPLEFT", 0, y)
-        skinLabel:SetText("Bar Skin (castbars and resource bars)")
+        skinLabel:SetText(Castborn.Masque and Castborn.Masque.lib and "Bar Skin without Masque" or "Bar Skin")
         skinLabel:SetTextColor(unpack(C.grey))
         y = y - 22
+
+        if Castborn.Masque and Castborn.Masque.lib then
+            local note = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
+            note:SetPoint("TOPLEFT", 0, y)
+            note:SetWidth(440)
+            note:SetJustifyH("LEFT")
+            note:SetText("Masque skins the castbars and resource bars: choose their skin in Masque's options under Castborn > Bars. This list applies when that group is disabled.")
+            y = y - 32
+        end
 
         local skinDropdown = CreateFrame("Frame", "CastbornBarSkinDropdown", parent, "UIDropDownMenuTemplate")
         SkinDropdown(skinDropdown)
