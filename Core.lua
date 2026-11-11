@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "8.1.0"
+CB.version = "8.1.1"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -477,6 +477,14 @@ function CB:CreateBackdrop(frame, bgColor, borderColor)
     end
 
     return bg
+end
+
+-- Repaint a CreateBackdrop frame's background. Also replaces the colour CreateBackdrop kept,
+-- because the colour picker saves a new table and RefreshBackgrounds repaints from the kept one.
+function CB:PaintBackdrop(frame, color)
+    if not frame or not frame.bg or not color then return end
+    frame._bgColor = color
+    frame.bg:SetColorTexture(color[1], color[2], color[3], color[4] or 0.9)
 end
 
 -- Toggle border visibility on all tracked backdrop frames
