@@ -68,7 +68,7 @@ local function CreateFSRBar()
     frame:SetFrameLevel(5)
 
     -- Use shared backdrop creation (matching GCD style)
-    CB:CreateBackdrop(frame, {0.05, 0.05, 0.05, 0.7}, cfg.borderColor or {0.3, 0.3, 0.3, 1})
+    CB:CreateBackdrop(frame, cfg.bgColor or {0.05, 0.05, 0.05, 0.7}, cfg.borderColor or {0.3, 0.3, 0.3, 1})
 
     -- Status bar (inset by 1px like GCD)
     local bar = CreateFrame("StatusBar", nil, frame)
@@ -302,6 +302,16 @@ end
 -- Register with TestManager
 CB:RegisterCallback("READY", function()
     CB.TestManager:Register("FSR", function() CB:TestFSR() end, function() CB:EndTestFSR() end)
+end)
+
+-- Repaint the 5-second rule bar's background from the saved colour
+function FiveSecondRule:ApplyBackground()
+    local cfg = CB.db and CB.db.fsr
+    if cfg then CB:PaintBackdrop(CB.fsrFrame, cfg.bgColor) end
+end
+
+CB:RegisterCallback("BACKGROUND_CHANGED", function(key)
+    if key == "fsr" then FiveSecondRule:ApplyBackground() end
 end)
 
 Castborn:RegisterModule("FiveSecondRule", FiveSecondRule)

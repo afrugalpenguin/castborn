@@ -675,6 +675,19 @@ function CB:RefreshCastbarColors()
     end
 end
 
+-- Repaint one castbar's background, and its icon's, from its saved colour
+function CastBars:ApplyBackground(dbKey)
+    local frame = CB.castbars and CB.castbars[dbKey]
+    local cfg = CB.db and CB.db[dbKey]
+    if not frame or not cfg then return end
+    CB:PaintBackdrop(frame, cfg.bgColor)
+    CB:PaintBackdrop(frame.iconFrame, cfg.bgColor)
+end
+
+CB:RegisterCallback("BACKGROUND_CHANGED", function(dbKey)
+    CastBars:ApplyBackground(dbKey)
+end)
+
 -- Enter test mode for castbars
 function CB:TestCastbars()
     testModeActive = true
