@@ -25,7 +25,9 @@ jobs:
       - name: Install LuaRocks
         uses: luarocks/gh-actions-luarocks@v7
         with:
-          luaRocksVersion: "@v3.13.0"
+          # The v3.13.0 tag's commit. A tag name does not work: GitHub drops the "v" from
+          # the archive's folder name, and the action then cannot find configure.
+          luaRocksVersion: "@3421bedc2ce2b64e79530bb97497531b014899a8"
 
       - name: Install busted
         run: luarocks install busted
