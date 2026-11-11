@@ -905,6 +905,8 @@ function Options:BuildCastbars(parent)
         barPicker:SetPoint("TOPLEFT", 0, y)
 
         local bgPicker = CreateColorPicker(panel, "Background Colour", CastbornDB[dbKey], "bgColor", function()
+            -- This castbar (and its interrupt icon) repaints itself
+            Castborn:FireCallback("BACKGROUND_CHANGED", dbKey)
             if Castborn.RefreshBackgrounds then Castborn:RefreshBackgrounds() end
         end)
         bgPicker:SetPoint("TOPLEFT", 220, y)
@@ -2761,6 +2763,8 @@ function Options:BuildModule(parent, key)
     -- Background colour picker
     if db.bgColor then
         local bgPicker = CreateColorPicker(parent, "Background Colour", db, "bgColor", function()
+            -- The module whose page this is repaints its own frames
+            Castborn:FireCallback("BACKGROUND_CHANGED", key)
             if Castborn.RefreshBackgrounds then
                 Castborn:RefreshBackgrounds()
             end

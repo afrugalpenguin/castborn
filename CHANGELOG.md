@@ -1,5 +1,9 @@
 # Changelog
 
+**v8.1.1**
+
+- Paladins now get a cooldown icon for Divine Protection, next to Divine Shield (existing characters pick it up automatically)
+
 **v8.1.0**
 
 - The What's New window, Test Mode and Grid panels now match the gilded options window

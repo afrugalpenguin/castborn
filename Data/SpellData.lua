@@ -397,6 +397,7 @@ SpellData.cooldowns = {
         { spellId = 31842, name = "Divine Illumination" },
         { spellId = 20216, name = "Divine Favor" },
         { spellId = 31884, name = "Avenging Wrath" },
+        { spellId = 498, name = "Divine Protection" },  -- rank 1; rank 2 (5573) matches by name
         { spellId = 642, name = "Divine Shield" },
         { spellId = 1044, name = "Blessing of Freedom" },
         { spellId = 853, name = "Hammer of Justice" },

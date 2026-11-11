@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.1.1",
+        features = {},
+        fixes = {
+            "Paladins now get a cooldown icon for Divine Protection, next to Divine Shield",
+        },
+    },
+    {
         version = "8.1.0",
         features = {
             "The What's New window, Test Mode and Grid panels now match the gilded options window",

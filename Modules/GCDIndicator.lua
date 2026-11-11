@@ -42,7 +42,7 @@ local function CreateGCDIndicator()
     frame:SetFrameLevel(8)
 
     -- Use shared backdrop creation
-    CB:CreateBackdrop(frame, {0.05, 0.05, 0.05, 0.7}, cfg.borderColor)
+    CB:CreateBackdrop(frame, cfg.bgColor or {0.05, 0.05, 0.05, 0.7}, cfg.borderColor)
 
     local bar = frame:CreateTexture(nil, "ARTWORK")
     bar:SetPoint("TOPLEFT", 1, -1)
@@ -253,6 +253,16 @@ CB:RegisterCallback("READY", function()
 
     -- Register with TestManager
     CB.TestManager:Register("GCD", function() CB:TestGCD() end, function() CB:EndTestGCD() end)
+end)
+
+-- Repaint the GCD bar's background from the saved colour
+function GCDIndicator:ApplyBackground()
+    local cfg = CB.db and CB.db.gcd
+    if cfg then CB:PaintBackdrop(CB.gcdFrame, cfg.bgColor) end
+end
+
+CB:RegisterCallback("BACKGROUND_CHANGED", function(key)
+    if key == "gcd" then GCDIndicator:ApplyBackground() end
 end)
 
 Castborn:RegisterModule("GCDIndicator", GCDIndicator)

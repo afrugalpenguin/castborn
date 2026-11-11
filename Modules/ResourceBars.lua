@@ -252,10 +252,14 @@ function ResourceBars:ApplyBackground()
     if not f or not db then return end
     local c = db.bgColor or defaults.bgColor
     for _, part in ipairs({ f.health, f.power }) do
-        part.holder._bgColor = c
-        if part.holder.bg then part.holder.bg:SetColorTexture(c[1], c[2], c[3], c[4] or 0.6) end
+        CB:PaintBackdrop(part.holder, c)
     end
 end
+
+-- Repaint when the Resource Bars page's background picker changes, like every other module
+CB:RegisterCallback("BACKGROUND_CHANGED", function(key)
+    if key == "resources" then ResourceBars:ApplyBackground() end
+end)
 
 -- The bars' own texture, or the global Look & Feel one
 function ResourceBars:GetTexture(db)
