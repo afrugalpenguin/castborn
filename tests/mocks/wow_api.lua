@@ -72,6 +72,11 @@ local function newMockFrame()
     frame.GetHeight = function() return 20 end
     frame.CreateTexture = function() return newMockFrame() end
     frame.CreateFontString = function() return newMockFrame() end
+    -- Placement is recorded so layout specs can read it back
+    frame.points = {}
+    frame.SetPoint = function(self, ...) self.points[#self.points + 1] = { ... } end
+    frame.ClearAllPoints = function(self) self.points = {} end
+    frame.SetSize = function(self, w, h) self.size = { w, h } end
     setmetatable(frame, { __index = function() return function() end end })
     return frame
 end
