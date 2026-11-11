@@ -42,6 +42,8 @@ read_globals = {
     "UnitGUID",
     "UnitAffectingCombat",
     "UnitPower",
+    "UnitHealth",
+    "UnitHealthMax",
     "UnitPowerMax",
     "UnitPowerType",
     "UnitCastingInfo",
@@ -96,6 +98,7 @@ read_globals = {
 
     -- WoW Constants
     "RAID_CLASS_COLORS",
+    "PowerBarColor",
     "LE_PARTY_CATEGORY_HOME",
     "Enum",
     "COMBATLOG_OBJECT_TYPE_PLAYER",

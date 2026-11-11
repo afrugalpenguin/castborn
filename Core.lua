@@ -374,6 +374,29 @@ CB.defaults = {
         warnNoSeal = true,
         warnInCombatOnly = false,
     },
+
+    resources = {
+        enabled = true,
+        showHealth = true,
+        showPower = true,
+        width = 220,
+        healthHeight = 18,
+        powerHeight = 12,
+        gap = 2,
+        healthColorMode = "CLASS",
+        healthColor = { 0.2, 0.8, 0.2, 1 },
+        powerColorMode = "TYPE",
+        powerColor = { 0.2, 0.4, 1, 1 },
+        textFormat = "CURRENT_MAX",
+        textSize = 11,
+        visibility = "ALWAYS",
+        fadeAlpha = 0.4,
+        bgColor = { 0.05, 0.05, 0.05, 0.6 },
+        anchored = false,
+        point = "CENTER",
+        xPct = 0,
+        yPct = -0.12,
+    },
 }
 
 -- Initialize saved variables
@@ -643,6 +666,10 @@ function CB:RefreshBackgrounds()
         local tCfg = CB.db.totems or {}
         local bgColor = tCfg.bgColor or {0, 0, 0, 0.7}
         CB.totemTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.7)
+    end
+    -- Resource bars (the colour picker replaces the table, so re-read it from the DB)
+    if CB.ResourceBars and CB.ResourceBars.ApplyBackground then
+        CB.ResourceBars:ApplyBackground()
     end
 end
 
