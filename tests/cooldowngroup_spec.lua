@@ -367,6 +367,7 @@ describe("Test mode drag to reorder", function()
         container.GetLeft = function() return 0 end
         container.GetRight = function() return 300 end
         container.GetTop = function() return 100 end
+        container.GetBottom = function() return 66 end
     end)
 
     after_each(function()
@@ -428,6 +429,42 @@ describe("Test mode drag to reorder", function()
             assert.are.equal("Interface\\Icons\\1", icon(2).icon.texture)
         end)
     end
+
+    -- Start dragging slot 1 and hover the cursor at (x, y)
+    local function hover(x, y)
+        local dragged = icon(1)
+        dragged.scripts.OnDragStart(dragged)
+        _G.GetCursorPosition = function() return x, y end
+        dragged.scripts.OnUpdate(dragged, 0.016)
+    end
+
+    it("targets the slot under the cursor in a vertical layout", function()
+        -- Two per column: slots 1 and 2 in the first column, 3 and 4 in the second
+        configure("VERTICAL", "RIGHT", 2)
+        track({ 1, 2, 3, 4, 5 })
+        Castborn:TestCooldowns()
+
+        hover(47, 85)  -- middle of slot 3: second column, top
+        assertPoint(container.slotHighlight, "TOPLEFT", container, "TOPLEFT", 32, 0)
+
+        icon(1).scripts.OnDragStop(icon(1))
+        Castborn:TestCooldowns()
+        hover(15, 53)  -- middle of slot 2: first column, second row
+        assertPoint(container.slotHighlight, "TOPLEFT", container, "TOPLEFT", 0, -32)
+    end)
+
+    it("counts rows from the bottom when growing up", function()
+        -- Three per row, rows stacking upwards from the container's bottom edge
+        configure("HORIZONTAL", "UP", 3)
+        track({ 1, 2, 3, 4, 5 })
+        Castborn:TestCooldowns()
+        container.GetRight = function() return 94 end
+        container.GetTop = function() return 66 end
+        container.GetBottom = function() return 0 end
+
+        hover(15, 47)  -- middle of slot 4: second row up, first column
+        assertPoint(container.slotHighlight, "BOTTOMLEFT", container, "BOTTOMLEFT", 0, 32)
+    end)
 end)
 
 describe("Castbar anchoring", function()
