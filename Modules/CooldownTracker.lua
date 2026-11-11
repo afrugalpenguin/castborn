@@ -209,19 +209,20 @@ local playerCastbar = nil
 
 Castborn:RegisterCallback("READY", function()
     local db = CastbornDB.cooldowns
+    local main = CooldownTracker:GetMainGroup()
     local _, class = UnitClass("player")
     local _, race = UnitRace("player")
     local currentVersion = Castborn.version
 
     -- Check if class changed (need to reload defaults)
-    -- Note: if loadedForClass is nil but trackedSpells exists, reload anyway (migration case)
+    -- Note: if loadedForClass is nil but the main group has spells, reload anyway (migration case)
     local classChanged = db.loadedForClass ~= class
 
-    if not db.trackedSpells or #db.trackedSpells == 0 or classChanged then
+    if not main.spells or #main.spells == 0 or classChanged then
         -- Preserve custom spells before reloading class defaults
         local customSpells = {}
-        if db.trackedSpells then
-            for _, spell in ipairs(db.trackedSpells) do
+        if main.spells then
+            for _, spell in ipairs(main.spells) do
                 if spell.custom then
                     table.insert(customSpells, spell)
                 end
@@ -230,16 +231,16 @@ Castborn:RegisterCallback("READY", function()
 
         -- Reload class defaults
         if class and Castborn.SpellData then
-            db.trackedSpells = Castborn.SpellData:GetClassCooldowns(class)
+            main.spells = Castborn.SpellData:GetClassCooldowns(class)
             -- Append racial cooldowns
             if race then
                 for _, spell in ipairs(Castborn.SpellData:GetRacialCooldowns(race)) do
-                    table.insert(db.trackedSpells, spell)
+                    table.insert(main.spells, spell)
                 end
             end
             -- Re-append custom spells
             for _, spell in ipairs(customSpells) do
-                table.insert(db.trackedSpells, spell)
+                table.insert(main.spells, spell)
             end
             db.defaultsLoaded = currentVersion
             db.loadedForClass = class
@@ -250,13 +251,13 @@ Castborn:RegisterCallback("READY", function()
             local defaults = Castborn.SpellData:GetClassCooldowns(class)
             local added = 0
             if defaults then
-                added = added + MergeNewDefaults(db.trackedSpells, defaults)
+                added = added + MergeNewDefaults(main.spells, defaults)
             end
             -- Merge racial cooldowns
             if race then
                 local racials = Castborn.SpellData:GetRacialCooldowns(race)
                 if racials then
-                    added = added + MergeNewDefaults(db.trackedSpells, racials)
+                    added = added + MergeNewDefaults(main.spells, racials)
                 end
             end
             if added > 0 then
