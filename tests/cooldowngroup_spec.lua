@@ -419,16 +419,47 @@ describe("Test mode drag to reorder", function()
 
             dragged.scripts.OnDragStop(dragged)
 
-            -- The dragged spell lands at index 2, one before the slot it was dropped on
-            assert.are.same({ 2, 1, 3, 4, 5 }, trackedIds())
+            -- The dragged spell lands in the slot it was dropped on, as the preview showed
+            assert.are.same({ 2, 3, 1, 4, 5 }, trackedIds())
             assert.is_false(dragged.ghost.shown)
             assert.is_false(container.insertMarker.shown)
             assert.is_false(container.insertMarkerGlow.shown)
             assert.is_false(container.slotHighlight.shown)
             assert.are.equal("Interface\\Icons\\2", icon(1).icon.texture)
-            assert.are.equal("Interface\\Icons\\1", icon(2).icon.texture)
+            assert.are.equal("Interface\\Icons\\3", icon(2).icon.texture)
+            assert.are.equal("Interface\\Icons\\1", icon(3).icon.texture)
         end)
     end
+
+    -- Drag the icon in slot `from` and drop it with the cursor over slot `to`, in one row
+    -- growing right (columns from the left edge, 32px apart)
+    local function dragAndDrop(from, to)
+        local dragged = icon(from)
+        dragged.scripts.OnDragStart(dragged)
+        _G.GetCursorPosition = function() return (to - 1) * 32, 90 end
+        dragged.scripts.OnUpdate(dragged, 0.016)
+        dragged.scripts.OnDragStop(dragged)
+    end
+
+    it("drops a backwards drag into the slot it was dropped on", function()
+        configure("HORIZONTAL", "RIGHT", 10)
+        track({ 1, 2, 3, 4, 5 })
+        Castborn:TestCooldowns()
+        dragAndDrop(4, 2)
+        assert.are.same({ 1, 4, 2, 3, 5 }, trackedIds())
+    end)
+
+    it("keeps a disabled spell in place when dragging past it", function()
+        configure("HORIZONTAL", "RIGHT", 10)
+        -- Test mode shows 1, 3, 4 and 5; spell 2 is disabled and hidden
+        track({ 1, 2, 3, 4, 5 }, { disabled = { [2] = true } })
+        Castborn:TestCooldowns()
+        dragAndDrop(1, 3)
+        assert.are.same({ 2, 3, 4, 1, 5 }, trackedIds())
+        assert.are.equal("Interface\\Icons\\3", icon(1).icon.texture)
+        assert.are.equal("Interface\\Icons\\4", icon(2).icon.texture)
+        assert.are.equal("Interface\\Icons\\1", icon(3).icon.texture)
+    end)
 
     -- Start dragging slot 1 and hover the cursor at (x, y)
     local function hover(x, y)
