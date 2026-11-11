@@ -313,16 +313,10 @@ CB.defaults = {
         anchored = false,
     },
 
+    -- Module-wide only: layout and position live on each cooldown group, with their
+    -- defaults in CooldownTracker.groupDefaults
     cooldowns = {
         enabled = true,
-        iconSize = 36,
-        spacing = 4,
-        point = "CENTER",
-        x = -450,
-        y = -300,
-        xPct = -0.234,
-        yPct = -0.278,
-        anchored = true,
         showReadyGlow = true,
     },
 
