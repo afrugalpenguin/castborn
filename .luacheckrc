@@ -145,6 +145,7 @@ read_globals = {
 
     -- Misc UI
     "CloseDropDownMenus",
+    "ToggleDropDownMenu",
     "GameFontHighlightSmall",
     "LibStub",
     "UnitMana",
