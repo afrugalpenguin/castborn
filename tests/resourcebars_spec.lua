@@ -254,6 +254,39 @@ describe("Resource bars (TBC behaviour)", function()
         end)
     end)
 
+    describe("frame placement and locking", function()
+        local originalApplyPosition
+
+        before_each(function()
+            _G.UnitPowerType = function() return 0, "MANA" end
+            _G.UnitPower = function() return 50 end
+            _G.UnitPowerMax = function() return 100 end
+            _G.UnitHealth = function() return 50 end
+            _G.UnitHealthMax = function() return 100 end
+            originalApplyPosition = Castborn.ApplyPosition
+        end)
+
+        after_each(function()
+            Castborn.ApplyPosition = originalApplyPosition
+        end)
+
+        it("applies the saved position even when anchored, in case the castbar never appears", function()
+            local positioned
+            Castborn.ApplyPosition = function(_, _, key) positioned = key end
+            db.anchored = true
+            RB:CreateFrames()
+            assert.are.equal("resources", positioned)
+        end)
+
+        it("re-applies its visibility once frames are locked", function()
+            RB:CreateFrames()
+            local shown = false
+            RB.frame.Show = function() shown = true end
+            Castborn:LockFrames()
+            assert.is_true(shown)
+        end)
+    end)
+
     describe("RegisterEvents", function()
         local function eventFrame(rejected)
             local f = { plain = {}, unit = {} }

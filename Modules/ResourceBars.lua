@@ -206,9 +206,9 @@ function ResourceBars:CreateFrames()
             db.anchored = false
         end, "Resource Bars")
     end
-    if not db.anchored then
-        CB:ApplyPosition(f, "resources")
-    end
+    -- Always placed, so an anchored frame still shows if the castbar never appears;
+    -- anchoring then moves it under the castbar
+    CB:ApplyPosition(f, "resources")
 
     self:ApplySettings()
     return f
@@ -419,6 +419,12 @@ CB:RegisterCallback("READY", function()
 end)
 
 CB:RegisterCallback("PLAYER_CASTBAR_CREATED", Reattach)
+
+-- Locking hides frames that were shown or Ctrl+Shift hidden for positioning; nothing else
+-- would re-show the bars until health, power or combat changed
+CB:RegisterCallback("FRAMES_LOCKED", function()
+    ResourceBars:ApplyVisibility()
+end)
 
 CB:RegisterAnchorCallbacks("RESOURCES", "Resource Bars", function() return ResourceBars.frame end,
     "resources", "BOTTOM", -2, { syncCallback = SyncWidth })

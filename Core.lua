@@ -790,6 +790,8 @@ function CB:LockFrames()
     if self.HideTestFrames then self:HideTestFrames() end
     if self.Anchoring then self.Anchoring:HideDragIndicators(true) end
     if self.HideTestModePanel then self:HideTestModePanel() end
+    -- Locking can hide frames that were shown for positioning; let modules restore theirs
+    self:FireCallback("FRAMES_LOCKED")
 end
 
 -- Unlock frames and show drag indicators (does NOT enter test mode)
