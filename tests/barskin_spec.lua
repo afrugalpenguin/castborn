@@ -54,32 +54,34 @@ describe("Bar skins", function()
         Castborn.Masque = nil
     end)
 
-    local function useMasque(skins)
-        Castborn.Masque = { lib = {
-            GetSkins = function() return skins end,
-            GetSkin = function(_, id) return skins[id] end,
-        } }
+    -- Masque with its "Bars" group set to skinId; settings overrides the group's db fields
+    local function useMasque(skins, skinId, settings)
+        local db = { SkinID = skinId, Disabled = false, Backdrop = true, Gloss = false, Shadow = false, Colors = {} }
+        for k, v in pairs(settings or {}) do db[k] = v end
+        Castborn.Masque = {
+            lib = {
+                GetSkin = function(_, id) return id and skins[id] end,
+                GetDefaultSkin = function() return "Default", skins.Default end,
+            },
+            groups = { bars = { db = db } },
+        }
+        return db
     end
 
-    describe("List", function()
-        it("offers the built-in skins without Masque, Castborn first", function()
+    describe("List (the fallback choice)", function()
+        it("offers Castborn's skins, Castborn first", function()
             local list = BS:List()
             assert.are.equal("Castborn", list[1].value)
             local values = {}
             for _, item in ipairs(list) do values[item.value] = item.label end
             assert.is_not_nil(values.Flat)
-            assert.is_nil(values["Masque:Frugal"])
         end)
 
-        it("adds every Masque skin when Masque is installed, sorted by name", function()
-            useMasque({ Zoomed = {}, Frugal = {}, Broken = { Disable = true } })
-            local list = BS:List()
-            local masque = {}
-            for _, item in ipairs(list) do
-                if item.value:find("^Masque:") then masque[#masque + 1] = item end
+        it("does not list Masque skins, which are chosen in Masque", function()
+            useMasque({ Frugal = {} }, "Frugal")
+            for _, item in ipairs(BS:List()) do
+                assert.is_nil(item.value:find("Frugal"))
             end
-            assert.are.same({ "Masque:Frugal", "Masque:Zoomed" }, { masque[1].value, masque[2].value })
-            assert.are.equal("Masque: Frugal", masque[1].label)
         end)
     end)
 
@@ -92,20 +94,54 @@ describe("Bar skins", function()
             assert.is_table(BS:GetSkinData("Flat"))
         end)
 
-        it("reads a Masque skin through Masque's API", function()
-            local frugal = { Normal = { Texture = "Border" } }
-            useMasque({ Frugal = frugal })
-            assert.are.equal(frugal, BS:GetSkinData("Masque:Frugal"))
-        end)
-
-        it("does not need Masque: a Masque skin without Masque falls back to none", function()
-            assert.is_nil(BS:GetSkinData("Masque:Frugal"))
-        end)
-
         it("accepts skins registered by other addons", function()
             local skin = { Normal = { Texture = "X" } }
             Castborn:RegisterBarSkin("Mine", skin)
             assert.are.equal(skin, BS:GetSkinData("Mine"))
+        end)
+    end)
+
+    describe("GetActiveSkin", function()
+        local frugal = { Normal = { Texture = "Border" } }
+
+        it("follows the Masque Bars group when Masque is installed", function()
+            useMasque({ Frugal = frugal }, "Frugal")
+            CastbornDB.barSkin = "Flat"
+            assert.are.equal(frugal, (BS:GetActiveSkin()))
+            assert.is_true(BS:IsMasqueActive())
+        end)
+
+        it("falls back to Castborn's choice without Masque", function()
+            CastbornDB.barSkin = "Flat"
+            assert.are.equal(BS.skins.Flat, (BS:GetActiveSkin()))
+            assert.is_false(BS:IsMasqueActive())
+        end)
+
+        it("falls back to Castborn's choice when the Masque group is disabled", function()
+            useMasque({ Frugal = frugal }, "Frugal", { Disabled = true })
+            CastbornDB.barSkin = "Flat"
+            assert.are.equal(BS.skins.Flat, (BS:GetActiveSkin()))
+            assert.is_false(BS:IsMasqueActive())
+        end)
+
+        it("uses Masque's default skin when the group's skin is gone", function()
+            local default = { Normal = { Texture = "Default" } }
+            useMasque({ Default = default }, "Uninstalled")
+            assert.are.equal(default, (BS:GetActiveSkin()))
+        end)
+
+        it("passes on the group's layer toggles and colours", function()
+            useMasque({ Frugal = frugal }, "Frugal", { Backdrop = false, Gloss = true, Colors = { Normal = { 1, 0, 0, 1 } } })
+            local _, opts = BS:GetActiveSkin()
+            assert.is_false(opts.backdrop)
+            assert.is_true(opts.gloss)
+            assert.are.same({ 1, 0, 0, 1 }, opts.colors.Normal)
+        end)
+
+        it("draws every layer of a fallback skin", function()
+            CastbornDB.barSkin = "Flat"
+            local _, opts = BS:GetActiveSkin()
+            assert.is_true(opts.backdrop and opts.gloss and opts.shadow)
         end)
     end)
 
@@ -179,9 +215,8 @@ describe("Bar skins", function()
             assert.is_true(f.bg.shown)
         end)
 
-        it("swaps the Castborn border and background for the skin's", function()
-            useMasque({ Frugal = frugal })
-            CastbornDB.barSkin = "Masque:Frugal"
+        it("draws the Masque group's skin in place of the Castborn border and background", function()
+            useMasque({ Frugal = frugal }, "Frugal")
             local f = spyFrame()
             BS:Register(f)
             assert.is_false(f.border.top.shown)
@@ -194,9 +229,24 @@ describe("Bar skins", function()
             assert.is_false(skin.gloss.shown)
         end)
 
+        it("keeps the Castborn background when the Masque group's backdrop is off", function()
+            useMasque({ Frugal = frugal }, "Frugal", { Backdrop = false })
+            local f = spyFrame()
+            BS:Register(f)
+            assert.is_true(f.bg.shown)
+            assert.is_false(f.castbornSkin.backdrop.shown)
+            assert.is_true(f.castbornSkin.pieces.TOP.shown)
+        end)
+
+        it("tints with the Masque group's colour override", function()
+            useMasque({ Frugal = frugal }, "Frugal", { Colors = { Normal = { 1, 0, 0, 1 } } })
+            local f = spyFrame()
+            BS:Register(f)
+            assert.are.same({ 1, 0, 0, 1 }, f.castbornSkin.pieces.TOP.color)
+        end)
+
         it("sizes the corners from the border setting and slices to match", function()
-            useMasque({ Frugal = frugal })
-            CastbornDB.barSkin = "Masque:Frugal"
+            useMasque({ Frugal = frugal }, "Frugal")
             CastbornDB.barSkinBorder = 3
             local f = spyFrame()
             BS:Register(f)
@@ -204,21 +254,22 @@ describe("Bar skins", function()
             assert.are.same({ 0, 3 / 36, 0, 3 / 36 }, f.castbornSkin.pieces.TOPLEFT.coords)
         end)
 
-        it("restores the Castborn look when the skin goes back to Castborn", function()
-            useMasque({ Frugal = frugal })
-            CastbornDB.barSkin = "Masque:Frugal"
+        it("falls back when the Masque group is disabled, and back again", function()
+            local db = useMasque({ Frugal = frugal }, "Frugal")
             local f = spyFrame()
             BS:Register(f)
-            CastbornDB.barSkin = "Castborn"
+            db.Disabled = true
             BS:ApplyAll()
             assert.is_true(f.border.top.shown)
             assert.is_true(f.bg.shown)
             assert.is_false(f.castbornSkin.pieces.TOPLEFT.shown)
             assert.is_false(f.castbornSkin.backdrop.shown)
+            db.Disabled = false
+            BS:ApplyAll()
+            assert.is_true(f.castbornSkin.pieces.TOPLEFT.shown)
         end)
 
-        it("falls back to the Castborn look when Masque is removed", function()
-            CastbornDB.barSkin = "Masque:Frugal"
+        it("uses the Castborn look without Masque", function()
             local f = spyFrame()
             BS:Register(f)
             assert.is_true(f.border.top.shown)
