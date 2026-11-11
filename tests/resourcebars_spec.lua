@@ -299,6 +299,21 @@ describe("Resource bars (TBC behaviour)", function()
             assert.are.equal("resources", positioned)
         end)
 
+        it("repaints both bars when its own background picker changes, and only then", function()
+            RB:CreateFrames()
+            local painted = {}
+            for _, part in ipairs({ RB.frame.health, RB.frame.power }) do
+                part.holder.bg.SetColorTexture = function(_, r, g, b, a) painted[part] = { r, g, b, a } end
+            end
+            db.bgColor = { 0.3, 0.2, 0.1, 0.5 }
+            Castborn:FireCallback("BACKGROUND_CHANGED", "swing")
+            assert.is_nil(next(painted))
+            Castborn:FireCallback("BACKGROUND_CHANGED", "resources")
+            assert.are.same({ 0.3, 0.2, 0.1, 0.5 }, painted[RB.frame.health])
+            assert.are.same({ 0.3, 0.2, 0.1, 0.5 }, painted[RB.frame.power])
+            assert.are.equal(db.bgColor, RB.frame.health.holder._bgColor)
+        end)
+
         it("re-applies its visibility once frames are locked", function()
             RB:CreateFrames()
             local shown = false

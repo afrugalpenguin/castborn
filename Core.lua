@@ -684,10 +684,6 @@ function CB:RefreshBackgrounds()
         local bgColor = tCfg.bgColor or {0, 0, 0, 0.7}
         CB.totemTracker.background:SetColorTexture(bgColor[1], bgColor[2], bgColor[3], bgColor[4] or 0.7)
     end
-    -- Resource bars (the colour picker replaces the table, so re-read it from the DB)
-    if CB.ResourceBars and CB.ResourceBars.ApplyBackground then
-        CB.ResourceBars:ApplyBackground()
-    end
 end
 
 -- Backwards compat alias
