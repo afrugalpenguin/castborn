@@ -7,6 +7,8 @@ Castborn.Masque = MasqueSupport
 -- Check if Masque is available
 local MSQ = LibStub and LibStub("Masque", true)
 MasqueSupport.enabled = MSQ ~= nil
+-- The library itself, so bar skins can offer Masque's skins (nil without Masque)
+MasqueSupport.lib = MSQ
 
 -- Masque groups for different icon types
 MasqueSupport.groups = {}

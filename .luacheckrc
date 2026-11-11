@@ -106,6 +106,7 @@ read_globals = {
 
     -- WoW Timer API
     "C_Timer",
+    "C_Texture",
 
     -- Lua globals
     "strsplit",
