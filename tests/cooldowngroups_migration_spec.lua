@@ -17,6 +17,10 @@ dofile("Modules/CooldownGroup.lua")
 dofile("Modules/CooldownTracker.lua")
 dofile("Systems/Config.lua")
 
+-- Anchoring's position helpers are real; its drag handles need the theme and real font
+-- metrics, and dragging is not under test here
+Castborn.Anchoring.MakeDraggable = function() end
+
 local CT = Castborn.CooldownTracker
 
 local LAYOUT_KEYS = {
