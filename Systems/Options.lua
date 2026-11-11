@@ -947,6 +947,47 @@ function Options:BuildLookFeel(parent)
     borderCB:SetPoint("TOPLEFT", 0, y)
     y = y - 36
 
+    -- Bar skin: Castborn's own, others' registered ones, and Masque's when installed
+    local BarSkin = Castborn.BarSkin
+    if BarSkin then
+        local skinLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
+        skinLabel:SetPoint("TOPLEFT", 0, y)
+        skinLabel:SetText("Bar Skin (castbars and resource bars)")
+        skinLabel:SetTextColor(unpack(C.grey))
+        y = y - 22
+
+        local skinDropdown = CreateFrame("Frame", "CastbornBarSkinDropdown", parent, "UIDropDownMenuTemplate")
+        SkinDropdown(skinDropdown)
+        skinDropdown:SetPoint("TOPLEFT", -10, y)
+        UIDropDownMenu_SetWidth(skinDropdown, 180)
+        local current = "Castborn"
+        for _, item in ipairs(BarSkin:List()) do
+            if item.value == CastbornDB.barSkin then current = item.label end
+        end
+        UIDropDownMenu_SetText(skinDropdown, current)
+        UIDropDownMenu_Initialize(skinDropdown, function()
+            for _, item in ipairs(BarSkin:List()) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = item.label
+                info.value = item.value
+                info.checked = CastbornDB.barSkin == item.value
+                info.func = function()
+                    CastbornDB.barSkin = item.value
+                    UIDropDownMenu_SetText(skinDropdown, item.label)
+                    CloseDropDownMenus()
+                    BarSkin:ApplyAll()
+                end
+                UIDropDownMenu_AddButton(info)
+            end
+        end)
+
+        local sizeSlider = CreateSlider(parent, "Skin Border Size", CastbornDB, "barSkinBorder", 1, 8, 1, function()
+            BarSkin:ApplyAll()
+        end)
+        sizeSlider:SetPoint("TOPLEFT", 230, y + 18)
+        y = y - 44
+    end
+
     -- Bar Texture dropdown
     local texLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     texLabel:SetPoint("TOPLEFT", 0, y)
