@@ -316,7 +316,7 @@ describe("Test mode layout", function()
         assert.is_false(icon(4).shown)
     end)
 
-    it("shows sample trinkets, which the live loop then replaces", function()
+    it("shows sample trinkets until test mode ends", function()
         configure("HORIZONTAL", "LEFT", 3)
         track({ 101 })
         Castborn:TestCooldowns()
@@ -330,7 +330,13 @@ describe("Test mode layout", function()
         assert.are.same({ 62, 34 }, trinketContainer.size)
         assert.is_true(trinketContainer.shown)
 
-        -- Trinkets keep updating during test mode; with none equipped they hide
+        -- The live loop leaves the samples alone during test mode
+        tick()
+        assert.is_true(trinketContainer.shown)
+        assert.is_true(t1.icon.desaturated)
+
+        -- and takes over again afterwards; with none equipped the trinkets hide
+        Castborn:EndTestCooldowns()
         tick()
         assert.is_false(trinketContainer.shown)
     end)
