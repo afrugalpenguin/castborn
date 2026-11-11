@@ -11,7 +11,6 @@ globals = {
     "SlashCmdList",
     "ColorPickerFrame",
     "StaticPopupDialogs",
-    "playerCastbar",
 }
 
 read_globals = {
