@@ -406,8 +406,17 @@ end
 -- destroyed, so the object is kept and reused if the group comes back.
 function CooldownGroup:Deactivate()
     self:EndTest()
-    if self.frame then self.frame:Hide() end
+    if self.frame then
+        self.frame:Hide()
+        -- Keep the strip out of unlock mode, which shows every draggable frame
+        self.frame.dragDisabled = true
+    end
     self.inactive = true
+end
+
+function CooldownGroup:Reactivate()
+    self.inactive = false
+    if self.frame then self.frame.dragDisabled = nil end
 end
 
 -- The label shown on the strip while frames are unlocked

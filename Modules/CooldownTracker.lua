@@ -254,7 +254,7 @@ function CooldownTracker:SyncGroups(repositionAll)
             runtime:SetLabel(GroupLabel(data))
             returning = runtime.inactive
         end
-        runtime.inactive = false
+        runtime:Reactivate()
         seen[data.id] = true
         activeGroups[#activeGroups + 1] = runtime
 

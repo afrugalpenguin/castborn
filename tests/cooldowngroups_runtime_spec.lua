@@ -329,6 +329,24 @@ describe("Runtime groups", function()
         assert.is_false(container("g1").shown)
     end)
 
+    it("keeps a removed group's strip out of unlock mode until it returns", function()
+        CT:AddGroup("Test")
+        local frame = container("g1")
+        CT:RemoveGroup("g1")
+        assert.is_true(frame.dragDisabled)
+
+        frame.dragIndicator = augment(realCreateFrame("Frame"))
+        local saved = Castborn.Anchoring.draggableFrames
+        Castborn.Anchoring.draggableFrames = { frame }
+        Castborn.Anchoring:ShowDragIndicators(true)
+        Castborn.Anchoring.draggableFrames = saved
+        assert.is_false(frame.shown)
+
+        CastbornDB.cooldowns.nextGroupId = 1
+        CT:AddGroup("Back")
+        assert.is_nil(frame.dragDisabled)
+    end)
+
     it("reuses a group's frames when its id returns", function()
         CT:AddGroup("Test")
         local frame = container("g1")

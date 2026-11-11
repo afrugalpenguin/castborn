@@ -255,30 +255,37 @@ end
 
 -- Show drag indicators on all draggable frames
 -- If forceShowFrames is true, also show the frames themselves (for unlock mode)
+local function ShowDragIndicator(frame, forceShowFrames)
+    -- Enable mouse interaction for dragging
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    if frame._dragStartFunc then
+        frame:SetScript("OnDragStart", frame._dragStartFunc)
+        frame:SetScript("OnDragStop", frame._dragStopFunc)
+    end
+    if frame.dragIndicator then
+        -- Restore frames that were Ctrl+Shift hidden in a previous unlock
+        if frame.hiddenForPositioning then
+            frame:Show()
+            frame.hiddenForPositioning = nil
+            frame.shownForPositioning = true
+        end
+        if forceShowFrames and not frame:IsShown() then
+            -- Show the frame itself so it can be repositioned
+            frame:Show()
+            frame.shownForPositioning = true
+        end
+        if frame:IsShown() then
+            frame.dragIndicator:Show()
+        end
+    end
+end
+
 function Anchoring:ShowDragIndicators(forceShowFrames)
     for _, frame in ipairs(self.draggableFrames) do
-        -- Enable mouse interaction for dragging
-        frame:EnableMouse(true)
-        frame:RegisterForDrag("LeftButton")
-        if frame._dragStartFunc then
-            frame:SetScript("OnDragStart", frame._dragStartFunc)
-            frame:SetScript("OnDragStop", frame._dragStopFunc)
-        end
-        if frame.dragIndicator then
-            -- Restore frames that were Ctrl+Shift hidden in a previous unlock
-            if frame.hiddenForPositioning then
-                frame:Show()
-                frame.hiddenForPositioning = nil
-                frame.shownForPositioning = true
-            end
-            if forceShowFrames and not frame:IsShown() then
-                -- Show the frame itself so it can be repositioned
-                frame:Show()
-                frame.shownForPositioning = true
-            end
-            if frame:IsShown() then
-                frame.dragIndicator:Show()
-            end
+        -- Frames whose owner has gone (a removed cooldown group) stay hidden
+        if not frame.dragDisabled then
+            ShowDragIndicator(frame, forceShowFrames)
         end
     end
 end
