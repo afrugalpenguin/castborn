@@ -303,7 +303,7 @@ APICheck.names = {
     "C_SpellActivationOverlay.IsSpellOverlayed",
     "C_DurationUtil.CreateDurationTextBinding", "C_StringUtil.CreateSecondsFormatter",
     -- Resource bars
-    "UnitHealthMax", "UnitHealthPercent", "UnitPowerPercent",
+    "UnitHealthMax", "UnitPowerType", "UnitHealthPercent", "UnitPowerPercent",
     "AbbreviateNumbers", "AbbreviateLargeNumbers", "PowerBarColor", "CurveConstants.ScaleTo100",
 }
 
