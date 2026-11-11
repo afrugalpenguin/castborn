@@ -14,15 +14,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      # Lua 5.1 and LuaRocks come from Ubuntu's package mirrors. Building Lua from the
-      # lua.org source download kept timing out.
-      - name: Install Lua and LuaRocks
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lua5.1 liblua5.1-0-dev luarocks
-
-      - name: Install luacheck
-        run: sudo luarocks --lua-version 5.1 install luacheck
-
+      # Runs luacheck from its container on ghcr.io, so nothing comes from the Ubuntu
+      # package mirrors (#273). The Lua 5.1 standard is set in .luacheckrc.
       - name: Run luacheck
-        run: luacheck .
+        uses: lunarmodules/luacheck@v1.2.0
+        with:
+          args: .
