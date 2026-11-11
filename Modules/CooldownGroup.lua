@@ -814,10 +814,9 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
             local toTrack = visibleToTrackIndex[targetSlot]
             local spell = table.remove(spells, fromTrack)
 
-            -- Recalculate target index after removal
-            if toTrack > fromTrack then
-                toTrack = toTrack - 1
-            end
+            -- Take the target spell's place, as the preview showed. Dragging forwards, the
+            -- removal has already moved the target spell back one, so inserting at its old
+            -- index puts the dragged spell just after it; dragging backwards, just before it.
             table.insert(spells, toTrack, spell)
         end
 
