@@ -163,6 +163,7 @@ local function CreateDragIndicator(frame, label)
     text:SetTextColor(Theme:Color("onAccent"))
     text:SetPoint("CENTER", 0, 0)
     text:SetText(label or "Drag")
+    indicator.text = text
 
     -- Size to fit the label text or the frame width, whichever is larger
     local textWidth = text:GetStringWidth() + 20
@@ -197,6 +198,14 @@ local function CreateDragIndicator(frame, label)
     indicator:Hide()
     frame.dragIndicator = indicator
     return indicator
+end
+
+-- Change the label on a draggable frame's indicator (for example after a rename)
+function Anchoring:SetDragLabel(frame, label)
+    local indicator = frame and frame.dragIndicator
+    if not indicator or not indicator.text then return end
+    indicator.text:SetText(label or "Drag")
+    indicator:SetWidth(math.max(frame:GetWidth(), indicator.text:GetStringWidth() + 20))
 end
 
 -- Track all draggable frames for lock/unlock

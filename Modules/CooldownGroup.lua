@@ -372,11 +372,62 @@ function CooldownGroup:CreateContainer()
     frame.slotHighlight:Hide()
 
     if Castborn.Anchoring then
-        Castborn.Anchoring:MakeDraggable(frame, settings, nil, self.dragLabel)
+        -- Drags read and save the position through the group's current settings table, so a
+        -- drag after a profile switch lands in the new profile rather than a stale copy
+        local group = self
+        local current = setmetatable({}, {
+            __index = function(_, key) return group:GetSettings()[key] end,
+            __newindex = function(_, key, value) group:GetSettings()[key] = value end,
+        })
+        Castborn.Anchoring:MakeDraggable(frame, current, function(f) group:OnDragStopped(f) end, self.dragLabel)
     end
 
     frame:Hide()  -- Start hidden, will show when cooldowns are tracked
     return frame
+end
+
+-- A centred group is re-saved by its centre, so it stays centred as its icon count changes.
+-- Other directions keep the corner the drag saved.
+function CooldownGroup:OnDragStopped(frame)
+    local settings = self:GetSettings()
+    if settings.growDirection ~= "CENTER" then return end
+    local cx, cy = frame:GetCenter()
+    if not cx or not cy then return end
+
+    local x, y = cx - GetScreenWidth() / 2, cy - GetScreenHeight() / 2
+    if Castborn.Anchoring then
+        Castborn.Anchoring:SavePosition(settings, "CENTER", x, y)
+    end
+    frame:ClearAllPoints()
+    frame:SetPoint("CENTER", UIParent, "CENTER", x, y)
+end
+
+-- Hide a group whose settings have gone (removed, or not in a new profile). Frames cannot be
+-- destroyed, so the object is kept and reused if the group comes back.
+function CooldownGroup:Deactivate()
+    self:EndTest()
+    if self.frame then self.frame:Hide() end
+    self.inactive = true
+end
+
+-- The label shown on the strip while frames are unlocked
+function CooldownGroup:SetLabel(label)
+    self.dragLabel = label
+    if self.frame and Castborn.Anchoring and Castborn.Anchoring.SetDragLabel then
+        Castborn.Anchoring:SetDragLabel(self.frame, label)
+    end
+end
+
+-- Register every icon with this group's Masque group again (after it was recreated)
+function CooldownGroup:AddToMasque()
+    if not (Castborn.Masque and Castborn.Masque.enabled) then return end
+    for _, f in ipairs(self.icons) do
+        Castborn.Masque:AddButton(self.masqueGroup, f, {
+            Icon = f.icon,
+            Cooldown = f.cooldown,
+            Normal = f.Normal,
+        })
+    end
 end
 
 function CooldownGroup:CreateTrinketContainer()
