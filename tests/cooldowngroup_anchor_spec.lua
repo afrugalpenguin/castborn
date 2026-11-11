@@ -49,7 +49,7 @@ describe("CooldownGroup.GetSlotAnchor", function()
 
     it("falls through to the top left for a missing or unknown direction", function()
         assert.are.same({ "TOPLEFT", "TOPLEFT", 32, 0 }, anchor(2, settings(nil, "HORIZONTAL")))
-        assert.are.same({ "TOPLEFT", "TOPLEFT", 32, 0 }, anchor(2, settings("CENTER", "HORIZONTAL")))
+        assert.are.same({ "TOPLEFT", "TOPLEFT", 32, 0 }, anchor(2, settings("SIDEWAYS", "HORIZONTAL")))
     end)
 
     it("takes an explicit direction over the settings", function()
