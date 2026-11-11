@@ -1,10 +1,11 @@
 --[[
     Castborn - Bar skins
     Draws a skin's border, backdrop, gloss and shadow around Castborn's bars.
-    With Masque installed, the bars follow the "Bars" group in Masque's options, like the icon
-    groups: its skin, its Backdrop / Gloss / Shadow toggles and its colours. Without Masque, or
-    with that group disabled, they fall back to the skin chosen on the Look & Feel page: the plain
-    Castborn look, a built-in skin, or one another addon added with Castborn:RegisterBarSkin.
+    With Masque installed and "Use Masque skin" ticked on the Look & Feel page, the bars follow
+    the "Bars" group in Masque's options, like the icon groups: its skin, its Backdrop / Gloss /
+    Shadow toggles and its colours. Otherwise (no Masque, the switch off, or the group disabled in
+    Masque) they use the skin chosen on the Look & Feel page: the plain Castborn look, a built-in
+    skin, or one another addon added with Castborn:RegisterBarSkin.
 
     Skins use Masque's region format (Normal = border, Backdrop, Gloss, Shadow; each with Texture
     or Atlas, TexCoords, Color, BlendMode, Width, Height sized for a 36px button). Masque only
@@ -46,16 +47,39 @@ function CB:RegisterBarSkin(id, data)
     end
 end
 
--- The Masque group the bars follow, or nil without Masque or with the group disabled
-function BarSkin:GetMasqueGroup()
+local function BarsGroup()
     local M = CB.Masque
     local group = M and M.lib and M.groups and M.groups.bars
-    if not group or type(group.db) ~= "table" or group.db.Disabled then return nil end
+    if not group or type(group.db) ~= "table" then return nil end
+    return group
+end
+
+-- Whether Masque is installed, so the Use Masque skin switch can be offered
+function BarSkin:IsMasqueAvailable()
+    return BarsGroup() ~= nil
+end
+
+-- The Masque group the bars follow: needs Masque, the Look & Feel switch on, and the group enabled
+function BarSkin:GetMasqueGroup()
+    local group = BarsGroup()
+    local db = CB.db or CastbornDB or {}
+    if not group or not db.barSkinUseMasque or group.db.Disabled then return nil end
     return group
 end
 
 function BarSkin:IsMasqueActive()
     return self:GetMasqueGroup() ~= nil
+end
+
+-- The skin id the Masque group is using (Masque's default if its skin is gone), for the options page
+function BarSkin:GetMasqueSkinName()
+    local group = BarsGroup()
+    if not group then return nil end
+    local lib = CB.Masque.lib
+    local id = group.db.SkinID
+    if id and lib.GetSkin and lib:GetSkin(id) then return id end
+    if lib.GetDefaultSkin then return (lib:GetDefaultSkin()) end
+    return id
 end
 
 -- The skin to draw and which layers to draw: the Masque group's, else the fallback choice
@@ -289,6 +313,8 @@ function BarSkin:ApplyAll()
     for frame in pairs(self.frames) do
         self:Apply(frame)
     end
+    -- The options page shows the skin in use; Masque changes arrive here too
+    CB:FireCallback("BAR_SKIN_CHANGED")
 end
 
 CB:RegisterCallback("BORDERS_CHANGED", function()
