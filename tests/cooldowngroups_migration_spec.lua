@@ -303,6 +303,19 @@ describe("Group accessors", function()
         assert.is_nil(CT:GetGroup("missing"))
         assert.are.equal(groups, CT:GetGroups())
     end)
+
+    it("recreates a missing main group with defaults and no spells", function()
+        login(nil)
+        local other = { id = "other", name = "Other", spells = {} }
+        CastbornDB.cooldowns.groups = { other }
+
+        local main = CT:GetMainGroup()
+        assert.are.equal("main", main.id)
+        assert.are.equal(36, main.iconSize)
+        assert.are.same({}, main.spells)
+        assert.are.same({ main, other }, CastbornDB.cooldowns.groups)
+        assert.are.equal(main, CT:GetMainGroup())
+    end)
 end)
 
 describe("Default spell loading on the main group", function()
