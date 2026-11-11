@@ -184,6 +184,9 @@ local function CreateBar(parent, db)
     CB:RegisterFontString(text, db.textSize, "OUTLINE")
     text:SetPoint("CENTER", bar, "CENTER", 0, 0)
 
+    -- Wear the chosen bar skin (works without Masque)
+    if CB.BarSkin then CB.BarSkin:Register(holder) end
+
     return { holder = holder, bar = bar, text = text }
 end
 
