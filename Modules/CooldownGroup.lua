@@ -76,6 +76,34 @@ end
 
 local GetSlotAnchor = CooldownGroup.GetSlotAnchor
 
+-- Which slot the point (x, y) falls in: the inverse of GetSlotAnchor, for a container with
+-- the given edges. Distances are measured from the corner slot 1 is anchored to, in the
+-- direction the icons grow. Along a row (a column when vertical) a point past the middle
+-- of a slot counts as the next slot, so a drop lands where the insertion marker shows;
+-- across rows it is the row the point is in. Not clamped to the number of icons.
+function CooldownGroup.GetSlotAtPoint(settings, x, y, left, right, top, bottom)
+    local size = settings.iconSize or 36
+    local spacing = settings.spacing or 4
+    local perRow = settings.iconsPerRow or 10
+    local step = size + spacing
+
+    local point = GetSlotAnchor(1, settings)
+    local dx = (point == "TOPRIGHT") and (right - x) or (x - left)
+    local dy = (point == "BOTTOMLEFT") and (y - bottom) or (top - y)
+
+    local along, across
+    if settings.orientation == "VERTICAL" then
+        along, across = dy, dx
+    else
+        along, across = dx, dy
+    end
+
+    local index = math.floor(along / step + 0.5)
+    index = math.max(0, math.min(index, perRow - 1))
+    local line = math.max(0, math.floor(across / step))
+    return line * perRow + index + 1
+end
+
 --------------------------------------------------------------------------------
 -- Construction
 --------------------------------------------------------------------------------
@@ -398,6 +426,9 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownGroup:UpdateTrinkets()
+    -- Don't override the sample trinkets test mode shows
+    if self.testModeActive then return end
+
     local settings = self:GetSettings()
     local trinketFrame = self.trinketFrame
     if not trinketFrame then return end
@@ -479,7 +510,10 @@ function CooldownGroup:Update()
             local onCooldown, isLong, start, duration = tracker:GetSpellCooldownState(spellName)
             local icon = GetSpellTexture(spellName)
 
-            -- Position the frame based on visible index (compact layout with row wrapping)
+            -- Size and position the frame based on visible index (compact layout with row
+            -- wrapping), so a new icon size shows straight away
+            local size = settings.iconSize or 36
+            cdFrame:SetSize(size, size)
             self:PlaceAtSlot(cdFrame, visibleIndex, settings)
 
             if icon then
@@ -653,6 +687,10 @@ function CooldownGroup:RefreshTestIcons()
 
     self.testSpellCount = #testSpells
 
+    -- Fit the container to the test icons, as the live update does, so the drag area
+    -- matches what is shown
+    self.frame:SetSize(CooldownGroup.GetContainerSize(#testSpells, settings))
+
     local size = settings.iconSize or 36
     for i = 1, #testSpells do
         local cdFrame = self.icons[i]
@@ -822,10 +860,9 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
             local toTrack = visibleToTrackIndex[targetSlot]
             local spell = table.remove(spells, fromTrack)
 
-            -- Recalculate target index after removal
-            if toTrack > fromTrack then
-                toTrack = toTrack - 1
-            end
+            -- Take the target spell's place, as the preview showed. Dragging forwards, the
+            -- removal has already moved the target spell back one, so inserting at its old
+            -- index puts the dragged spell just after it; dragging backwards, just before it.
             table.insert(spells, toTrack, spell)
         end
 
@@ -868,31 +905,15 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
 
         -- Calculate target slot from cursor position
         local size = settings.iconSize or 36
-        local spacing = settings.spacing or 4
-        local step = size + spacing
 
         local frameLeft = frame:GetLeft()
         local frameRight = frame:GetRight()
         local frameTop = frame:GetTop()
-        if not frameLeft or not frameRight or not frameTop then return end
+        local frameBottom = frame:GetBottom()
+        if not frameLeft or not frameRight or not frameTop or not frameBottom then return end
 
-        local perRow = settings.iconsPerRow or 10
-
-        -- Calculate row from Y position
-        local rowFromY = math.floor((frameTop - cursorY) / step)
-        rowFromY = math.max(0, rowFromY)
-
-        -- Calculate column from X position, counting from the edge the icons grow from
-        local colFromX
-        local growsFromRight = GetSlotAnchor(1, settings) == "TOPRIGHT"
-        if growsFromRight then
-            colFromX = math.floor((frameRight - cursorX) / step + 0.5)
-        else
-            colFromX = math.floor((cursorX - frameLeft) / step + 0.5)
-        end
-        colFromX = math.max(0, math.min(colFromX, perRow - 1))
-
-        local targetSlot = rowFromY * perRow + colFromX + 1
+        local targetSlot = CooldownGroup.GetSlotAtPoint(settings, cursorX, cursorY,
+            frameLeft, frameRight, frameTop, frameBottom)
         targetSlot = math.max(1, math.min(targetSlot, group.testSpellCount))
 
         -- Only update if target slot changed
@@ -917,14 +938,15 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
                 end
             end
 
-            -- Update insertion marker, on the slot's leading edge
+            -- Update insertion marker: 4px wide, straddling the slot's leading edge (its
+            -- right edge when growing left, its left edge otherwise)
             if frame.insertMarker then
                 frame.insertMarker:ClearAllPoints()
                 frame.insertMarker:SetSize(4, size)
 
                 local point, relativePoint, markerX, markerY = GetSlotAnchor(targetSlot, settings)
                 if point == "TOPRIGHT" then
-                    markerX = markerX + size / 2 + 2
+                    markerX = markerX + 2
                 else
                     markerX = markerX - 2
                 end

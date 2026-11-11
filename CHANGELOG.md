@@ -1,5 +1,15 @@
 # Changelog
 
+**v8.1.2**
+
+- Changing the cooldown icon size now resizes the icons straight away, without a reload
+- Changing a Background Colour in the options now shows straight away on castbars and the swing timer, and the GCD, 5 Second Rule and Interrupt backgrounds now use their colour setting
+- In test mode, dragging a cooldown icon forwards now drops it where the preview showed it, instead of one slot short
+- In test mode, dragging cooldown icons now picks the right slot with Vertical Layout, and with Grow Up across more than one row
+- In test mode, the drag marker now sits on the edge of the target slot when cooldowns grow left
+- In test mode, the sample trinket icons now stay visible instead of disappearing straight away
+- In test mode, the cooldown strip's drag area now fits all the test icons
+
 **v8.1.1**
 
 - Paladins now get a cooldown icon for Divine Protection, next to Divine Shield (existing characters pick it up automatically)

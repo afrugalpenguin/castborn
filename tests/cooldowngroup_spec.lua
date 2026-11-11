@@ -221,7 +221,6 @@ describe("Live layout", function()
             it(orientation .. " growing " .. grow, function()
                 configure(orientation, grow, 3)
                 track({ 101, 102, 103, 104, 105 })
-                local sizeBefore = copy(icon(1).size)
                 tick()
 
                 local point, offsets = EXPECTED[orientation][grow][1], EXPECTED[orientation][grow][2]
@@ -232,8 +231,8 @@ describe("Live layout", function()
                 for i = 6, 20 do assert.is_false(icon(i).shown) end
                 assert.are.same(CONTAINER[orientation], container.size)
                 assert.is_true(container.shown)
-                -- Live updates never resize the icons themselves
-                assert.are.same(sizeBefore, icon(1).size)
+                -- Live updates size the icons from the current icon size
+                for i = 1, 5 do assert.are.same({ 30, 30 }, icon(i).size) end
             end)
         end
     end
@@ -286,7 +285,6 @@ describe("Test mode layout", function()
             it(orientation .. " growing " .. grow, function()
                 configure(orientation, grow, 3)
                 track({ 101, 102, 103, 104, 105 })
-                local containerBefore = copy(container.size)
                 Castborn:TestCooldowns()
 
                 local point, offsets = EXPECTED[orientation][grow][1], EXPECTED[orientation][grow][2]
@@ -299,8 +297,8 @@ describe("Test mode layout", function()
                 end
                 for i = 6, 20 do assert.is_false(icon(i).shown) end
                 assert.is_true(container.shown)
-                -- Test mode does not resize the container
-                assert.are.same(containerBefore, container.size)
+                -- Test mode fits the container to the test icons, like the live update
+                assert.are.same(CONTAINER[orientation], container.size)
                 -- The second icon is the sample cooldown
                 assert.is_true(icon(2).icon.desaturated)
                 assert.is_false(icon(1).icon.desaturated)
@@ -318,9 +316,11 @@ describe("Test mode layout", function()
         assert.are.equal("Interface\\Icons\\4", icon(3).icon.texture)
         assertPoint(icon(3), "TOPLEFT", container, "TOPLEFT", 64, 0)
         assert.is_false(icon(4).shown)
+        -- Sized for the three test icons, though only two are known
+        assert.are.same({ 94, 34 }, container.size)
     end)
 
-    it("shows sample trinkets, which the live loop then replaces", function()
+    it("shows sample trinkets until test mode ends", function()
         configure("HORIZONTAL", "LEFT", 3)
         track({ 101 })
         Castborn:TestCooldowns()
@@ -334,7 +334,13 @@ describe("Test mode layout", function()
         assert.are.same({ 62, 34 }, trinketContainer.size)
         assert.is_true(trinketContainer.shown)
 
-        -- Trinkets keep updating during test mode; with none equipped they hide
+        -- The live loop leaves the samples alone during test mode
+        tick()
+        assert.is_true(trinketContainer.shown)
+        assert.is_true(t1.icon.desaturated)
+
+        -- and takes over again afterwards; with none equipped the trinkets hide
+        Castborn:EndTestCooldowns()
         tick()
         assert.is_false(trinketContainer.shown)
     end)
@@ -359,8 +365,10 @@ describe("Test mode drag to reorder", function()
     -- Columns count from the container's right edge when growing left, else from its left.
     local CURSOR_X = { LEFT = 300 - 64, RIGHT = 64, UP = 64, DOWN = 64 }
 
+    -- The marker straddles the target slot's leading edge: 2px past its right edge when
+    -- growing left (mirroring the others), 2px before its left edge otherwise
     local DRAG = {
-        LEFT  = { point = "TOPRIGHT",   marker = -47, highlight = -64, third = -32 },
+        LEFT  = { point = "TOPRIGHT",   marker = -62, highlight = -64, third = -32 },
         RIGHT = { point = "TOPLEFT",    marker = 62,  highlight = 64,  third = 32 },
         UP    = { point = "BOTTOMLEFT", marker = 62,  highlight = 64,  third = 32 },
         DOWN  = { point = "TOPLEFT",    marker = 62,  highlight = 64,  third = 32 },
@@ -370,6 +378,7 @@ describe("Test mode drag to reorder", function()
         container.GetLeft = function() return 0 end
         container.GetRight = function() return 300 end
         container.GetTop = function() return 100 end
+        container.GetBottom = function() return 66 end
     end)
 
     after_each(function()
@@ -421,16 +430,83 @@ describe("Test mode drag to reorder", function()
 
             dragged.scripts.OnDragStop(dragged)
 
-            -- The dragged spell lands at index 2, one before the slot it was dropped on
-            assert.are.same({ 2, 1, 3, 4, 5 }, trackedIds())
+            -- The dragged spell lands in the slot it was dropped on, as the preview showed
+            assert.are.same({ 2, 3, 1, 4, 5 }, trackedIds())
             assert.is_false(dragged.ghost.shown)
             assert.is_false(container.insertMarker.shown)
             assert.is_false(container.insertMarkerGlow.shown)
             assert.is_false(container.slotHighlight.shown)
             assert.are.equal("Interface\\Icons\\2", icon(1).icon.texture)
-            assert.are.equal("Interface\\Icons\\1", icon(2).icon.texture)
+            assert.are.equal("Interface\\Icons\\3", icon(2).icon.texture)
+            assert.are.equal("Interface\\Icons\\1", icon(3).icon.texture)
         end)
     end
+
+    -- Drag the icon in slot `from` and drop it with the cursor over slot `to`, in one row
+    -- growing right (columns from the left edge, 32px apart)
+    local function dragAndDrop(from, to)
+        local dragged = icon(from)
+        dragged.scripts.OnDragStart(dragged)
+        _G.GetCursorPosition = function() return (to - 1) * 32, 90 end
+        dragged.scripts.OnUpdate(dragged, 0.016)
+        dragged.scripts.OnDragStop(dragged)
+    end
+
+    it("drops a backwards drag into the slot it was dropped on", function()
+        configure("HORIZONTAL", "RIGHT", 10)
+        track({ 1, 2, 3, 4, 5 })
+        Castborn:TestCooldowns()
+        dragAndDrop(4, 2)
+        assert.are.same({ 1, 4, 2, 3, 5 }, trackedIds())
+    end)
+
+    it("keeps a disabled spell in place when dragging past it", function()
+        configure("HORIZONTAL", "RIGHT", 10)
+        -- Test mode shows 1, 3, 4 and 5; spell 2 is disabled and hidden
+        track({ 1, 2, 3, 4, 5 }, { disabled = { [2] = true } })
+        Castborn:TestCooldowns()
+        dragAndDrop(1, 3)
+        assert.are.same({ 2, 3, 4, 1, 5 }, trackedIds())
+        assert.are.equal("Interface\\Icons\\3", icon(1).icon.texture)
+        assert.are.equal("Interface\\Icons\\4", icon(2).icon.texture)
+        assert.are.equal("Interface\\Icons\\1", icon(3).icon.texture)
+    end)
+
+    -- Start dragging slot 1 and hover the cursor at (x, y)
+    local function hover(x, y)
+        local dragged = icon(1)
+        dragged.scripts.OnDragStart(dragged)
+        _G.GetCursorPosition = function() return x, y end
+        dragged.scripts.OnUpdate(dragged, 0.016)
+    end
+
+    it("targets the slot under the cursor in a vertical layout", function()
+        -- Two per column: slots 1 and 2 in the first column, 3 and 4 in the second
+        configure("VERTICAL", "RIGHT", 2)
+        track({ 1, 2, 3, 4, 5 })
+        Castborn:TestCooldowns()
+
+        hover(47, 85)  -- middle of slot 3: second column, top
+        assertPoint(container.slotHighlight, "TOPLEFT", container, "TOPLEFT", 32, 0)
+
+        icon(1).scripts.OnDragStop(icon(1))
+        Castborn:TestCooldowns()
+        hover(15, 53)  -- middle of slot 2: first column, second row
+        assertPoint(container.slotHighlight, "TOPLEFT", container, "TOPLEFT", 0, -32)
+    end)
+
+    it("counts rows from the bottom when growing up", function()
+        -- Three per row, rows stacking upwards from the container's bottom edge
+        configure("HORIZONTAL", "UP", 3)
+        track({ 1, 2, 3, 4, 5 })
+        Castborn:TestCooldowns()
+        container.GetRight = function() return 94 end
+        container.GetTop = function() return 66 end
+        container.GetBottom = function() return 0 end
+
+        hover(15, 47)  -- middle of slot 4: second row up, first column
+        assertPoint(container.slotHighlight, "BOTTOMLEFT", container, "BOTTOMLEFT", 0, 32)
+    end)
 end)
 
 describe("Castbar anchoring", function()
