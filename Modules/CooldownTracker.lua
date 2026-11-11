@@ -87,6 +87,9 @@ local function MergeNewDefaults(existingSpells, defaultSpells)
     return added
 end
 
+-- Anchoring Support
+local playerCastbar = nil
+
 Castborn:RegisterCallback("READY", function()
     local db = CastbornDB.cooldowns
     local _, class = UnitClass("player")
@@ -177,9 +180,6 @@ Castborn:RegisterCallback("READY", function()
         end
     end
 end)
-
--- Anchoring Support
-local playerCastbar = nil
 
 Castborn:RegisterCallback("PLAYER_CASTBAR_CREATED", function(castbar)
     playerCastbar = castbar
