@@ -28,6 +28,7 @@ local defaults = {
 local mainGroup = Castborn.CooldownGroup:New({
     id = "main",
     getSettings = function() return CastbornDB.cooldowns end,
+    getModuleSettings = function() return CastbornDB.cooldowns end,
     getSpells = function() return CastbornDB.cooldowns.trackedSpells end,
     names = {
         container = "Castborn_CooldownTracker",

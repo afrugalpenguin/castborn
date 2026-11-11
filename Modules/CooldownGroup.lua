@@ -82,7 +82,9 @@ local GetSlotAnchor = CooldownGroup.GetSlotAnchor
 
 -- opts:
 --   id           stable group key
---   getSettings  returns the settings table (iconSize, spacing, iconsPerRow, ...)
+--   getSettings  returns the group's settings table (iconSize, spacing, iconsPerRow, ...)
+--   getModuleSettings  returns the module-wide settings table (enabled, showReadyGlow,
+--                trackTrinkets)
 --   getSpells    returns the tracked spell list
 --   names        global frame names: container, icon (prefix), and for the group that
 --                owns trinkets, trinkets (container) and trinket (prefix)
@@ -94,6 +96,7 @@ function CooldownGroup:New(opts)
     local group = setmetatable({}, CooldownGroup)
     group.id = opts.id
     group.getSettings = opts.getSettings
+    group.getModuleSettings = opts.getModuleSettings
     group.getSpells = opts.getSpells
     group.names = opts.names
     group.masqueGroup = opts.masqueGroup
@@ -118,6 +121,10 @@ end
 
 function CooldownGroup:GetSettings()
     return self.getSettings()
+end
+
+function CooldownGroup:GetModuleSettings()
+    return self.getModuleSettings()
 end
 
 function CooldownGroup:GetSpells()
@@ -394,7 +401,7 @@ function CooldownGroup:UpdateTrinkets()
     local settings = self:GetSettings()
     local trinketFrame = self.trinketFrame
     if not trinketFrame then return end
-    if not settings.trackTrinkets then
+    if not self:GetModuleSettings().trackTrinkets then
         trinketFrame:Hide()
         return
     end
@@ -445,10 +452,11 @@ function CooldownGroup:Update()
     if self.testModeActive then return end
 
     local settings = self:GetSettings()
+    local moduleSettings = self:GetModuleSettings()
     local frame = self.frame
     local cdFrames = self.icons
     local tracker = self.tracker
-    if not settings.enabled or not frame then
+    if not moduleSettings.enabled or not frame then
         if frame then frame:Hide() end
         return
     end
@@ -523,7 +531,7 @@ function CooldownGroup:Update()
                     cdFrame.icon:SetDesaturated(false)
 
                     -- Start edge pulse if enabled and was a real cooldown
-                    if settings.showReadyGlow ~= false and self.lastCooldownDuration[spell.spellId] then
+                    if moduleSettings.showReadyGlow ~= false and self.lastCooldownDuration[spell.spellId] then
                         if not cdFrame.edgePulseActive then
                             StartEdgePulse(cdFrame)
                         end
@@ -682,7 +690,7 @@ function CooldownGroup:RefreshTestIcons()
                 cdFrame.cooldown:SetCooldown(GetTime() - 5, 30)
                 StopEdgePulse(cdFrame)
             else
-                if settings.showReadyGlow ~= false then
+                if self:GetModuleSettings().showReadyGlow ~= false then
                     StartEdgePulse(cdFrame)
                 end
             end
@@ -961,7 +969,7 @@ function CooldownGroup:StartTest()
 
     -- Show sample trinket icons in test mode
     local trinketFrame = self.trinketFrame
-    if settings.trackTrinkets and trinketFrame then
+    if self:GetModuleSettings().trackTrinkets and trinketFrame then
         local size = settings.iconSize or 36
         local spacing = settings.spacing or 4
         local testTrinketIcons = {
