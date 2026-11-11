@@ -21,6 +21,12 @@ _G.UIParent.GetEffectiveScale = function() return 1 end
 
 -- Frames also remember whether they are shown, their texture, alpha and desaturation
 local function augment(f)
+    -- As in the game, a field nobody set is nil; only methods (CapitalCase) fall back to
+    -- no-ops. The shared mock answers every key with a function, which makes unset fields
+    -- such as ghost or dragIndicator look set.
+    setmetatable(f, { __index = function(_, k)
+        if type(k) == "string" and k:match("^%u") then return function() end end
+    end })
     f.shown = true
     f.Show = function(self) self.shown = true end
     f.Hide = function(self) self.shown = false end
