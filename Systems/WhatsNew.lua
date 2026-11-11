@@ -14,6 +14,19 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.1.2",
+        features = {},
+        fixes = {
+            "Changing the cooldown icon size now resizes the icons straight away",
+            "Background Colour changes show straight away on castbars and the swing timer, and the GCD, 5 Second Rule and Interrupt backgrounds now use their colour setting",
+            "Test mode: dragging a cooldown icon forwards now drops it where the preview showed it",
+            "Test mode: dragging cooldown icons picks the right slot with Vertical Layout and multi-row Grow Up",
+            "Test mode: the drag marker sits on the target slot's edge when cooldowns grow left",
+            "Test mode: the sample trinket icons stay visible",
+            "Test mode: the cooldown drag area fits all the test icons",
+        },
+    },
+    {
         version = "8.1.1",
         features = {},
         fixes = {
