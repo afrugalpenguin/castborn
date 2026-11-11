@@ -1,6 +1,7 @@
 require("tests.mocks.wow_api")
 _G.RAID_CLASS_COLORS = {}
 dofile("Core.lua")
+dofile("Data/SpellData.lua")
 dofile("Modules/CooldownTracker.lua")
 
 describe("Cooldown seams (TBC behaviour)", function()
@@ -38,5 +39,25 @@ describe("Cooldown seams (TBC behaviour)", function()
         local cooldown = { SetCooldown = function(_, s, d) got = { s, d } end }
         CT:SetIconCooldown(cooldown, "Hammer of Justice", 100, 30)
         assert.are.same({ 100, 30 }, got)
+    end)
+end)
+
+describe("Paladin cooldown defaults", function()
+    local function indexOf(name)
+        for i, spell in ipairs(Castborn.SpellData:GetClassCooldowns("PALADIN")) do
+            if spell.name == name then return i, spell end
+        end
+    end
+
+    it("tracks Divine Protection by its castable rank 1 ID", function()
+        local _, spell = indexOf("Divine Protection")
+        assert.is_not_nil(spell, "Divine Protection is not tracked")
+        assert.are.equal(498, spell.spellId)
+    end)
+
+    it("lists Divine Protection just before Divine Shield", function()
+        local dp = indexOf("Divine Protection")
+        local ds = indexOf("Divine Shield")
+        assert.are.equal(ds - 1, dp)
     end)
 end)
