@@ -65,6 +65,7 @@ describe("Bar skins", function()
             },
             groups = { bars = { db = db } },
         }
+        CastbornDB.barSkinUseMasque = true  -- the Look & Feel switch
         return db
     end
 
@@ -98,6 +99,44 @@ describe("Bar skins", function()
             local skin = { Normal = { Texture = "X" } }
             Castborn:RegisterBarSkin("Mine", skin)
             assert.are.equal(skin, BS:GetSkinData("Mine"))
+        end)
+    end)
+
+    describe("the Use Masque skin switch", function()
+        local frugal = { Normal = { Texture = "Border" } }
+
+        it("is off by default, so installing Masque changes nothing", function()
+            assert.is_false(Castborn.defaults.barSkinUseMasque)
+        end)
+
+        it("uses Castborn's choice when switched off, even with Masque installed", function()
+            useMasque({ Frugal = frugal }, "Frugal")
+            CastbornDB.barSkinUseMasque = false
+            CastbornDB.barSkin = "Flat"
+            assert.are.equal(BS.skins.Flat, (BS:GetActiveSkin()))
+            assert.is_false(BS:IsMasqueActive())
+            assert.is_true(BS:IsMasqueAvailable())
+        end)
+
+        it("is unavailable without Masque", function()
+            assert.is_false(BS:IsMasqueAvailable())
+        end)
+
+        it("names the skin the Masque group is using", function()
+            useMasque({ Frugal = frugal }, "Frugal")
+            assert.are.equal("Frugal", BS:GetMasqueSkinName())
+        end)
+
+        it("names Masque's default skin when the group's skin is gone", function()
+            useMasque({ Default = frugal }, "Uninstalled")
+            assert.are.equal("Default", BS:GetMasqueSkinName())
+        end)
+
+        it("announces each re-skin so the options page can update", function()
+            local fired = 0
+            Castborn:RegisterCallback("BAR_SKIN_CHANGED", function() fired = fired + 1 end)
+            BS:ApplyAll()
+            assert.are.equal(1, fired)
         end)
     end)
 
