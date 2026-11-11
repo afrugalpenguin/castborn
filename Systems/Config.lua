@@ -103,6 +103,10 @@ function CB:ResetPositions()
             Castborn.Anchoring:ApplyPosition(cdFrame, cdGroup)
         end
     end
+    -- The other cooldown groups go back below main, one under another
+    if cdGroup then
+        CT:RestackGroups()
+    end
     local multiDotFrame = _G["Castborn_MultiDoTTracker"]
     if multiDotFrame and CB.db.multidot then
         CB:ApplyPosition(multiDotFrame, "multidot")
