@@ -4,8 +4,17 @@
 local CooldownTracker = {}
 Castborn.CooldownTracker = CooldownTracker
 
+-- Module-wide settings, merged into CastbornDB.cooldowns. Never put groups (or any other
+-- list) here: MergeDefaults would merge a default list index by index into the user's own.
 local defaults = {
     enabled = true,
+    showTime = true,
+    showReadyGlow = true,     -- Animated edge glow when ready
+    trackTrinkets = true,
+}
+
+-- Per-group settings, filled into each group table on its own
+local groupDefaults = {
     iconSize = 36,
     spacing = 4,
     point = "CENTER",
@@ -13,22 +22,122 @@ local defaults = {
     y = -300,
     xPct = -0.234,
     yPct = -0.278,
-    showTime = true,
-    trackedSpells = {},
     anchored = true,
     anchorPosition = "LEFT",  -- LEFT, RIGHT, TOP, BOTTOM
     growDirection = "LEFT",   -- LEFT or RIGHT
-    showReadyGlow = true,     -- Animated edge glow when ready
-    trackTrinkets = true,
     iconsPerRow = 10,
     orientation = "HORIZONTAL",
 }
+CooldownTracker.groupDefaults = groupDefaults  -- Reset Positions reads these
+
+local MAIN_GROUP_ID = "main"
+
+-- Top-level keys that moved into the main group. verticalLayout is the options page's
+-- mirror of orientation; it has no default.
+local LEGACY_GROUP_KEYS = {
+    "iconSize", "spacing", "iconsPerRow", "orientation", "verticalLayout", "growDirection",
+    "anchored", "anchorPosition", "point", "x", "y", "xPct", "yPct",
+}
+
+-- A saved position is taken as a whole, so a pixel-only position is never mixed with
+-- default percentages (ApplyPosition prefers the percentages).
+local POSITION_KEYS = { x = true, y = true, xPct = true, yPct = true }
+
+local function FillGroupDefaults(group)
+    local hasPosition = group.x ~= nil or group.y ~= nil or group.xPct ~= nil or group.yPct ~= nil
+    if hasPosition and Castborn.Anchoring then
+        Castborn.Anchoring:MigratePosition(group)
+    end
+    for key, value in pairs(groupDefaults) do
+        if group[key] == nil and not (hasPosition and POSITION_KEYS[key]) then
+            group[key] = value
+        end
+    end
+    group.spells = group.spells or {}
+end
+
+-- Move the old flat settings (top-level layout keys and trackedSpells) into a "main" group.
+-- Does nothing if db already has groups. Returns true only when old settings were moved,
+-- so a fresh install is not announced as a migration.
+function CooldownTracker.MigrateToGroups(db)
+    if type(db) ~= "table" or db.groups ~= nil then return false end
+
+    local hadLegacy = db.trackedSpells ~= nil
+    for _, key in ipairs(LEGACY_GROUP_KEYS) do
+        if db[key] ~= nil then hadLegacy = true end
+    end
+
+    -- Keep a one-time copy of the old keys before anything is removed
+    if hadLegacy and db.legacyBackup == nil then
+        local backup = {}
+        for _, key in ipairs(LEGACY_GROUP_KEYS) do
+            backup[key] = Castborn:DeepCopy(db[key])
+        end
+        backup.trackedSpells = Castborn:DeepCopy(db.trackedSpells)
+        db.legacyBackup = backup
+    end
+
+    local main = { id = MAIN_GROUP_ID, name = "Main" }
+    for _, key in ipairs(LEGACY_GROUP_KEYS) do
+        main[key] = db[key]
+    end
+    main.spells = db.trackedSpells or {}
+    FillGroupDefaults(main)
+    db.groups = { main }
+
+    -- Only now that the group is written, drop the old keys
+    for _, key in ipairs(LEGACY_GROUP_KEYS) do
+        db[key] = nil
+    end
+    db.trackedSpells = nil
+
+    return hadLegacy
+end
+
+-- Migrate if needed (announcing it once) and fill each group's defaults
+local function PrepareGroups(db)
+    if CooldownTracker.MigrateToGroups(db) then
+        Castborn:Print("Cooldowns moved to the new groups format")
+    end
+    for _, group in ipairs(db.groups) do
+        FillGroupDefaults(group)
+    end
+end
+
+-- The groups list. Migrates first if the old shape turns up (an old profile or import).
+function CooldownTracker:GetGroups()
+    local db = CastbornDB.cooldowns
+    if db.groups == nil then
+        PrepareGroups(db)
+    end
+    return db.groups
+end
+
+function CooldownTracker:GetGroup(id)
+    for _, group in ipairs(self:GetGroups()) do
+        if group.id == id then return group end
+    end
+    return nil
+end
+
+-- Looked up by id, never by position, because groups can be reordered. Recreated with
+-- defaults (and no spells, so READY reloads them) if damaged data lost it.
+function CooldownTracker:GetMainGroup()
+    local main = self:GetGroup(MAIN_GROUP_ID)
+    if not main then
+        main = { id = MAIN_GROUP_ID, name = "Main" }
+        FillGroupDefaults(main)
+        table.insert(self:GetGroups(), 1, main)
+    end
+    return main
+end
 
 -- The one group: today's strip, with its original frame names and Masque group
 local mainGroup = Castborn.CooldownGroup:New({
-    id = "main",
-    getSettings = function() return CastbornDB.cooldowns end,
-    getSpells = function() return CastbornDB.cooldowns.trackedSpells end,
+    id = MAIN_GROUP_ID,
+    getSettings = function() return CooldownTracker:GetMainGroup() end,
+    getModuleSettings = function() return CastbornDB.cooldowns end,
+    getSpells = function() return CooldownTracker:GetMainGroup().spells end,
     names = {
         container = "Castborn_CooldownTracker",
         icon = "Castborn_CD",
@@ -63,6 +172,14 @@ end
 
 Castborn:RegisterCallback("INIT", function()
     CastbornDB.cooldowns = Castborn:MergeDefaults(CastbornDB.cooldowns or {}, defaults)
+    PrepareGroups(CastbornDB.cooldowns)
+end)
+
+-- A profile saved before groups existed (or an old export string) arrives in the old shape
+Castborn:RegisterCallback("PROFILE_CHANGED", function()
+    if CastbornDB.cooldowns then
+        PrepareGroups(CastbornDB.cooldowns)
+    end
 end)
 
 Castborn:RegisterCallback("COOLDOWNS_GLOW_OFF", function()
@@ -92,19 +209,20 @@ local playerCastbar = nil
 
 Castborn:RegisterCallback("READY", function()
     local db = CastbornDB.cooldowns
+    local main = CooldownTracker:GetMainGroup()
     local _, class = UnitClass("player")
     local _, race = UnitRace("player")
     local currentVersion = Castborn.version
 
     -- Check if class changed (need to reload defaults)
-    -- Note: if loadedForClass is nil but trackedSpells exists, reload anyway (migration case)
+    -- Note: if loadedForClass is nil but the main group has spells, reload anyway (migration case)
     local classChanged = db.loadedForClass ~= class
 
-    if not db.trackedSpells or #db.trackedSpells == 0 or classChanged then
+    if not main.spells or #main.spells == 0 or classChanged then
         -- Preserve custom spells before reloading class defaults
         local customSpells = {}
-        if db.trackedSpells then
-            for _, spell in ipairs(db.trackedSpells) do
+        if main.spells then
+            for _, spell in ipairs(main.spells) do
                 if spell.custom then
                     table.insert(customSpells, spell)
                 end
@@ -113,16 +231,16 @@ Castborn:RegisterCallback("READY", function()
 
         -- Reload class defaults
         if class and Castborn.SpellData then
-            db.trackedSpells = Castborn.SpellData:GetClassCooldowns(class)
+            main.spells = Castborn.SpellData:GetClassCooldowns(class)
             -- Append racial cooldowns
             if race then
                 for _, spell in ipairs(Castborn.SpellData:GetRacialCooldowns(race)) do
-                    table.insert(db.trackedSpells, spell)
+                    table.insert(main.spells, spell)
                 end
             end
             -- Re-append custom spells
             for _, spell in ipairs(customSpells) do
-                table.insert(db.trackedSpells, spell)
+                table.insert(main.spells, spell)
             end
             db.defaultsLoaded = currentVersion
             db.loadedForClass = class
@@ -133,13 +251,13 @@ Castborn:RegisterCallback("READY", function()
             local defaults = Castborn.SpellData:GetClassCooldowns(class)
             local added = 0
             if defaults then
-                added = added + MergeNewDefaults(db.trackedSpells, defaults)
+                added = added + MergeNewDefaults(main.spells, defaults)
             end
             -- Merge racial cooldowns
             if race then
                 local racials = Castborn.SpellData:GetRacialCooldowns(race)
                 if racials then
-                    added = added + MergeNewDefaults(db.trackedSpells, racials)
+                    added = added + MergeNewDefaults(main.spells, racials)
                 end
             end
             if added > 0 then
@@ -165,7 +283,7 @@ Castborn:RegisterCallback("READY", function()
     end)
 
     -- Apply initial anchoring if enabled and castbar exists
-    if db.anchored ~= false then
+    if CooldownTracker:GetMainGroup().anchored ~= false then
         local castbar = Castborn.castbars and Castborn.castbars.player
         if castbar then
             playerCastbar = castbar
@@ -187,7 +305,7 @@ Castborn:RegisterCallback("PLAYER_CASTBAR_CREATED", function(castbar)
     local frame = mainGroup.frame
 
     -- Anchor to the left of the castbar's icon (if it exists) by default
-    if frame and db and db.anchored ~= false then
+    if frame and db and CooldownTracker:GetMainGroup().anchored ~= false then
         -- Find the anchor target - prefer the icon frame if it exists
         local anchorTarget = (castbar.iconFrame and castbar.iconFrame:IsShown()) and castbar.iconFrame or castbar
 
@@ -201,19 +319,18 @@ end)
 
 -- Detach cooldowns from castbar
 Castborn:RegisterCallback("DETACH_COOLDOWNS", function()
-    local db = CastbornDB.cooldowns
-    db.anchored = false
+    local main = CooldownTracker:GetMainGroup()
+    main.anchored = false
     local frame = mainGroup.frame
     if Castborn.Anchoring then
-        Castborn.Anchoring:Detach(frame, db)
+        Castborn.Anchoring:Detach(frame, main)
     end
     Castborn:Print("Cooldowns detached from castbar")
 end)
 
 -- Reattach cooldowns to castbar
 Castborn:RegisterCallback("REATTACH_COOLDOWNS", function()
-    local db = CastbornDB.cooldowns
-    db.anchored = true
+    CooldownTracker:GetMainGroup().anchored = true
 
     local frame = mainGroup.frame
     -- Try to find playerCastbar if not set

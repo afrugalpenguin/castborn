@@ -111,16 +111,19 @@ local function tick()
     updateFrame.scripts.OnUpdate(updateFrame, 0.1)
 end
 
+local function mainGroup() return Castborn.CooldownTracker:GetMainGroup() end
+
 local function configure(orientation, grow, perRow)
     local db = CastbornDB.cooldowns
     db.enabled = true
-    db.iconSize = 30
-    db.spacing = 2
-    db.iconsPerRow = perRow
-    db.orientation = orientation
-    db.growDirection = grow
     db.showReadyGlow = true
     db.trackTrinkets = true
+    local group = mainGroup()
+    group.iconSize = 30
+    group.spacing = 2
+    group.iconsPerRow = perRow
+    group.orientation = orientation
+    group.growDirection = grow
 end
 
 -- Spells 1..n, all enabled and known unless listed otherwise
@@ -131,13 +134,13 @@ local function track(ids, opts)
         spells[#spells + 1] = { spellId = id, name = "Spell" .. id, enabled = not (opts.disabled and opts.disabled[id]) }
         known[id] = not (opts.unknown and opts.unknown[id])
     end
-    CastbornDB.cooldowns.trackedSpells = spells
+    mainGroup().spells = spells
     return spells
 end
 
 local function trackedIds()
     local ids = {}
-    for i, spell in ipairs(CastbornDB.cooldowns.trackedSpells) do ids[i] = spell.spellId end
+    for i, spell in ipairs(mainGroup().spells) do ids[i] = spell.spellId end
     return ids
 end
 
@@ -513,7 +516,7 @@ describe("Castbar anchoring", function()
     castbar.iconFrame = iconFrame
 
     before_each(function()
-        db = CastbornDB.cooldowns
+        db = mainGroup()
         db.anchored = true
     end)
 

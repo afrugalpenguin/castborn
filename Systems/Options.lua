@@ -1514,25 +1514,27 @@ function moduleBuilders.buffs(parent, db, y)
 end
 
 function moduleBuilders.cooldowns(parent, db, y)
+    -- Layout settings and spells live on the main group; the rest of db is module-wide
+    local group = Castborn.CooldownTracker:GetMainGroup()
     -- Icon Size and Spacing sliders
-    db.iconSize = db.iconSize or 36
-    local iconSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 20, 56, 2)
+    group.iconSize = group.iconSize or 36
+    local iconSlider = CreateSlider(parent, "Icon Size", group, "iconSize", 20, 56, 2)
     iconSlider:SetPoint("TOPLEFT", 0, y)
-    db.spacing = db.spacing or 4
-    local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
+    group.spacing = group.spacing or 4
+    local spacingSlider = CreateSlider(parent, "Spacing", group, "spacing", 0, 12, 1)
     spacingSlider:SetPoint("TOPLEFT", 220, y)
     y = y - 60
-    db.iconsPerRow = db.iconsPerRow or 10
-    local perRowSlider = CreateSlider(parent, "Icons Per Row", db, "iconsPerRow", 1, 20, 1)
+    group.iconsPerRow = group.iconsPerRow or 10
+    local perRowSlider = CreateSlider(parent, "Icons Per Row", group, "iconsPerRow", 1, 20, 1)
     perRowSlider:SetPoint("TOPLEFT", 0, y)
     y = y - 50
 
     -- Orientation checkbox
-    local vertCB = CreateCheckbox(parent, "Vertical Layout", db, "verticalLayout", function(v)
-        db.orientation = v and "VERTICAL" or "HORIZONTAL"
+    local vertCB = CreateCheckbox(parent, "Vertical Layout", group, "verticalLayout", function(v)
+        group.orientation = v and "VERTICAL" or "HORIZONTAL"
     end)
-    db.verticalLayout = (db.orientation == "VERTICAL")
-    vertCB:SetChecked(db.verticalLayout)
+    group.verticalLayout = (group.orientation == "VERTICAL")
+    vertCB:SetChecked(group.verticalLayout)
     vertCB:SetPoint("TOPLEFT", 0, y)
 
     local trinketCB = CreateCheckbox(parent, "Track Trinket Cooldowns", db, "trackTrinkets")
@@ -1557,7 +1559,7 @@ function moduleBuilders.cooldowns(parent, db, y)
     growDropdown:SetPoint("TOPLEFT", 90, y + 6)
     UIDropDownMenu_SetWidth(growDropdown, 140)
 
-    local currentGrow = db.growDirection or "LEFT"
+    local currentGrow = group.growDirection or "LEFT"
     for _, opt in ipairs(growOptions) do
         if opt.value == currentGrow then
             UIDropDownMenu_SetText(growDropdown, opt.label)
@@ -1569,9 +1571,9 @@ function moduleBuilders.cooldowns(parent, db, y)
             local info = UIDropDownMenu_CreateInfo()
             info.text = opt.label
             info.value = opt.value
-            info.checked = (db.growDirection or "LEFT") == opt.value
+            info.checked = (group.growDirection or "LEFT") == opt.value
             info.func = function()
-                db.growDirection = opt.value
+                group.growDirection = opt.value
                 UIDropDownMenu_SetText(growDropdown, opt.label)
                 CloseDropDownMenus()
             end
@@ -1593,11 +1595,11 @@ function moduleBuilders.cooldowns(parent, db, y)
     local _, race = UnitRace("player")
     local classSpells = Castborn.SpellData and Castborn.SpellData:GetClassCooldowns(class) or {}
     local racialSpells = Castborn.SpellData and race and Castborn.SpellData:GetRacialCooldowns(race) or {}
-    db.trackedSpells = db.trackedSpells or {}
+    group.spells = group.spells or {}
 
     -- Index existing tracked spells by spellId for quick lookup
     local tracked = {}
-    for _, spell in ipairs(db.trackedSpells) do
+    for _, spell in ipairs(group.spells) do
         tracked[spell.spellId] = spell
     end
 
@@ -1605,7 +1607,7 @@ function moduleBuilders.cooldowns(parent, db, y)
     for _, def in ipairs(classSpells) do
         if not tracked[def.spellId] then
             local entry = { spellId = def.spellId, name = def.name, enabled = true }
-            table.insert(db.trackedSpells, entry)
+            table.insert(group.spells, entry)
             tracked[def.spellId] = entry
         end
     end
@@ -1614,7 +1616,7 @@ function moduleBuilders.cooldowns(parent, db, y)
     for _, def in ipairs(racialSpells) do
         if not tracked[def.spellId] then
             local entry = { spellId = def.spellId, name = def.name, enabled = true }
-            table.insert(db.trackedSpells, entry)
+            table.insert(group.spells, entry)
             tracked[def.spellId] = entry
         end
     end
@@ -1638,9 +1640,9 @@ function moduleBuilders.cooldowns(parent, db, y)
         end
 
         local listY = 0
-        local total = #db.trackedSpells
+        local total = #group.spells
 
-        for i, spell in ipairs(db.trackedSpells) do
+        for i, spell in ipairs(group.spells) do
             if spell.enabled == nil then spell.enabled = true end
 
             local row = CreateFrame("Frame", nil, spellListContainer)
@@ -1665,7 +1667,7 @@ function moduleBuilders.cooldowns(parent, db, y)
             end
             downBtn:SetScript("OnClick", function()
                 if i < total then
-                    db.trackedSpells[i], db.trackedSpells[i + 1] = db.trackedSpells[i + 1], db.trackedSpells[i]
+                    group.spells[i], group.spells[i + 1] = group.spells[i + 1], group.spells[i]
                     BuildSpellList()
                     PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
                 end
@@ -1680,7 +1682,7 @@ function moduleBuilders.cooldowns(parent, db, y)
             end
             upBtn:SetScript("OnClick", function()
                 if i > 1 then
-                    db.trackedSpells[i], db.trackedSpells[i - 1] = db.trackedSpells[i - 1], db.trackedSpells[i]
+                    group.spells[i], group.spells[i - 1] = group.spells[i - 1], group.spells[i]
                     BuildSpellList()
                     PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
                 end
@@ -1691,7 +1693,7 @@ function moduleBuilders.cooldowns(parent, db, y)
                 local removeBtn = CreateRowButton(row, "remove")
                 removeBtn:SetPoint("RIGHT", upBtn, "LEFT", -6, 0)
                 removeBtn:SetScript("OnClick", function()
-                    table.remove(db.trackedSpells, i)
+                    table.remove(group.spells, i)
                     BuildSpellList()
                     PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
                 end)
@@ -1732,13 +1734,13 @@ function moduleBuilders.cooldowns(parent, db, y)
             end
 
             -- Check cap
-            if #db.trackedSpells >= 20 then
+            if #group.spells >= 20 then
                 statusText:SetText("|cffff4444Maximum of 20 spells reached|r")
                 return
             end
 
             -- Check for duplicates
-            for _, spell in ipairs(db.trackedSpells) do
+            for _, spell in ipairs(group.spells) do
                 if spell.spellId == spellId then
                     statusText:SetText("|cffff4444Already tracked|r")
                     return
@@ -1753,7 +1755,7 @@ function moduleBuilders.cooldowns(parent, db, y)
             end
 
             -- Add the custom spell
-            table.insert(db.trackedSpells, {
+            table.insert(group.spells, {
                 spellId = spellId,
                 name = name,
                 enabled = true,
@@ -1780,7 +1782,7 @@ function moduleBuilders.cooldowns(parent, db, y)
 
     BuildSpellList()
 
-    y = y - (26 * #db.trackedSpells) - 60
+    y = y - (26 * #group.spells) - 60
 
     return y
 end
@@ -2509,9 +2511,13 @@ function Options:BuildModule(parent, key)
         y = y - 60
     end
 
-    -- Anchor checkbox
-    if db.anchored ~= nil then
-        local anchorCB = CreateCheckbox(parent, "Anchor to Castbar", db, "anchored", function(v)
+    -- Anchor checkbox (the cooldowns page anchors its main group)
+    local anchorDb = db
+    if key == "cooldowns" and Castborn.CooldownTracker then
+        anchorDb = Castborn.CooldownTracker:GetMainGroup()
+    end
+    if anchorDb.anchored ~= nil then
+        local anchorCB = CreateCheckbox(parent, "Anchor to Castbar", anchorDb, "anchored", function(v)
             if v then
                 Castborn:FireCallback("REATTACH_" .. string.upper(key))
             else

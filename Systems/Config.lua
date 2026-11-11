@@ -6,8 +6,9 @@
 local CB = Castborn
 
 function CB:ResetPositions()
+    -- Cooldowns are reset separately below: their position lives on the main group
     local positionKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd",
-                          "interrupt", "procs", "cooldowns", "multidot", "totems", "absorbs", "armortracker",
+                          "interrupt", "procs", "multidot", "totems", "absorbs", "armortracker",
                           "seals"}
 
     for _, key in ipairs(positionKeys) do
@@ -25,6 +26,19 @@ function CB:ResetPositions()
             if def.iconSize then CB.db[key].iconSize = def.iconSize end
             if def.anchored ~= nil then CB.db[key].anchored = def.anchored end
         end
+    end
+    local CT = Castborn.CooldownTracker
+    local cdGroup = CT and CB.db.cooldowns and CT:GetMainGroup()
+    if cdGroup then
+        local def = CT.groupDefaults
+        cdGroup.point = def.point
+        cdGroup.xPct = def.xPct
+        cdGroup.yPct = def.yPct
+        if Castborn.Anchoring then
+            cdGroup.x, cdGroup.y = Castborn.Anchoring:PercentToPixel(def.xPct, def.yPct)
+        end
+        cdGroup.iconSize = def.iconSize
+        cdGroup.anchored = def.anchored
     end
     -- Apply positions and sizes to frames
     if CB.castbars then
@@ -81,12 +95,12 @@ function CB:ResetPositions()
         end
     end
     local cdFrame = _G["Castborn_CooldownTracker"]
-    if cdFrame and CB.db.cooldowns then
-        if CB.db.cooldowns.anchored then
+    if cdFrame and cdGroup then
+        if cdGroup.anchored then
             -- Re-anchor cooldowns to castbar
             Castborn:FireCallback("REATTACH_COOLDOWNS")
-        else
-            CB:ApplyPosition(cdFrame, "cooldowns")
+        elseif Castborn.Anchoring then
+            Castborn.Anchoring:ApplyPosition(cdFrame, cdGroup)
         end
     end
     local multiDotFrame = _G["Castborn_MultiDoTTracker"]
