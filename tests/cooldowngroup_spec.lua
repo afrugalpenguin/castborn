@@ -356,8 +356,10 @@ describe("Test mode drag to reorder", function()
     -- Columns count from the container's right edge when growing left, else from its left.
     local CURSOR_X = { LEFT = 300 - 64, RIGHT = 64, UP = 64, DOWN = 64 }
 
+    -- The marker straddles the target slot's leading edge: 2px past its right edge when
+    -- growing left (mirroring the others), 2px before its left edge otherwise
     local DRAG = {
-        LEFT  = { point = "TOPRIGHT",   marker = -47, highlight = -64, third = -32 },
+        LEFT  = { point = "TOPRIGHT",   marker = -62, highlight = -64, third = -32 },
         RIGHT = { point = "TOPLEFT",    marker = 62,  highlight = 64,  third = 32 },
         UP    = { point = "BOTTOMLEFT", marker = 62,  highlight = 64,  third = 32 },
         DOWN  = { point = "TOPLEFT",    marker = 62,  highlight = 64,  third = 32 },

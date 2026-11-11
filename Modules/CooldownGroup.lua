@@ -920,14 +920,15 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
                 end
             end
 
-            -- Update insertion marker, on the slot's leading edge
+            -- Update insertion marker: 4px wide, straddling the slot's leading edge (its
+            -- right edge when growing left, its left edge otherwise)
             if frame.insertMarker then
                 frame.insertMarker:ClearAllPoints()
                 frame.insertMarker:SetSize(4, size)
 
                 local point, relativePoint, markerX, markerY = GetSlotAnchor(targetSlot, settings)
                 if point == "TOPRIGHT" then
-                    markerX = markerX + size / 2 + 2
+                    markerX = markerX + 2
                 else
                     markerX = markerX - 2
                 end
