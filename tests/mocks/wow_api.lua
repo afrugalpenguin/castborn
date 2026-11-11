@@ -65,6 +65,7 @@ local function newMockFrame()
         scripts = {},
     }
     frame.RegisterEvent = function(self, event) self.events[event] = true end
+    frame.RegisterUnitEvent = function(self, event, ...) self.events[event] = { ... } end
     frame.UnregisterEvent = function(self, event) self.events[event] = nil end
     frame.SetScript = function(self, handler, fn) self.scripts[handler] = fn end
     frame.GetScript = function(self, handler) return self.scripts[handler] end
