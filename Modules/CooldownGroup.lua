@@ -419,6 +419,9 @@ end
 --------------------------------------------------------------------------------
 
 function CooldownGroup:UpdateTrinkets()
+    -- Don't override the sample trinkets test mode shows
+    if self.testModeActive then return end
+
     local settings = self:GetSettings()
     local trinketFrame = self.trinketFrame
     if not trinketFrame then return end
