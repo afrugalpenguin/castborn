@@ -673,6 +673,10 @@ function CooldownGroup:RefreshTestIcons()
 
     self.testSpellCount = #testSpells
 
+    -- Fit the container to the test icons, as the live update does, so the drag area
+    -- matches what is shown
+    self.frame:SetSize(CooldownGroup.GetContainerSize(#testSpells, settings))
+
     local size = settings.iconSize or 36
     for i = 1, #testSpells do
         local cdFrame = self.icons[i]
