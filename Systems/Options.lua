@@ -53,6 +53,7 @@ local currentCategory = "general"
 local categories = {
     { id = "general", name = "General" },
     { id = "castbars", name = "Castbars" },
+    { id = "resources", name = "Resource Bars" },
     { id = "gcd", name = "GCD Indicator" },
     { id = "fsr", name = "5 Second Rule" },
     { id = "swing", name = "Swing Timer" },
@@ -77,6 +78,7 @@ local categories = {
 local pageSubtitles = {
     general = "Lock and test your frames, and the essentials.",
     castbars = "Your castbar and those of your target, their target and your focus.",
+    resources = "Your health and power, in their own movable frame.",
     gcd = "A sweep that shows the global cooldown.",
     fsr = "The five-second rule for mana regeneration.",
     swing = "When your next auto attack lands.",
@@ -719,6 +721,9 @@ function Options:BuildGeneral(parent)
         { key = "seals", label = "Seal Tracker", class = "PALADIN" },
         { key = "interrupt", label = "Interrupt Tracker" },
         { key = "multidot", label = "Multi-DoT Tracker" },
+        { key = "resources", label = "Resource Bars", onChange = function()
+            if Castborn.ResourceBars then Castborn.ResourceBars:ApplySettings() end
+        end },
     }
 
     local col = 0
@@ -731,7 +736,7 @@ function Options:BuildGeneral(parent)
             count = count + 1
             local dbKey = mod.db or mod.key
             CastbornDB[dbKey] = CastbornDB[dbKey] or {}
-            local cb = CreateCheckbox(parent, mod.label, CastbornDB[dbKey], "enabled")
+            local cb = CreateCheckbox(parent, mod.label, CastbornDB[dbKey], "enabled", mod.onChange)
             cb:SetPoint("TOPLEFT", col * 200, y)
             y = y - 26
             if count == 5 then
@@ -2442,6 +2447,147 @@ function moduleBuilders.cooldowntext(parent, db, y)
         previewBtn:SetPoint("TOPLEFT", 320, y + 2)
         y = y - 34
     end
+
+    return y
+end
+
+function moduleBuilders.resources(parent, db, y)
+    local RB = Castborn.ResourceBars
+    local function apply()
+        if RB then RB:ApplySettings() end
+    end
+
+    -- A labelled dropdown that saves one of a set of values and applies it
+    local function CreateChoice(name, label, key, choices, x, onPick)
+        local labelText = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
+        labelText:SetPoint("TOPLEFT", x, y)
+        labelText:SetText(label)
+        labelText:SetTextColor(unpack(C.grey))
+
+        local dropdown = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
+        SkinDropdown(dropdown)
+        dropdown:SetPoint("TOPLEFT", x - 16, y - 16)
+        UIDropDownMenu_SetWidth(dropdown, 150)
+        for _, choice in ipairs(choices) do
+            if choice.value == db[key] then UIDropDownMenu_SetText(dropdown, choice.label) end
+        end
+        UIDropDownMenu_Initialize(dropdown, function()
+            for _, choice in ipairs(choices) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = choice.label
+                info.value = choice.value
+                info.checked = db[key] == choice.value
+                info.func = function()
+                    db[key] = choice.value
+                    UIDropDownMenu_SetText(dropdown, choice.label)
+                    CloseDropDownMenus()
+                    if onPick then onPick(choice.value) end
+                    apply()
+                end
+                UIDropDownMenu_AddButton(info)
+            end
+        end)
+        return dropdown
+    end
+
+    local enableCB = CreateCheckbox(parent, "Enable Resource Bars", db, "enabled", apply)
+    enableCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    local healthCB = CreateCheckbox(parent, "Show Health", db, "showHealth", apply)
+    healthCB:SetPoint("TOPLEFT", 0, y)
+    local powerCB = CreateCheckbox(parent, "Show Power", db, "showPower", apply)
+    powerCB:SetPoint("TOPLEFT", 220, y)
+    y = y - 40
+
+    -- Size
+    local sizeHeader = CreateHeader(parent, "Size")
+    sizeHeader:SetPoint("TOPLEFT", 0, y)
+    sizeHeader:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    local widthSlider = CreateSlider(parent, "Width", db, "width", 80, 400, 10, apply)
+    widthSlider:SetPoint("TOPLEFT", 0, y)
+    local gapSlider = CreateSlider(parent, "Gap", db, "gap", 0, 10, 1, apply)
+    gapSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+
+    local healthHeightSlider = CreateSlider(parent, "Health Height", db, "healthHeight", 4, 40, 1, apply)
+    healthHeightSlider:SetPoint("TOPLEFT", 0, y)
+    local powerHeightSlider = CreateSlider(parent, "Power Height", db, "powerHeight", 2, 40, 1, apply)
+    powerHeightSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+
+    -- Colours: each picker shows only in Custom mode
+    local colourHeader = CreateHeader(parent, "Colours")
+    colourHeader:SetPoint("TOPLEFT", 0, y)
+    colourHeader:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    local healthPicker = CreateColorPicker(parent, "Custom Health Colour", db, "healthColor", apply)
+    local powerPicker = CreateColorPicker(parent, "Custom Power Colour", db, "powerColor", apply)
+    CreateChoice("CastbornResourceHealthColourDropdown", "Health Colour:", "healthColorMode", {
+        { value = "CLASS", label = "Class Colour" },
+        { value = "CUSTOM", label = "Custom" },
+    }, 0, function(v) if v == "CUSTOM" then healthPicker:Show() else healthPicker:Hide() end end)
+    CreateChoice("CastbornResourcePowerColourDropdown", "Power Colour:", "powerColorMode", {
+        { value = "TYPE", label = "By Power Type" },
+        { value = "CUSTOM", label = "Custom" },
+    }, 220, function(v) if v == "CUSTOM" then powerPicker:Show() else powerPicker:Hide() end end)
+    y = y - 56
+
+    healthPicker:SetPoint("TOPLEFT", 0, y)
+    powerPicker:SetPoint("TOPLEFT", 220, y)
+    if db.healthColorMode ~= "CUSTOM" then healthPicker:Hide() end
+    if db.powerColorMode ~= "CUSTOM" then powerPicker:Hide() end
+    y = y - 40
+
+    -- Text
+    local textHeader = CreateHeader(parent, "Text")
+    textHeader:SetPoint("TOPLEFT", 0, y)
+    textHeader:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    CreateChoice("CastbornResourceTextDropdown", "Text Format:", "textFormat", {
+        { value = "NONE", label = "None" },
+        { value = "CURRENT", label = "Current" },
+        { value = "CURRENT_MAX", label = "Current / Max" },
+        { value = "PERCENT", label = "Percentage" },
+        { value = "CURRENT_PERCENT", label = "Current (Percentage)" },
+    }, 0)
+    local textSizeSlider = CreateSlider(parent, "Text Size", db, "textSize", 6, 24, 1, apply)
+    textSizeSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+
+    if RB and not RB:SupportsPercent() then
+        local note = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
+        note:SetPoint("TOPLEFT", 0, y)
+        note:SetWidth(420)
+        note:SetJustifyH("LEFT")
+        note:SetText("Percentages are not available on this client, so those formats show current / max instead.")
+        y = y - 30
+    end
+
+    -- Visibility
+    local visHeader = CreateHeader(parent, "Visibility")
+    visHeader:SetPoint("TOPLEFT", 0, y)
+    visHeader:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    local fadeSlider = CreateSlider(parent, "Out of Combat Opacity", db, "fadeAlpha", 0, 1, 0.05, apply)
+    CreateChoice("CastbornResourceVisibilityDropdown", "Show:", "visibility", {
+        { value = "ALWAYS", label = "Always" },
+        { value = "COMBAT", label = "In Combat Only" },
+        { value = "FADE", label = "Fade Out of Combat" },
+    }, 0, function(v) if v == "FADE" then fadeSlider:Show() else fadeSlider:Hide() end end)
+    fadeSlider:SetPoint("TOPLEFT", 220, y)
+    if db.visibility ~= "FADE" then fadeSlider:Hide() end
+    y = y - 60
+
+    local testBtn = CreateButton(parent, "Test Resource Bars", 140, function()
+        StartPreview("TestResourceBars", "EndTestResourceBars")
+    end)
+    testBtn:SetPoint("TOPLEFT", 0, y)
 
     return y
 end
