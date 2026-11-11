@@ -282,7 +282,6 @@ describe("Test mode layout", function()
             it(orientation .. " growing " .. grow, function()
                 configure(orientation, grow, 3)
                 track({ 101, 102, 103, 104, 105 })
-                local containerBefore = copy(container.size)
                 Castborn:TestCooldowns()
 
                 local point, offsets = EXPECTED[orientation][grow][1], EXPECTED[orientation][grow][2]
@@ -295,8 +294,8 @@ describe("Test mode layout", function()
                 end
                 for i = 6, 20 do assert.is_false(icon(i).shown) end
                 assert.is_true(container.shown)
-                -- Test mode does not resize the container
-                assert.are.same(containerBefore, container.size)
+                -- Test mode fits the container to the test icons, like the live update
+                assert.are.same(CONTAINER[orientation], container.size)
                 -- The second icon is the sample cooldown
                 assert.is_true(icon(2).icon.desaturated)
                 assert.is_false(icon(1).icon.desaturated)
@@ -314,6 +313,8 @@ describe("Test mode layout", function()
         assert.are.equal("Interface\\Icons\\4", icon(3).icon.texture)
         assertPoint(icon(3), "TOPLEFT", container, "TOPLEFT", 64, 0)
         assert.is_false(icon(4).shown)
+        -- Sized for the three test icons, though only two are known
+        assert.are.same({ 94, 34 }, container.size)
     end)
 
     it("shows sample trinkets until test mode ends", function()
