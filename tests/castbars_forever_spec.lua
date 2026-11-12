@@ -145,5 +145,25 @@ describe("CastBars_Forever", function()
         it("drops the rank when the spell id is secret", function()
             assert.are.equal("Name", CB:GetCastDisplayName("Name", nil, secret(), { showSpellRank = true }))
         end)
+
+        describe("IsSameUnit", function()
+            local original
+            before_each(function() original = _G.UnitIsUnit end)
+            after_each(function() _G.UnitIsUnit = original end)
+
+            it("passes a plain UnitIsUnit result through", function()
+                _G.UnitIsUnit = function() return true end
+                assert.is_true(CB:IsSameUnit("targettarget", "player"))
+                _G.UnitIsUnit = function() return false end
+                assert.is_false(CB:IsSameUnit("targettarget", "player"))
+            end)
+
+            it("treats a secret result as a different unit", function()
+                _G.UnitIsUnit = function() return secret() end
+                local same
+                assert.has_no.errors(function() same = CB:IsSameUnit("targettarget", "player") end)
+                assert.is_false(same)
+            end)
+        end)
     end)
 end)

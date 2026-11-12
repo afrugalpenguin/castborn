@@ -1,5 +1,10 @@
 # Changelog
 
+**v8.1.3**
+
+- Forever: targeting a party member no longer throws an endless castbar error
+- Forever: the armour reminder no longer throws errors in dungeons, where your buffs cannot be read even out of combat
+
 **v8.1.2**
 
 - Changing the cooldown icon size now resizes the icons straight away, without a reload
