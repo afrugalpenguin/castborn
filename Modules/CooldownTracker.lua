@@ -285,6 +285,12 @@ function CooldownTracker:UpdateAll()
     mainGroup:UpdateTrinkets()
 end
 
+-- Groups with no icons show placeholder slots while this is on (the options window is open)
+function CooldownTracker:SetPlaceholdersShown(on)
+    Castborn.CooldownGroup.placeholdersShown = on and true or false
+    if framesBuilt then self:UpdateAll() end
+end
+
 -- In test mode, show a changed group's new order straight away
 local function RefreshTest(group)
     local runtime = runtimeGroups[group.id]
@@ -299,6 +305,14 @@ end
 --------------------------------------------------------------------------------
 
 local STACK_GAP = 48
+
+local function SaveCentre(data, x, y)
+    if Castborn.Anchoring then
+        Castborn.Anchoring:SavePosition(data, "CENTER", x, y)
+    else
+        data.point, data.x, data.y = "CENTER", x, y
+    end
+end
 
 -- Place a group just below the group before it in the list: under that strip when it has a
 -- size on screen, else a step below the default position
@@ -318,11 +332,45 @@ local function StackPosition(index, data)
         y = groupDefaults.y - (index - 1) * STACK_GAP
     end
 
-    if Castborn.Anchoring then
-        Castborn.Anchoring:SavePosition(data, "CENTER", x, y)
-    else
-        data.point, data.x, data.y = "CENTER", x, y
+    SaveCentre(data, x, y)
+end
+
+local CLEAR_GAP = 8
+
+-- Where a w x h strip centred at (x, y) should go so it is not under the rectangle avoid
+-- (left/right/top/bottom, screen coordinates): unchanged when clear of it, else below it,
+-- else above it, else beside it on the side with more room
+function CooldownTracker.PlaceClearOf(x, y, w, h, avoid, screenW, screenH)
+    local overlaps = x + w / 2 > avoid.left and x - w / 2 < avoid.right
+        and y + h / 2 > avoid.bottom and y - h / 2 < avoid.top
+    if not overlaps then return x, y end
+
+    local midX = (avoid.left + avoid.right) / 2
+    local below = avoid.bottom - CLEAR_GAP - h / 2
+    if below - h / 2 >= 0 then return midX, below end
+    local above = avoid.top + CLEAR_GAP + h / 2
+    if above + h / 2 <= screenH then return midX, above end
+
+    local midY = (avoid.bottom + avoid.top) / 2
+    if screenW - avoid.right >= avoid.left then
+        return avoid.right + CLEAR_GAP + w / 2, midY
     end
+    return avoid.left - CLEAR_GAP - w / 2, midY
+end
+
+-- Move a new group's strip out from under the options window, if it is open, so its
+-- placeholders can be seen
+local function KeepClearOfOptions(data)
+    local book = _G.CastbornOptionsFrame
+    if not (book and book:IsShown()) then return end
+    local left, right, top, bottom = book:GetLeft(), book:GetRight(), book:GetTop(), book:GetBottom()
+    if not (left and right and top and bottom) then return end
+
+    local sw, sh = GetScreenWidth(), GetScreenHeight()
+    local w, h = Castborn.CooldownGroup.GetContainerSize(Castborn.CooldownGroup.PLACEHOLDER_COUNT, data)
+    local x, y = CooldownTracker.PlaceClearOf(data.x + sw / 2, data.y + sh / 2, w, h,
+        { left = left, right = right, top = top, bottom = bottom }, sw, sh)
+    SaveCentre(data, x - sw / 2, y - sh / 2)
 end
 
 local function TrimName(name)
@@ -358,6 +406,7 @@ function CooldownTracker:AddGroup(name)
     data.anchored = false  -- only main may anchor to the castbar
     groups[#groups + 1] = data
     StackPosition(#groups, data)
+    KeepClearOfOptions(data)
 
     self:SyncGroups()
     return id

@@ -434,8 +434,14 @@ local function CreateOptionsFrame()
     frame:SetClampedToScreen(true)
     frame:Hide()
 
+    -- Empty cooldown groups show placeholder slots while the options are open
+    frame:SetScript("OnShow", function()
+        if Castborn.CooldownTracker then Castborn.CooldownTracker:SetPlaceholdersShown(true) end
+    end)
+
     -- Lock frames when options panel is closed
     frame:SetScript("OnHide", function()
+        if Castborn.CooldownTracker then Castborn.CooldownTracker:SetPlaceholdersShown(false) end
         if not CastbornDB.locked then
             Castborn:LockFrames()
             Castborn:Print("Frames locked")
