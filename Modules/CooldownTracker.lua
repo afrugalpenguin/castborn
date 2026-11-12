@@ -285,6 +285,13 @@ function CooldownTracker:UpdateAll()
     mainGroup:UpdateTrinkets()
 end
 
+-- The spell ID among GetCursorInfo's returns, for a spell picked up from the spellbook or an
+-- action bar; nil for anything else
+function CooldownTracker.CursorSpellId(infoType, _, _, spellId)
+    if infoType == "spell" and type(spellId) == "number" then return spellId end
+    return nil
+end
+
 -- Groups with no icons show placeholder slots while this is on (the options window is open)
 function CooldownTracker:SetPlaceholdersShown(on)
     Castborn.CooldownGroup.placeholdersShown = on and true or false
