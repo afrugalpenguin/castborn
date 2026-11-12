@@ -7,6 +7,8 @@ Castborn.Masque = MasqueSupport
 -- Check if Masque is available
 local MSQ = LibStub and LibStub("Masque", true)
 MasqueSupport.enabled = MSQ ~= nil
+-- The library itself, so bar skins can offer Masque's skins (nil without Masque)
+MasqueSupport.lib = MSQ
 
 -- Masque groups for different icon types
 MasqueSupport.groups = {}
@@ -30,6 +32,16 @@ function MasqueSupport:Init()
     self.groups.armor = MSQ:Group("Castborn", "Armour Icons")
     self.groups.items = MSQ:Group("Castborn", "Item Icons")
     self.groups.seals = MSQ:Group("Castborn", "Seal Icons")
+
+    -- Bars hold no buttons: Castborn's bar skins read this group's skin and settings and draw
+    -- them around the castbars and resource bars (Systems/BarSkin.lua). Masque calls back on any
+    -- change to the group's skin, layer toggles or disabled state.
+    self.groups.bars = MSQ:Group("Castborn", "Bars")
+    if self.groups.bars.RegisterCallback then
+        self.groups.bars:RegisterCallback(function()
+            if Castborn.BarSkin then Castborn.BarSkin:ApplyAll() end
+        end)
+    end
 
     Castborn:Print("Masque support enabled")
 end

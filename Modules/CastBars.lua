@@ -185,6 +185,9 @@ local function CreateCastBar(unit, dbKey)
 
     CB:ApplyPosition(frame, dbKey)
 
+    -- Wear the chosen bar skin (works without Masque)
+    if CB.BarSkin then CB.BarSkin:Register(frame) end
+
     -- Register icon with Masque if available
     if frame.iconFrame and Castborn.Masque and Castborn.Masque.enabled then
         Castborn.Masque:AddButton("castbar", frame.iconFrame, {

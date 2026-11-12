@@ -15,6 +15,7 @@ Systems/Profiles.lua
 Systems/ClassDefaults.lua
 Systems/GridPosition.lua
 Systems/Masque.lua
+Systems/BarSkin.lua
 
 Data/SpellData.lua
 

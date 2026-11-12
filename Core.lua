@@ -134,6 +134,9 @@ CB.defaults = {
     useGlobalBarColor = false,
     globalBarColor = {0.4, 0.6, 0.9, 1},
     showBorders = true,
+    barSkin = "Castborn",  -- bar skin (Systems/BarSkin.lua); "Castborn" is the plain look
+    barSkinBorder = 2,     -- skin border size in pixels
+    barSkinUseMasque = false,  -- follow Masque's Castborn > Bars group instead (needs Masque)
     barTexture = "Blizzard",
     barFont = "Arial Narrow",
 

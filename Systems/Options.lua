@@ -960,6 +960,84 @@ function Options:BuildLookFeel(parent)
     borderCB:SetPoint("TOPLEFT", 0, y)
     y = y - 36
 
+    -- Bar skin for the castbars and resource bars: Masque's Castborn > Bars group when "Use Masque
+    -- skin" is ticked (and Masque is installed), otherwise the Bar Skin dropdown below
+    local BarSkin = Castborn.BarSkin
+    if BarSkin then
+        local skinLabel, skinDropdown, status
+
+        -- Say where the skin comes from, and dim the dropdown while Masque is in charge
+        local function RefreshSkinControls()
+            local masque = BarSkin:IsMasqueActive()
+            skinLabel:SetAlpha(masque and 0.5 or 1)
+            skinDropdown:SetAlpha(masque and 0.5 or 1)
+            if not status then return end
+            if masque then
+                status:SetText("Using the Masque skin " .. tostring(BarSkin:GetMasqueSkinName())
+                    .. ". Change it in Masque's options under Castborn > Bars.")
+            elseif CastbornDB.barSkinUseMasque then
+                status:SetText("The Castborn > Bars group is disabled in Masque, so the Bar Skin below is used.")
+            else
+                status:SetText("Hand the castbar and resource bar skin to Masque's Castborn > Bars group.")
+            end
+        end
+
+        if BarSkin:IsMasqueAvailable() then
+            local masqueCB = CreateCheckbox(parent, "Use Masque skin", CastbornDB, "barSkinUseMasque", function()
+                BarSkin:ApplyAll()
+            end)
+            masqueCB:SetPoint("TOPLEFT", 0, y)
+            y = y - 28
+
+            status = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
+            status:SetPoint("TOPLEFT", 0, y)
+            status:SetWidth(440)
+            status:SetJustifyH("LEFT")
+            y = y - 30
+        end
+
+        skinLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
+        skinLabel:SetPoint("TOPLEFT", 0, y)
+        skinLabel:SetText("Bar Skin")
+        skinLabel:SetTextColor(unpack(C.grey))
+        y = y - 22
+
+        skinDropdown = CreateFrame("Frame", "CastbornBarSkinDropdown", parent, "UIDropDownMenuTemplate")
+        SkinDropdown(skinDropdown)
+        skinDropdown:SetPoint("TOPLEFT", -10, y)
+        UIDropDownMenu_SetWidth(skinDropdown, 180)
+        local current = "Castborn"
+        for _, item in ipairs(BarSkin:List()) do
+            if item.value == CastbornDB.barSkin then current = item.label end
+        end
+        UIDropDownMenu_SetText(skinDropdown, current)
+        UIDropDownMenu_Initialize(skinDropdown, function()
+            for _, item in ipairs(BarSkin:List()) do
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = item.label
+                info.value = item.value
+                info.checked = CastbornDB.barSkin == item.value
+                info.func = function()
+                    CastbornDB.barSkin = item.value
+                    UIDropDownMenu_SetText(skinDropdown, item.label)
+                    CloseDropDownMenus()
+                    BarSkin:ApplyAll()
+                end
+                UIDropDownMenu_AddButton(info)
+            end
+        end)
+
+        local sizeSlider = CreateSlider(parent, "Skin Border Size", CastbornDB, "barSkinBorder", 1, 8, 1, function()
+            BarSkin:ApplyAll()
+        end)
+        sizeSlider:SetPoint("TOPLEFT", 230, y + 18)
+        y = y - 44
+
+        -- Every re-skin (including skin changes made in Masque) refreshes the controls
+        Castborn:RegisterCallback("BAR_SKIN_CHANGED", RefreshSkinControls)
+        RefreshSkinControls()
+    end
+
     -- Bar Texture dropdown
     local texLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
     texLabel:SetPoint("TOPLEFT", 0, y)
