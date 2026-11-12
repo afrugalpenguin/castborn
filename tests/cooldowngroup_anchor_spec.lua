@@ -49,7 +49,7 @@ describe("CooldownGroup.GetSlotAnchor", function()
 
     it("falls through to the top left for a missing or unknown direction", function()
         assert.are.same({ "TOPLEFT", "TOPLEFT", 32, 0 }, anchor(2, settings(nil, "HORIZONTAL")))
-        assert.are.same({ "TOPLEFT", "TOPLEFT", 32, 0 }, anchor(2, settings("CENTER", "HORIZONTAL")))
+        assert.are.same({ "TOPLEFT", "TOPLEFT", 32, 0 }, anchor(2, settings("SIDEWAYS", "HORIZONTAL")))
     end)
 
     it("takes an explicit direction over the settings", function()
@@ -126,5 +126,73 @@ describe("CooldownGroup.GetSlotAtPoint", function()
         local s = settings("RIGHT", "HORIZONTAL")
         assert.are.equal(3, GetSlotAtPoint(s, RIGHT - 1, TOP - 1, LEFT, RIGHT, TOP, BOTTOM))
         assert.are.equal(1, GetSlotAtPoint(s, LEFT - 50, TOP + 50, LEFT, RIGHT, TOP, BOTTOM))
+    end)
+end)
+
+describe("Centred groups", function()
+    local GetSlotAnchor = Castborn.CooldownGroup.GetSlotAnchor
+    local GetSlotAtPoint = Castborn.CooldownGroup.GetSlotAtPoint
+    local LEFT, RIGHT, TOP, BOTTOM = 0, 200, 200, 0
+
+    local function settings(orientation)
+        return { iconSize = 30, spacing = 2, iconsPerRow = 3, growDirection = "CENTER", orientation = orientation }
+    end
+
+    local function anchor(slot, s, count)
+        return { GetSlotAnchor(slot, s, nil, count) }
+    end
+
+    it("centres each row on the container's top edge, the short last row included", function()
+        local s = settings("HORIZONTAL")
+        -- 5 icons, 3 per row: a 94px row then a 62px row
+        assert.are.same({ "TOP", "TOP", -32, 0 }, anchor(1, s, 5))
+        assert.are.same({ "TOP", "TOP", 0, 0 }, anchor(2, s, 5))
+        assert.are.same({ "TOP", "TOP", 32, 0 }, anchor(3, s, 5))
+        assert.are.same({ "TOP", "TOP", -16, -32 }, anchor(4, s, 5))
+        assert.are.same({ "TOP", "TOP", 16, -32 }, anchor(5, s, 5))
+    end)
+
+    it("centres each column on the container's left edge when vertical", function()
+        local s = settings("VERTICAL")
+        assert.are.same({ "LEFT", "LEFT", 0, 32 }, anchor(1, s, 5))
+        assert.are.same({ "LEFT", "LEFT", 0, 0 }, anchor(2, s, 5))
+        assert.are.same({ "LEFT", "LEFT", 0, -32 }, anchor(3, s, 5))
+        assert.are.same({ "LEFT", "LEFT", 32, 16 }, anchor(4, s, 5))
+        assert.are.same({ "LEFT", "LEFT", 32, -16 }, anchor(5, s, 5))
+    end)
+
+    it("treats a full pool as full rows when no count is given", function()
+        local s = settings("HORIZONTAL")
+        assert.are.same({ "TOP", "TOP", -32, -32 }, anchor(4, s))
+    end)
+
+    -- The centre of a slot, from where GetSlotAnchor places it in a container with these edges
+    local function centre(slot, s, count)
+        local point, _, x, y = GetSlotAnchor(slot, s, nil, count)
+        if point == "TOP" then return (LEFT + RIGHT) / 2 + x, TOP + y - 15 end
+        return LEFT + x + 15, (TOP + BOTTOM) / 2 + y
+    end
+
+    for _, orientation in ipairs({ "HORIZONTAL", "VERTICAL" }) do
+        for _, count in ipairs({ 7, 8, 9 }) do
+            it("finds every slot from its centre, " .. orientation .. " with " .. count .. " icons", function()
+                local s = settings(orientation)
+                for slot = 1, count do
+                    local x, y = centre(slot, s, count)
+                    assert.are.equal(slot, GetSlotAtPoint(s, x, y, LEFT, RIGHT, TOP, BOTTOM, count), "slot " .. slot)
+                end
+            end)
+        end
+    end
+
+    it("counts a point past the middle of a slot along a row as the next slot", function()
+        local s = settings("HORIZONTAL")
+        -- One row of 3 centred on x = 100: slots span 53-83, 85-115, 117-147
+        assert.are.equal(1, GetSlotAtPoint(s, 68, 185, LEFT, RIGHT, TOP, BOTTOM, 3))
+        assert.are.equal(2, GetSlotAtPoint(s, 70, 185, LEFT, RIGHT, TOP, BOTTOM, 3))
+    end)
+
+    it("sizes the container from the widest row", function()
+        assert.are.same({ 94, 66 }, { Castborn.CooldownGroup.GetContainerSize(5, settings("HORIZONTAL")) })
     end)
 end)

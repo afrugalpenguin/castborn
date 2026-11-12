@@ -1551,7 +1551,6 @@ function moduleBuilders.cooldowns(parent, db, y)
         { value = "RIGHT", label = "Grow Right" },
         { value = "LEFT", label = "Grow Left" },
         { value = "UP", label = "Grow Up" },
-        { value = "DOWN", label = "Grow Down" },
     }
 
     local growDropdown = CreateFrame("Frame", "CastbornCooldownGrowDropdown", parent, "UIDropDownMenuTemplate")
@@ -1597,10 +1596,13 @@ function moduleBuilders.cooldowns(parent, db, y)
     local racialSpells = Castborn.SpellData and race and Castborn.SpellData:GetRacialCooldowns(race) or {}
     group.spells = group.spells or {}
 
-    -- Index existing tracked spells by spellId for quick lookup
+    -- Index tracked spells by spellId for quick lookup, in every group, so a spell moved to
+    -- another group is not added to main again
     local tracked = {}
-    for _, spell in ipairs(group.spells) do
-        tracked[spell.spellId] = spell
+    for _, g in ipairs(Castborn.CooldownTracker:GetGroups()) do
+        for _, spell in ipairs(g.spells) do
+            tracked[spell.spellId] = spell
+        end
     end
 
     -- Ensure all class spells exist in trackedSpells
@@ -1739,12 +1741,10 @@ function moduleBuilders.cooldowns(parent, db, y)
                 return
             end
 
-            -- Check for duplicates
-            for _, spell in ipairs(group.spells) do
-                if spell.spellId == spellId then
-                    statusText:SetText("|cffff4444Already tracked|r")
-                    return
-                end
+            -- Check for duplicates, in every group
+            if Castborn.CooldownTracker:FindSpell(spellId) then
+                statusText:SetText("|cffff4444Already tracked|r")
+                return
             end
 
             -- Validate spell exists

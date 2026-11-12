@@ -12,7 +12,7 @@ CooldownGroup.MAX_ICONS = MAX_ICONS
 local TRINKET_SLOTS = { 13, 14 }
 
 -- Grow directions the build-time layout places icons for; anything else leaves them unanchored
-local LAYOUT_DIRECTIONS = { LEFT = true, RIGHT = true, UP = true, DOWN = true }
+local LAYOUT_DIRECTIONS = { LEFT = true, RIGHT = true, UP = true, DOWN = true, CENTER = true }
 
 --------------------------------------------------------------------------------
 -- Layout
@@ -42,14 +42,34 @@ local function CalcIconPosition(visibleIndex, settings)
     end
 end
 
+-- How many icons sit in the row (column when vertical) holding slot, out of count icons.
+-- Without a count every row is full.
+local function LineLength(slot, perRow, count)
+    if not count then return perRow end
+    local line = math.floor((slot - 1) / perRow)
+    return math.max(1, math.min(perRow, count - line * perRow))
+end
+
 -- Where slot N sits in the container: the anchor point, the container's relative point and
 -- the x/y offsets. Every placement goes through here. LEFT grows from the top right, UP from
--- the bottom left, and RIGHT, DOWN and anything else from the top left.
--- grow defaults to settings.growDirection.
-function CooldownGroup.GetSlotAnchor(slot, settings, grow)
+-- the bottom left, CENTER centres each row on the top edge (each column on the left edge
+-- when vertical), and RIGHT, DOWN and anything else grow from the top left.
+-- grow defaults to settings.growDirection. count, the number of visible icons, only matters
+-- for CENTER, where it sets the length of the last row.
+function CooldownGroup.GetSlotAnchor(slot, settings, grow, count)
     if grow == nil then grow = settings.growDirection end
     local colX, rowY = CalcIconPosition(slot, settings)
-    if grow == "LEFT" then
+    if grow == "CENTER" then
+        local size = settings.iconSize or 36
+        local step = size + (settings.spacing or 4)
+        local perRow = settings.iconsPerRow or 10
+        local length = LineLength(slot, perRow, count) * step - step + size
+        local index = (slot - 1) % perRow
+        if settings.orientation == "VERTICAL" then
+            return "LEFT", "LEFT", colX, length / 2 - size / 2 - index * step
+        end
+        return "TOP", "TOP", index * step + size / 2 - length / 2, rowY
+    elseif grow == "LEFT" then
         return "TOPRIGHT", "TOPRIGHT", -colX, rowY
     elseif grow == "UP" then
         return "BOTTOMLEFT", "BOTTOMLEFT", colX, -rowY
@@ -80,22 +100,35 @@ local GetSlotAnchor = CooldownGroup.GetSlotAnchor
 -- the given edges. Distances are measured from the corner slot 1 is anchored to, in the
 -- direction the icons grow. Along a row (a column when vertical) a point past the middle
 -- of a slot counts as the next slot, so a drop lands where the insertion marker shows;
--- across rows it is the row the point is in. Not clamped to the number of icons.
-function CooldownGroup.GetSlotAtPoint(settings, x, y, left, right, top, bottom)
+-- across rows it is the row the point is in. Not clamped to the number of icons. count, the
+-- number of icons shown, only matters for CENTER, where it sets the length of the last row.
+function CooldownGroup.GetSlotAtPoint(settings, x, y, left, right, top, bottom, count)
     local size = settings.iconSize or 36
     local spacing = settings.spacing or 4
     local perRow = settings.iconsPerRow or 10
     local step = size + spacing
-
-    local point = GetSlotAnchor(1, settings)
-    local dx = (point == "TOPRIGHT") and (right - x) or (x - left)
-    local dy = (point == "BOTTOMLEFT") and (y - bottom) or (top - y)
+    local vertical = settings.orientation == "VERTICAL"
 
     local along, across
-    if settings.orientation == "VERTICAL" then
-        along, across = dy, dx
+    if settings.growDirection == "CENTER" then
+        -- Rows (columns) are centred, so measure along each from where it starts
+        across = vertical and (x - left) or (top - y)
+        local line = math.max(0, math.floor(across / step))
+        local length = LineLength(line * perRow + 1, perRow, count) * step - step + size
+        if vertical then
+            along = ((top + bottom) / 2 + length / 2) - y
+        else
+            along = x - ((left + right) / 2 - length / 2)
+        end
     else
-        along, across = dx, dy
+        local point = GetSlotAnchor(1, settings)
+        local dx = (point == "TOPRIGHT") and (right - x) or (x - left)
+        local dy = (point == "BOTTOMLEFT") and (y - bottom) or (top - y)
+        if vertical then
+            along, across = dy, dx
+        else
+            along, across = dx, dy
+        end
     end
 
     local index = math.floor(along / step + 0.5)
@@ -339,11 +372,71 @@ function CooldownGroup:CreateContainer()
     frame.slotHighlight:Hide()
 
     if Castborn.Anchoring then
-        Castborn.Anchoring:MakeDraggable(frame, settings, nil, self.dragLabel)
+        -- Drags read and save the position through the group's current settings table, so a
+        -- drag after a profile switch lands in the new profile rather than a stale copy
+        local group = self
+        local current = setmetatable({}, {
+            __index = function(_, key) return group:GetSettings()[key] end,
+            __newindex = function(_, key, value) group:GetSettings()[key] = value end,
+        })
+        Castborn.Anchoring:MakeDraggable(frame, current, function(f) group:OnDragStopped(f) end, self.dragLabel)
     end
 
     frame:Hide()  -- Start hidden, will show when cooldowns are tracked
     return frame
+end
+
+-- A centred group is re-saved by its centre, so it stays centred as its icon count changes.
+-- Other directions keep the corner the drag saved.
+function CooldownGroup:OnDragStopped(frame)
+    local settings = self:GetSettings()
+    if settings.growDirection ~= "CENTER" then return end
+    local cx, cy = frame:GetCenter()
+    if not cx or not cy then return end
+
+    local x, y = cx - GetScreenWidth() / 2, cy - GetScreenHeight() / 2
+    if Castborn.Anchoring then
+        Castborn.Anchoring:SavePosition(settings, "CENTER", x, y)
+    end
+    frame:ClearAllPoints()
+    frame:SetPoint("CENTER", UIParent, "CENTER", x, y)
+end
+
+-- Hide a group whose settings have gone (removed, or not in a new profile). Frames cannot be
+-- destroyed, so the object is kept and reused if the group comes back.
+function CooldownGroup:Deactivate()
+    self:EndTest()
+    if self.frame then
+        self.frame:Hide()
+        -- Keep the strip out of unlock mode, which shows every draggable frame
+        self.frame.dragDisabled = true
+    end
+    self.inactive = true
+end
+
+function CooldownGroup:Reactivate()
+    self.inactive = false
+    if self.frame then self.frame.dragDisabled = nil end
+end
+
+-- The label shown on the strip while frames are unlocked
+function CooldownGroup:SetLabel(label)
+    self.dragLabel = label
+    if self.frame and Castborn.Anchoring and Castborn.Anchoring.SetDragLabel then
+        Castborn.Anchoring:SetDragLabel(self.frame, label)
+    end
+end
+
+-- Register every icon with this group's Masque group again (after it was recreated)
+function CooldownGroup:AddToMasque()
+    if not (Castborn.Masque and Castborn.Masque.enabled) then return end
+    for _, f in ipairs(self.icons) do
+        Castborn.Masque:AddButton(self.masqueGroup, f, {
+            Icon = f.icon,
+            Cooldown = f.cooldown,
+            Normal = f.Normal,
+        })
+    end
 end
 
 function CooldownGroup:CreateTrinketContainer()
@@ -373,8 +466,8 @@ function CooldownGroup:Build()
 end
 
 -- Put a frame or texture in slot N of the container
-function CooldownGroup:PlaceAtSlot(region, slot, settings)
-    local point, relativePoint, x, y = GetSlotAnchor(slot, settings)
+function CooldownGroup:PlaceAtSlot(region, slot, settings, count)
+    local point, relativePoint, x, y = GetSlotAnchor(slot, settings, nil, count)
     region:ClearAllPoints()
     region:SetPoint(point, self.frame, relativePoint, x, y)
 end
@@ -390,7 +483,7 @@ function CooldownGroup:LayoutAll()
         f:ClearAllPoints()
         f:SetSize(size, size)
         if LAYOUT_DIRECTIONS[grow] then
-            local point, relativePoint, x, y = GetSlotAnchor(i, settings, grow)
+            local point, relativePoint, x, y = GetSlotAnchor(i, settings, grow, MAX_ICONS)
             f:SetPoint(point, self.frame, relativePoint, x, y)
         end
     end
@@ -492,8 +585,22 @@ function CooldownGroup:Update()
         return
     end
 
+    local spells = self:GetSpells() or {}
+
+    -- Centred rows need to know how many icons will show before the first is placed
+    local shownCount
+    if settings.growDirection == "CENTER" then
+        shownCount = 0
+        for _, spell in ipairs(spells) do
+            if spell.enabled ~= false and Castborn:IsSpellKnown(spell.spellId) then
+                shownCount = shownCount + 1
+            end
+        end
+        shownCount = math.min(shownCount, MAX_ICONS)
+    end
+
     local visibleIndex = 0
-    for i, spell in ipairs(self:GetSpells() or {}) do
+    for i, spell in ipairs(spells) do
         -- Skip disabled spells
         if spell.enabled == false then
             -- do nothing
@@ -514,7 +621,7 @@ function CooldownGroup:Update()
             -- wrapping), so a new icon size shows straight away
             local size = settings.iconSize or 36
             cdFrame:SetSize(size, size)
-            self:PlaceAtSlot(cdFrame, visibleIndex, settings)
+            self:PlaceAtSlot(cdFrame, visibleIndex, settings, shownCount)
 
             if icon then
                 cdFrame.icon:SetTexture(icon)
@@ -607,7 +714,7 @@ function CooldownGroup:SmoothRepositionIcon(icon, targetSlot, settings)
     if not icon or not settings then return end
     local frame = self.frame
 
-    local _, _, targetX, targetY = GetSlotAnchor(targetSlot, settings)
+    local _, _, targetX, targetY = GetSlotAnchor(targetSlot, settings, nil, self.testSpellCount)
     icon.targetX = targetX
     icon.targetY = targetY
 
@@ -695,7 +802,7 @@ function CooldownGroup:RefreshTestIcons()
     for i = 1, #testSpells do
         local cdFrame = self.icons[i]
         if cdFrame then
-            self:PlaceAtSlot(cdFrame, i, settings)
+            self:PlaceAtSlot(cdFrame, i, settings, #testSpells)
             cdFrame:SetSize(size, size)
             cdFrame.icon:SetTexture(testSpells[i].icon)
             cdFrame.icon:SetDesaturated(i == 2)
@@ -781,7 +888,7 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
         -- Setup ghost at original position
         local size = settings.iconSize or 36
         self.ghost:SetTexture(self.icon:GetTexture())
-        group:PlaceAtSlot(self.ghost, self.visibleIndex, settings)
+        group:PlaceAtSlot(self.ghost, self.visibleIndex, settings, group.testSpellCount)
         self.ghost:SetSize(size, size)
         self.ghost:Show()
 
@@ -913,7 +1020,7 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
         if not frameLeft or not frameRight or not frameTop or not frameBottom then return end
 
         local targetSlot = CooldownGroup.GetSlotAtPoint(settings, cursorX, cursorY,
-            frameLeft, frameRight, frameTop, frameBottom)
+            frameLeft, frameRight, frameTop, frameBottom, group.testSpellCount)
         targetSlot = math.max(1, math.min(targetSlot, group.testSpellCount))
 
         -- Only update if target slot changed
@@ -944,9 +1051,13 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
                 frame.insertMarker:ClearAllPoints()
                 frame.insertMarker:SetSize(4, size)
 
-                local point, relativePoint, markerX, markerY = GetSlotAnchor(targetSlot, settings)
+                local point, relativePoint, markerX, markerY =
+                    GetSlotAnchor(targetSlot, settings, nil, group.testSpellCount)
                 if point == "TOPRIGHT" then
                     markerX = markerX + 2
+                elseif point == "TOP" then
+                    -- Centred icons are anchored by their top middle; the marker is too
+                    markerX = markerX - size / 2
                 else
                     markerX = markerX - 2
                 end
@@ -964,7 +1075,7 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
             -- Update slot highlight
             if frame.slotHighlight then
                 frame.slotHighlight:SetSize(size, size)
-                group:PlaceAtSlot(frame.slotHighlight, targetSlot, settings)
+                group:PlaceAtSlot(frame.slotHighlight, targetSlot, settings, group.testSpellCount)
                 frame.slotHighlight:Show()
             end
         end
