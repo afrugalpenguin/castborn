@@ -447,8 +447,18 @@ local function SetButtonSize(parts)
     ProcTracker.sizeStatus = ok and "ok" or ("error: " .. tostring(err))
 end
 
+-- Blizzard's buttons report a secret size, so Masque keeps its old one unless told
+local function SizeMasqueSkin(parts)
+    local masque = Castborn.Masque
+    local group = masque and masque.enabled and masque.groups and masque.groups.buffs
+    if not (group and group.SetFrameSize) then return end
+    local size = DB().iconSize or 28
+    pcall(group.SetFrameSize, group, size, size, parts.button, true)
+end
+
 local function SizeButton(parts)
     SetButtonSize(parts)
+    SizeMasqueSkin(parts)
     local timer, stacks = ProcTracker.GetTextSizes(DB().iconSize or 28)
     SizeText(parts.duration, timer)
     SizeText(parts.stacks, stacks)
