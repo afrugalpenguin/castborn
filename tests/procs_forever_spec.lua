@@ -243,6 +243,14 @@ describe("Forever proc tracker", function()
             assert.are.equal(17, fontSize(parts.stacks))
         end)
 
+        it("puts the timer under the icon, clear of Masque's stack count", function()
+            local parts = PT.GetButtonParts()[1]
+            local point = called(parts.duration, "SetPoint")[1]
+            assert.are.equal("TOP", point[2])
+            assert.are.equal(parts.button, point[3])
+            assert.are.equal("BOTTOM", point[4])
+        end)
+
         it("resizes the text when the icon size changes", function()
             CastbornDB.procs.iconSize = 40
             PT:UpdateLayout()
@@ -391,6 +399,31 @@ describe("Forever proc tracker", function()
             PT:UpdateLayout()
             Castborn.Masque = saved
             assert.are.equal("buffs", reskinned)
+        end)
+
+        it("tells Masque each button's size, as Blizzard's buttons report a secret one", function()
+            local saved = Castborn.Masque
+            local sized = {}
+            local buffsGroup = {
+                SetFrameSize = function(_, w, h, b) sized[#sized + 1] = { w = w, h = h, b = b } end,
+            }
+            Castborn.Masque = { enabled = true, groups = { buffs = buffsGroup } }
+            CastbornDB.procs.iconSize = 40
+            PT:UpdateLayout()
+            Castborn.Masque = saved
+            CastbornDB.procs.iconSize = 28
+            PT:UpdateLayout()
+            assert.are.equal(#PT.GetButtonParts(), #sized)
+            assert.are.equal(40, sized[1].w)
+            assert.are.equal(40, sized[1].h)
+            assert.are.equal(PT.GetButtonParts()[1].button, sized[1].b)
+        end)
+
+        it("survives a Masque without SetFrameSize", function()
+            local saved = Castborn.Masque
+            Castborn.Masque = { enabled = true, groups = { buffs = {} } }
+            assert.has_no.errors(function() PT:UpdateLayout() end)
+            Castborn.Masque = saved
         end)
 
         it("falls back to Castborn's border when Masque refuses a button", function()
