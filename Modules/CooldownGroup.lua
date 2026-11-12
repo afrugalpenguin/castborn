@@ -11,6 +11,11 @@ CooldownGroup.MAX_ICONS = MAX_ICONS
 
 local TRINKET_SLOTS = { 13, 14 }
 
+-- Empty slots an iconless group shows while the options window is open
+local PLACEHOLDER_COUNT = 4
+CooldownGroup.PLACEHOLDER_COUNT = PLACEHOLDER_COUNT
+CooldownGroup.placeholdersShown = false  -- set for every group by CooldownTracker
+
 -- Grow directions the build-time layout places icons for; anything else leaves them unanchored
 local LAYOUT_DIRECTIONS = { LEFT = true, RIGHT = true, UP = true, DOWN = true, CENTER = true }
 
@@ -472,6 +477,60 @@ function CooldownGroup:PlaceAtSlot(region, slot, settings, count)
     region:SetPoint(point, self.frame, relativePoint, x, y)
 end
 
+-- Empty, pulsing slots for a group with no icons, created the first time they are needed
+function CooldownGroup:CreatePlaceholders()
+    local holder = CreateFrame("Frame", nil, self.frame)
+    holder:SetAllPoints()
+    holder.slots = {}
+    for i = 1, PLACEHOLDER_COUNT do
+        local slot = CreateFrame("Frame", nil, holder)
+        slot.edge = slot:CreateTexture(nil, "BORDER")
+        slot.edge:SetAllPoints()
+        slot.edge:SetColorTexture(0.6, 0.6, 0.6, 0.8)
+        slot.fill = slot:CreateTexture(nil, "ARTWORK")
+        slot.fill:SetPoint("TOPLEFT", 1, -1)
+        slot.fill:SetPoint("BOTTOMRIGHT", -1, 1)
+        slot.fill:SetColorTexture(0, 0, 0, 0.6)
+        holder.slots[i] = slot
+    end
+
+    local pulse = holder:CreateAnimationGroup()
+    if pulse then
+        pulse:SetLooping("BOUNCE")
+        local fade = pulse:CreateAnimation("Alpha")
+        fade:SetFromAlpha(1)
+        fade:SetToAlpha(0.35)
+        fade:SetDuration(0.8)
+        fade:SetSmoothing("IN_OUT")
+        holder.pulse = pulse
+    end
+
+    holder:Hide()
+    self.frame.placeholders = holder
+    return holder
+end
+
+-- Lay the placeholders out as the group's icons would be, and fit the container to them
+function CooldownGroup:ShowPlaceholders(settings)
+    local holder = self.frame.placeholders or self:CreatePlaceholders()
+    local size = settings.iconSize or 36
+    for i, slot in ipairs(holder.slots) do
+        slot:SetSize(size, size)
+        self:PlaceAtSlot(slot, i, settings, PLACEHOLDER_COUNT)
+        slot:Show()
+    end
+    self.frame:SetSize(CooldownGroup.GetContainerSize(PLACEHOLDER_COUNT, settings))
+    holder:Show()
+    if holder.pulse and not holder.pulse:IsPlaying() then holder.pulse:Play() end
+end
+
+function CooldownGroup:HidePlaceholders()
+    local holder = self.frame and self.frame.placeholders
+    if not holder then return end
+    if holder.pulse then holder.pulse:Stop() end
+    holder:Hide()
+end
+
 -- Place every icon in the pool, as at build time. A missing grow direction counts as LEFT
 -- here, unlike everywhere else, where it falls through to the top-left anchor.
 function CooldownGroup:LayoutAll()
@@ -693,14 +752,20 @@ function CooldownGroup:Update()
         end
     end
 
-    -- Only show container if there are visible cooldowns
-    if visibleIndex > 0 then
-        frame:SetSize(CooldownGroup.GetContainerSize(visibleIndex, settings))
+    -- Show the container for visible cooldowns, or for placeholders while the options are open
+    if visibleIndex > 0 or self.placeholdersShown then
+        if visibleIndex > 0 then
+            self:HidePlaceholders()
+            frame:SetSize(CooldownGroup.GetContainerSize(visibleIndex, settings))
+        else
+            self:ShowPlaceholders(settings)
+        end
         frame:Show()
         if frame.dragIndicator and CastbornDB.locked ~= false then
             frame.dragIndicator:Hide()
         end
     else
+        self:HidePlaceholders()
         frame:Hide()
     end
 end
@@ -1086,6 +1151,7 @@ function CooldownGroup:StartTest()
     local settings = self:GetSettings()
     local frame = self.frame
     if not frame then return end
+    self:HidePlaceholders()  -- test mode shows sample icons instead
 
     self.testModeActive = true
     frame:Show()

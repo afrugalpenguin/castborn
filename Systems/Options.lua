@@ -434,8 +434,14 @@ local function CreateOptionsFrame()
     frame:SetClampedToScreen(true)
     frame:Hide()
 
+    -- Empty cooldown groups show placeholder slots while the options are open
+    frame:SetScript("OnShow", function()
+        if Castborn.CooldownTracker then Castborn.CooldownTracker:SetPlaceholdersShown(true) end
+    end)
+
     -- Lock frames when options panel is closed
     frame:SetScript("OnHide", function()
+        if Castborn.CooldownTracker then Castborn.CooldownTracker:SetPlaceholdersShown(false) end
         if not CastbornDB.locked then
             Castborn:LockFrames()
             Castborn:Print("Frames locked")
@@ -2000,7 +2006,7 @@ function moduleBuilders.cooldowns(parent, db, y)
 
         local customLabel = spellListContainer:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
         customLabel:SetPoint("TOPLEFT", 0, customY)
-        customLabel:SetText("Add Custom Spell ID")
+        customLabel:SetText("Add Custom Spell ID (or drop a spell from your spellbook)")
         customY = customY - 20
 
         local inputBox = CreateFrame("EditBox", nil, spellListContainer, "InputBoxTemplate")
@@ -2010,6 +2016,21 @@ function moduleBuilders.cooldowns(parent, db, y)
         inputBox:SetAutoFocus(false)
         inputBox:SetNumeric(true)
         inputBox:SetMaxLetters(6)
+
+        -- Accept a spell dropped from the spellbook or an action bar
+        local function TakeCursorSpell(self)
+            local spellId = CT.CursorSpellId(GetCursorInfo())
+            if not spellId then return false end
+            self:SetText(tostring(spellId))
+            ClearCursor()
+            return true
+        end
+        inputBox:EnableMouse(true)
+        inputBox:SetScript("OnReceiveDrag", TakeCursorSpell)
+        inputBox:SetScript("OnMouseDown", function(self, button)
+            if button == "LeftButton" and TakeCursorSpell(self) then return end
+            self:SetFocus()
+        end)
 
         local addBtn = CreateButton(spellListContainer, "Add", 60, nil, "primary")
         addBtn:SetPoint("LEFT", inputBox, "RIGHT", 10, 0)
