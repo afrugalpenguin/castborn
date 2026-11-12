@@ -19,6 +19,7 @@ Systems/Masque.lua
 Data/SpellData.lua
 
 Modules/CastBars.lua
+Modules/ResourceBars.lua
 Modules/GCDIndicator.lua
 Modules/FiveSecondRule.lua
 Modules/SwingTimer.lua

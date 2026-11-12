@@ -405,4 +405,71 @@ describe("APICheck", function()
             assert.are.equal("missing", APICheck:TryTextBinding({}))
         end)
     end)
+
+    describe("resource bars", function()
+        before_each(function()
+            _G.CastbornDB = {}
+        end)
+
+        after_each(function()
+            _G.UnitHealth = nil
+            _G.UnitHealthPercent = nil
+            _G.CurveConstants = nil
+            _G.AbbreviateNumbers = nil
+            Castborn.ResourceBars = nil
+        end)
+
+        it("lists the health, power and text APIs the resource bars use", function()
+            local names = APICheck:Run().names
+            for _, path in ipairs({ "UnitHealth", "UnitHealthMax", "UnitPower", "UnitPowerMax", "UnitPowerType",
+                    "UnitHealthPercent", "UnitPowerPercent", "AbbreviateNumbers", "AbbreviateLargeNumbers",
+                    "PowerBarColor", "CurveConstants.ScaleTo100" }) do
+                assert.is_not_nil(names[path], path .. " is not listed")
+            end
+        end)
+
+        it("probes the player's health and power", function()
+            _G.UnitHealth = function() return 100 end
+            local live = APICheck:Run().live
+            assert.are.equal("number", live["UnitHealth(player)"])
+            for _, key in ipairs({ "UnitHealthMax(player)", "UnitPower(player)", "UnitPowerMax(player)",
+                    "UnitPowerType(player)", "UnitHealthPercent(player)", "UnitPowerPercent(player)" }) do
+                assert.is_not_nil(live[key], key .. " is not probed")
+            end
+        end)
+
+        it("reports the events the resource bars skipped", function()
+            Castborn.ResourceBars = { skippedEvents = { "UNIT_POWER_FREQUENT", "UNIT_MAXPOWER" } }
+            assert.are.equal("UNIT_POWER_FREQUENT,UNIT_MAXPOWER", APICheck:Run().resourceSkippedEvents)
+            Castborn.ResourceBars = { skippedEvents = {} }
+            assert.are.equal("none", APICheck:Run().resourceSkippedEvents)
+            Castborn.ResourceBars = nil
+            assert.are.equal("module not loaded", APICheck:Run().resourceSkippedEvents)
+        end)
+
+        it("reports missing percentage and abbreviation APIs", function()
+            assert.are.same({ percent = "missing", abbreviated = "missing" }, APICheck:TryResourceText())
+        end)
+
+        it("feeds the health percentage and abbreviated health to SetFormattedText", function()
+            local curveSeen
+            _G.CurveConstants = { ScaleTo100 = {} }
+            _G.UnitHealthPercent = function(_, _, c) curveSeen = c return 75 end
+            _G.UnitHealth = function() return 7500 end
+            _G.AbbreviateNumbers = function() return "7.5K" end
+            local text = APICheck:TryResourceText()
+            assert.matches("^ok", text.percent)
+            assert.matches("^ok", text.abbreviated)
+            assert.are.equal(_G.CurveConstants.ScaleTo100, curveSeen)
+            local live = APICheck:Run().live
+            assert.is_not_nil(live["Resource text percent"])
+            assert.is_not_nil(live["Resource text abbreviated"])
+        end)
+
+        it("reports a refused percentage instead of raising it", function()
+            _G.CurveConstants = { ScaleTo100 = {} }
+            _G.UnitHealthPercent = function() error("secret refused") end
+            assert.matches("^error: .*secret refused", APICheck:TryResourceText().percent)
+        end)
+    end)
 end)

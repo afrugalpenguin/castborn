@@ -175,6 +175,40 @@ function APICheck:TryFormattedText(duration)
     return "ok, text " .. DescribeText(self, pcall(fallbackText.GetText, fallbackText))
 end
 
+-- The resource bars' Forever text paths: a 0-100 health percentage and abbreviated health,
+-- both handed to SetFormattedText without being looked at
+function APICheck:TryResourceText()
+    local results = {}
+    local curve = CurveConstants and CurveConstants.ScaleTo100
+    if UnitHealthPercent and curve then
+        local ok, err = pcall(function()
+            probeText:SetFormattedText("%.0f%%", UnitHealthPercent("player", true, curve))
+        end)
+        results.percent = ok and ("ok, text " .. DescribeText(self, pcall(probeText.GetText, probeText)))
+            or ("error: " .. tostring(err))
+    else
+        results.percent = "missing"
+    end
+    if AbbreviateNumbers and UnitHealth then
+        local ok, err = pcall(function()
+            probeText:SetFormattedText("%s", AbbreviateNumbers(UnitHealth("player")))
+        end)
+        results.abbreviated = ok and ("ok, text " .. DescribeText(self, pcall(probeText.GetText, probeText)))
+            or ("error: " .. tostring(err))
+    else
+        results.abbreviated = "missing"
+    end
+    return results
+end
+
+-- Events the resource bars could not register on this client
+local function ResourceSkippedEvents()
+    local bars = Castborn.ResourceBars
+    if not bars or not bars.skippedEvents then return "module not loaded" end
+    if #bars.skippedEvents == 0 then return "none" end
+    return table.concat(bars.skippedEvents, ",")
+end
+
 function APICheck:ProbeRendering(duration)
     local ok, err = pcall(renderCooldown.SetCooldownFromDurationObject, renderCooldown, duration)
     self.events[CombatKey("Cooldown armed from duration")] = ok and "ok" or ("error: " .. tostring(err))
@@ -268,6 +302,9 @@ APICheck.names = {
     "C_SwingTimer.EnableRangeCheck", "C_SwingTimer.IsTargetWithinSwingRange",
     "C_SpellActivationOverlay.IsSpellOverlayed",
     "C_DurationUtil.CreateDurationTextBinding", "C_StringUtil.CreateSecondsFormatter",
+    -- Resource bars
+    "UnitHealthMax", "UnitPowerType", "UnitHealthPercent", "UnitPowerPercent",
+    "AbbreviateNumbers", "AbbreviateLargeNumbers", "PowerBarColor", "CurveConstants.ScaleTo100",
 }
 
 -- Tables whose fields are listed in the report (enum names the Forever ports need)
@@ -311,6 +348,14 @@ APICheck.probes = {
     { "C_Spell.GetSpellCooldown", "Kick" },
     { "C_Spell.GetSpellCooldown", "Pummel" },
     { "C_Spell.GetSpellCooldown", "Earth Shock" },
+    -- Resource bars; run in combat to see which are secret
+    { "UnitHealth", "player" },
+    { "UnitHealthMax", "player" },
+    { "UnitPower", "player" },
+    { "UnitPowerMax", "player" },
+    { "UnitPowerType", "player" },
+    { "UnitHealthPercent", "player" },
+    { "UnitPowerPercent", "player" },
 }
 
 -- Widget methods that might accept secret values directly
@@ -452,6 +497,10 @@ function APICheck:Run()
         local fn = probeWidgets[widgetType][method]
         report.widgets[widgetType .. ":" .. method] = type(fn) == "function" and "function" or "missing"
     end
+    local resourceText = self:TryResourceText()
+    report.live[CombatKey("Resource text percent")] = resourceText.percent
+    report.live[CombatKey("Resource text abbreviated")] = resourceText.abbreviated
+    report.resourceSkippedEvents = ResourceSkippedEvents()
     CastbornDB.apicheck = report
     return report
 end
@@ -481,6 +530,7 @@ function APICheck:Print(report)
     print("  Combat log: registered=" .. tostring(report.cleu.registered)
         .. ", events=" .. report.cleu.count
         .. ", sample=" .. tostring(report.cleu.sample))
+    print("  Resource bars skipped events: " .. tostring(report.resourceSkippedEvents))
     print("  Can detect secrets: " .. tostring(report.canDetectSecrets))
     print("  Run in combat: " .. tostring(report.inCombat))
     Castborn:Print("Saved to CastbornDB.apicheck. /reload to write it to disk.")

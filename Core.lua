@@ -368,6 +368,30 @@ CB.defaults = {
         warnNoSeal = true,
         warnInCombatOnly = false,
     },
+
+    resources = {
+        enabled = true,
+        showHealth = true,
+        showPower = true,
+        width = 220,
+        healthHeight = 18,
+        powerHeight = 12,
+        gap = 2,
+        healthColorMode = "CLASS",
+        healthColor = { 0.2, 0.8, 0.2, 1 },
+        powerColorMode = "TYPE",
+        powerColor = { 0.2, 0.4, 1, 1 },
+        textFormat = "CURRENT_MAX",
+        textSize = 11,
+        visibility = "ALWAYS",
+        fadeAlpha = 0.4,
+        bgColor = { 0.05, 0.05, 0.05, 0.6 },
+        barTexture = "GLOBAL",  -- "GLOBAL" follows Look & Feel, else a texture name
+        anchored = false,
+        point = "CENTER",
+        xPct = 0,
+        yPct = -0.12,
+    },
 }
 
 -- Initialize saved variables
@@ -569,7 +593,11 @@ function CB:RegisterBarFrame(bar)
 end
 
 function CB:GetBarTexture()
-    local name = self.db and self.db.barTexture or "Blizzard"
+    return self:ResolveBarTexture(self.db and self.db.barTexture or "Blizzard")
+end
+
+-- Texture path for a built-in or LibSharedMedia texture name, else the Blizzard bar
+function CB:ResolveBarTexture(name)
     if self.builtinTextures[name] then
         return self.builtinTextures[name]
     end
@@ -584,6 +612,10 @@ function CB:RefreshBarTextures()
     local texture = self:GetBarTexture()
     for bar in pairs(self._barFrames) do
         bar:SetStatusBarTexture(texture)
+    end
+    -- The resource bars may have their own texture, which the global one must not replace
+    if self.ResourceBars and self.ResourceBars.ApplyTexture then
+        self.ResourceBars:ApplyTexture()
     end
 end
 
@@ -765,6 +797,8 @@ function CB:LockFrames()
     if self.HideTestFrames then self:HideTestFrames() end
     if self.Anchoring then self.Anchoring:HideDragIndicators(true) end
     if self.HideTestModePanel then self:HideTestModePanel() end
+    -- Locking can hide frames that were shown for positioning; let modules restore theirs
+    self:FireCallback("FRAMES_LOCKED")
 end
 
 -- Unlock frames and show drag indicators (does NOT enter test mode)

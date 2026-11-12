@@ -41,6 +41,8 @@ read_globals = {
     "UnitGUID",
     "UnitAffectingCombat",
     "UnitPower",
+    "UnitHealth",
+    "UnitHealthMax",
     "UnitPowerMax",
     "UnitPowerType",
     "UnitCastingInfo",
@@ -95,6 +97,7 @@ read_globals = {
 
     -- WoW Constants
     "RAID_CLASS_COLORS",
+    "PowerBarColor",
     "LE_PARTY_CATEGORY_HOME",
     "Enum",
     "COMBATLOG_OBJECT_TYPE_PLAYER",
@@ -195,5 +198,7 @@ files["**/*_Forever.lua"] = {
         "UnitCastingDuration", "UnitChannelDuration", "C_SwingTimer",
         "C_CurveUtil", "C_DurationUtil", "C_StringUtil", "CreateColor",
         "C_CVar", "C_ActionBar",
+        "UnitHealthPercent", "UnitPowerPercent", "CurveConstants",
+        "AbbreviateNumbers", "AbbreviateLargeNumbers",
     },
 }
