@@ -1,5 +1,9 @@
 # Changelog
 
+**v8.3.0**
+
+- Hide Blizzard Castbars (on the player castbar page) now also hides Blizzard's target and focus castbars, on TBC and Forever. It's on by default, so after updating you'll only see Castborn's target and focus castbars; untick it and /reload to bring Blizzard's back
+
 **v8.2.0**
 
 - Cooldown groups: split your cooldowns into up to 8 groups, each with its own position, icon size, spacing, icons per row and grow direction, and its own Masque group

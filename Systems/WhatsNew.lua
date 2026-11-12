@@ -14,6 +14,16 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.3.0",
+        features = {
+            "Hide Blizzard Castbars now also hides Blizzard's target and focus castbars",
+        },
+        changes = {
+            "On by default: untick it on the player castbar page and /reload to bring them back",
+        },
+        fixes = {},
+    },
+    {
         version = "8.2.0",
         features = {
             "Cooldown groups: up to 8 groups, each with its own position, layout and Masque group",
