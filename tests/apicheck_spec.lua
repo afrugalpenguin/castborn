@@ -492,6 +492,7 @@ describe("APICheck Vengeance probe", function()
         _G.C_UnitAuras = {
             GetPlayerAuraBySpellID = function(id)
                 if id == 20055 then return { spellId = 20055, applications = 2 } end
+                return nil  -- the real API returns an explicit nil when the aura is not up
             end,
         }
         local live = APICheck:Run().live
