@@ -14,6 +14,14 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.1.3",
+        features = {},
+        fixes = {
+            "Forever: targeting a party member no longer throws an endless castbar error",
+            "Forever: the armour reminder no longer throws errors in dungeons",
+        },
+    },
+    {
         version = "8.1.2",
         features = {},
         fixes = {

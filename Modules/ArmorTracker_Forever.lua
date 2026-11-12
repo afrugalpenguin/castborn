@@ -23,8 +23,10 @@ function ArmorTracker:HasTalent(entry)
     return false
 end
 
+-- In a dungeon auras are secret even out of combat, so also try one protected read
 function ArmorTracker:CanReadAuras()
-    return not (InCombatLockdown() or UnitAffectingCombat("player"))
+    if InCombatLockdown() or UnitAffectingCombat("player") then return false end
+    return (pcall(C_UnitAuras.GetAuraDataByIndex, "player", 1, "HELPFUL"))
 end
 
 -- The cast event does not name the target, so a blessing cast on someone else also hides the
