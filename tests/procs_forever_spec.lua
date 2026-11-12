@@ -346,6 +346,27 @@ describe("Forever proc tracker", function()
     end)
 
     describe("Masque", function()
+        it("sizes a button before Masque skins it, as Masque scales the skin to the button", function()
+            local saved = Castborn.Masque
+            local sizedWhenSkinned
+            Castborn.Masque = {
+                enabled = true,
+                AddButton = function(_, _, b) sizedWhenSkinned = #called(b, "SetSize") > 0 end,
+            }
+            PT.InitButton(mock())
+            Castborn.Masque = saved
+            assert.is_true(sizedWhenSkinned)
+        end)
+
+        it("re-skins the procs when the icon size changes", function()
+            local saved = Castborn.Masque
+            local reskinned
+            Castborn.Masque = { enabled = true, ReSkin = function(_, group) reskinned = group end }
+            PT:UpdateLayout()
+            Castborn.Masque = saved
+            assert.are.equal("buffs", reskinned)
+        end)
+
         it("falls back to Castborn's border when Masque refuses a button", function()
             local saved = Castborn.Masque
             Castborn.Masque = { enabled = true, AddButton = function() error("forbidden") end }
