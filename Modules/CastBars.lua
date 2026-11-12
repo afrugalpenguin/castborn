@@ -292,6 +292,11 @@ function CB:IsHiddenTradeSkill(isTradeSkill, cfg)
     return isTradeSkill and cfg.hideTradeSkills
 end
 
+-- True when both tokens are the same unit. Forever overrides this.
+function CB:IsSameUnit(a, b)
+    return UnitIsUnit(a, b)
+end
+
 -- Update castbar appearance during cast
 local function UpdateCastBar(frame, elapsed)
     -- Don't update during test mode (let test values persist)
@@ -339,10 +344,10 @@ local function StartCast(frame, unit)
     if not cfg.enabled then return end
 
     -- Skip self-casts on non-player castbars (e.g., when target/focus is the player)
-    if unit ~= "player" and UnitIsUnit(unit, "player") then return end
+    if unit ~= "player" and CB:IsSameUnit(unit, "player") then return end
 
     -- Skip ToT castbar when target is self-targeting (redundant with target castbar)
-    if unit == "targettarget" and UnitIsUnit("targettarget", "target") then return end
+    if unit == "targettarget" and CB:IsSameUnit("targettarget", "target") then return end
 
     local name, text, texture, startTime, endTime, isTradeSkill, _, notInterruptible, spellID = UnitCastingInfo(unit)
 
@@ -406,10 +411,10 @@ local function StartChannel(frame, unit)
     if not cfg.enabled then return end
 
     -- Skip self-casts on non-player castbars (e.g., when target/focus is the player)
-    if unit ~= "player" and UnitIsUnit(unit, "player") then return end
+    if unit ~= "player" and CB:IsSameUnit(unit, "player") then return end
 
     -- Skip ToT castbar when target is self-targeting (redundant with target castbar)
-    if unit == "targettarget" and UnitIsUnit("targettarget", "target") then return end
+    if unit == "targettarget" and CB:IsSameUnit("targettarget", "target") then return end
 
     local name, text, texture, startTime, endTime, isTradeSkill, notInterruptible, spellID = UnitChannelInfo(unit)
 
@@ -493,7 +498,7 @@ local function CheckUnitCast(frame, unit)
     end
 
     -- Skip self-casts on non-player castbars (e.g., when target/focus is the player)
-    if unit ~= "player" and UnitIsUnit(unit, "player") then
+    if unit ~= "player" and CB:IsSameUnit(unit, "player") then
         frame:Hide()
         frame.casting = false
         frame.channeling = false
@@ -501,7 +506,7 @@ local function CheckUnitCast(frame, unit)
     end
 
     -- Skip ToT castbar when target is self-targeting (redundant with target castbar)
-    if unit == "targettarget" and UnitIsUnit("targettarget", "target") then
+    if unit == "targettarget" and CB:IsSameUnit("targettarget", "target") then
         frame:Hide()
         frame.casting = false
         frame.channeling = false

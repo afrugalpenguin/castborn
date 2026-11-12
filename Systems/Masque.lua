@@ -46,6 +46,39 @@ function MasqueSupport:Init()
     Castborn:Print("Masque support enabled")
 end
 
+-- Masque groups for cooldown groups other than main ("Cooldowns: <name>"), created on demand
+-- and keyed by group ID. Main keeps "Cooldown Icons" (key "cooldowns"). The static ID lets
+-- Masque keep a group's skin through a rename where the installed Masque supports it.
+MasqueSupport.cooldownNames = {}
+
+-- Returns the key to pass to AddButton, and whether the Masque group was just created
+function MasqueSupport:EnsureCooldownGroup(id, name)
+    local key = "cooldowns_" .. id
+    local label = "Cooldowns: " .. name
+    local group = self.groups[key]
+    if group then
+        if self.cooldownNames[key] ~= label and group.SetName then
+            group:SetName(label)
+        end
+        self.cooldownNames[key] = label
+        return key, false
+    end
+    if not MSQ then return key, false end
+
+    self.groups[key] = MSQ:Group("Castborn", label, "Cooldowns_" .. id)
+    self.cooldownNames[key] = label
+    return key, true
+end
+
+function MasqueSupport:DeleteCooldownGroup(id)
+    local key = "cooldowns_" .. id
+    local group = self.groups[key]
+    if not group then return end
+    if group.Delete then group:Delete() end
+    self.groups[key] = nil
+    self.cooldownNames[key] = nil
+end
+
 -- Skin a button/icon frame with Masque
 -- buttonData should include: Icon, Cooldown, Normal, Pushed, Highlight, etc.
 function MasqueSupport:AddButton(groupName, button, buttonData)

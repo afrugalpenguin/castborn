@@ -371,6 +371,25 @@ function Theme:SkinScrollBar(scrollFrame)
     end
 end
 
+-- Lay items of the given widths out left to right, `gap` apart, starting a new row (rowHeight
+-- plus gap below the last) whenever the next item would pass maxWidth. Without maxWidth
+-- everything stays on one row. Returns each item's { x, y } offset from the top left, the
+-- widest row's width and the total height.
+function Theme.WrapRow(widths, maxWidth, gap, rowHeight)
+    local places, x, y, widest = {}, 0, 0, 0
+    for i, w in ipairs(widths) do
+        if maxWidth and x > 0 and x + w > maxWidth then
+            x = 0
+            y = y - rowHeight - gap
+        end
+        places[i] = { x, y }
+        widest = math.max(widest, x + w)
+        x = x + w + gap
+    end
+    local height = #widths > 0 and (rowHeight - y) or 0
+    return places, widest, height
+end
+
 -- A gold diamond between two short rules, centred under `anchor`
 function Theme:CreateDiamondRule(parent, anchor, lineWidth, gap)
     local diamond = parent:CreateTexture(nil, "ARTWORK")

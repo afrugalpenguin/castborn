@@ -1,6 +1,7 @@
 require("tests.mocks.wow_api")
 _G.RAID_CLASS_COLORS = {}
 dofile("Core.lua")
+dofile("Modules/CooldownGroup.lua")
 dofile("Modules/CooldownTracker.lua")
 dofile("Modules/CooldownTracker_Forever.lua")
 

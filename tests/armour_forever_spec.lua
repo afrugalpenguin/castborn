@@ -45,6 +45,15 @@ describe("Armour reminder on Forever", function()
             _G.UnitAffectingCombat = function() return true end
             assert.is_false(AT:CanReadAuras())
         end)
+
+        it("does not read auras when they are secret out of combat, as in a dungeon", function()
+            _G.C_UnitAuras.GetAuraDataByIndex = function()
+                error("Auras cannot be accessed when secret")
+            end
+            local readable
+            assert.has_no.errors(function() readable = AT:CanReadAuras() end)
+            assert.is_false(readable)
+        end)
     end)
 
     describe("HasTalent", function()

@@ -27,6 +27,7 @@ Modules/SwingTimer.lua
 Modules/DoTTracker.lua
 Modules/MultiDoTTracker.lua
 Modules/ProcTracker.lua
+Modules/CooldownGroup.lua
 Modules/CooldownTracker.lua
 Modules/InterruptTracker.lua
 Modules/TotemTracker.lua

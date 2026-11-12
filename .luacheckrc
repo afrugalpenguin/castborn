@@ -11,7 +11,6 @@ globals = {
     "SlashCmdList",
     "ColorPickerFrame",
     "StaticPopupDialogs",
-    "playerCastbar",
 }
 
 read_globals = {
@@ -150,6 +149,7 @@ read_globals = {
 
     -- Misc UI
     "CloseDropDownMenus",
+    "ToggleDropDownMenu",
     "GameFontHighlightSmall",
     "LibStub",
     "UnitMana",

@@ -103,6 +103,15 @@ function CB:IsHiddenTradeSkill(isTradeSkill, cfg)
     return baseIsHiddenTradeSkill(self, isTradeSkill, cfg)
 end
 
+-- UnitIsUnit can be secret for units outside the player's control (a party member's target).
+-- Treat that as a different unit, so the bar shows rather than erroring.
+local baseIsSameUnit = CB.IsSameUnit
+function CB:IsSameUnit(a, b)
+    local same = baseIsSameUnit(self, a, b)
+    if isSecret(same) then return false end
+    return same
+end
+
 local baseGetCastDisplayName = CB.GetCastDisplayName
 function CB:GetCastDisplayName(name, text, spellID, cfg)
     if isSecret(spellID) or isSecret(name) or isSecret(text) then
