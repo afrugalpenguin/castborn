@@ -501,6 +501,9 @@ function APICheck:Run()
     report.live[CombatKey("Resource text percent")] = resourceText.percent
     report.live[CombatKey("Resource text abbreviated")] = resourceText.abbreviated
     report.resourceSkippedEvents = ResourceSkippedEvents()
+    local procs = Castborn.ProcTracker
+    report.procTracker = procs and procs.status or "module not loaded"
+    report.procMasque = procs and procs.masqueStatus or "module not loaded"
     CastbornDB.apicheck = report
     return report
 end
@@ -531,6 +534,7 @@ function APICheck:Print(report)
         .. ", events=" .. report.cleu.count
         .. ", sample=" .. tostring(report.cleu.sample))
     print("  Resource bars skipped events: " .. tostring(report.resourceSkippedEvents))
+    print("  Proc tracker: " .. tostring(report.procTracker) .. ", Masque: " .. tostring(report.procMasque))
     print("  Can detect secrets: " .. tostring(report.canDetectSecrets))
     print("  Run in combat: " .. tostring(report.inCombat))
     Castborn:Print("Saved to CastbornDB.apicheck. /reload to write it to disk.")

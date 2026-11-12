@@ -201,5 +201,6 @@ files["**/*_Forever.lua"] = {
         "C_CVar", "C_ActionBar",
         "UnitHealthPercent", "UnitPowerPercent", "CurveConstants",
         "AbbreviateNumbers", "AbbreviateLargeNumbers",
+        "AnchorUtil",
     },
 }

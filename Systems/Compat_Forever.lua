@@ -44,7 +44,6 @@ Castborn.unavailableOptions = {
     fsr = true,  -- mana is a secret value on Forever, so the bar cannot compare it
     dots = true,
     multidot = true,
-    buffs = true,
     ["interrupt.lockout"] = true,  -- the lockout needs the combat log, which Forever blocks
     ["armortracker.sanctuary"] = true,  -- Blessing of Sanctuary is not on Forever
     totems = true,

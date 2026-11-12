@@ -1540,10 +1540,16 @@ function moduleBuilders.buffs(parent, db, y)
     -- ProcTracker stores settings in CastbornDB.procs, not CastbornDB.buffs
     local procsDB = CastbornDB.procs
 
-    local timersCB = CreateCheckbox(parent, "Show Timers", procsDB, "showDuration")
+    -- The Forever tracker hands these to Blizzard's buttons; TBC's reads them every update
+    local function refreshProcs()
+        local tracker = Castborn.ProcTracker
+        if tracker and tracker.RefreshOptions then tracker:RefreshOptions() end
+    end
+
+    local timersCB = CreateCheckbox(parent, "Show Timers", procsDB, "showDuration", refreshProcs)
     timersCB:SetPoint("TOPLEFT", 0, y)
 
-    local glowCB = CreateCheckbox(parent, "Show Proc Glow", procsDB, "showGlow")
+    local glowCB = CreateCheckbox(parent, "Show Proc Glow", procsDB, "showGlow", refreshProcs)
     glowCB:SetPoint("TOPLEFT", 220, y)
     y = y - 36
 
