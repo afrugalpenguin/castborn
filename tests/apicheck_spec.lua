@@ -473,3 +473,59 @@ describe("APICheck", function()
         end)
     end)
 end)
+
+describe("APICheck Vengeance probe", function()
+    local APICheck = Castborn.APICheck
+
+    before_each(function()
+        _G.CastbornDB = {}
+        _G.InCombatLockdown = function() return true end
+    end)
+
+    after_each(function()
+        _G.InCombatLockdown = nil
+        _G.C_UnitAuras = nil
+        _G.C_Secrets = nil
+    end)
+
+    it("reads each Vengeance rank by spell ID in combat", function()
+        _G.C_UnitAuras = {
+            GetPlayerAuraBySpellID = function(id)
+                if id == 20055 then return { spellId = 20055, applications = 2 } end
+            end,
+        }
+        local live = APICheck:Run().live
+        assert.are.equal("{applications=number,spellId=number}",
+            live["C_UnitAuras.GetPlayerAuraBySpellID(20055) [combat]"])
+        for _, id in ipairs({ 20050, 20052, 20053, 20054 }) do
+            assert.are.equal("nil", live["C_UnitAuras.GetPlayerAuraBySpellID(" .. id .. ") [combat]"])
+        end
+    end)
+
+    it("reports a blocked read instead of raising it", function()
+        _G.C_UnitAuras = {
+            GetPlayerAuraBySpellID = function() error("Auras cannot be accessed when secret") end,
+        }
+        local live
+        assert.has_no.errors(function() live = APICheck:Run().live end)
+        assert.matches("^error: .*secret", live["C_UnitAuras.GetPlayerAuraBySpellID(20055) [combat]"])
+    end)
+
+    it("asks C_Secrets about each rank when it exists", function()
+        _G.C_Secrets = {
+            ShouldSpellAuraBeSecret = function() return true end,
+            ShouldAurasBeSecret = function() return false end,
+        }
+        local report = APICheck:Run()
+        assert.are.equal("boolean", report.live["C_Secrets.ShouldSpellAuraBeSecret(20050) [combat]"])
+        assert.are.equal("boolean", report.live["C_Secrets.ShouldAurasBeSecret() [combat]"])
+        assert.are.equal("{ShouldAurasBeSecret=function,ShouldSpellAuraBeSecret=function}",
+            report.values["C_Secrets"])
+    end)
+
+    it("reports C_Secrets as missing when the client has none", function()
+        local report = APICheck:Run()
+        assert.are.equal("missing", report.live["C_Secrets.ShouldSpellAuraBeSecret(20055) [combat]"])
+        assert.are.equal("missing", report.values["C_Secrets"])
+    end)
+end)
