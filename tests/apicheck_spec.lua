@@ -512,16 +512,64 @@ describe("APICheck Vengeance probe", function()
         assert.matches("^error: .*secret", live["C_UnitAuras.GetPlayerAuraBySpellID(20055) [combat]"])
     end)
 
-    it("asks C_Secrets about each rank when it exists", function()
+    it("records C_Secrets' answers for each rank when it exists", function()
         _G.C_Secrets = {
             ShouldSpellAuraBeSecret = function() return true end,
+            GetSpellAuraSecrecy = function() return 2 end,
             ShouldAurasBeSecret = function() return false end,
         }
         local report = APICheck:Run()
-        assert.are.equal("boolean", report.live["C_Secrets.ShouldSpellAuraBeSecret(20050) [combat]"])
-        assert.are.equal("boolean", report.live["C_Secrets.ShouldAurasBeSecret() [combat]"])
-        assert.are.equal("{ShouldAurasBeSecret=function,ShouldSpellAuraBeSecret=function}",
+        assert.are.equal("true", report.live["C_Secrets.ShouldSpellAuraBeSecret(20050) [combat]"])
+        assert.are.equal("2", report.live["C_Secrets.GetSpellAuraSecrecy(20050) [combat]"])
+        assert.are.equal("false", report.live["C_Secrets.ShouldAurasBeSecret() [combat]"])
+        assert.are.equal("{GetSpellAuraSecrecy=function,ShouldAurasBeSecret=function,ShouldSpellAuraBeSecret=function}",
             report.values["C_Secrets"])
+    end)
+
+    it("reports a secret answer without reading it", function()
+        local secret = {}
+        _G.issecretvalue = function(v) return v == secret end
+        _G.C_Secrets = { ShouldSpellAuraBeSecret = function() return secret end }
+        local live = APICheck:Run().live
+        _G.issecretvalue = nil
+        assert.are.equal("secret", live["C_Secrets.ShouldSpellAuraBeSecret(20055) [combat]"])
+    end)
+
+    describe("out of combat", function()
+        before_each(function()
+            _G.InCombatLockdown = function() return false end
+            APICheck.vengeanceFoundId = nil
+        end)
+        after_each(function() APICheck.vengeanceFoundId = nil end)
+
+        local function buffs(list)
+            _G.C_UnitAuras = {
+                GetAuraDataByIndex = function(_, i) return list[i] end,
+                GetPlayerAuraBySpellID = function() return nil end,
+            }
+        end
+
+        it("lists every buff by name and spell ID", function()
+            buffs({ { name = "Blessing of Might", spellId = 27140 }, { name = "Vengeance", spellId = 1234567 } })
+            assert.are.equal("Blessing of Might=27140, Vengeance=1234567", APICheck:Run().live["Player buffs"])
+        end)
+
+        it("probes Forever's own Vengeance ID once it has been seen", function()
+            buffs({ { name = "Vengeance", spellId = 1234567 } })
+            APICheck:Run()
+            _G.InCombatLockdown = function() return true end
+            assert.are.equal("nil", APICheck:Run().live["C_UnitAuras.GetPlayerAuraBySpellID(1234567) [combat]"])
+        end)
+
+        it("reports a blocked buff list instead of raising it", function()
+            _G.C_UnitAuras = { GetAuraDataByIndex = function() error("Auras cannot be accessed when secret") end }
+            assert.matches("^error: .*secret", APICheck:Run().live["Player buffs"])
+        end)
+
+        it("says when there are no buffs", function()
+            buffs({})
+            assert.are.equal("none", APICheck:Run().live["Player buffs"])
+        end)
     end)
 
     it("reports C_Secrets as missing when the client has none", function()
