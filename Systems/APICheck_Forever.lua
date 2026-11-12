@@ -394,13 +394,64 @@ end
 -- combat, under pcall: on retail some auras stay readable while the rest are secret (#302)
 APICheck.vengeanceIds = { 20050, 20052, 20053, 20054, 20055 }
 
-function APICheck:ProbeVengeance(live)
-    for _, id in ipairs(self.vengeanceIds) do
-        for _, path in ipairs({ "C_UnitAuras.GetPlayerAuraBySpellID", "C_Secrets.ShouldSpellAuraBeSecret" }) do
-            live[CombatKey(ProbeKey(path, id))] = self:DescribeCall(path, id)
+-- Like DescribeCall for one return, but a plain boolean or number reports its value, so a
+-- secrecy answer can be read
+function APICheck:DescribeAnswer(path, ...)
+    local fn = self:Resolve(path)
+    if type(fn) ~= "function" then return "missing" end
+    local ok, value = pcall(fn, ...)
+    if not ok then return "error: " .. tostring(value) end
+    if isSecret(value) then return "secret" end
+    if type(value) == "boolean" or type(value) == "number" then return tostring(value) end
+    return self:Describe(value)
+end
+
+-- Every buff on the player as name=spellId, out of combat only (reads by index are blocked in
+-- combat). Remembers a buff named Vengeance, so the in-combat probe also tries Forever's own ID.
+function APICheck:ListPlayerBuffs()
+    if InCombat() then return "skipped in combat" end
+    local fn = C_UnitAuras and C_UnitAuras.GetAuraDataByIndex
+    if not fn then return "missing" end
+    local parts = {}
+    for i = 1, 40 do
+        local ok, aura = pcall(fn, "player", i, "HELPFUL")
+        if not ok then
+            parts[#parts + 1] = "error: " .. tostring(aura)
+            break
+        end
+        if not aura then break end
+        local name, id = aura.name, aura.spellId
+        if isSecret(name) or isSecret(id) then
+            parts[#parts + 1] = "secret"
+        else
+            parts[#parts + 1] = tostring(name) .. "=" .. tostring(id)
+            if name == "Vengeance" and type(id) == "number" then self.vengeanceFoundId = id end
         end
     end
-    live[CombatKey(ProbeKey("C_Secrets.ShouldAurasBeSecret"))] = self:DescribeCall("C_Secrets.ShouldAurasBeSecret")
+    if #parts == 0 then return "none" end
+    return table.concat(parts, ", ")
+end
+
+function APICheck:ProbeVengeance(live)
+    local buffs = self:ListPlayerBuffs()
+    if buffs ~= "skipped in combat" then live["Player buffs"] = buffs end
+
+    local ids, listed = {}, {}
+    for _, id in ipairs(self.vengeanceIds) do
+        ids[#ids + 1] = id
+        listed[id] = true
+    end
+    local found = self.vengeanceFoundId
+    if found and not listed[found] then ids[#ids + 1] = found end
+
+    for _, id in ipairs(ids) do
+        live[CombatKey(ProbeKey("C_UnitAuras.GetPlayerAuraBySpellID", id))] =
+            self:DescribeCall("C_UnitAuras.GetPlayerAuraBySpellID", id)
+        for _, path in ipairs({ "C_Secrets.ShouldSpellAuraBeSecret", "C_Secrets.GetSpellAuraSecrecy" }) do
+            live[CombatKey(ProbeKey(path, id))] = self:DescribeAnswer(path, id)
+        end
+    end
+    live[CombatKey(ProbeKey("C_Secrets.ShouldAurasBeSecret"))] = self:DescribeAnswer("C_Secrets.ShouldAurasBeSecret")
 end
 
 local function Snapshot(path, ...)
