@@ -251,11 +251,21 @@ describe("Forever proc tracker", function()
         end)
     end)
 
+    -- Forever has no trinket procs of its own yet, so these use a stand-in
+    local function withTrinket()
+        PT.sharedProcs = { { spellId = 33370, name = "Spell Haste" } }
+        PT:SetTrinketProcs(true)
+    end
+    local function withoutTrinket()
+        PT:SetTrinketProcs(false)
+        PT.sharedProcs = {}
+    end
+
     describe("filter changes in combat", function()
+        before_each(withTrinket)
         after_each(function()
             inCombat = false
-            CastbornDB.procs.showTrinketProcs = true
-            PT:SetTrinketProcs(true)
+            withoutTrinket()
         end)
 
         it("waits until combat ends", function()
@@ -269,7 +279,8 @@ describe("Forever proc tracker", function()
     end)
 
     describe("trinket procs", function()
-        after_each(function() PT:SetTrinketProcs(true) end)
+        before_each(withTrinket)
+        after_each(withoutTrinket)
 
         it("adds and removes the shared trinket procs", function()
             assert.is_true(filterIds()[33370])

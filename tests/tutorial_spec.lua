@@ -95,20 +95,20 @@ describe("Tutorial steps", function()
         it("shows a mage only modules Forever loads", function()
             assert.are.same({
                 "welcome", "player_castbar", "castbar_companions", "cooldowns", "items",
-                "other_castbars", "interrupt", "armour", "customise", "complete",
+                "other_castbars", "procs", "interrupt", "armour", "customise", "complete",
             }, shownIds(load("MAGE", true)))
         end)
 
         it("shows a paladin the swing timer and seal tracker", function()
             assert.are.same({
                 "welcome", "player_castbar", "castbar_companions", "cooldowns", "items",
-                "other_castbars", "swing", "armour", "seals", "customise", "complete",
+                "other_castbars", "procs", "swing", "armour", "seals", "customise", "complete",
             }, shownIds(load("PALADIN", true)))
         end)
 
-        it("maps the proc step to its options page id", function()
+        it("shows the proc step now Forever loads the proc tracker", function()
             local T = load("MAGE", true)
-            assert.is_false(T:IsStepShown(indexOf(T, "procs")))
+            assert.is_true(T:IsStepShown(indexOf(T, "procs")))
         end)
 
         it("describes the GCD bar without the five-second rule", function()
@@ -122,7 +122,7 @@ describe("Tutorial steps", function()
             local T = load("MAGE", true)
             local position, total = T:GetStepPosition(indexOf(T, "other_castbars"))
             assert.are.equal(6, position)
-            assert.are.equal(10, total)
+            assert.are.equal(11, total)
         end)
 
         it("describes the interrupt tracker without the lockout", function()
