@@ -193,6 +193,41 @@ describe("Forever proc tracker", function()
         end)
     end)
 
+    describe("text size", function()
+        -- The size of the last SetFont on a button's font string
+        local function fontSize(fs)
+            local calls = called(fs, "SetFont")
+            return calls[#calls] and calls[#calls][3]
+        end
+
+        it("scales the timer and stack count with the icon size", function()
+            assert.are.same({ 14, 17 }, { PT.GetTextSizes(28) })
+            assert.are.same({ 20, 24 }, { PT.GetTextSizes(40) })
+        end)
+
+        it("never goes below a readable minimum", function()
+            local timer, stacks = PT.GetTextSizes(12)
+            assert.is_true(timer >= 9)
+            assert.is_true(stacks >= 10)
+        end)
+
+        it("sizes each button's text from the icon size", function()
+            local parts = PT.GetButtonParts()[1]
+            assert.are.equal(14, fontSize(parts.duration))
+            assert.are.equal(17, fontSize(parts.stacks))
+        end)
+
+        it("resizes the text when the icon size changes", function()
+            CastbornDB.procs.iconSize = 40
+            PT:UpdateLayout()
+            local parts = PT.GetButtonParts()[1]
+            assert.are.equal(20, fontSize(parts.duration))
+            assert.are.equal(24, fontSize(parts.stacks))
+            CastbornDB.procs.iconSize = 28
+            PT:UpdateLayout()
+        end)
+    end)
+
     describe("settings", function()
         after_each(function()
             CastbornDB.procs.showDuration = true
