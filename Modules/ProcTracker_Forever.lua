@@ -368,9 +368,28 @@ local function ApplyButtonOptions(parts)
     end
 end
 
+-- Timer and stack count text follow the icon size (14 and 17 at the default 28)
+function ProcTracker.GetTextSizes(iconSize)
+    local size = iconSize or 28
+    return math.max(9, math.floor(size * 0.5 + 0.5)), math.max(10, math.floor(size * 0.6 + 0.5))
+end
+
+local function SizeText(fs, size)
+    pcall(fs.SetFont, fs, Castborn:GetBarFont(), size, "OUTLINE")
+    Castborn:RegisterFontString(fs, size, "OUTLINE")
+end
+
 local function SizeButton(parts)
     local size = DB().iconSize or 28
     pcall(parts.button.SetSize, parts.button, size, size)
+    local timer, stacks = ProcTracker.GetTextSizes(size)
+    SizeText(parts.duration, timer)
+    SizeText(parts.stacks, stacks)
+end
+
+-- For tests and /cbapi
+function ProcTracker.GetButtonParts()
+    return buttonParts
 end
 
 -- Called by Blizzard for each button it creates; also exposed for tests
@@ -389,14 +408,11 @@ function ProcTracker.InitButton(b)
     parts.border:SetColorTexture(0.3, 0.3, 0.3, 1)
     parts.border:Hide()
 
+    -- Sized by SizeButton, after Masque, so a skin cannot shrink them
     parts.duration = b:CreateFontString(nil, "OVERLAY")
-    parts.duration:SetFont(Castborn:GetBarFont(), 10, "OUTLINE")
-    Castborn:RegisterFontString(parts.duration, 10, "OUTLINE")
     parts.duration:SetPoint("BOTTOM", 0, -2)
 
     parts.stacks = b:CreateFontString(nil, "OVERLAY")
-    parts.stacks:SetFont(Castborn:GetBarFont(), 12, "OUTLINE")
-    Castborn:RegisterFontString(parts.stacks, 12, "OUTLINE")
     parts.stacks:SetPoint("BOTTOMRIGHT", -1, 1)
 
     -- Blizzard plays this while the proc is up, as the TBC tracker pulses its glow
@@ -542,6 +558,7 @@ function Castborn:TestProcs()
     for i, icon in ipairs(samples) do
         local f = TestFrame(i)
         f:SetSize(size, size)
+        f.duration:SetFont(Castborn:GetBarFont(), (ProcTracker.GetTextSizes(size)), "OUTLINE")
         f.icon:SetTexture(icon)
         f.duration:SetText(db.showDuration and string.format("%.1f", 12.3 - i * 3) or "")
         f:ClearAllPoints()
