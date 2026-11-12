@@ -108,6 +108,15 @@ describe("Forever proc tracker", function()
             assert.are.equal(20050, names["Vengeance"])
         end)
 
+        it("drops a saved entry that has left the class list, such as Seal of Command", function()
+            table.insert(CastbornDB.procs.trackedSpells, { spellId = 20375, name = "Seal of Command" })
+            Castborn:FireCallback("INIT")
+            for _, s in ipairs(CastbornDB.procs.trackedSpells) do
+                assert.are_not.equal("Seal of Command", s.name)
+            end
+            assert.is_nil(PT:GetFilterIds()[20375])
+        end)
+
         it("builds a player container inside the strip", function()
             assert.are.equal(_G.Castborn_ProcTracker, container.parent)
             assert.are.same({ "SetUnit", "player" }, called(container, "SetUnit")[1])
