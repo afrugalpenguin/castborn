@@ -381,11 +381,16 @@ end
 
 ProcTracker.sizeStatus = "not tried"
 
-local function SizeButton(parts)
+-- Before Masque sees the button: Masque scales its skin to the button's size when it is added
+local function SetButtonSize(parts)
     local size = DB().iconSize or 28
     local ok, err = pcall(parts.button.SetSize, parts.button, size, size)
     ProcTracker.sizeStatus = ok and "ok" or ("error: " .. tostring(err))
-    local timer, stacks = ProcTracker.GetTextSizes(size)
+end
+
+local function SizeButton(parts)
+    SetButtonSize(parts)
+    local timer, stacks = ProcTracker.GetTextSizes(DB().iconSize or 28)
     SizeText(parts.duration, timer)
     SizeText(parts.stacks, stacks)
 end
@@ -436,6 +441,8 @@ function ProcTracker.InitButton(b)
         fade:SetDuration(0.8)
         parts.glowAnim = anim
     end
+
+    SetButtonSize(parts)
 
     -- Masque may be refused by Blizzard's button: fall back to the plain look
     local masque = Castborn.Masque
@@ -518,6 +525,11 @@ function ProcTracker:UpdateLayout()
     pcall(ApplyContainerLayout, layout)
     pcall(container.SetAuraGroupLayout, container, GROUP_KEY, GroupLayout(layout))
     for _, parts in ipairs(buttonParts) do SizeButton(parts) end
+    -- Masque fitted the skin to the old size
+    local masque = Castborn.Masque
+    if masque and masque.enabled and masque.ReSkin then
+        pcall(masque.ReSkin, masque, "buffs")
+    end
 end
 
 --------------------------------------------------------------------------------
