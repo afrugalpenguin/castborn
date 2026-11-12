@@ -501,6 +501,22 @@ function APICheck:Run()
     report.live[CombatKey("Resource text percent")] = resourceText.percent
     report.live[CombatKey("Resource text abbreviated")] = resourceText.abbreviated
     report.resourceSkippedEvents = ResourceSkippedEvents()
+    local procs = Castborn.ProcTracker
+    report.procTracker = procs and procs.status or "module not loaded"
+    report.procMasque = procs and procs.masqueStatus or "module not loaded"
+    -- Whether Blizzard's aura button took Castborn's size, and the size it really has
+    report.procButtonResize = procs and procs.sizeStatus or "module not loaded"
+    local parts = procs and procs.GetButtonParts and procs.GetButtonParts()[1]
+    if parts then
+        local b = parts.button
+        local ok, w, h = pcall(function() return b:GetWidth(), b:GetHeight() end)
+        report.procButtonSize = ok and (self:Describe(w) .. " " .. tostring(not isSecret(w) and w or "") .. " x "
+            .. self:Describe(h) .. " " .. tostring(not isSecret(h) and h or "")) or ("error: " .. tostring(w))
+        local okI, iw = pcall(function() return parts.icon:GetWidth() end)
+        report.procIconWidth = okI and (isSecret(iw) and "secret" or tostring(iw)) or ("error: " .. tostring(iw))
+    else
+        report.procButtonSize = "no buttons"
+    end
     CastbornDB.apicheck = report
     return report
 end
@@ -531,6 +547,9 @@ function APICheck:Print(report)
         .. ", events=" .. report.cleu.count
         .. ", sample=" .. tostring(report.cleu.sample))
     print("  Resource bars skipped events: " .. tostring(report.resourceSkippedEvents))
+    print("  Proc tracker: " .. tostring(report.procTracker) .. ", Masque: " .. tostring(report.procMasque))
+    print("  Proc button resize: " .. tostring(report.procButtonResize) .. ", size: " .. tostring(report.procButtonSize)
+        .. ", icon width: " .. tostring(report.procIconWidth))
     print("  Can detect secrets: " .. tostring(report.canDetectSecrets))
     print("  Run in combat: " .. tostring(report.inCombat))
     Castborn:Print("Saved to CastbornDB.apicheck. /reload to write it to disk.")
