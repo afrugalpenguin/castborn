@@ -163,9 +163,9 @@ function ClassDefaults:ApplyFirstRunDefaults()
     end
 
     -- Signal ProcTracker and CooldownTracker to reload class spells on next session.
-    -- Do NOT clear trackedSpells here: CooldownTracker's READY callback already
+    -- Do NOT clear the spell lists here: CooldownTracker's READY callback already
     -- preserves custom spells when reloading for a class change, but only if
-    -- trackedSpells is still intact when that callback runs.
+    -- the main group's spells are still intact when that callback runs.
     CastbornDB.procs = CastbornDB.procs or {}
     CastbornDB.procs.loadedForClass = nil
 

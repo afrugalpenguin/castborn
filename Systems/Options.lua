@@ -290,8 +290,9 @@ local function SkinDropdown(dropdown)
 end
 
 -- Tabs: a row of chamfered buttons with the open one in gold. Returns the row frame and a
--- function that opens a tab by index (calling onSelect with it).
-local function CreateTabs(parent, labels, onSelect)
+-- function that opens a tab by index (calling onSelect with it). With maxWidth, tabs that do
+-- not fit wrap onto further rows and the row frame grows to hold them.
+local function CreateTabs(parent, labels, onSelect, maxWidth)
     local row = CreateFrame("Frame", nil, parent)
     row:SetHeight(28)
     local tabs, x = {}, 0
@@ -320,7 +321,6 @@ local function CreateTabs(parent, labels, onSelect)
         tab:SetFontString(text)
         tab:SetText(label)
         tab:SetWidth(text:GetStringWidth() + 32)
-        tab:SetPoint("TOPLEFT", x, 0)
         x = x + tab:GetWidth() + 6
         tab:SetScript("OnEnter", function(self) Paint(self, true) end)
         tab:SetScript("OnLeave", function(self) Paint(self) end)
@@ -330,7 +330,18 @@ local function CreateTabs(parent, labels, onSelect)
         end)
         tabs[i] = tab
     end
-    row:SetWidth(x)
+
+    local widths = {}
+    for i, tab in ipairs(tabs) do widths[i] = tab:GetWidth() end
+    local places, wrappedWidth, height = Theme.WrapRow(widths, maxWidth, 6, 28)
+    for i, tab in ipairs(tabs) do
+        tab:SetPoint("TOPLEFT", places[i][1], places[i][2])
+    end
+    if maxWidth then
+        row:SetSize(wrappedWidth, height)
+    else
+        row:SetWidth(x)
+    end
     return row, Open
 end
 
@@ -1518,30 +1529,200 @@ function moduleBuilders.buffs(parent, db, y)
     return y
 end
 
+-- The cooldown group open on the Cooldowns page, kept while the page is rebuilt
+local selectedCooldownGroup = "main"
+
+-- Rebuild a page in place, for example after the cooldown groups change
+local function RebuildCategory(catId)
+    local old = contentFrames[catId]
+    if old then
+        old:Hide()
+        old:SetParent(nil)
+    end
+    contentFrames[catId] = nil
+    Options:ShowCategory(catId)
+end
+
+-- One menu shared by every spell row's Move to button: the other groups, full ones greyed
+local moveMenu
+
+local function ShowMoveMenu(anchor, spell, fromId, onMoved)
+    local CT = Castborn.CooldownTracker
+    if not moveMenu then
+        moveMenu = CreateFrame("Frame", "CastbornCooldownMoveMenu", UIParent, "UIDropDownMenuTemplate")
+    end
+    UIDropDownMenu_Initialize(moveMenu, function(self, level)
+        for _, g in ipairs(CT:GetGroups()) do
+            if g.id ~= fromId then
+                local info = UIDropDownMenu_CreateInfo()
+                local full = #g.spells >= CT.MAX_SPELLS
+                info.text = full and (g.name .. " (full)") or g.name
+                info.notCheckable = true
+                info.disabled = full
+                info.func = function()
+                    CloseDropDownMenus()
+                    onMoved(CT:MoveSpell(spell.spellId, g.id))
+                end
+                UIDropDownMenu_AddButton(info, level)
+            end
+        end
+    end, "MENU")
+    ToggleDropDownMenu(1, nil, moveMenu, anchor, 0, 0)
+end
+
 function moduleBuilders.cooldowns(parent, db, y)
+    local CT = Castborn.CooldownTracker
+    local groups = CT:GetGroups()
+    if not CT:GetGroup(selectedCooldownGroup) then
+        selectedCooldownGroup = "main"
+    end
+    -- Layout settings and spells below belong to the open group; db is module-wide
+    local group = CT:GetGroup(selectedCooldownGroup)
+    local isMain = group.id == "main"
+
+    local trinketCB = CreateCheckbox(parent, "Track Trinket Cooldowns", db, "trackTrinkets")
+    trinketCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 40
+
+    -- Group tabs: one per group, then "+ New group" while there is room
+    local labels, ids, openIndex = {}, {}, 1
+    for i, g in ipairs(groups) do
+        labels[i] = g.name
+        ids[i] = g.id
+        if g.id == group.id then openIndex = i end
+    end
+    if #groups < CT.MAX_GROUPS then
+        labels[#labels + 1] = "+ New group"
+    end
+
+    local quiet = true  -- opening a tab while building, or relighting the open one, does nothing
+    local tabRow, openTab
+    local pageWidth = parent:GetWidth()
+    tabRow, openTab = CreateTabs(parent, labels, function(index)
+        if quiet then return end
+        if ids[index] then
+            selectedCooldownGroup = ids[index]
+            RebuildCategory("cooldowns")
+            return
+        end
+        -- "+ New group": keep the open group's tab lit and ask for a name
+        quiet = true
+        openTab(openIndex)
+        quiet = false
+        ShowDialog({
+            title = "New Cooldown Group",
+            text = "Name the new group, then move spells into it with Move to.",
+            input = true,
+            confirm = "Create",
+            onConfirm = function(name)
+                local id, reason = CT:AddGroup(name)
+                if id then
+                    selectedCooldownGroup = id
+                    RebuildCategory("cooldowns")
+                elseif reason then
+                    Castborn:Print(reason)
+                end
+            end,
+        })
+    end, pageWidth > 0 and pageWidth or nil)
+    tabRow:SetPoint("TOPLEFT", 0, y)
+    openTab(openIndex)
+    quiet = false
+    y = y - tabRow:GetHeight() - 14
+
+    -- The open group: its name, and where it sits among the groups
+    local status = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
+    local function Refuse(reason)
+        status:SetText("|cffff4444" .. (reason or "") .. "|r")
+    end
+
+    local nameBox = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    SkinInput(nameBox)
+    nameBox:SetSize(160, 22)
+    nameBox:SetPoint("TOPLEFT", 4, y)
+    nameBox:SetAutoFocus(false)
+    nameBox:SetMaxLetters(24)
+    nameBox:SetText(group.name)
+
+    local renameBtn = CreateButton(parent, "Rename", 76, function()
+        local ok, reason = CT:RenameGroup(group.id, nameBox:GetText())
+        if ok then RebuildCategory("cooldowns") else Refuse(reason) end
+    end)
+    renameBtn:SetPoint("LEFT", nameBox, "RIGHT", 10, 0)
+    nameBox:SetScript("OnEnterPressed", function() renameBtn:Click() end)
+    nameBox:SetScript("OnEscapePressed", function(self)
+        self:SetText(group.name)
+        self:ClearFocus()
+    end)
+
+    if not isMain then
+        local deleteBtn = CreateButton(parent, "Delete", 76, function()
+            ShowDialog({
+                title = "Delete Group",
+                text = "Delete \"" .. group.name .. "\"? Its spells move to " .. CT:GetMainGroup().name .. ".",
+                confirm = "Delete",
+                danger = true,
+                onConfirm = function()
+                    local ok, reason = CT:RemoveGroup(group.id)
+                    if ok then
+                        selectedCooldownGroup = "main"
+                        RebuildCategory("cooldowns")
+                    else
+                        Refuse(reason)
+                    end
+                end,
+            })
+        end, "danger")
+        deleteBtn:SetPoint("LEFT", renameBtn, "RIGHT", 6, 0)
+    end
+    y = y - 34
+
+    local leftBtn = CreateButton(parent, "Move left", 96, function()
+        CT:MoveGroup(group.id, openIndex - 1)
+        RebuildCategory("cooldowns")
+    end)
+    leftBtn:SetPoint("TOPLEFT", 0, y)
+    if openIndex == 1 then leftBtn:Disable() end
+
+    local rightBtn = CreateButton(parent, "Move right", 96, function()
+        CT:MoveGroup(group.id, openIndex + 1)
+        RebuildCategory("cooldowns")
+    end)
+    rightBtn:SetPoint("LEFT", leftBtn, "RIGHT", 6, 0)
+    if openIndex == #groups then rightBtn:Disable() end
+
+    status:SetPoint("LEFT", rightBtn, "RIGHT", 10, 0)
+    status:SetText("")
+    y = y - 44
+
     -- Icon Size and Spacing sliders
-    db.iconSize = db.iconSize or 36
-    local iconSlider = CreateSlider(parent, "Icon Size", db, "iconSize", 20, 56, 2)
+    group.iconSize = group.iconSize or 36
+    local iconSlider = CreateSlider(parent, "Icon Size", group, "iconSize", 20, 56, 2)
     iconSlider:SetPoint("TOPLEFT", 0, y)
-    db.spacing = db.spacing or 4
-    local spacingSlider = CreateSlider(parent, "Spacing", db, "spacing", 0, 12, 1)
+    group.spacing = group.spacing or 4
+    local spacingSlider = CreateSlider(parent, "Spacing", group, "spacing", 0, 12, 1)
     spacingSlider:SetPoint("TOPLEFT", 220, y)
     y = y - 60
-    db.iconsPerRow = db.iconsPerRow or 10
-    local perRowSlider = CreateSlider(parent, "Icons Per Row", db, "iconsPerRow", 1, 20, 1)
+    group.iconsPerRow = group.iconsPerRow or 10
+    local perRowSlider = CreateSlider(parent, "Icons Per Row", group, "iconsPerRow", 1, 20, 1)
     perRowSlider:SetPoint("TOPLEFT", 0, y)
     y = y - 50
 
     -- Orientation checkbox
-    local vertCB = CreateCheckbox(parent, "Vertical Layout", db, "verticalLayout", function(v)
-        db.orientation = v and "VERTICAL" or "HORIZONTAL"
+    local vertCB = CreateCheckbox(parent, "Vertical Layout", group, "verticalLayout", function(v)
+        group.orientation = v and "VERTICAL" or "HORIZONTAL"
     end)
-    db.verticalLayout = (db.orientation == "VERTICAL")
-    vertCB:SetChecked(db.verticalLayout)
+    group.verticalLayout = (group.orientation == "VERTICAL")
+    vertCB:SetChecked(group.verticalLayout)
     vertCB:SetPoint("TOPLEFT", 0, y)
 
-    local trinketCB = CreateCheckbox(parent, "Track Trinket Cooldowns", db, "trackTrinkets")
-    trinketCB:SetPoint("TOPLEFT", 220, y)
+    -- Only main anchors to the castbar; other groups are placed by dragging when unlocked
+    if isMain then
+        local anchorCB = CreateCheckbox(parent, "Anchor to Castbar", group, "anchored", function(v)
+            Castborn:FireCallback(v and "REATTACH_COOLDOWNS" or "DETACH_COOLDOWNS")
+        end)
+        anchorCB:SetPoint("TOPLEFT", 220, y)
+    end
     y = y - 36
 
     -- Grow Direction dropdown
@@ -1554,7 +1735,7 @@ function moduleBuilders.cooldowns(parent, db, y)
         { value = "RIGHT", label = "Grow Right" },
         { value = "LEFT", label = "Grow Left" },
         { value = "UP", label = "Grow Up" },
-        { value = "DOWN", label = "Grow Down" },
+        { value = "CENTER", label = "Centre" },
     }
 
     local growDropdown = CreateFrame("Frame", "CastbornCooldownGrowDropdown", parent, "UIDropDownMenuTemplate")
@@ -1562,7 +1743,7 @@ function moduleBuilders.cooldowns(parent, db, y)
     growDropdown:SetPoint("TOPLEFT", 90, y + 6)
     UIDropDownMenu_SetWidth(growDropdown, 140)
 
-    local currentGrow = db.growDirection or "LEFT"
+    local currentGrow = group.growDirection or "LEFT"
     for _, opt in ipairs(growOptions) do
         if opt.value == currentGrow then
             UIDropDownMenu_SetText(growDropdown, opt.label)
@@ -1574,9 +1755,9 @@ function moduleBuilders.cooldowns(parent, db, y)
             local info = UIDropDownMenu_CreateInfo()
             info.text = opt.label
             info.value = opt.value
-            info.checked = (db.growDirection or "LEFT") == opt.value
+            info.checked = (group.growDirection or "LEFT") == opt.value
             info.func = function()
-                db.growDirection = opt.value
+                group.growDirection = opt.value
                 UIDropDownMenu_SetText(growDropdown, opt.label)
                 CloseDropDownMenus()
             end
@@ -1593,33 +1774,37 @@ function moduleBuilders.cooldowns(parent, db, y)
     divider:SetColorTexture(0.25, 0.25, 0.25, 1)
     y = y - 14
 
-    -- Build ordered list from SpellData (ensures all class + racial spells are always shown)
+    -- Every class and racial spell is always tracked somewhere: any missing go into main
     local _, class = UnitClass("player")
     local _, race = UnitRace("player")
     local classSpells = Castborn.SpellData and Castborn.SpellData:GetClassCooldowns(class) or {}
     local racialSpells = Castborn.SpellData and race and Castborn.SpellData:GetRacialCooldowns(race) or {}
-    db.trackedSpells = db.trackedSpells or {}
+    local mainSpells = CT:GetMainGroup().spells
+    group.spells = group.spells or {}
 
-    -- Index existing tracked spells by spellId for quick lookup
+    -- Index tracked spells by spellId for quick lookup, in every group, so a spell moved to
+    -- another group is not added to main again
     local tracked = {}
-    for _, spell in ipairs(db.trackedSpells) do
-        tracked[spell.spellId] = spell
+    for _, g in ipairs(groups) do
+        for _, spell in ipairs(g.spells) do
+            tracked[spell.spellId] = spell
+        end
     end
 
-    -- Ensure all class spells exist in trackedSpells
+    -- Ensure all class spells exist
     for _, def in ipairs(classSpells) do
         if not tracked[def.spellId] then
             local entry = { spellId = def.spellId, name = def.name, enabled = true }
-            table.insert(db.trackedSpells, entry)
+            table.insert(mainSpells, entry)
             tracked[def.spellId] = entry
         end
     end
 
-    -- Ensure all racial spells exist in trackedSpells
+    -- Ensure all racial spells exist
     for _, def in ipairs(racialSpells) do
         if not tracked[def.spellId] then
             local entry = { spellId = def.spellId, name = def.name, enabled = true }
-            table.insert(db.trackedSpells, entry)
+            table.insert(mainSpells, entry)
             tracked[def.spellId] = entry
         end
     end
@@ -1643,9 +1828,9 @@ function moduleBuilders.cooldowns(parent, db, y)
         end
 
         local listY = 0
-        local total = #db.trackedSpells
+        local total = #group.spells
 
-        for i, spell in ipairs(db.trackedSpells) do
+        for i, spell in ipairs(group.spells) do
             if spell.enabled == nil then spell.enabled = true end
 
             local row = CreateFrame("Frame", nil, spellListContainer)
@@ -1655,11 +1840,25 @@ function moduleBuilders.cooldowns(parent, db, y)
             StyleListRow(row)
 
             -- Checkbox
-            local CT = Castborn.CooldownTracker
-            local spellName = CT and CT:GetTrackedSpellName(spell) or spell.name
+            local spellName = CT:GetTrackedSpellName(spell) or spell.name
             local displayName = spell.custom and (spellName .. " |cff888888(Custom)|r") or spellName
             local cb = CreateCheckbox(row, displayName, spell, "enabled")
             cb:SetPoint("LEFT", 0, 0)
+
+            -- The spell's icon in a gilt frame, between the tick box and the name
+            local iconFrame = CreateFrame("Frame", nil, row)
+            iconFrame:SetSize(22, 22)
+            iconFrame:SetPoint("LEFT", cb, "RIGHT", 2, 0)
+            Theme:Chamfer(iconFrame, { cut = 3, fill = "inputBg", edge = "accent" })
+            local iconTexture = iconFrame:CreateTexture(nil, "ARTWORK")
+            iconTexture:SetPoint("TOPLEFT", 2, -2)
+            iconTexture:SetPoint("BOTTOMRIGHT", -2, 2)
+            iconTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            iconTexture:SetTexture(GetSpellTexture(spellName) or GetSpellTexture(spell.spellId)
+                or "Interface\\Icons\\INV_Misc_QuestionMark")
+            cb.text:ClearAllPoints()
+            cb.text:SetPoint("LEFT", iconFrame, "RIGHT", 6, 0)
+            cb:SetHitRectInsets(0, -(iconFrame:GetWidth() + 8 + cb.text:GetStringWidth() + 8), 0, 0)
 
             -- Down arrow
             local downBtn = CreateRowButton(row, "down")
@@ -1670,7 +1869,7 @@ function moduleBuilders.cooldowns(parent, db, y)
             end
             downBtn:SetScript("OnClick", function()
                 if i < total then
-                    db.trackedSpells[i], db.trackedSpells[i + 1] = db.trackedSpells[i + 1], db.trackedSpells[i]
+                    group.spells[i], group.spells[i + 1] = group.spells[i + 1], group.spells[i]
                     BuildSpellList()
                     PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
                 end
@@ -1685,21 +1884,34 @@ function moduleBuilders.cooldowns(parent, db, y)
             end
             upBtn:SetScript("OnClick", function()
                 if i > 1 then
-                    db.trackedSpells[i], db.trackedSpells[i - 1] = db.trackedSpells[i - 1], db.trackedSpells[i]
+                    group.spells[i], group.spells[i - 1] = group.spells[i - 1], group.spells[i]
                     BuildSpellList()
                     PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
                 end
             end)
+            local leftmost = upBtn
 
             -- Remove button for custom spells
             if spell.custom then
                 local removeBtn = CreateRowButton(row, "remove")
                 removeBtn:SetPoint("RIGHT", upBtn, "LEFT", -6, 0)
                 removeBtn:SetScript("OnClick", function()
-                    table.remove(db.trackedSpells, i)
+                    table.remove(group.spells, i)
                     BuildSpellList()
                     PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
                 end)
+                leftmost = removeBtn
+            end
+
+            -- Move to another group
+            if #groups > 1 then
+                local moveBtn = CreateButton(row, "Move to", 72, function(btn)
+                    ShowMoveMenu(btn, spell, group.id, function(ok, reason)
+                        if ok then BuildSpellList() else Refuse(reason) end
+                    end)
+                end)
+                moveBtn:SetHeight(20)
+                moveBtn:SetPoint("RIGHT", leftmost, "LEFT", -8, 0)
             end
 
             listY = listY - 26
@@ -1737,17 +1949,15 @@ function moduleBuilders.cooldowns(parent, db, y)
             end
 
             -- Check cap
-            if #db.trackedSpells >= 20 then
-                statusText:SetText("|cffff4444Maximum of 20 spells reached|r")
+            if #group.spells >= CT.MAX_SPELLS then
+                statusText:SetText("|cffff4444This group already has " .. CT.MAX_SPELLS .. " spells|r")
                 return
             end
 
-            -- Check for duplicates
-            for _, spell in ipairs(db.trackedSpells) do
-                if spell.spellId == spellId then
-                    statusText:SetText("|cffff4444Already tracked|r")
-                    return
-                end
+            -- Check for duplicates, in every group
+            if CT:FindSpell(spellId) then
+                statusText:SetText("|cffff4444Already tracked|r")
+                return
             end
 
             -- Validate spell exists
@@ -1757,8 +1967,8 @@ function moduleBuilders.cooldowns(parent, db, y)
                 return
             end
 
-            -- Add the custom spell
-            table.insert(db.trackedSpells, {
+            -- Add the custom spell to the open group
+            table.insert(group.spells, {
                 spellId = spellId,
                 name = name,
                 enabled = true,
@@ -1785,7 +1995,7 @@ function moduleBuilders.cooldowns(parent, db, y)
 
     BuildSpellList()
 
-    y = y - (26 * #db.trackedSpells) - 60
+    y = y - (26 * #group.spells) - 60
 
     return y
 end
@@ -2669,8 +2879,8 @@ function Options:BuildModule(parent, key)
         y = y - 60
     end
 
-    -- Anchor checkbox
-    if db.anchored ~= nil then
+    -- Anchor checkbox (the cooldowns page draws its own, for the main group)
+    if key ~= "cooldowns" and db.anchored ~= nil then
         local anchorCB = CreateCheckbox(parent, "Anchor to Castbar", db, "anchored", function(v)
             if v then
                 Castborn:FireCallback("REATTACH_" .. string.upper(key))

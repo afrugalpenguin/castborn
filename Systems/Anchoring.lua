@@ -163,6 +163,7 @@ local function CreateDragIndicator(frame, label)
     text:SetTextColor(Theme:Color("onAccent"))
     text:SetPoint("CENTER", 0, 0)
     text:SetText(label or "Drag")
+    indicator.text = text
 
     -- Size to fit the label text or the frame width, whichever is larger
     local textWidth = text:GetStringWidth() + 20
@@ -197,6 +198,14 @@ local function CreateDragIndicator(frame, label)
     indicator:Hide()
     frame.dragIndicator = indicator
     return indicator
+end
+
+-- Change the label on a draggable frame's indicator (for example after a rename)
+function Anchoring:SetDragLabel(frame, label)
+    local indicator = frame and frame.dragIndicator
+    if not indicator or not indicator.text then return end
+    indicator.text:SetText(label or "Drag")
+    indicator:SetWidth(math.max(frame:GetWidth(), indicator.text:GetStringWidth() + 20))
 end
 
 -- Track all draggable frames for lock/unlock
@@ -246,30 +255,37 @@ end
 
 -- Show drag indicators on all draggable frames
 -- If forceShowFrames is true, also show the frames themselves (for unlock mode)
+local function ShowDragIndicator(frame, forceShowFrames)
+    -- Enable mouse interaction for dragging
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    if frame._dragStartFunc then
+        frame:SetScript("OnDragStart", frame._dragStartFunc)
+        frame:SetScript("OnDragStop", frame._dragStopFunc)
+    end
+    if frame.dragIndicator then
+        -- Restore frames that were Ctrl+Shift hidden in a previous unlock
+        if frame.hiddenForPositioning then
+            frame:Show()
+            frame.hiddenForPositioning = nil
+            frame.shownForPositioning = true
+        end
+        if forceShowFrames and not frame:IsShown() then
+            -- Show the frame itself so it can be repositioned
+            frame:Show()
+            frame.shownForPositioning = true
+        end
+        if frame:IsShown() then
+            frame.dragIndicator:Show()
+        end
+    end
+end
+
 function Anchoring:ShowDragIndicators(forceShowFrames)
     for _, frame in ipairs(self.draggableFrames) do
-        -- Enable mouse interaction for dragging
-        frame:EnableMouse(true)
-        frame:RegisterForDrag("LeftButton")
-        if frame._dragStartFunc then
-            frame:SetScript("OnDragStart", frame._dragStartFunc)
-            frame:SetScript("OnDragStop", frame._dragStopFunc)
-        end
-        if frame.dragIndicator then
-            -- Restore frames that were Ctrl+Shift hidden in a previous unlock
-            if frame.hiddenForPositioning then
-                frame:Show()
-                frame.hiddenForPositioning = nil
-                frame.shownForPositioning = true
-            end
-            if forceShowFrames and not frame:IsShown() then
-                -- Show the frame itself so it can be repositioned
-                frame:Show()
-                frame.shownForPositioning = true
-            end
-            if frame:IsShown() then
-                frame.dragIndicator:Show()
-            end
+        -- Frames whose owner has gone (a removed cooldown group) stay hidden
+        if not frame.dragDisabled then
+            ShowDragIndicator(frame, forceShowFrames)
         end
     end
 end

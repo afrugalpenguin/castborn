@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "8.1.1"
+CB.version = "8.1.3"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -313,16 +313,10 @@ CB.defaults = {
         anchored = false,
     },
 
+    -- Module-wide only: layout and position live on each cooldown group, with their
+    -- defaults in CooldownTracker.groupDefaults
     cooldowns = {
         enabled = true,
-        iconSize = 36,
-        spacing = 4,
-        point = "CENTER",
-        x = -450,
-        y = -300,
-        xPct = -0.234,
-        yPct = -0.278,
-        anchored = true,
         showReadyGlow = true,
     },
 

@@ -25,6 +25,7 @@ Modules/ResourceBars.lua
 Modules/ResourceBars_Forever.lua
 Modules/GCDIndicator.lua
 Modules/GCDIndicator_Forever.lua
+Modules/CooldownGroup.lua
 Modules/CooldownTracker.lua
 Modules/CooldownTracker_Forever.lua
 Modules/InterruptTracker.lua
