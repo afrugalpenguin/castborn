@@ -117,6 +117,32 @@ describe("Forever proc tracker", function()
             assert.is_nil(PT:GetFilterIds()[20375])
         end)
 
+        it("lists no Season of Discovery leftovers, which Forever never teaches", function()
+            local leftovers = { [425121] = true, [48108] = true, [427713] = true, [431666] = true,
+                [415414] = true, [413380] = true, [426157] = true }
+            for class, list in pairs(PT.classProcs) do
+                for _, s in ipairs(list) do
+                    assert.is_nil(leftovers[s.spellId], class .. " lists " .. s.name)
+                end
+            end
+        end)
+
+        it("keeps every ID of a buff listed under one name, in order, across reloads", function()
+            local function snapshot()
+                local out = {}
+                for i, s in ipairs(CastbornDB.procs.trackedSpells) do out[i] = s.spellId end
+                return out
+            end
+            local holyShield = 0
+            for _, s in ipairs(CastbornDB.procs.trackedSpells) do
+                if s.name == "Holy Shield" then holyShield = holyShield + 1 end
+            end
+            assert.are.equal(4, holyShield)
+            local before = snapshot()
+            Castborn:FireCallback("INIT")
+            assert.are.same(before, snapshot())
+        end)
+
         it("builds a player container inside the strip", function()
             assert.are.equal(_G.Castborn_ProcTracker, container.parent)
             assert.are.same({ "SetUnit", "player" }, called(container, "SetUnit")[1])
