@@ -55,7 +55,7 @@ ProcTracker.classProcs = {
     PALADIN = {
         { spellId = 20050, name = "Vengeance" },          -- every talent rank puts 20050 on you
         { spellId = 20216, name = "Divine Favor" },
-        { spellId = 20375, name = "Seal of Command" },    -- rank 1; other ranks are learned
+        -- No seals: on Forever Seal of Command is an ordinary seal, and the seal tracker shows seals
         { spellId = 437063, name = "Infusion of Light" },
         { spellId = 426157, name = "The Art of War" },    -- unverified
     },
