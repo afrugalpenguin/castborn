@@ -379,9 +379,12 @@ local function SizeText(fs, size)
     Castborn:RegisterFontString(fs, size, "OUTLINE")
 end
 
+ProcTracker.sizeStatus = "not tried"
+
 local function SizeButton(parts)
     local size = DB().iconSize or 28
-    pcall(parts.button.SetSize, parts.button, size, size)
+    local ok, err = pcall(parts.button.SetSize, parts.button, size, size)
+    ProcTracker.sizeStatus = ok and "ok" or ("error: " .. tostring(err))
     local timer, stacks = ProcTracker.GetTextSizes(size)
     SizeText(parts.duration, timer)
     SizeText(parts.stacks, stacks)
