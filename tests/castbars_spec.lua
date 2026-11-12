@@ -14,6 +14,41 @@ end
 describe("CastBars seams (TBC behaviour)", function()
     local CB = Castborn
 
+    describe("HideBlizzardCastBar", function()
+        local names = { "CastingBarFrame", "TargetFrameSpellBar", "FocusFrameSpellBar" }
+        local frames
+
+        before_each(function()
+            frames = {}
+            for _, name in ipairs(names) do
+                local f = { hidden = false }
+                f.UnregisterAllEvents = function() f.unregistered = true end
+                f.Hide = function() f.hidden = true end
+                f.SetScript = function(_, script, fn) f[script] = fn end
+                frames[name] = f
+                _G[name] = f
+            end
+        end)
+
+        after_each(function()
+            for _, name in ipairs(names) do _G[name] = nil end
+        end)
+
+        it("hides the player, target and focus castbars", function()
+            CB:HideBlizzardCastBar(true)
+            for _, name in ipairs(names) do
+                assert.is_true(frames[name].unregistered, name)
+                assert.is_true(frames[name].hidden, name)
+                assert.is_function(frames[name].OnShow, name)
+            end
+        end)
+
+        it("skips frames that do not exist", function()
+            _G.FocusFrameSpellBar = nil
+            assert.has_no.errors(function() CB:HideBlizzardCastBar(true) end)
+        end)
+    end)
+
     describe("SetCastTiming", function()
         it("stores millisecond times as seconds", function()
             local frame = {}

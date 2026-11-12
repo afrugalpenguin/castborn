@@ -39,6 +39,65 @@ describe("CastBars_Forever", function()
         assert.has_no.errors(function() Castborn:HideBlizzardCastBar(true) end)
     end)
 
+    describe("target and focus castbars", function()
+        local names = { "TargetFrameSpellBar", "FocusFrameSpellBar" }
+        local frames
+
+        local function fakeSpellBar()
+            local f = { hooks = {}, hideCount = 0, calls = {} }
+            f.HookScript = function(_, script, fn) f.hooks[#f.hooks + 1] = { script, fn } end
+            f.Hide = function() f.hideCount = f.hideCount + 1 end
+            f.SetUnit = function() f.calls[#f.calls + 1] = "SetUnit" end
+            f.UnregisterAllEvents = function() f.calls[#f.calls + 1] = "UnregisterAllEvents" end
+            f.SetScript = function() f.calls[#f.calls + 1] = "SetScript" end
+            return f
+        end
+
+        before_each(function()
+            frames = {}
+            for _, name in ipairs(names) do
+                frames[name] = fakeSpellBar()
+                _G[name] = frames[name]
+            end
+        end)
+
+        after_each(function()
+            for _, name in ipairs(names) do _G[name] = nil end
+        end)
+
+        it("hides each bar whenever Blizzard shows it", function()
+            Castborn:HideBlizzardCastBar(true)
+            for _, name in ipairs(names) do
+                local f = frames[name]
+                assert.are.equal(1, #f.hooks, name)
+                assert.are.equal("OnShow", f.hooks[1][1], name)
+                local before = f.hideCount
+                f.hooks[1][2](f)
+                assert.are.equal(before + 1, f.hideCount, name)
+            end
+        end)
+
+        it("hooks each bar only once across repeated calls", function()
+            Castborn:HideBlizzardCastBar(true)
+            Castborn:HideBlizzardCastBar(true)
+            for _, name in ipairs(names) do
+                assert.are.equal(1, #frames[name].hooks, name)
+            end
+        end)
+
+        it("never detaches, unregisters or replaces Blizzard's scripts", function()
+            Castborn:HideBlizzardCastBar(true)
+            for _, name in ipairs(names) do
+                assert.are.same({}, frames[name].calls, name)
+            end
+        end)
+
+        it("does nothing when the bars are missing", function()
+            for _, name in ipairs(names) do _G[name] = nil end
+            assert.has_no.errors(function() Castborn:HideBlizzardCastBar(true) end)
+        end)
+    end)
+
     describe("secret cast data", function()
         local secrets = setmetatable({}, { __mode = "k" })
         local function secret() local s = {} secrets[s] = true return s end

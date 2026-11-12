@@ -638,13 +638,15 @@ function CB:InitCastBars()
     CB:Print("Castbars initialized")
 end
 
--- Hide the default Blizzard castbar
+-- Hide the default Blizzard castbars
 function CB:HideBlizzardCastBar(silent)
     -- Try different names used across WoW versions
     local blizzardCastBars = {
         "CastingBarFrame",           -- Classic/TBC
         "PlayerCastingBarFrame",     -- Retail
         "PetCastingBarFrame",        -- Pet castbar
+        "TargetFrameSpellBar",       -- Target frame castbar
+        "FocusFrameSpellBar",        -- Focus frame castbar
     }
 
     for _, frameName in ipairs(blizzardCastBars) do
@@ -657,7 +659,7 @@ function CB:HideBlizzardCastBar(silent)
     end
 
     if not silent then
-        CB:Print("Default Blizzard castbar hidden")
+        CB:Print("Default Blizzard castbars hidden")
     end
 end
 

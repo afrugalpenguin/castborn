@@ -4,15 +4,29 @@
 ]]
 local CB = Castborn
 
+-- Target and focus castbars already hooked, so repeat calls don't stack hooks
+local hookedSpellBars = {}
+
 -- Unregistering events on Blizzard's castbar taints it on the Mainline UI, so detach it from
 -- the player instead. The Blizzard bar then has no unit to show and stays hidden.
+-- The target and focus bars can't be detached: their target-change handler reads
+-- UnitCastingInfo(self.unit). Their showTargetCastbar CVar can't turn them off either, as
+-- Blizzard reads it with GetCVar and "0" is truthy. Hide them whenever Blizzard shows them.
 function CB:HideBlizzardCastBar(silent)
     local frame = PlayerCastingBarFrame
     if frame and frame.SetUnit then
         frame:SetUnit(nil)
     end
+    for _, name in ipairs({ "TargetFrameSpellBar", "FocusFrameSpellBar" }) do
+        local bar = _G[name]
+        if bar and not hookedSpellBars[bar] then
+            hookedSpellBars[bar] = true
+            bar:HookScript("OnShow", bar.Hide)
+            bar:Hide()
+        end
+    end
     if not silent then
-        CB:Print("Default Blizzard castbar hidden")
+        CB:Print("Default Blizzard castbars hidden")
     end
 end
 

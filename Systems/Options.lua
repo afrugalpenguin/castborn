@@ -888,7 +888,7 @@ function Options:BuildCastbars(parent)
             rankCB:SetPoint("TOPLEFT", 0, y)
             y = y - 26
 
-            local blizzCB = CreateCheckbox(panel, "Hide Blizzard Castbar", CastbornDB[dbKey], "hideBlizzardCastBar", function(checked)
+            local blizzCB = CreateCheckbox(panel, "Hide Blizzard Castbars", CastbornDB[dbKey], "hideBlizzardCastBar", function(checked)
                 if checked then
                     Castborn:HideBlizzardCastBar()
                 else
