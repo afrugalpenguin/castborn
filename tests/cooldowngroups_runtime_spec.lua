@@ -745,3 +745,22 @@ describe("Placing a new group clear of the options window", function()
         end)
     end)
 end)
+
+describe("Spell picked up on the cursor", function()
+    local CursorSpellId = CT.CursorSpellId
+
+    it("gives the spell ID of a spell from the spellbook or an action bar", function()
+        -- GetCursorInfo: "spell", spellbook slot, book type, spell ID
+        assert.are.equal(12051, CursorSpellId("spell", 23, "spell", 12051))
+    end)
+
+    it("ignores anything that is not a spell", function()
+        assert.is_nil(CursorSpellId("item", 6948, "item:6948"))
+        assert.is_nil(CursorSpellId("macro", 3))
+        assert.is_nil(CursorSpellId(nil))
+    end)
+
+    it("ignores a spell without an ID", function()
+        assert.is_nil(CursorSpellId("spell", 23, "spell"))
+    end)
+end)
