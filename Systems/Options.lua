@@ -886,8 +886,11 @@ function Options:BuildCastbars(parent)
 
             local rankCB = CreateCheckbox(panel, "Show Spell Rank", CastbornDB[dbKey], "showSpellRank")
             rankCB:SetPoint("TOPLEFT", 0, y)
+            local tradeCB = CreateCheckbox(panel, "Hide Tradeskill Casts", CastbornDB[dbKey], "hideTradeSkills")
+            tradeCB:SetPoint("TOPLEFT", 150, y)
             y = y - 26
 
+            -- Own row: the label is too wide to share with a second column
             local blizzCB = CreateCheckbox(panel, "Hide Blizzard Castbars", CastbornDB[dbKey], "hideBlizzardCastBar", function(checked)
                 if checked then
                     Castborn:HideBlizzardCastBar()
@@ -896,8 +899,6 @@ function Options:BuildCastbars(parent)
                 end
             end)
             blizzCB:SetPoint("TOPLEFT", 0, y)
-            local tradeCB = CreateCheckbox(panel, "Hide Tradeskill Casts", CastbornDB[dbKey], "hideTradeSkills")
-            tradeCB:SetPoint("TOPLEFT", 150, y)
             y = y - 36
         else
             y = y - 10
