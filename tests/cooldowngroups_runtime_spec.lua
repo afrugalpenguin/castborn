@@ -595,3 +595,153 @@ describe("Reset Positions", function()
         assert.are.equal(-348 / 1080, g.yPct)
     end)
 end)
+
+describe("Empty group placeholders", function()
+    before_each(reset)
+    after_each(function()
+        CT:SetPlaceholdersShown(false)
+        Castborn:EndTestCooldowns()
+    end)
+
+    local function placeholders(id)
+        return container(id).placeholders
+    end
+
+    it("shows four slots for an empty group while placeholders are on", function()
+        CT:SetPlaceholdersShown(true)
+        CT:AddGroup("Test")
+        CT:UpdateAll()
+
+        local frame = container("g1")
+        assert.is_true(frame.shown)
+        assert.is_true(placeholders("g1").shown)
+        assert.are.equal(4, #placeholders("g1").slots)
+        for _, slot in ipairs(placeholders("g1").slots) do
+            assert.is_true(slot.shown)
+        end
+        local w, h = Castborn.CooldownGroup.GetContainerSize(4, CT:GetGroup("g1"))
+        assert.are.same({ w, h }, frame.size)
+    end)
+
+    it("lays the slots out with the group's own grow direction", function()
+        CT:SetPlaceholdersShown(true)
+        CT:AddGroup("Test")
+        local settings = CT:GetGroup("g1")
+        settings.growDirection = "CENTER"
+        CT:UpdateAll()
+
+        local point, relativePoint, x, y = Castborn.CooldownGroup.GetSlotAnchor(2, settings, nil, 4)
+        local p = placeholders("g1").slots[2].points[1]
+        assert.are.same({ point, container("g1"), relativePoint, x, y }, p)
+    end)
+
+    it("keeps an empty group hidden while placeholders are off", function()
+        CT:AddGroup("Test")
+        CT:UpdateAll()
+        assert.is_false(container("g1").shown)
+    end)
+
+    it("hides the placeholders straight away when they are turned off", function()
+        CT:SetPlaceholdersShown(true)
+        CT:AddGroup("Test")
+        CT:UpdateAll()
+        CT:SetPlaceholdersShown(false)
+        assert.is_false(container("g1").shown)
+        assert.is_false(placeholders("g1").shown)
+    end)
+
+    it("swaps the placeholders for real icons, and back when the group empties", function()
+        CT:SetPlaceholdersShown(true)
+        CT:AddGroup("Test")
+        CT:MoveSpell(103, "g1")
+        CT:UpdateAll()
+        assert.is_false(placeholders("g1").shown)
+        assert.is_true(icon("g1", 1).shown)
+
+        CT:MoveSpell(103, "main")
+        CT:UpdateAll()
+        assert.is_true(placeholders("g1").shown)
+        assert.is_true(container("g1").shown)
+    end)
+
+    it("does not show placeholders on a group with icons", function()
+        CT:SetPlaceholdersShown(true)
+        CT:UpdateAll()
+        assert.is_true(container("main").shown)
+        local main = placeholders("main")
+        assert.is_true(main == nil or main.shown == false)
+    end)
+
+    it("leaves test mode's sample icons alone", function()
+        CT:SetPlaceholdersShown(true)
+        CT:AddGroup("Test")
+        CT:UpdateAll()
+        Castborn:TestCooldowns()
+        assert.is_false(placeholders("g1").shown)
+        assert.is_true(icon("g1", 1).shown)
+    end)
+end)
+
+describe("Placing a new group clear of the options window", function()
+    local PlaceClearOf = CT.PlaceClearOf
+    -- A 900x640 window; screen 1920x1080
+    local book = { left = 510, right = 1410, bottom = 220, top = 860 }
+
+    it("leaves a strip that does not overlap the window where it is", function()
+        local x, y = PlaceClearOf(200, 500, 156, 40, book, 1920, 1080)
+        assert.are.equal(200, x)
+        assert.are.equal(500, y)
+    end)
+
+    it("moves an overlapping strip below the window, centred on it", function()
+        local x, y = PlaceClearOf(960, 540, 156, 40, book, 1920, 1080)
+        assert.are.equal(960, x)
+        assert.are.equal(220 - 8 - 20, y)
+    end)
+
+    it("goes above the window when there is no room below", function()
+        local low = { left = 510, right = 1410, bottom = 30, top = 670 }
+        local x, y = PlaceClearOf(960, 300, 156, 40, low, 1920, 1080)
+        assert.are.equal(960, x)
+        assert.are.equal(670 + 8 + 20, y)
+    end)
+
+    it("goes to the side with more room when there is none above or below", function()
+        local tall = { left = 300, right = 1200, bottom = 20, top = 1060 }
+        local x, y = PlaceClearOf(700, 540, 156, 40, tall, 1920, 1080)
+        assert.are.equal(1200 + 8 + 78, x)
+        assert.are.equal(540, y)
+    end)
+
+    describe("when a group is added", function()
+        before_each(reset)
+        after_each(function() _G.CastbornOptionsFrame = nil end)
+
+        local function openBook(rect)
+            _G.CastbornOptionsFrame = {
+                IsShown = function() return true end,
+                GetLeft = function() return rect.left end,
+                GetRight = function() return rect.right end,
+                GetTop = function() return rect.top end,
+                GetBottom = function() return rect.bottom end,
+            }
+        end
+
+        it("moves the new strip out from under the open window", function()
+            -- The usual stacked spot is centred at (510, 192); this window covers it
+            openBook({ left = 400, right = 1300, bottom = 100, top = 740 })
+            CT:AddGroup("Test")
+            local g = CT:GetGroup("g1")
+            assert.are.equal("CENTER", g.point)
+            assert.are.equal(850 - 960, g.x)
+            assert.are.equal(100 - 8 - 20 - 540, g.y)
+        end)
+
+        it("keeps the usual stacked spot when the window is closed", function()
+            CT:AddGroup("Test")
+            local g = CT:GetGroup("g1")
+            assert.are.equal(-450, g.x)
+            assert.are.equal(-348, g.y)
+        end)
+    end)
+end)
