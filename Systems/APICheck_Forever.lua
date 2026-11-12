@@ -310,6 +310,7 @@ APICheck.names = {
 -- Tables whose fields are listed in the report (enum names the Forever ports need)
 APICheck.values = {
     "Enum.StatusBarTimerDirection", "Enum.StatusBarInterpolation", "Enum.PlayerSwingType",
+    "C_Secrets",
 }
 
 -- Calls made when /cbapi runs; have a buff up and target a caster mob first
@@ -387,6 +388,19 @@ local function ProbeKey(path, ...)
     local args = {}
     for i = 1, select("#", ...) do args[i] = tostring((select(i, ...))) end
     return path .. "(" .. table.concat(args, ",") .. ")"
+end
+
+-- Vengeance (ret paladin proc) buff ranks 1-5. Unlike the other aura probes these also run in
+-- combat, under pcall: on retail some auras stay readable while the rest are secret (#302)
+APICheck.vengeanceIds = { 20050, 20052, 20053, 20054, 20055 }
+
+function APICheck:ProbeVengeance(live)
+    for _, id in ipairs(self.vengeanceIds) do
+        for _, path in ipairs({ "C_UnitAuras.GetPlayerAuraBySpellID", "C_Secrets.ShouldSpellAuraBeSecret" }) do
+            live[CombatKey(ProbeKey(path, id))] = self:DescribeCall(path, id)
+        end
+    end
+    live[CombatKey(ProbeKey("C_Secrets.ShouldAurasBeSecret"))] = self:DescribeCall("C_Secrets.ShouldAurasBeSecret")
 end
 
 local function Snapshot(path, ...)
@@ -497,6 +511,7 @@ function APICheck:Run()
         local fn = probeWidgets[widgetType][method]
         report.widgets[widgetType .. ":" .. method] = type(fn) == "function" and "function" or "missing"
     end
+    self:ProbeVengeance(report.live)
     local resourceText = self:TryResourceText()
     report.live[CombatKey("Resource text percent")] = resourceText.percent
     report.live[CombatKey("Resource text abbreviated")] = resourceText.abbreviated
