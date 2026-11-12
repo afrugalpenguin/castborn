@@ -1,5 +1,19 @@
 # Changelog
 
+**v8.2.0**
+
+- Cooldown groups: split your cooldowns into up to 8 groups, each with its own position, icon size, spacing, icons per row and grow direction, and its own Masque group
+- Manage groups from Options > Cooldowns: group tabs, + New group, rename, delete, reorder, and a Move to menu on each spell
+- New Centre grow direction for cooldown groups, which keeps each row centred as icons come and go
+- While the options are open, an empty cooldown group shows placeholder slots so you can find and place it
+- New Resource Bars: your health and power bars in one movable frame, with class or custom colours, several text formats, and always / in combat / faded visibility (TBC and Forever)
+- Castbars and resource bars can now wear a Masque skin (Use Masque skin on Look & Feel, off by default), or pick a built-in Bar Skin without Masque
+- Forever: the Proc Tracker is back, drawn by Blizzard's own aura display so it works in combat
+- Forever: the proc list now matches Forever's talents for every class. Spells Forever never teaches are gone, and new procs such as Heating Up, Fingers of Frost, Holy Purpose, Eclipse, Elemental Devastation, Redoubt, Quick Strikes and Overpower are tracked
+- Grow Down is gone from the cooldown options, as it looked the same as Grow Right; saved Grow Down settings become Grow Right
+- Your existing cooldown settings move into the new Main group automatically
+- Importing profiles from this version into an older version of Castborn, or downgrading after updating, is not supported
+
 **v8.1.3**
 
 - Forever: targeting a party member no longer throws an endless castbar error

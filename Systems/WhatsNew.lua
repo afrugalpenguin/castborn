@@ -14,6 +14,25 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.2.0",
+        features = {
+            "Cooldown groups: up to 8 groups, each with its own position, layout and Masque group",
+            "Manage cooldown groups from Options > Cooldowns: tabs, new, rename, delete, reorder and Move to",
+            "A Centre grow direction for cooldown groups",
+            "Empty cooldown groups show placeholder slots while the options are open",
+            "Resource Bars: your health and power bars in one movable frame",
+            "Castbars and resource bars can wear a Masque skin, or a built-in Bar Skin",
+            "Forever: the Proc Tracker is back, and works in combat",
+            "Forever: the proc list now matches Forever's talents for every class",
+        },
+        changes = {
+            "Grow Down is gone from the cooldown options; saved Grow Down becomes Grow Right",
+            "Existing cooldown settings move into the new Main group automatically",
+            "Importing profiles from this version into an older version, or downgrading, is not supported",
+        },
+        fixes = {},
+    },
+    {
         version = "8.1.3",
         features = {},
         fixes = {
