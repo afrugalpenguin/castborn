@@ -243,6 +243,14 @@ describe("Forever proc tracker", function()
             assert.are.equal(17, fontSize(parts.stacks))
         end)
 
+        it("puts the timer under the icon, clear of Masque's stack count", function()
+            local parts = PT.GetButtonParts()[1]
+            local point = called(parts.duration, "SetPoint")[1]
+            assert.are.equal("TOP", point[2])
+            assert.are.equal(parts.button, point[3])
+            assert.are.equal("BOTTOM", point[4])
+        end)
+
         it("resizes the text when the icon size changes", function()
             CastbornDB.procs.iconSize = 40
             PT:UpdateLayout()

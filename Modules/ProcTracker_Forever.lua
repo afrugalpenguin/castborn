@@ -486,8 +486,9 @@ function ProcTracker.InitButton(b)
     parts.border:Hide()
 
     -- Sized by SizeButton, after Masque, so a skin cannot shrink them
+    -- Under the icon: Masque places the stack count in the bottom-right corner
     parts.duration = b:CreateFontString(nil, "OVERLAY")
-    parts.duration:SetPoint("BOTTOM", 0, -2)
+    parts.duration:SetPoint("TOP", b, "BOTTOM", 0, -1)
 
     parts.stacks = b:CreateFontString(nil, "OVERLAY")
     parts.stacks:SetPoint("BOTTOMRIGHT", -1, 1)
@@ -615,7 +616,7 @@ local function TestFrame(i)
         f.cooldown:Hide()
         f.duration = f:CreateFontString(nil, "OVERLAY")
         f.duration:SetFont(Castborn:GetBarFont(), 10, "OUTLINE")
-        f.duration:SetPoint("BOTTOM", 0, -2)
+        f.duration:SetPoint("TOP", f, "BOTTOM", 0, -1)
         testFrames[i] = f
     end
     return testFrames[i]
