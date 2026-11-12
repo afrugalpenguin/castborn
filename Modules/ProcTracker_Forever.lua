@@ -18,64 +18,119 @@ Castborn.ProcTracker = ProcTracker
 local GROUP_KEY = "procs"
 local MAX_PROCS = 8
 
--- Forever buff IDs (not the talents'), from ForeverDB (foreverdb.net), build 1.60.1.70888.
--- Names must match the buff's name, which is what learning matches on, so an unverified ID
--- corrects itself the first time the proc is seen out of combat.
+-- Forever buff IDs (not the talents'), from ForeverDB's spell data (foreverdb.net), build
+-- 1.60.1.70888. Season of Discovery spells left in the client but taught by nothing on Forever
+-- (Icy Veins, Hot Streak, Backdraft, Surge of Light, Lock and Load, Blood Surge, The Art of War)
+-- are left out. Names must match the buff's name, which is what learning matches on, so an ID
+-- that turns out wrong corrects itself the first time the proc is seen out of combat.
+-- "matched by name" = the talent is scripted on the server, so the data has no talent-to-buff link.
 ProcTracker.classProcs = {
     MAGE = {
         { spellId = 12536, name = "Clearcasting" },       -- Arcane Concentration
         { spellId = 12042, name = "Arcane Power" },
         { spellId = 12043, name = "Presence of Mind" },
         { spellId = 28682, name = "Combustion" },
-        { spellId = 425121, name = "Icy Veins" },
         { spellId = 400589, name = "Missile Barrage" },
-        { spellId = 48108, name = "Hot Streak" },         -- unverified
+        { spellId = 1326083, name = "Missile Barrage" },  -- Forever variant, same buff name
+        { spellId = 400625, name = "Heating Up" },        -- replaces Hot Streak; matched by name
+        { spellId = 400669, name = "Fingers of Frost" },  -- two charges; matched by name
+        { spellId = 400670, name = "Fingers of Frost" },  -- one charge
+        { spellId = 400573, name = "Arcane Blast" },      -- stacking self-buff
     },
     WARLOCK = {
-        { spellId = 17941, name = "Shadow Trance" },      -- Nightfall
-        { spellId = 427713, name = "Backdraft" },         -- unverified
-        { spellId = 440873, name = "Decimation" },        -- unverified
+        { spellId = 17941, name = "Shadow Trance" },      -- Nightfall; matched by name
+        { spellId = 440873, name = "Decimation" },        -- matched by name
+        { spellId = 1242853, name = "Soul Harvest" },     -- matched by name
+        { spellId = 18288, name = "Amplify Curse" },
+        { spellId = 18708, name = "Fel Domination" },
+        { spellId = 1293816, name = "Shadow" },           -- Shadow and Flame; matched by name
+        { spellId = 426311, name = "Flame" },             -- Shadow and Flame; matched by name
     },
     PRIEST = {
         { spellId = 14751, name = "Inner Focus" },
         { spellId = 15271, name = "Spirit Tap" },
-        { spellId = 431666, name = "Surge of Light" },    -- unverified
+        { spellId = 1284536, name = "Holy Purpose" },     -- from the Searing Light talent
+        { spellId = 27828, name = "Focused Casting" },    -- Martyrdom
+        { spellId = 1326168, name = "Dark Inspiration" }, -- matched by name
+        { spellId = 10060, name = "Power Infusion" },
+        { spellId = 27813, name = "Blessed Recovery" },
     },
     DRUID = {
         { spellId = 16870, name = "Clearcasting" },       -- Omen of Clarity
         { spellId = 16886, name = "Nature's Grace" },
         { spellId = 17116, name = "Nature's Swiftness" },
+        { spellId = 408255, name = "Eclipse" },           -- matched by name
+        { spellId = 1330763, name = "Poised" },
     },
     SHAMAN = {
         { spellId = 16246, name = "Clearcasting" },       -- Elemental Focus
         { spellId = 16188, name = "Nature's Swiftness" },
         { spellId = 16257, name = "Flurry" },             -- one ID for every rank
         { spellId = 408505, name = "Maelstrom Weapon" },
+        { spellId = 30165, name = "Elemental Devastation" }, -- matched by name
+        { spellId = 16166, name = "Lightning Mastery" },
+        { spellId = 425336, name = "Rage of the Farseer" },
+        { spellId = 1238931, name = "Improved Stormstrike" }, -- matched by name
     },
     PALADIN = {
         { spellId = 20050, name = "Vengeance" },          -- every talent rank puts 20050 on you
         { spellId = 20216, name = "Divine Favor" },
         -- No seals: on Forever Seal of Command is an ordinary seal, and the seal tracker shows seals
-        { spellId = 437063, name = "Infusion of Light" },
-        { spellId = 426157, name = "The Art of War" },    -- unverified
+        { spellId = 437063, name = "Infusion of Light" }, -- matched by name
+        { spellId = 20128, name = "Redoubt" },            -- matched by name
+        { spellId = 1326084, name = "Reckoning" },        -- matched by name
+        { spellId = 1311033, name = "Iron Creed" },
+        { spellId = 1328551, name = "Shieldsworn" },      -- matched by name
+        { spellId = 20925, name = "Holy Shield" },
+        { spellId = 20927, name = "Holy Shield" },
+        { spellId = 20928, name = "Holy Shield" },
+        { spellId = 1239570, name = "Holy Shield" },
     },
     HUNTER = {
-        { spellId = 6150, name = "Quick Shots" },         -- unverified
+        { spellId = 6150, name = "Quick Shots" },         -- Aspect of the Hawk
+        { spellId = 1299448, name = "Quick Strikes" },    -- Aspect of the Beast
         { spellId = 3045, name = "Rapid Fire" },
-        { spellId = 415414, name = "Lock and Load" },     -- unverified
+        { spellId = 415407, name = "Rapid Killing" },     -- matched by name
+        { spellId = 1310726, name = "Expose Prey" },
+        { spellId = 1310687, name = "Sniper Shot" },
+        { spellId = 1242688, name = "Resourcefulness" },
+        { spellId = 1242512, name = "Rapid Recuperation" }, -- matched by name
+        { spellId = 1317257, name = "Strider Kick" },
+        { spellId = 19263, name = "Deterrence" },
     },
     WARRIOR = {
         { spellId = 12880, name = "Enrage" },             -- one ID for every rank
         { spellId = 12966, name = "Flurry" },             -- one ID for every rank
         { spellId = 12328, name = "Death Wish" },         -- 12292 and 12328 swapped from TBC
         { spellId = 12292, name = "Sweeping Strikes" },
-        { spellId = 413380, name = "Blood Surge" },       -- unverified
+        { spellId = 1719, name = "Recklessness" },
+        { spellId = 1282733, name = "Overpower" },        -- Forever gives Overpower a real aura
+        { spellId = 1329555, name = "Reckless Swings" },
+        { spellId = 1289681, name = "Bloodthrill" },      -- matched by name
+        { spellId = 1323969, name = "Gore Drinker" },
+        { spellId = 402975, name = "Victorious" },        -- Victory Rush; unconfirmed on Forever
+        { spellId = 23881, name = "Bloodthirst" },        -- movement speed, one ID per rank
+        { spellId = 23892, name = "Bloodthirst" },
+        { spellId = 23893, name = "Bloodthirst" },
+        { spellId = 23894, name = "Bloodthirst" },
+        { spellId = 18499, name = "Berserker Rage" },
     },
     ROGUE = {
         { spellId = 13750, name = "Adrenaline Rush" },
         { spellId = 13877, name = "Blade Flurry" },
-        { spellId = 6774, name = "Slice and Dice" },      -- rank 2; rank 1 (5171) is learned
+        { spellId = 5171, name = "Slice and Dice" },
+        { spellId = 6774, name = "Slice and Dice" },
         { spellId = 14177, name = "Cold Blood" },
+        { spellId = 14143, name = "Remorseless" },        -- matched by name
+        { spellId = 1310703, name = "Venom" },
+        { spellId = 14278, name = "Ghostly Strike" },     -- dodge
+        { spellId = 1329326, name = "Ghostly Strike" },   -- next opener needs no Stealth
+        { spellId = 1330741, name = "Poised" },
+        { spellId = 1329282, name = "Quick Getaway" },
+        { spellId = 2983, name = "Sprint" },
+        { spellId = 8696, name = "Sprint" },
+        { spellId = 11305, name = "Sprint" },
+        { spellId = 5277, name = "Evasion" },
     },
 }
 
@@ -251,13 +306,17 @@ local function LoadClassList(db, playerClass)
         end
         db.loadedForClass = playerClass
     elseif classList then
+        -- A name can carry several IDs (ranks, or variants that share a buff name)
         local canonical = {}
-        for _, spell in ipairs(classList) do canonical[spell.name] = spell.spellId end
+        for _, spell in ipairs(classList) do
+            canonical[spell.name] = canonical[spell.name] or {}
+            canonical[spell.name][spell.spellId] = true
+        end
         local shared = {}
         for _, spell in ipairs(ProcTracker.sharedProcs) do shared[spell.spellId] = true end
         for i = #db.trackedSpells, 1, -1 do
             local saved = db.trackedSpells[i]
-            if not shared[saved.spellId] and canonical[saved.name] ~= saved.spellId then
+            if not shared[saved.spellId] and not (canonical[saved.name] or {})[saved.spellId] then
                 table.remove(db.trackedSpells, i)
             end
         end
