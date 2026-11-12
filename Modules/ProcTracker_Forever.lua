@@ -18,19 +18,70 @@ Castborn.ProcTracker = ProcTracker
 local GROUP_KEY = "procs"
 local MAX_PROCS = 8
 
--- Forever buff IDs (not the talents'). Names must match the buff's name, which is what
--- learning matches on.
+-- Forever buff IDs (not the talents'), from ForeverDB (foreverdb.net), build 1.60.1.70888.
+-- Names must match the buff's name, which is what learning matches on, so an unverified ID
+-- corrects itself the first time the proc is seen out of combat.
 ProcTracker.classProcs = {
+    MAGE = {
+        { spellId = 12536, name = "Clearcasting" },       -- Arcane Concentration
+        { spellId = 12042, name = "Arcane Power" },
+        { spellId = 12043, name = "Presence of Mind" },
+        { spellId = 28682, name = "Combustion" },
+        { spellId = 425121, name = "Icy Veins" },
+        { spellId = 400589, name = "Missile Barrage" },
+        { spellId = 48108, name = "Hot Streak" },         -- unverified
+    },
+    WARLOCK = {
+        { spellId = 17941, name = "Shadow Trance" },      -- Nightfall
+        { spellId = 427713, name = "Backdraft" },         -- unverified
+        { spellId = 440873, name = "Decimation" },        -- unverified
+    },
+    PRIEST = {
+        { spellId = 14751, name = "Inner Focus" },
+        { spellId = 15271, name = "Spirit Tap" },
+        { spellId = 431666, name = "Surge of Light" },    -- unverified
+    },
+    DRUID = {
+        { spellId = 16870, name = "Clearcasting" },       -- Omen of Clarity
+        { spellId = 16886, name = "Nature's Grace" },
+        { spellId = 17116, name = "Nature's Swiftness" },
+    },
+    SHAMAN = {
+        { spellId = 16246, name = "Clearcasting" },       -- Elemental Focus
+        { spellId = 16188, name = "Nature's Swiftness" },
+        { spellId = 16257, name = "Flurry" },             -- one ID for every rank
+        { spellId = 408505, name = "Maelstrom Weapon" },
+    },
     PALADIN = {
         { spellId = 20050, name = "Vengeance" },          -- every talent rank puts 20050 on you
+        { spellId = 20216, name = "Divine Favor" },
+        { spellId = 20375, name = "Seal of Command" },    -- rank 1; other ranks are learned
+        { spellId = 437063, name = "Infusion of Light" },
+        { spellId = 426157, name = "The Art of War" },    -- unverified
+    },
+    HUNTER = {
+        { spellId = 6150, name = "Quick Shots" },         -- unverified
+        { spellId = 3045, name = "Rapid Fire" },
+        { spellId = 415414, name = "Lock and Load" },     -- unverified
+    },
+    WARRIOR = {
+        { spellId = 12880, name = "Enrage" },             -- one ID for every rank
+        { spellId = 12966, name = "Flurry" },             -- one ID for every rank
+        { spellId = 12328, name = "Death Wish" },         -- 12292 and 12328 swapped from TBC
+        { spellId = 12292, name = "Sweeping Strikes" },
+        { spellId = 413380, name = "Blood Surge" },       -- unverified
+    },
+    ROGUE = {
+        { spellId = 13750, name = "Adrenaline Rush" },
+        { spellId = 13877, name = "Blade Flurry" },
+        { spellId = 6774, name = "Slice and Dice" },      -- rank 2; rank 1 (5171) is learned
+        { spellId = 14177, name = "Cold Blood" },
     },
 }
 
--- Trinket and other non-class procs, shared across classes
-ProcTracker.sharedProcs = {
-    { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
-    { spellId = 34597, name = "Power of Arcanagos" }, -- Robe of the Elder Scribes
-}
+-- Trinket and other non-class procs, shared across classes. The TBC ones (Quagmirran's Eye,
+-- Robe of the Elder Scribes) are not on Forever.
+ProcTracker.sharedProcs = {}
 
 -- As on TBC, so the options page and profiles work the same
 local defaults = {
