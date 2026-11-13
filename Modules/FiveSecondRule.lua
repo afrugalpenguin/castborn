@@ -10,9 +10,6 @@ Castborn.FiveSecondRule = FiveSecondRule
 local CB = Castborn
 CB.fsrFrame = nil
 
--- Reference to the player castbar for anchoring
-local playerCastbar = nil
-
 local lastManaSpend = 0
 local FSR_DURATION = 5.0
 local previousMana = 0
@@ -174,10 +171,39 @@ local function UpdateFSR()
     end
 end
 
+-- Whether this class's bar sits above the swing timer. Saved per class, because settings
+-- are account-wide and the default differs: paladins rarely see the castbar, casters do.
+function FiveSecondRule:AnchorsToSwing()
+    local cfg = CastbornDB.fsr
+    local class = CB:GetPlayerInfo().class
+    local choice = cfg and cfg.anchorToSwingByClass and cfg.anchorToSwingByClass[class]
+    if choice ~= nil then return choice end
+    local defaults = CB.ClassDefaults and CB.ClassDefaults:GetDefaults(class) or {}
+    return defaults.fsrAboveSwing == true
+end
+
+function FiveSecondRule:SetAnchorsToSwing(value)
+    CastbornDB.fsr = CastbornDB.fsr or {}
+    CastbornDB.fsr.anchorToSwingByClass = CastbornDB.fsr.anchorToSwingByClass or {}
+    CastbornDB.fsr.anchorToSwingByClass[CB:GetPlayerInfo().class] = value and true or false
+end
+
+-- The top swing bar, when the bar should sit above the swing timer instead of the castbar
+local function SwingAnchor()
+    if not FiveSecondRule:AnchorsToSwing() then return nil end
+    return CB.swingTimers and CB.swingTimers.mainhand
+end
+
 local function SyncFSRWidth()
     if not CB.fsrFrame then return end
     if CastbornDB.fsr and CastbornDB.fsr.anchored ~= false then
-        local width = Castborn.Anchoring and Castborn.Anchoring:GetCastbarBarWidth()
+        local swing = SwingAnchor()
+        local width
+        if swing then
+            width = swing:GetWidth()
+        else
+            width = Castborn.Anchoring and Castborn.Anchoring:GetCastbarBarWidth()
+        end
         if width then
             CB.fsrFrame:SetWidth(width)
         end
@@ -187,20 +213,74 @@ local function SyncFSRWidth()
     end
 end
 
--- Detach / reattach FSR from castbar
+-- Anchor above the swing timer if chosen and present, otherwise above the player castbar
+function FiveSecondRule:Reattach()
+    local frame, cfg = CB.fsrFrame, CastbornDB.fsr
+    if not (frame and cfg and Castborn.Anchoring) then return false end
+    local swing = SwingAnchor()
+    if swing then
+        cfg.anchored = true
+        Castborn.Anchoring:Anchor(frame, swing, "TOP", 0, 2)
+        SyncFSRWidth()
+        return true
+    end
+    return Castborn.Anchoring:ReattachToCastbar(frame, cfg, "TOP", 2, SyncFSRWidth)
+end
+
+-- Detach / reattach FSR
 CB:RegisterAnchorCallbacks("FSR", "5 Second Rule", function() return CB.fsrFrame end, "fsr", "TOP", 2, {
     syncCallback = SyncFSRWidth,
+    reattach = function() FiveSecondRule:Reattach() end,
 })
 
 -- Listen for player castbar creation
-CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function(frame)
-    playerCastbar = frame
-
-    -- Anchor ABOVE the player castbar if configured
-    if CB.fsrFrame and CastbornDB.fsr and CastbornDB.fsr.anchored ~= false and Castborn.Anchoring then
-        Castborn.Anchoring:ReattachToCastbar(CB.fsrFrame, CastbornDB.fsr, "TOP", 2, SyncFSRWidth)
+CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function()
+    -- Anchor ABOVE the player castbar (or swing timer) if configured
+    if CastbornDB.fsr and CastbornDB.fsr.anchored ~= false then
+        FiveSecondRule:Reattach()
     end
 end)
+
+-- The swing timer is built after this bar, so move above it once everything exists
+CB:RegisterCallback("READY", function()
+    if CastbornDB.fsr and CastbornDB.fsr.anchored ~= false and SwingAnchor() then
+        FiveSecondRule:Reattach()
+    end
+end)
+
+CB:RegisterCallback("SWING_RESIZED", SyncFSRWidth)
+
+function FiveSecondRule:MarkManaSpent()
+    lastManaSpend = GetTime()
+end
+
+-- Mana-spend detection. FiveSecondRule_Forever.lua replaces RegisterEvents and
+-- OnPlayerEvent, because mana is a secret value there and cannot be compared.
+function FiveSecondRule:RegisterEvents(eventFrame)
+    previousMana = UnitPower("player", POWER_MANA) or UnitMana("player") or 0
+    eventFrame:RegisterEvent("UNIT_POWER_UPDATE")
+    eventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    if not UnitPower then eventFrame:RegisterEvent("UNIT_MANA") end
+end
+
+function FiveSecondRule:OnPlayerEvent(event, ...)
+    if event == "UNIT_POWER_UPDATE" then
+        local powerType = ...
+        if powerType == "MANA" then
+            local currentMana = UnitPower and UnitPower("player", POWER_MANA) or UnitMana("player")
+            if currentMana < previousMana and (previousMana - currentMana) > 1 then
+                self:MarkManaSpent()
+            end
+            previousMana = currentMana
+        end
+    elseif event == "UNIT_MANA" then
+        local currentMana = UnitMana("player") or 0
+        if currentMana < previousMana and (previousMana - currentMana) > 1 then
+            self:MarkManaSpent()
+        end
+        previousMana = currentMana
+    end
+end
 
 function CB:InitFSR()
     if not PlayerUsesMana() then CB:Print("Five Second Rule tracker disabled (non-mana class)") return end
@@ -215,40 +295,18 @@ function CB:InitFSR()
     end
 
     CB.fsrFrame = CreateFSRBar()
-    previousMana = UnitPower("player", POWER_MANA) or UnitMana("player") or 0
 
     -- If player castbar already exists and we should be anchored, attach now
-    if CastbornDB.fsr.anchored ~= false and Castborn.Anchoring then
-        playerCastbar = playerCastbar or (CB.castbars and CB.castbars.player)
-        if playerCastbar then
-            Castborn.Anchoring:ReattachToCastbar(CB.fsrFrame, CastbornDB.fsr, "TOP", 2, SyncFSRWidth)
-        end
+    if CastbornDB.fsr.anchored ~= false then
+        FiveSecondRule:Reattach()
     end
 
     local eventFrame = CreateFrame("Frame")
-    eventFrame:RegisterEvent("UNIT_POWER_UPDATE")
-    eventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-    if not UnitPower then eventFrame:RegisterEvent("UNIT_MANA") end
+    FiveSecondRule:RegisterEvents(eventFrame)
 
     eventFrame:SetScript("OnEvent", function(self, event, unit, ...)
         if unit ~= "player" then return end
-
-        if event == "UNIT_POWER_UPDATE" then
-            local powerType = ...
-            if powerType == "MANA" then
-                local currentMana = UnitPower and UnitPower("player", POWER_MANA) or UnitMana("player")
-                if currentMana < previousMana and (previousMana - currentMana) > 1 then
-                    lastManaSpend = GetTime()
-                end
-                previousMana = currentMana
-            end
-        elseif event == "UNIT_MANA" then
-            local currentMana = UnitMana("player") or 0
-            if currentMana < previousMana and (previousMana - currentMana) > 1 then
-                lastManaSpend = GetTime()
-            end
-            previousMana = currentMana
-        end
+        FiveSecondRule:OnPlayerEvent(event, ...)
     end)
 
     CB:CreateThrottledUpdater(0.02, UpdateFSR)
@@ -264,16 +322,8 @@ function CB:TestFSR()
     testModeActive = true
 
     -- Ensure anchoring is applied in test mode
-    if CastbornDB.fsr and CastbornDB.fsr.anchored ~= false and Castborn.Anchoring then
-        -- Try to find playerCastbar if not set
-        if not playerCastbar then
-            playerCastbar = CB.castbars and CB.castbars.player
-        end
-        if playerCastbar then
-            local anchorTarget = playerCastbar.bar or playerCastbar
-            Castborn.Anchoring:Anchor(CB.fsrFrame, anchorTarget, "TOP", 0, 2)
-            SyncFSRWidth()
-        end
+    if CastbornDB.fsr and CastbornDB.fsr.anchored ~= false then
+        FiveSecondRule:Reattach()
     end
 
     -- Show the bar in "active" state (counting down)

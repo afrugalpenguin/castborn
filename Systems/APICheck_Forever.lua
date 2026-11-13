@@ -348,6 +348,14 @@ APICheck.probes = {
     { "C_Spell.GetSpellCooldown", "Kick" },
     { "C_Spell.GetSpellCooldown", "Pummel" },
     { "C_Spell.GetSpellCooldown", "Earth Shock" },
+    -- Five-second rule; run in combat to check the mana cost stays plain
+    { "C_Spell.GetSpellPowerCost", "Holy Light" },
+    { "C_Spell.GetSpellPowerCost", "Frostbolt" },
+    { "C_Spell.GetSpellPowerCost", "Lesser Heal" },
+    { "C_Spell.GetSpellPowerCost", "Shadow Bolt" },
+    { "C_Spell.GetSpellPowerCost", "Healing Touch" },
+    { "C_Spell.GetSpellPowerCost", "Healing Wave" },
+    { "C_Spell.GetSpellPowerCost", "Serpent Sting" },
     -- Resource bars; run in combat to see which are secret
     { "UnitHealth", "player" },
     { "UnitHealthMax", "player" },

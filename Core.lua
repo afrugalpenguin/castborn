@@ -827,8 +827,9 @@ end
 -- @param dbKey      Key into CastbornDB for position data (e.g. "dots")
 -- @param side       Anchor side for ReattachToCastbar (e.g. "BOTTOM", "TOP")
 -- @param offset     Pixel offset for ReattachToCastbar (e.g. -2, 2)
--- @param opts       Optional table: { onDetach = fn, syncCallback = fn }
---                   syncCallback is passed to ReattachToCastbar and also called on detach
+-- @param opts       Optional table: { onDetach = fn, syncCallback = fn, reattach = fn }
+--                   syncCallback is passed to ReattachToCastbar and also called on detach;
+--                   reattach, if given, replaces ReattachToCastbar (for frames with another anchor)
 function CB:RegisterAnchorCallbacks(name, displayName, frameGetter, dbKey, side, offset, opts)
     opts = opts or {}
     local function getFrame()
@@ -851,6 +852,11 @@ function CB:RegisterAnchorCallbacks(name, displayName, frameGetter, dbKey, side,
         local frame = getFrame()
         if not frame then return end
         CastbornDB[dbKey] = CastbornDB[dbKey] or {}
+        if opts.reattach then
+            opts.reattach()
+            CB:Print(displayName .. " anchored")
+            return
+        end
         if Castborn.Anchoring then
             Castborn.Anchoring:ReattachToCastbar(frame, CastbornDB[dbKey], side, offset, opts.syncCallback)
         end

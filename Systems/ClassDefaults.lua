@@ -47,6 +47,7 @@ ClassDefaults.definitions = {
     },
     PALADIN = {
         fiveSecondRule = true,
+        fsrAboveSwing = true,  -- melee rarely see the castbar, so the bar sits on the swing timer
         swingTimer = true,
         procs = {
             { spellId = 20050, name = "Vengeance" },
