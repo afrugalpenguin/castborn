@@ -14,6 +14,17 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.4.0",
+        features = {
+            "5 Second Rule is back on Forever: it starts when you finish casting a spell that costs mana",
+            "5 Second Rule can sit above the swing timer (Anchor to Swing Timer); on by default for paladins",
+        },
+        fixes = {
+            "Proc Tracker icons now resize with the Icon Size slider when skinned by Masque",
+            "Proc timers sit under the icon, so the stack count no longer covers them",
+        },
+    },
+    {
         version = "8.3.0",
         features = {
             "Hide Blizzard Castbars now also hides Blizzard's target and focus castbars",

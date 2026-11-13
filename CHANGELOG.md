@@ -1,5 +1,12 @@
 # Changelog
 
+**v8.4.0**
+
+- 5 Second Rule (Forever): the bar is back. Forever hides your mana from addons, so the timer now starts when you finish casting a spell that costs mana. A free cast, such as under Clearcasting, still starts it
+- 5 Second Rule: new Anchor to Swing Timer option puts the bar above your swing timer, for melee who rarely see the castbar. On by default for paladins; other classes stay on the castbar, and each class keeps its own choice
+- Proc Tracker (Forever, with Masque): changing Icon Size now resizes the icon, rather than only moving it
+- Proc Tracker (Forever): the timer now sits under the icon, so the stack count no longer covers it
+
 **v8.3.0**
 
 - Hide Blizzard Castbars (on the player castbar page) now also hides Blizzard's target and focus castbars, on TBC and Forever. It's on by default, so after updating you'll only see Castborn's target and focus castbars; untick it and /reload to bring Blizzard's back
