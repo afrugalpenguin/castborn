@@ -202,6 +202,38 @@ CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function(frame)
     end
 end)
 
+function FiveSecondRule:MarkManaSpent()
+    lastManaSpend = GetTime()
+end
+
+-- Mana-spend detection. FiveSecondRule_Forever.lua replaces RegisterEvents and
+-- OnPlayerEvent, because mana is a secret value there and cannot be compared.
+function FiveSecondRule:RegisterEvents(eventFrame)
+    previousMana = UnitPower("player", POWER_MANA) or UnitMana("player") or 0
+    eventFrame:RegisterEvent("UNIT_POWER_UPDATE")
+    eventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    if not UnitPower then eventFrame:RegisterEvent("UNIT_MANA") end
+end
+
+function FiveSecondRule:OnPlayerEvent(event, ...)
+    if event == "UNIT_POWER_UPDATE" then
+        local powerType = ...
+        if powerType == "MANA" then
+            local currentMana = UnitPower and UnitPower("player", POWER_MANA) or UnitMana("player")
+            if currentMana < previousMana and (previousMana - currentMana) > 1 then
+                self:MarkManaSpent()
+            end
+            previousMana = currentMana
+        end
+    elseif event == "UNIT_MANA" then
+        local currentMana = UnitMana("player") or 0
+        if currentMana < previousMana and (previousMana - currentMana) > 1 then
+            self:MarkManaSpent()
+        end
+        previousMana = currentMana
+    end
+end
+
 function CB:InitFSR()
     if not PlayerUsesMana() then CB:Print("Five Second Rule tracker disabled (non-mana class)") return end
 
@@ -215,7 +247,6 @@ function CB:InitFSR()
     end
 
     CB.fsrFrame = CreateFSRBar()
-    previousMana = UnitPower("player", POWER_MANA) or UnitMana("player") or 0
 
     -- If player castbar already exists and we should be anchored, attach now
     if CastbornDB.fsr.anchored ~= false and Castborn.Anchoring then
@@ -226,29 +257,11 @@ function CB:InitFSR()
     end
 
     local eventFrame = CreateFrame("Frame")
-    eventFrame:RegisterEvent("UNIT_POWER_UPDATE")
-    eventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-    if not UnitPower then eventFrame:RegisterEvent("UNIT_MANA") end
+    FiveSecondRule:RegisterEvents(eventFrame)
 
     eventFrame:SetScript("OnEvent", function(self, event, unit, ...)
         if unit ~= "player" then return end
-
-        if event == "UNIT_POWER_UPDATE" then
-            local powerType = ...
-            if powerType == "MANA" then
-                local currentMana = UnitPower and UnitPower("player", POWER_MANA) or UnitMana("player")
-                if currentMana < previousMana and (previousMana - currentMana) > 1 then
-                    lastManaSpend = GetTime()
-                end
-                previousMana = currentMana
-            end
-        elseif event == "UNIT_MANA" then
-            local currentMana = UnitMana("player") or 0
-            if currentMana < previousMana and (previousMana - currentMana) > 1 then
-                lastManaSpend = GetTime()
-            end
-            previousMana = currentMana
-        end
+        FiveSecondRule:OnPlayerEvent(event, ...)
     end)
 
     CB:CreateThrottledUpdater(0.02, UpdateFSR)

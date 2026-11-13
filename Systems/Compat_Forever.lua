@@ -41,7 +41,6 @@ end
 -- Option pages (and module checkboxes) hidden on Forever, keyed by Options.lua category id.
 -- Remove an entry when its module is ported and added to Castborn_Camelot.toc.
 Castborn.unavailableOptions = {
-    fsr = true,  -- mana is a secret value on Forever, so the bar cannot compare it
     dots = true,
     multidot = true,
     ["interrupt.lockout"] = true,  -- the lockout needs the combat log, which Forever blocks
