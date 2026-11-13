@@ -179,16 +179,6 @@ function ClassDefaults:ApplyFirstRunDefaults()
     Castborn:FireCallback("DEFAULTS_APPLIED")
 end
 
--- Where the five-second rule bar anchors, until the player picks for themselves.
--- Not tied to the first run: the setting is newer than most saved variables.
-function ClassDefaults:ApplyFSRAnchorDefault()
-    CastbornDB.fsr = CastbornDB.fsr or {}
-    if CastbornDB.fsr.anchorToSwing == nil then
-        CastbornDB.fsr.anchorToSwing = self:GetPlayerDefaults().fsrAboveSwing == true
-    end
-end
-
 Castborn:RegisterCallback("READY", function()
-    ClassDefaults:ApplyFSRAnchorDefault()
     ClassDefaults:ApplyFirstRunDefaults()
 end)

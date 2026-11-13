@@ -2955,14 +2955,16 @@ end
 -- The bar sits above the castbar or, for melee who rarely cast, above the swing timer.
 -- The two boxes are one choice: ticking one unticks the other, unticking either detaches.
 function moduleBuilders.fsr(parent, db, y)
+    local FSR = Castborn.FiveSecondRule
     local castbarCB, swingCB
     local function sync()
-        castbarCB:SetChecked(db.anchored ~= false and not db.anchorToSwing)
-        swingCB:SetChecked(db.anchored ~= false and db.anchorToSwing == true)
+        local toSwing = FSR:AnchorsToSwing()
+        castbarCB:SetChecked(db.anchored ~= false and not toSwing)
+        swingCB:SetChecked(db.anchored ~= false and toSwing)
     end
     local function choose(toSwing, checked)
         if checked then
-            db.anchorToSwing = toSwing
+            FSR:SetAnchorsToSwing(toSwing)
             db.anchored = true
             Castborn:FireCallback("REATTACH_FSR")
         else

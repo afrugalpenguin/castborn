@@ -171,10 +171,26 @@ local function UpdateFSR()
     end
 end
 
+-- Whether this class's bar sits above the swing timer. Saved per class, because settings
+-- are account-wide and the default differs: paladins rarely see the castbar, casters do.
+function FiveSecondRule:AnchorsToSwing()
+    local cfg = CastbornDB.fsr
+    local class = CB:GetPlayerInfo().class
+    local choice = cfg and cfg.anchorToSwingByClass and cfg.anchorToSwingByClass[class]
+    if choice ~= nil then return choice end
+    local defaults = CB.ClassDefaults and CB.ClassDefaults:GetDefaults(class) or {}
+    return defaults.fsrAboveSwing == true
+end
+
+function FiveSecondRule:SetAnchorsToSwing(value)
+    CastbornDB.fsr = CastbornDB.fsr or {}
+    CastbornDB.fsr.anchorToSwingByClass = CastbornDB.fsr.anchorToSwingByClass or {}
+    CastbornDB.fsr.anchorToSwingByClass[CB:GetPlayerInfo().class] = value and true or false
+end
+
 -- The top swing bar, when the bar should sit above the swing timer instead of the castbar
 local function SwingAnchor()
-    local cfg = CastbornDB.fsr
-    if not (cfg and cfg.anchorToSwing) then return nil end
+    if not FiveSecondRule:AnchorsToSwing() then return nil end
     return CB.swingTimers and CB.swingTimers.mainhand
 end
 
