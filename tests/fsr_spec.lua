@@ -57,7 +57,7 @@ end)
 describe("Five second rule anchoring", function()
     local FSR = Castborn.FiveSecondRule
     local CB = Castborn
-    local anchoredTo, castbarReattaches, realAnchoring, realDB
+    local anchoredTo, castbarReattaches, realAnchoring, realDB, realInfo
 
     local function sized(width)
         local w = width
@@ -69,7 +69,8 @@ describe("Five second rule anchoring", function()
 
     before_each(function()
         anchoredTo, castbarReattaches = nil, 0
-        realAnchoring, realDB = Castborn.Anchoring, _G.CastbornDB
+        realAnchoring, realDB, realInfo = Castborn.Anchoring, _G.CastbornDB, Castborn.playerInfo
+        Castborn.playerInfo = { class = "MAGE" }
         Castborn.Anchoring = {
             Anchor = function(_, frame, parent, position, x, y)
                 anchoredTo = { parent = parent, position = position, x = x, y = y }
@@ -88,7 +89,7 @@ describe("Five second rule anchoring", function()
     end)
 
     after_each(function()
-        Castborn.Anchoring, _G.CastbornDB = realAnchoring, realDB
+        Castborn.Anchoring, _G.CastbornDB, Castborn.playerInfo = realAnchoring, realDB, realInfo
         CB.fsrFrame = nil
         CB.swingTimers = {}
     end)
@@ -100,7 +101,7 @@ describe("Five second rule anchoring", function()
     end)
 
     it("sits above the main-hand swing bar when chosen", function()
-        CastbornDB.fsr.anchorToSwing = true
+        FSR:SetAnchorsToSwing(true)
         FSR:Reattach()
         assert.are.equal(CB.swingTimers.mainhand, anchoredTo.parent)
         assert.are.equal("TOP", anchoredTo.position)
@@ -109,13 +110,13 @@ describe("Five second rule anchoring", function()
     end)
 
     it("matches the swing bar's width above the swing timer", function()
-        CastbornDB.fsr.anchorToSwing = true
+        FSR:SetAnchorsToSwing(true)
         FSR:Reattach()
         assert.are.equal(180, CB.fsrFrame:GetWidth())
     end)
 
     it("follows the swing bar when it is resized", function()
-        CastbornDB.fsr.anchorToSwing = true
+        FSR:SetAnchorsToSwing(true)
         FSR:Reattach()
         CB.swingTimers.mainhand:SetWidth(220)
         CB:FireCallback("SWING_RESIZED")
@@ -123,26 +124,26 @@ describe("Five second rule anchoring", function()
     end)
 
     it("falls back to the castbar when there is no swing timer", function()
-        CastbornDB.fsr.anchorToSwing = true
+        FSR:SetAnchorsToSwing(true)
         CB.swingTimers = {}
         FSR:Reattach()
         assert.are.equal(1, castbarReattaches)
     end)
 
     it("reattaches to the swing timer from the options toggle", function()
-        CastbornDB.fsr.anchorToSwing = true
+        FSR:SetAnchorsToSwing(true)
         CB:FireCallback("REATTACH_FSR")
         assert.are.equal(CB.swingTimers.mainhand, anchoredTo.parent)
     end)
 
     it("moves above the swing timer once it exists at login", function()
-        CastbornDB.fsr.anchorToSwing = true
+        FSR:SetAnchorsToSwing(true)
         CB:FireCallback("READY")
         assert.are.equal(CB.swingTimers.mainhand, anchoredTo.parent)
     end)
 
     it("stays put at login when detached", function()
-        CastbornDB.fsr.anchorToSwing = true
+        FSR:SetAnchorsToSwing(true)
         CastbornDB.fsr.anchored = false
         CB:FireCallback("READY")
         assert.is_nil(anchoredTo)
