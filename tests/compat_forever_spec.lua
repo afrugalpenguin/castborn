@@ -110,6 +110,10 @@ describe("Compat_Forever", function()
         assert.is_nil(Castborn.unavailableOptions.swing)
     end)
 
+    it("shows the five-second rule page", function()
+        assert.is_nil(Castborn.unavailableOptions.fsr)
+    end)
+
     it("shows the item tracker page", function()
         assert.is_nil(Castborn.unavailableOptions.itemtracker)
     end)

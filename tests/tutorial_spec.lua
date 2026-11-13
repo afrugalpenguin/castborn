@@ -111,11 +111,14 @@ describe("Tutorial steps", function()
             assert.is_true(T:IsStepShown(indexOf(T, "procs")))
         end)
 
-        it("describes the GCD bar without the five-second rule", function()
+        it("keeps both companion checkboxes for a mage", function()
             local T = load("MAGE", true)
-            local step = T.steps[indexOf(T, "castbar_companions")]
-            assert.are.equal("GCD Indicator", step.title)
-            assert.are.same({ "gcd" }, step.configKeys)
+            assert.are.same({ "fsr", "gcd" }, T:GetShownKeys(T.steps[indexOf(T, "castbar_companions")]))
+        end)
+
+        it("drops the five-second rule checkbox for a warrior", function()
+            local T = load("WARRIOR", true)
+            assert.are.same({ "gcd" }, T:GetShownKeys(T.steps[indexOf(T, "castbar_companions")]))
         end)
 
         it("numbers the steps out of those shown", function()
