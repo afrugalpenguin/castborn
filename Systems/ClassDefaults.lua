@@ -47,6 +47,7 @@ ClassDefaults.definitions = {
     },
     PALADIN = {
         fiveSecondRule = true,
+        fsrAboveSwing = true,  -- melee rarely see the castbar, so the bar sits on the swing timer
         swingTimer = true,
         procs = {
             { spellId = 20050, name = "Vengeance" },
@@ -178,6 +179,16 @@ function ClassDefaults:ApplyFirstRunDefaults()
     Castborn:FireCallback("DEFAULTS_APPLIED")
 end
 
+-- Where the five-second rule bar anchors, until the player picks for themselves.
+-- Not tied to the first run: the setting is newer than most saved variables.
+function ClassDefaults:ApplyFSRAnchorDefault()
+    CastbornDB.fsr = CastbornDB.fsr or {}
+    if CastbornDB.fsr.anchorToSwing == nil then
+        CastbornDB.fsr.anchorToSwing = self:GetPlayerDefaults().fsrAboveSwing == true
+    end
+end
+
 Castborn:RegisterCallback("READY", function()
+    ClassDefaults:ApplyFSRAnchorDefault()
     ClassDefaults:ApplyFirstRunDefaults()
 end)
