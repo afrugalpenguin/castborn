@@ -10,9 +10,6 @@ Castborn.FiveSecondRule = FiveSecondRule
 local CB = Castborn
 CB.fsrFrame = nil
 
--- Reference to the player castbar for anchoring
-local playerCastbar = nil
-
 local lastManaSpend = 0
 local FSR_DURATION = 5.0
 local previousMana = 0
@@ -174,10 +171,23 @@ local function UpdateFSR()
     end
 end
 
+-- The top swing bar, when the bar should sit above the swing timer instead of the castbar
+local function SwingAnchor()
+    local cfg = CastbornDB.fsr
+    if not (cfg and cfg.anchorToSwing) then return nil end
+    return CB.swingTimers and CB.swingTimers.mainhand
+end
+
 local function SyncFSRWidth()
     if not CB.fsrFrame then return end
     if CastbornDB.fsr and CastbornDB.fsr.anchored ~= false then
-        local width = Castborn.Anchoring and Castborn.Anchoring:GetCastbarBarWidth()
+        local swing = SwingAnchor()
+        local width
+        if swing then
+            width = swing:GetWidth()
+        else
+            width = Castborn.Anchoring and Castborn.Anchoring:GetCastbarBarWidth()
+        end
         if width then
             CB.fsrFrame:SetWidth(width)
         end
@@ -187,20 +197,42 @@ local function SyncFSRWidth()
     end
 end
 
--- Detach / reattach FSR from castbar
+-- Anchor above the swing timer if chosen and present, otherwise above the player castbar
+function FiveSecondRule:Reattach()
+    local frame, cfg = CB.fsrFrame, CastbornDB.fsr
+    if not (frame and cfg and Castborn.Anchoring) then return false end
+    local swing = SwingAnchor()
+    if swing then
+        cfg.anchored = true
+        Castborn.Anchoring:Anchor(frame, swing, "TOP", 0, 2)
+        SyncFSRWidth()
+        return true
+    end
+    return Castborn.Anchoring:ReattachToCastbar(frame, cfg, "TOP", 2, SyncFSRWidth)
+end
+
+-- Detach / reattach FSR
 CB:RegisterAnchorCallbacks("FSR", "5 Second Rule", function() return CB.fsrFrame end, "fsr", "TOP", 2, {
     syncCallback = SyncFSRWidth,
+    reattach = function() FiveSecondRule:Reattach() end,
 })
 
 -- Listen for player castbar creation
-CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function(frame)
-    playerCastbar = frame
-
-    -- Anchor ABOVE the player castbar if configured
-    if CB.fsrFrame and CastbornDB.fsr and CastbornDB.fsr.anchored ~= false and Castborn.Anchoring then
-        Castborn.Anchoring:ReattachToCastbar(CB.fsrFrame, CastbornDB.fsr, "TOP", 2, SyncFSRWidth)
+CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function()
+    -- Anchor ABOVE the player castbar (or swing timer) if configured
+    if CastbornDB.fsr and CastbornDB.fsr.anchored ~= false then
+        FiveSecondRule:Reattach()
     end
 end)
+
+-- The swing timer is built after this bar, so move above it once everything exists
+CB:RegisterCallback("READY", function()
+    if CastbornDB.fsr and CastbornDB.fsr.anchored ~= false and SwingAnchor() then
+        FiveSecondRule:Reattach()
+    end
+end)
+
+CB:RegisterCallback("SWING_RESIZED", SyncFSRWidth)
 
 function FiveSecondRule:MarkManaSpent()
     lastManaSpend = GetTime()
@@ -249,11 +281,8 @@ function CB:InitFSR()
     CB.fsrFrame = CreateFSRBar()
 
     -- If player castbar already exists and we should be anchored, attach now
-    if CastbornDB.fsr.anchored ~= false and Castborn.Anchoring then
-        playerCastbar = playerCastbar or (CB.castbars and CB.castbars.player)
-        if playerCastbar then
-            Castborn.Anchoring:ReattachToCastbar(CB.fsrFrame, CastbornDB.fsr, "TOP", 2, SyncFSRWidth)
-        end
+    if CastbornDB.fsr.anchored ~= false then
+        FiveSecondRule:Reattach()
     end
 
     local eventFrame = CreateFrame("Frame")
@@ -277,16 +306,8 @@ function CB:TestFSR()
     testModeActive = true
 
     -- Ensure anchoring is applied in test mode
-    if CastbornDB.fsr and CastbornDB.fsr.anchored ~= false and Castborn.Anchoring then
-        -- Try to find playerCastbar if not set
-        if not playerCastbar then
-            playerCastbar = CB.castbars and CB.castbars.player
-        end
-        if playerCastbar then
-            local anchorTarget = playerCastbar.bar or playerCastbar
-            Castborn.Anchoring:Anchor(CB.fsrFrame, anchorTarget, "TOP", 0, 2)
-            SyncFSRWidth()
-        end
+    if CastbornDB.fsr and CastbornDB.fsr.anchored ~= false then
+        FiveSecondRule:Reattach()
     end
 
     -- Show the bar in "active" state (counting down)

@@ -2952,6 +2952,34 @@ function moduleBuilders.absorbs(parent, db, y)
     return y
 end
 
+-- The bar sits above the castbar or, for melee who rarely cast, above the swing timer.
+-- The two boxes are one choice: ticking one unticks the other, unticking either detaches.
+function moduleBuilders.fsr(parent, db, y)
+    local castbarCB, swingCB
+    local function sync()
+        castbarCB:SetChecked(db.anchored ~= false and not db.anchorToSwing)
+        swingCB:SetChecked(db.anchored ~= false and db.anchorToSwing == true)
+    end
+    local function choose(toSwing, checked)
+        if checked then
+            db.anchorToSwing = toSwing
+            db.anchored = true
+            Castborn:FireCallback("REATTACH_FSR")
+        else
+            db.anchored = false
+            Castborn:FireCallback("DETACH_FSR")
+        end
+        sync()
+    end
+
+    castbarCB = CreateCheckbox(parent, "Anchor to Castbar", nil, nil, function(v) choose(false, v) end)
+    castbarCB:SetPoint("TOPLEFT", 0, y)
+    swingCB = CreateCheckbox(parent, "Anchor to Swing Timer", nil, nil, function(v) choose(true, v) end)
+    swingCB:SetPoint("TOPLEFT", 220, y)
+    sync()
+    return y - 30
+end
+
 function Options:BuildModule(parent, key)
     local y = 0  -- the page header (CreatePageHeader) already names the page
 
@@ -2968,6 +2996,7 @@ function Options:BuildModule(parent, key)
                 if Castborn.swingTimers.mainhand then Castborn.swingTimers.mainhand:SetWidth(v) end
                 if Castborn.swingTimers.offhand then Castborn.swingTimers.offhand:SetWidth(v) end
                 if Castborn.swingTimers.ranged then Castborn.swingTimers.ranged:SetWidth(v) end
+                Castborn:FireCallback("SWING_RESIZED")
             end
         end)
         widthSlider:SetPoint("TOPLEFT", 0, y)
@@ -2985,8 +3014,8 @@ function Options:BuildModule(parent, key)
         y = y - 60
     end
 
-    -- Anchor checkbox (the cooldowns page draws its own, for the main group)
-    if key ~= "cooldowns" and db.anchored ~= nil then
+    -- Anchor checkbox (the cooldowns and five-second rule pages draw their own)
+    if key ~= "cooldowns" and key ~= "fsr" and db.anchored ~= nil then
         local anchorCB = CreateCheckbox(parent, "Anchor to Castbar", db, "anchored", function(v)
             if v then
                 Castborn:FireCallback("REATTACH_" .. string.upper(key))
