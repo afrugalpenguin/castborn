@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.5.0",
+        features = {
+            "Proc Tracker on Forever shows Unsealed Wrath's stored seals (Echo of ...) with their stack count",
+        },
+        fixes = {},
+    },
+    {
         version = "8.4.0",
         features = {
             "5 Second Rule is back on Forever: it starts when you finish casting a spell that costs mana",

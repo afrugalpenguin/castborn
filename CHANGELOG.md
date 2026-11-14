@@ -1,5 +1,9 @@
 # Changelog
 
+**v8.5.0**
+
+- Proc Tracker (Forever): tracks Unsealed Wrath. The stored-seal buffs (Echo of Righteousness, Command, Fury, Justice, Wisdom and Light) now show in combat with their stack count, up to 3
+
 **v8.4.0**
 
 - 5 Second Rule (Forever): the bar is back. Forever hides your mana from addons, so the timer now starts when you finish casting a spell that costs mana. A free cast, such as under Clearcasting, still starts it
