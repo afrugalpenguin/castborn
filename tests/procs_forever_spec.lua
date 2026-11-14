@@ -108,6 +108,17 @@ describe("Forever proc tracker", function()
             assert.are.equal(20050, names["Vengeance"])
         end)
 
+        it("lists every Unsealed Wrath echo for paladins", function()
+            local ids = {}
+            for _, s in ipairs(PT.classProcs.PALADIN) do ids[s.spellId] = s.name end
+            assert.are.equal("Echo of Righteousness", ids[1311704])
+            assert.are.equal("Echo of Command", ids[1311703])
+            assert.are.equal("Echo of Fury", ids[1311701])
+            assert.are.equal("Echo of Justice", ids[1311705])
+            assert.are.equal("Echo of Wisdom", ids[1328206])
+            assert.are.equal("Echo of Light", ids[1328198])
+        end)
+
         it("drops a saved entry that has left the class list, such as Seal of Command", function()
             table.insert(CastbornDB.procs.trackedSpells, { spellId = 20375, name = "Seal of Command" })
             Castborn:FireCallback("INIT")
