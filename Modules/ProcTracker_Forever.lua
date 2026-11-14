@@ -85,6 +85,13 @@ ProcTracker.classProcs = {
         { spellId = 20927, name = "Holy Shield" },
         { spellId = 20928, name = "Holy Shield" },
         { spellId = 1239570, name = "Holy Shield" },
+        -- Unsealed Wrath: one stacking buff per stored seal; matched by name
+        { spellId = 1311704, name = "Echo of Righteousness" },
+        { spellId = 1311703, name = "Echo of Command" },
+        { spellId = 1311701, name = "Echo of Fury" },
+        { spellId = 1311705, name = "Echo of Justice" },
+        { spellId = 1328206, name = "Echo of Wisdom" },
+        { spellId = 1328198, name = "Echo of Light" },
     },
     HUNTER = {
         { spellId = 6150, name = "Quick Shots" },         -- Aspect of the Hawk
