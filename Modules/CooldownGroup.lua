@@ -552,6 +552,9 @@ end
 -- Ready glow
 --------------------------------------------------------------------------------
 
+-- Icon brightness for a ready spell the target is the wrong creature type for
+local TARGET_DIM = 0.4
+
 -- Static glow for ready cooldowns
 local function StartEdgePulse(cdFrame)
     if cdFrame.edgePulseActive then return end
@@ -719,6 +722,7 @@ function CooldownGroup:Update()
                 if onCooldown then
                     tracker:SetIconCooldown(cdFrame.cooldown, spellName, start, duration)
                     cdFrame.icon:SetDesaturated(true)
+                    cdFrame.icon:SetVertexColor(1, 1, 1, 1)
                     cdFrame.glow:SetAlpha(0)
                     -- Remember a real cooldown (only if significant) so the ready glow can follow
                     if isLong then
@@ -730,10 +734,20 @@ function CooldownGroup:Update()
                     cdFrame.cooldown:Clear()
                     cdFrame.icon:SetDesaturated(false)
 
-                    -- Start edge pulse if enabled and was a real cooldown
-                    if moduleSettings.showReadyGlow ~= false and self.lastCooldownDuration[spell.spellId] then
-                        if not cdFrame.edgePulseActive then
-                            StartEdgePulse(cdFrame)
+                    -- A spell limited to some creature types (Exorcism) glows while the
+                    -- target is one of them and dims while it is not
+                    local targetFit = tracker:GetTargetFit(spell)
+                    if targetFit == false then
+                        cdFrame.icon:SetVertexColor(TARGET_DIM, TARGET_DIM, TARGET_DIM, 1)
+                        StopEdgePulse(cdFrame)
+                    else
+                        cdFrame.icon:SetVertexColor(1, 1, 1, 1)
+                        local glowWanted = targetFit or self.lastCooldownDuration[spell.spellId]
+                        -- Start edge pulse if enabled and was a real cooldown
+                        if moduleSettings.showReadyGlow ~= false and glowWanted then
+                            if not cdFrame.edgePulseActive then
+                                StartEdgePulse(cdFrame)
+                            end
                         end
                     end
                 end
@@ -871,6 +885,7 @@ function CooldownGroup:RefreshTestIcons()
             cdFrame:SetSize(size, size)
             cdFrame.icon:SetTexture(testSpells[i].icon)
             cdFrame.icon:SetDesaturated(i == 2)
+            cdFrame.icon:SetVertexColor(1, 1, 1, 1)
             cdFrame.cooldown:Clear()
 
             -- Create charges fontstring if it doesn't exist (for existing frames)

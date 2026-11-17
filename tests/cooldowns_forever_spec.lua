@@ -93,4 +93,39 @@ describe("Cooldowns on Forever", function()
         CT:SetIconCooldown(cooldown, "Hammer of Justice", 100, 30)
         assert.are.same({ 100, 30 }, got)
     end)
+
+    describe("GetTargetCreatureType", function()
+        local exists, creatureType
+
+        before_each(function()
+            exists, creatureType = true, "Undead"
+            _G.UnitExists = function() return exists end
+            _G.UnitCreatureType = function() return creatureType end
+        end)
+
+        after_each(function()
+            _G.UnitExists = function() return false end
+            _G.UnitCreatureType = nil
+        end)
+
+        it("reads a plain creature type", function()
+            assert.are.equal("Undead", CT:GetTargetCreatureType())
+        end)
+
+        it("reports no target as false", function()
+            exists = false
+            assert.is_false(CT:GetTargetCreatureType())
+        end)
+
+        it("gives up on a secret creature type", function()
+            creatureType = secret()
+            assert.has_no.errors(function() CT:GetTargetCreatureType() end)
+            assert.is_nil(CT:GetTargetCreatureType())
+        end)
+
+        it("gives up when whether the target exists is secret", function()
+            exists = secret()
+            assert.is_nil(CT:GetTargetCreatureType())
+        end)
+    end)
 end)

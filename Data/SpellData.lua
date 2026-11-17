@@ -407,6 +407,7 @@ SpellData.cooldowns = {
         { spellId = 31935, name = "Avenger's Shield" },
         { spellId = 20066, name = "Repentance" },
         { spellId = 26573, name = "Consecration" },
+        { spellId = 879, name = "Exorcism" },  -- rank 1; other ranks match by name
     },
     DRUID = {
         { spellId = 17116, name = "Nature's Swiftness" },
@@ -517,6 +518,20 @@ end
 function SpellData:GetRacialCooldowns(race)
     return self.racialCooldowns[race] or {}
 end
+
+-- Cooldowns that only work on some creature types, keyed by every rank's spell ID (a spell
+-- dragged in from the spellbook is stored at the rank the player knows). Values list
+-- creature type IDs: 3 Demon, 6 Undead. Forever has ranks 1-6; 27138 is TBC only.
+local UNDEAD_OR_DEMON = { 3, 6 }
+SpellData.targetCreatureTypes = {
+    [879] = UNDEAD_OR_DEMON,    -- Exorcism, ranks 1-7
+    [5614] = UNDEAD_OR_DEMON,
+    [5615] = UNDEAD_OR_DEMON,
+    [10312] = UNDEAD_OR_DEMON,
+    [10313] = UNDEAD_OR_DEMON,
+    [10314] = UNDEAD_OR_DEMON,
+    [27138] = UNDEAD_OR_DEMON,
+}
 
 -- Absorb shields (keyed by buff spell ID)
 -- school field = school-specific absorb (only absorbs that school), nil = absorbs all

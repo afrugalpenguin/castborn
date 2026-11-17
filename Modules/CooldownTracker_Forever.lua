@@ -46,3 +46,13 @@ function CooldownTracker:SetIconCooldown(cooldown, spellName, start, duration)
     end
     cooldown:SetCooldown(start, duration)
 end
+
+-- Not yet probed in combat, so treat a secret answer as unreadable rather than compare it
+function CooldownTracker:GetTargetCreatureType()
+    local exists = UnitExists("target")
+    if isSecret(exists) then return nil end
+    if not exists then return false end
+    local creatureType = UnitCreatureType("target")
+    if isSecret(creatureType) then return nil end
+    return creatureType
+end

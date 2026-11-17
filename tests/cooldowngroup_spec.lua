@@ -35,6 +35,7 @@ local function augment(f)
     f.GetTexture = function(self) return self.texture end
     f.SetAlpha = function(self, a) self.alpha = a end
     f.SetDesaturated = function(self, d) self.desaturated = d end
+    f.SetVertexColor = function(self, r, g, b, a) self.vertexColor = { r, g, b, a } end
     f.GetPoint = function(self)
         local p = self.points[1]
         if p then return unpack(p) end
@@ -274,6 +275,90 @@ describe("Live layout", function()
 
         Castborn:FireCallback("COOLDOWNS_GLOW_OFF")
         assert.are.equal(0, icon(1).glow.alpha)
+    end)
+
+    describe("a spell limited to some creature types", function()
+        local tracker = Castborn.CooldownTracker
+        local fit
+        local originalFit = tracker.GetTargetFit
+
+        before_each(function()
+            fit = nil
+            tracker.GetTargetFit = function(_, spell)
+                if spell.spellId == 879 then return fit end
+                return nil
+            end
+            _G.GetSpellCooldown = function() return 0, 0 end
+            configure("HORIZONTAL", "LEFT", 3)
+            track({ 879 })
+            Castborn:FireCallback("COOLDOWNS_GLOW_OFF")
+        end)
+
+        after_each(function()
+            tracker.GetTargetFit = originalFit
+            _G.GetSpellCooldown = function() return 0, 0 end
+        end)
+
+        it("glows and shows full colour when ready and the target fits", function()
+            fit = true
+            tick()
+            assert.are.equal(0.3, icon(1).glow.alpha)
+            assert.are.same({ 1, 1, 1, 1 }, icon(1).icon.vertexColor)
+            assert.is_false(icon(1).icon.desaturated)
+        end)
+
+        it("dims without a glow when ready but the target does not fit", function()
+            fit = false
+            tick()
+            assert.are.equal(0, icon(1).glow.alpha)
+            assert.are.same({ 0.4, 0.4, 0.4, 1 }, icon(1).icon.vertexColor)
+            assert.is_false(icon(1).icon.desaturated)
+        end)
+
+        it("drops the glow and dims when the target changes to one that does not fit", function()
+            fit = true
+            tick()
+            fit = false
+            tick()
+            assert.are.equal(0, icon(1).glow.alpha)
+            assert.are.same({ 0.4, 0.4, 0.4, 1 }, icon(1).icon.vertexColor)
+        end)
+
+        it("does not glow from the target when the glow is switched off", function()
+            CastbornDB.cooldowns.showReadyGlow = false
+            fit = true
+            tick()
+            assert.are.equal(0, icon(1).glow.alpha)
+            assert.are.same({ 1, 1, 1, 1 }, icon(1).icon.vertexColor)
+        end)
+
+        it("shows the plain cooldown look while on cooldown, whatever the target", function()
+            fit = true
+            tick()
+            _G.GetSpellCooldown = function() return 100, 15 end
+            tick()
+            assert.is_true(icon(1).icon.desaturated)
+            assert.are.equal(0, icon(1).glow.alpha)
+            assert.are.same({ 1, 1, 1, 1 }, icon(1).icon.vertexColor)
+        end)
+
+        it("does not take the ready glow after its cooldown when the target does not fit", function()
+            fit = false
+            _G.GetSpellCooldown = function() return 100, 15 end
+            tick()
+            _G.GetSpellCooldown = function() return 0, 0 end
+            tick()
+            assert.are.equal(0, icon(1).glow.alpha)
+            assert.are.same({ 0.4, 0.4, 0.4, 1 }, icon(1).icon.vertexColor)
+        end)
+
+        it("restores full colour when the slot goes to another spell", function()
+            fit = false
+            tick()
+            track({ 900 })
+            tick()
+            assert.are.same({ 1, 1, 1, 1 }, icon(1).icon.vertexColor)
+        end)
     end)
 end)
 
