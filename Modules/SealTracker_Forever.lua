@@ -19,8 +19,10 @@ local function isSecret(v)
     return issecretvalue ~= nil and issecretvalue(v)
 end
 
+-- In a dungeon auras are secret even out of combat, so also try one protected read
 function SealTracker:CanReadAuras()
-    return not (InCombatLockdown() or UnitAffectingCombat("player"))
+    if InCombatLockdown() or UnitAffectingCombat("player") then return false end
+    return (pcall(C_UnitAuras.GetAuraDataByIndex, "player", 1, "HELPFUL"))
 end
 
 function SealTracker:FindActiveSeal()
