@@ -33,6 +33,8 @@ read_globals = {
     "UnitClass",
     "UnitName",
     "UnitExists",
+    "UnitCreatureType",
+    "C_CreatureInfo",
     "UnitIsPlayer",
     "UnitIsUnit",
     "UnitIsDeadOrGhost",

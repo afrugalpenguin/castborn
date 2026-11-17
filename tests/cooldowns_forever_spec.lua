@@ -1,6 +1,7 @@
 require("tests.mocks.wow_api")
 _G.RAID_CLASS_COLORS = {}
 dofile("Core.lua")
+dofile("Data/SpellData.lua")
 dofile("Modules/CooldownGroup.lua")
 dofile("Modules/CooldownTracker.lua")
 dofile("Modules/CooldownTracker_Forever.lua")
@@ -92,5 +93,104 @@ describe("Cooldowns on Forever", function()
         local cooldown = { SetCooldown = function(_, s, d) got = { s, d } end }
         CT:SetIconCooldown(cooldown, "Hammer of Justice", 100, 30)
         assert.are.same({ 100, 30 }, got)
+    end)
+
+    describe("GetTargetCreatureType", function()
+        local exists, creatureType
+
+        before_each(function()
+            exists, creatureType = true, "Undead"
+            _G.UnitExists = function() return exists end
+            _G.UnitCreatureType = function() return creatureType end
+        end)
+
+        after_each(function()
+            _G.UnitExists = function() return false end
+            _G.UnitCreatureType = nil
+        end)
+
+        it("reads a plain creature type", function()
+            assert.are.equal("Undead", CT:GetTargetCreatureType())
+        end)
+
+        it("reports no target as false", function()
+            exists = false
+            assert.is_false(CT:GetTargetCreatureType())
+        end)
+
+        it("gives up on a secret creature type", function()
+            creatureType = secret()
+            assert.has_no.errors(function() CT:GetTargetCreatureType() end)
+            assert.is_nil(CT:GetTargetCreatureType())
+        end)
+
+        it("gives up when whether the target exists is secret", function()
+            exists = secret()
+            assert.is_nil(CT:GetTargetCreatureType())
+        end)
+    end)
+
+    -- In combat the creature type is secret, but the range check stays plain: nil when the
+    -- spell cannot be cast on the target at all, true or false (in or out of range) when it can
+    describe("GetTargetFit with a secret creature type", function()
+        local exorcism = { spellId = 879, name = "Exorcism" }
+        local inRange, rangeAsked, originalGetSpellInfo
+
+        before_each(function()
+            inRange, rangeAsked = nil, nil
+            _G.UnitExists = function() return true end
+            _G.UnitCreatureType = function() return secret() end
+            _G.C_Spell.IsSpellInRange = function(spell, unit)
+                rangeAsked = { spell, unit }
+                return inRange
+            end
+            originalGetSpellInfo = _G.GetSpellInfo
+            _G.GetSpellInfo = function(id) return id == 879 and "Exorcism" or nil end
+        end)
+
+        after_each(function()
+            _G.UnitExists = function() return false end
+            _G.UnitCreatureType = nil
+            _G.GetSpellInfo = originalGetSpellInfo
+        end)
+
+        it("fits a target the spell can be cast on, in range", function()
+            inRange = true
+            assert.is_true(CT:GetTargetFit(exorcism))
+            assert.are.same({ "Exorcism", "target" }, rangeAsked)
+        end)
+
+        it("fits a target the spell can be cast on, out of range", function()
+            inRange = false
+            assert.is_true(CT:GetTargetFit(exorcism))
+        end)
+
+        it("does not fit a target the spell cannot be cast on", function()
+            inRange = nil
+            assert.is_false(CT:GetTargetFit(exorcism))
+        end)
+
+        it("has no opinion when the range check is secret too", function()
+            inRange = secret()
+            assert.is_nil(CT:GetTargetFit(exorcism))
+        end)
+
+        it("does not check range for spells without a creature type limit", function()
+            assert.is_nil(CT:GetTargetFit({ spellId = 853, name = "Hammer of Justice" }))
+            assert.is_nil(rangeAsked)
+        end)
+
+        it("still uses a plain creature type when it can be read", function()
+            _G.UnitCreatureType = function() return "Humanoid" end
+            inRange = true
+            assert.is_false(CT:GetTargetFit(exorcism))
+            assert.is_nil(rangeAsked)
+        end)
+
+        it("does not fit with no target, without checking range", function()
+            _G.UnitExists = function() return false end
+            assert.is_false(CT:GetTargetFit(exorcism))
+            assert.is_nil(rangeAsked)
+        end)
     end)
 end)

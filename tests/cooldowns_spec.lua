@@ -61,4 +61,75 @@ describe("Paladin cooldown defaults", function()
         local ds = indexOf("Divine Shield")
         assert.are.equal(ds - 1, dp)
     end)
+
+    it("tracks Exorcism by its rank 1 ID", function()
+        local _, spell = indexOf("Exorcism")
+        assert.is_not_nil(spell, "Exorcism is not tracked")
+        assert.are.equal(879, spell.spellId)
+    end)
+end)
+
+describe("Target creature type check", function()
+    local CT = Castborn.CooldownTracker
+    local EXORCISM_RANKS = { 879, 5614, 5615, 10312, 10313, 10314, 27138 }
+    local targetType
+
+    before_each(function()
+        targetType = nil
+        _G.UnitExists = function(unit) return unit == "target" and targetType ~= nil end
+        _G.UnitCreatureType = function() return targetType end
+    end)
+
+    after_each(function()
+        _G.UnitExists = function() return false end
+        _G.UnitCreatureType = nil
+        _G.C_CreatureInfo = nil
+    end)
+
+    it("fits an Undead target for every rank of Exorcism", function()
+        targetType = "Undead"
+        for _, id in ipairs(EXORCISM_RANKS) do
+            assert.is_true(CT:GetTargetFit({ spellId = id, name = "Exorcism" }), "rank " .. id)
+        end
+    end)
+
+    it("fits a Demon target", function()
+        targetType = "Demon"
+        assert.is_true(CT:GetTargetFit({ spellId = 879, name = "Exorcism" }))
+    end)
+
+    it("does not fit a Humanoid target", function()
+        targetType = "Humanoid"
+        assert.is_false(CT:GetTargetFit({ spellId = 879, name = "Exorcism" }))
+    end)
+
+    it("does not fit when there is no target", function()
+        assert.is_false(CT:GetTargetFit({ spellId = 879, name = "Exorcism" }))
+    end)
+
+    it("has no opinion on spells without a creature type limit", function()
+        targetType = "Humanoid"
+        assert.is_nil(CT:GetTargetFit({ spellId = 853, name = "Hammer of Justice" }))
+    end)
+
+    it("has no opinion when the creature type cannot be read", function()
+        local original = CT.GetTargetCreatureType
+        CT.GetTargetCreatureType = function() return nil end
+        local fit = CT:GetTargetFit({ spellId = 879, name = "Exorcism" })
+        CT.GetTargetCreatureType = original
+        assert.is_nil(fit)
+    end)
+
+    it("matches the client's localised creature type names", function()
+        _G.C_CreatureInfo = {
+            GetCreatureTypeInfo = function(id)
+                local names = { [3] = "Dämon", [6] = "Untoter" }
+                return names[id] and { name = names[id] }
+            end,
+        }
+        targetType = "Untoter"
+        assert.is_true(CT:GetTargetFit({ spellId = 879, name = "Exorcism" }))
+        targetType = "Humanoide"
+        assert.is_false(CT:GetTargetFit({ spellId = 879, name = "Exorcism" }))
+    end)
 end)

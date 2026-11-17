@@ -338,6 +338,8 @@ APICheck.probes = {
     { "UnitCastingDuration", "target" },
     { "UnitChannelDuration", "target" },
     { "UnitIsUnit", "target", "player" },
+    { "UnitExists", "target" },           -- Exorcism's target check
+    { "UnitCreatureType", "target" },
     { "C_Container.GetContainerItemCooldown", 0, 1 },
     { "C_Item.GetItemCount", 6948 },     -- Hearthstone
     { "C_Item.GetItemInfo", 6948 },

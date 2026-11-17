@@ -46,3 +46,29 @@ function CooldownTracker:SetIconCooldown(cooldown, spellName, start, duration)
     end
     cooldown:SetCooldown(start, duration)
 end
+
+-- The creature type is secret in combat, so treat a secret answer as unreadable rather than
+-- compare it
+function CooldownTracker:GetTargetCreatureType()
+    local exists = UnitExists("target")
+    if isSecret(exists) then return nil end
+    if not exists then return false end
+    local creatureType = UnitCreatureType("target")
+    if isSecret(creatureType) then return nil end
+    return creatureType
+end
+
+-- When the creature type is secret (in combat), ask the range check instead. It stays plain
+-- in combat and answers nil when the spell cannot be cast on the target at all (a humanoid
+-- for Exorcism), and true or false, in or out of range, when it can.
+local baseGetTargetFit = CooldownTracker.GetTargetFit
+
+function CooldownTracker:GetTargetFit(spell)
+    local fit = baseGetTargetFit(self, spell)
+    if fit ~= nil then return fit end
+    local limited = Castborn.SpellData and Castborn.SpellData.targetCreatureTypes[spell.spellId]
+    if not limited then return nil end
+    local inRange = C_Spell.IsSpellInRange(self:GetTrackedSpellName(spell), "target")
+    if isSecret(inRange) then return nil end
+    return inRange ~= nil
+end

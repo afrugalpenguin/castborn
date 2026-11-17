@@ -526,6 +526,39 @@ function CooldownTracker:SetIconCooldown(cooldown, spellName, start, duration)
     cooldown:SetCooldown(start, duration)
 end
 
+-- The target's creature type name (localised), false with no target, or nil when it cannot
+-- be read. Forever overrides this.
+function CooldownTracker:GetTargetCreatureType()
+    if not UnitExists("target") then return false end
+    return UnitCreatureType("target")
+end
+
+-- English creature type names, by creature type ID
+local CREATURE_TYPE_NAMES = { [3] = "Demon", [6] = "Undead" }
+
+local function IsCreatureType(name, typeId)
+    if name == CREATURE_TYPE_NAMES[typeId] then return true end
+    -- UnitCreatureType answers in the client's language
+    local info = C_CreatureInfo and C_CreatureInfo.GetCreatureTypeInfo
+        and C_CreatureInfo.GetCreatureTypeInfo(typeId)
+    return info ~= nil and info.name == name
+end
+
+-- For a spell that only works on some creature types (Exorcism): true when the target is one
+-- of them, false when it is not or there is no target. nil for any other spell, or when the
+-- target's type cannot be read.
+function CooldownTracker:GetTargetFit(spell)
+    local typeIds = Castborn.SpellData and Castborn.SpellData.targetCreatureTypes[spell.spellId]
+    if not typeIds then return nil end
+    local creatureType = self:GetTargetCreatureType()
+    if creatureType == nil then return nil end
+    if creatureType == false then return false end
+    for _, typeId in ipairs(typeIds) do
+        if IsCreatureType(creatureType, typeId) then return true end
+    end
+    return false
+end
+
 --------------------------------------------------------------------------------
 -- Lifecycle
 --------------------------------------------------------------------------------
