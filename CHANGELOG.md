@@ -1,5 +1,9 @@
 # Changelog
 
+**v8.5.1**
+
+- Seal Tracker (Forever): no longer errors in dungeons, where auras can't be read even out of combat. It follows your seal casts there instead
+
 **v8.5.0**
 
 - Proc Tracker (Forever): tracks Unsealed Wrath. The stored-seal buffs (Echo of Righteousness, Command, Fury, Justice, Wisdom and Light) now show in combat with their stack count, up to 3

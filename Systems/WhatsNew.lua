@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.5.1",
+        features = {},
+        fixes = {
+            "Seal Tracker on Forever no longer errors in dungeons, where auras are hidden even out of combat",
+        },
+    },
+    {
         version = "8.5.0",
         features = {
             "Proc Tracker on Forever shows Unsealed Wrath's stored seals (Echo of ...) with their stack count",
