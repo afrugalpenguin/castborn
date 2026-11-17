@@ -67,6 +67,26 @@ describe("Seal tracker on Forever", function()
         end)
     end)
 
+    describe("out of combat with secret auras, as in a dungeon", function()
+        before_each(function()
+            _G.C_UnitAuras.GetAuraDataByIndex = function()
+                error("Auras cannot be accessed when secret while tainted by 'Castborn'")
+            end
+        end)
+
+        it("does not read auras", function()
+            local readable
+            assert.has_no.errors(function() readable = ST:CanReadAuras() end)
+            assert.is_false(readable)
+            assert.has_no.errors(function() ST:UpdateState() end)
+        end)
+
+        it("follows casts instead", function()
+            ST:OnPlayerCast(20375)
+            assert.are.equal(20375, ST.state.spellId)
+        end)
+    end)
+
     describe("in combat", function()
         before_each(function() inCombat = true end)
 
