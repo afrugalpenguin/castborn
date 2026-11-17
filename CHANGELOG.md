@@ -1,5 +1,9 @@
 # Changelog
 
+**v8.6.0**
+
+- Cooldown Tracker: Exorcism is now tracked for paladins. While it's ready it glows when your target is Undead or Demon, and is dimmed for any other target or none, so you can see at a glance whether it can be used. Works in combat on Forever too
+
 **v8.5.1**
 
 - Seal Tracker (Forever): no longer errors in dungeons, where auras can't be read even out of combat. It follows your seal casts there instead

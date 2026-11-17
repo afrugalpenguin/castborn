@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.6.0",
+        features = {
+            "Exorcism is tracked for paladins: it glows on Undead and Demon targets and dims on anything else",
+        },
+        fixes = {},
+    },
+    {
         version = "8.5.1",
         features = {},
         fixes = {
