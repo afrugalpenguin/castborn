@@ -472,4 +472,145 @@ describe("APICheck", function()
             assert.matches("^error: .*secret refused", APICheck:TryResourceText().percent)
         end)
     end)
+
+    describe("tracking panel", function()
+        before_each(function()
+            _G.CastbornDB = {}
+        end)
+
+        after_each(function()
+            _G.UnitXP = nil
+            _G.C_Reputation = nil
+            _G.GetWatchedFactionInfo = nil
+            _G.GetFactionInfoByID = nil
+        end)
+
+        it("probes XP, reputation and honour", function()
+            _G.UnitXP = function() return 1200 end
+            local live = APICheck:Run().live
+            assert.are.equal("number", live["UnitXP(player)"])
+            for _, key in ipairs({ "UnitXPMax(player)", "GetXPExhaustion()", "UnitLevel(player)",
+                    "GetMaxPlayerLevel()", "IsXPUserDisabled()",
+                    "C_Reputation.GetWatchedFactionData()", "C_Reputation.GetNumFactions()",
+                    "C_Reputation.GetFactionDataByIndex(1)",
+                    "GetWatchedFactionInfo()", "GetNumFactions()", "GetFactionInfo(1)",
+                    "UnitHonor(player)", "UnitHonorMax(player)", "UnitHonorLevel(player)",
+                    "C_Reputation.GetFactionDataByID(watched)", "GetFactionInfoByID(watched)" }) do
+                assert.is_not_nil(live[key], key .. " is not probed")
+            end
+        end)
+
+        it("lists the reputation namespaces and colours", function()
+            local names = APICheck:Run().names
+            for _, path in ipairs({ "C_Reputation", "C_Reputation.IsFactionParagon", "C_MajorFactions",
+                    "AbbreviateNumbers", "FACTION_BAR_COLORS" }) do
+                assert.is_not_nil(names[path], path .. " is not listed")
+            end
+        end)
+
+        it("describes the faction data table field by field", function()
+            _G.issecretvalue = function(v) return v == "SECRET" end
+            _G.C_Reputation = { GetFactionDataByIndex = function() return { name = "Stormwind", currentStanding = "SECRET" } end }
+            assert.are.equal("{currentStanding=secret,name=string}",
+                APICheck:Run().live["C_Reputation.GetFactionDataByIndex(1)"])
+        end)
+
+        it("looks the watched faction up by its own ID", function()
+            local seen
+            _G.C_Reputation = {
+                GetWatchedFactionData = function() return { factionID = 72 } end,
+                GetFactionDataByID = function(id) seen = id return { name = "Stormwind" } end,
+            }
+            assert.are.equal("{name=string}", APICheck:Run().live["C_Reputation.GetFactionDataByID(watched)"])
+            assert.are.equal(72, seen)
+        end)
+
+        it("falls back to the old global for the watched faction ID", function()
+            _G.GetWatchedFactionInfo = function() return "Stormwind", 5, 0, 3000, 1500, 72 end
+            _G.GetFactionInfoByID = function(id) return id == 72 and "Stormwind" or nil end
+            assert.are.equal("string", APICheck:Run().live["GetFactionInfoByID(watched)"])
+        end)
+
+        it("reports when no faction is watched", function()
+            _G.C_Reputation = { GetWatchedFactionData = function() return nil end }
+            assert.are.equal("no watched faction", APICheck:DescribeWatchedFaction("C_Reputation.GetFactionDataByID"))
+        end)
+
+        it("does not call by ID with a secret watched faction ID", function()
+            local calls = 0
+            _G.issecretvalue = function(v) return v == "SECRET" end
+            _G.C_Reputation = {
+                GetWatchedFactionData = function() return { factionID = "SECRET" } end,
+                GetFactionDataByID = function() calls = calls + 1 end,
+            }
+            assert.are.equal("watched faction ID secret",
+                APICheck:DescribeWatchedFaction("C_Reputation.GetFactionDataByID"))
+            assert.are.equal(0, calls)
+        end)
+
+        it("skips events the client rejects and reports them", function()
+            local frame = { registered = {} }
+            frame.RegisterEvent = function(self, event)
+                if event == "HONOR_XP_UPDATE" then error("unknown event") end
+                self.registered[event] = true
+            end
+            local skipped = APICheck:RegisterOptionalEvents(frame, APICheck.trackingEvents)
+            assert.are.same({ "HONOR_XP_UPDATE" }, skipped)
+            assert.is_true(frame.registered.PLAYER_XP_UPDATE)
+            assert.is_true(frame.registered.CHAT_MSG_COMBAT_FACTION_CHANGE)
+            local saved = APICheck.skippedEvents
+            APICheck.skippedEvents = skipped
+            assert.are.equal("HONOR_XP_UPDATE", APICheck:Run().skippedEvents)
+            APICheck.skippedEvents = saved
+        end)
+
+        it("registers every tracking event", function()
+            assert.are.same({ "PLAYER_XP_UPDATE", "UPDATE_EXHAUSTION", "PLAYER_LEVEL_UP",
+                "UPDATE_FACTION", "CHAT_MSG_COMBAT_FACTION_CHANGE", "HONOR_XP_UPDATE" }, APICheck.trackingEvents)
+        end)
+
+        it("snapshots UnitXP on the first XP update in and out of combat", function()
+            APICheck.events["PLAYER_XP_UPDATE first UnitXP(player)"] = nil
+            APICheck.events["PLAYER_XP_UPDATE first UnitXP(player) [combat]"] = nil
+            _G.UnitXP = function() return 1200 end
+            APICheck:OnEvent("PLAYER_XP_UPDATE", "player")
+            _G.issecretvalue = function(v) return v == 1200 end
+            APICheck:OnEvent("PLAYER_XP_UPDATE", "player")
+            _G.InCombatLockdown = function() return true end
+            APICheck:OnEvent("PLAYER_XP_UPDATE", "player")
+            local events = APICheck:Run().events
+            assert.are.equal("number", events["PLAYER_XP_UPDATE first UnitXP(player)"])
+            assert.are.equal("secret", events["PLAYER_XP_UPDATE first UnitXP(player) [combat]"])
+        end)
+
+        it("reports each Blizzard tracking bar frame", function()
+            _G.MainMenuExpBar = { IsProtected = function() return true, false end }
+            _G.StatusTrackingBarManager = { IsProtected = function() return false end, systemInfo = {} }
+            local frames = APICheck:Run().frames
+            assert.are.equal("exists protected=true editMode=false", frames.MainMenuExpBar)
+            assert.are.equal("exists protected=false editMode=true", frames.StatusTrackingBarManager)
+            assert.are.equal("missing", frames.ReputationWatchBar)
+            for _, name in ipairs({ "MainStatusTrackingBarContainer", "SecondaryStatusTrackingBarContainer",
+                    "MainMenuBarMaxLevelBar", "ExhaustionTick" }) do
+                assert.is_not_nil(frames[name], name .. " is not reported")
+            end
+            _G.MainMenuExpBar = nil
+            _G.StatusTrackingBarManager = nil
+        end)
+
+        it("reports a protection check that errors instead of raising it", function()
+            _G.ExhaustionTick = { IsProtected = function() error("blocked") end }
+            assert.matches("^exists protected=error: .*blocked", APICheck:DescribeFrame("ExhaustionTick"))
+            _G.ExhaustionTick = nil
+        end)
+
+        it("records whether the faction change message is secret, not its text", function()
+            _G.issecretvalue = function(v) return v == "SECRET" end
+            APICheck:OnEvent("CHAT_MSG_COMBAT_FACTION_CHANGE", "Reputation with Stormwind increased by 25.")
+            assert.are.equal("string", APICheck:Run().events["CHAT_MSG_COMBAT_FACTION_CHANGE message"])
+            _G.InCombatLockdown = function() return true end
+            APICheck:OnEvent("CHAT_MSG_COMBAT_FACTION_CHANGE", "SECRET")
+            assert.are.equal("secret", APICheck:Run().events["CHAT_MSG_COMBAT_FACTION_CHANGE message [combat]"])
+        end)
+    end)
 end)

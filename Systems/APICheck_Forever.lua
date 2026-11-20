@@ -305,6 +305,8 @@ APICheck.names = {
     -- Resource bars
     "UnitHealthMax", "UnitPowerType", "UnitHealthPercent", "UnitPowerPercent",
     "AbbreviateNumbers", "AbbreviateLargeNumbers", "PowerBarColor", "CurveConstants.ScaleTo100",
+    -- Tracking panel (AbbreviateNumbers is listed above)
+    "C_Reputation", "C_Reputation.IsFactionParagon", "C_MajorFactions", "FACTION_BAR_COLORS",
 }
 
 -- Tables whose fields are listed in the report (enum names the Forever ports need)
@@ -366,7 +368,90 @@ APICheck.probes = {
     { "UnitPowerType", "player" },
     { "UnitHealthPercent", "player" },
     { "UnitPowerPercent", "player" },
+    -- Tracking panel; run in and out of combat
+    { "UnitXP", "player" },
+    { "UnitXPMax", "player" },
+    { "GetXPExhaustion" },
+    { "UnitLevel", "player" },
+    { "GetMaxPlayerLevel" },
+    { "IsXPUserDisabled" },
+    { "C_Reputation.GetWatchedFactionData" },
+    { "C_Reputation.GetNumFactions" },
+    { "C_Reputation.GetFactionDataByIndex", 1 },
+    { "GetWatchedFactionInfo" },
+    { "GetNumFactions" },
+    { "GetFactionInfo", 1 },
+    { "UnitHonor", "player" },
+    { "UnitHonorMax", "player" },
+    { "UnitHonorLevel", "player" },
 }
+
+-- By-ID faction lookups, called with the watched faction's ID (see DescribeWatchedFaction)
+APICheck.watchedFactionProbes = { "C_Reputation.GetFactionDataByID", "GetFactionInfoByID" }
+
+-- Tracking panel events; registered through RegisterOptionalEvents, so a rejected one is
+-- listed in the report instead of raising an error
+APICheck.trackingEvents = {
+    "PLAYER_XP_UPDATE", "UPDATE_EXHAUSTION", "PLAYER_LEVEL_UP",
+    "UPDATE_FACTION", "CHAT_MSG_COMBAT_FACTION_CHANGE", "HONOR_XP_UPDATE",
+}
+APICheck.skippedEvents = {}
+
+-- The watched faction's ID, from C_Reputation or the old global; nil plus a reason when unknown
+function APICheck:WatchedFactionID()
+    local ok, id = pcall(function()
+        if C_Reputation and C_Reputation.GetWatchedFactionData then
+            local data = C_Reputation.GetWatchedFactionData()
+            if isSecret(data) then return "secret" end
+            return data and data.factionID
+        end
+        if GetWatchedFactionInfo then
+            return (select(6, GetWatchedFactionInfo()))
+        end
+        return "missing"
+    end)
+    if not ok then return nil, "error: " .. tostring(id) end
+    if isSecret(id) or id == "secret" then return nil, "watched faction ID secret" end
+    if id == "missing" then return nil, "missing" end
+    if id == nil or id == 0 then return nil, "no watched faction" end
+    return id
+end
+
+-- Call a by-ID faction API with the watched faction's ID, never with a hard-coded one
+function APICheck:DescribeWatchedFaction(path)
+    local id, reason = self:WatchedFactionID()
+    if not id then return reason end
+    return self:DescribeCall(path, id)
+end
+
+-- Blizzard XP/reputation bar frames the tracking panel may hide later
+APICheck.trackingFrames = {
+    "StatusTrackingBarManager", "MainStatusTrackingBarContainer", "SecondaryStatusTrackingBarContainer",
+    "MainMenuExpBar", "ReputationWatchBar", "MainMenuBarMaxLevelBar", "ExhaustionTick",
+}
+
+-- Whether a global frame exists, is protected, and is managed by Edit Mode (systemInfo or system field)
+function APICheck:DescribeFrame(name)
+    local frame = _G[name]
+    if frame == nil then return "missing" end
+    if type(frame) ~= "table" then return type(frame) end
+    local protected = "n/a"
+    if type(frame.IsProtected) == "function" then
+        local ok, isProtected = pcall(frame.IsProtected, frame)
+        protected = ok and (isSecret(isProtected) and "secret" or tostring(isProtected)) or ("error: " .. tostring(isProtected))
+    end
+    local ok, editMode = pcall(function() return frame.systemInfo ~= nil or frame.system ~= nil end)
+    return "exists protected=" .. protected .. " editMode=" .. (ok and tostring(editMode) or "error")
+end
+
+-- Register each event under pcall; returns the events the client rejected
+function APICheck:RegisterOptionalEvents(frame, events)
+    local skipped = {}
+    for _, event in ipairs(events) do
+        if not pcall(frame.RegisterEvent, frame, event) then skipped[#skipped + 1] = event end
+    end
+    return skipped
+end
 
 -- Widget methods that might accept secret values directly
 APICheck.widgetMethods = {
@@ -462,6 +547,15 @@ function APICheck:OnEvent(event, unit, ...)
     elseif event == "PLAYER_SWING" then
         -- No unit argument: the first value is swingDuration. The swing timer needs it plain.
         self.events[CombatKey("PLAYER_SWING payload")] = self:DescribeValues(unit, ...)
+    elseif event == "PLAYER_XP_UPDATE" then
+        -- First update in and out of combat, to see whether XP turns secret mid-fight
+        local key = CombatKey("PLAYER_XP_UPDATE first UnitXP(player)")
+        if self.events[key] == nil then
+            self.events[key] = self:DescribeCall("UnitXP", "player")
+        end
+    elseif event == "CHAT_MSG_COMBAT_FACTION_CHANGE" then
+        -- No unit argument: the first value is the message. Only its type is kept, never its text.
+        self.events[CombatKey("CHAT_MSG_COMBAT_FACTION_CHANGE message")] = self:Describe(unit)
     elseif event == "UNIT_AURA" and unit == "target" then
         Snapshot("C_UnitAuras.GetAuraDataByIndex", "target", 1, "HARMFUL")
         Snapshot("UnitDebuff", "target", 1)
@@ -501,6 +595,14 @@ function APICheck:Run()
         else
             report.live[key] = self:DescribeCall(unpack(probe))
         end
+    end
+    for _, path in ipairs(self.watchedFactionProbes) do
+        report.live[CombatKey(path .. "(watched)")] = self:DescribeWatchedFaction(path)
+    end
+    report.skippedEvents = #self.skippedEvents == 0 and "none" or table.concat(self.skippedEvents, ",")
+    report.frames = {}
+    for _, name in ipairs(self.trackingFrames) do
+        report.frames[name] = self:DescribeFrame(name)
     end
     for _, entry in ipairs(self.widgetMethods) do
         local widgetType, method = entry[1], entry[2]
@@ -553,10 +655,12 @@ function APICheck:Print(report)
     PrintSorted("Event counts", report.eventCounts)
     PrintSorted("Widget methods", report.widgets)
     PrintSorted("Values", report.values)
+    PrintSorted("Tracking bar frames", report.frames)
     print("  Combat log: registered=" .. tostring(report.cleu.registered)
         .. ", events=" .. report.cleu.count
         .. ", sample=" .. tostring(report.cleu.sample))
     print("  Resource bars skipped events: " .. tostring(report.resourceSkippedEvents))
+    print("  API check skipped events: " .. tostring(report.skippedEvents))
     print("  Proc tracker: " .. tostring(report.procTracker) .. ", Masque: " .. tostring(report.procMasque))
     print("  Proc button resize: " .. tostring(report.procButtonResize) .. ", size: " .. tostring(report.procButtonSize)
         .. ", icon width: " .. tostring(report.procIconWidth))
@@ -570,6 +674,7 @@ for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START",
         "SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", "SPELL_ACTIVATION_OVERLAY_GLOW_HIDE" }) do
     eventFrame:RegisterEvent(event)
 end
+APICheck.skippedEvents = APICheck:RegisterOptionalEvents(eventFrame, APICheck.trackingEvents)
 -- The combat log is not registered: Forever ignored it in two probe runs and it is the
 -- suspected cause of the "UI action blocked" message on login
 eventFrame:SetScript("OnEvent", function(_, event, ...)

@@ -204,5 +204,6 @@ files["**/*_Forever.lua"] = {
         "UnitHealthPercent", "UnitPowerPercent", "CurveConstants",
         "AbbreviateNumbers", "AbbreviateLargeNumbers",
         "AnchorUtil",
+        "C_Reputation", "GetWatchedFactionInfo",
     },
 }
