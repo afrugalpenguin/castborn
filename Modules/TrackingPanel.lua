@@ -67,6 +67,8 @@ local HANDLE_SIZE = 12
 -- Sample values for test mode: level 42 at 58.7% with rested to 80%, Darkspear Raiders Honored 60.8%
 local SAMPLE_XP = { level = 42, current = 58700, max = 100000, rested = 21300, maxLevel = 70, disabled = false }
 local SAMPLE_REPUTATION = { name = "Darkspear Raiders", reaction = 6, min = 9000, max = 21000, value = 16296 }
+local SAMPLE_XP_RATE = 48200
+local SAMPLE_REP_GAIN = 250
 
 local function GetDB()
     return CB.db and CB.db.tracking
@@ -158,16 +160,40 @@ function TrackingPanel:ShouldShowXP(xp, db)
     return true
 end
 
--- A row is the texts, the bar range (0 to max) and fills, and colours
-function TrackingPanel:BuildXPRow(xp)
+-- 3060 -> "51m", 4500 -> "1h 15m"
+function TrackingPanel:FormatDuration(seconds)
+    local minutes = math.floor(seconds / 60)
+    if minutes < 1 then return "<1m" end
+    if minutes < 60 then return minutes .. "m" end
+    local hours = math.floor(minutes / 60)
+    if hours >= 100 then return "99h+" end
+    return hours .. "h " .. (minutes % 60) .. "m"
+end
+
+-- Detail line parts are joined with a spaced hyphen (commas already group the numbers)
+local function JoinDetail(parts)
+    if #parts == 0 then return nil end
+    return table.concat(parts, " - ")
+end
+
+-- A row is the texts, the bar range (0 to max) and fills, and colours.
+-- rate is XP per hour this session, or nil to leave the rate out.
+function TrackingPanel:BuildXPRow(xp, rate)
     local current, max = xp.current or 0, xp.max or 0
     local percent = max > 0 and current * 100 / max or 0
     local rested = xp.rested or 0
     local barMax = max > 0 and max or 1
+    local remaining = math.max(0, max - current)
+    local parts = {}
+    if rested > 0 then parts[#parts + 1] = "Rested " .. self:FormatNumber(rested) end
+    if rate and rate > 0 then
+        parts[#parts + 1] = self:FormatNumber(rate) .. " XP/h"
+        parts[#parts + 1] = self:FormatDuration(remaining / rate * 3600) .. " to level"
+    end
     return {
         name = "Level " .. tostring(xp.level),
-        value = string.format("%.1f%% (%s to go)", percent, self:FormatNumber(math.max(0, max - current))),
-        detail = rested > 0 and ("Rested " .. self:FormatNumber(rested)) or nil,
+        value = string.format("%.1f%% (%s to go)", percent, self:FormatNumber(remaining)),
+        detail = JoinDetail(parts),
         max = barMax,
         fill = current,
         rested = math.min(current + rested, barMax),
@@ -175,14 +201,19 @@ function TrackingPanel:BuildXPRow(xp)
     }
 end
 
-function TrackingPanel:BuildReputationRow(rep)
+-- sessionGain is the standing gained this session, or nil to leave it out
+function TrackingPanel:BuildReputationRow(rep, sessionGain)
     local range = rep.max - rep.min
     local percent = range > 0 and (rep.value - rep.min) * 100 / range or 100
     local r, g, b = self:StandingColor(rep.reaction)
-    local detail
+    local parts = {}
     if range > 0 and rep.reaction < EXALTED then
-        detail = self:FormatNumber(rep.max - rep.value) .. " to " .. self:StandingLabel(rep.reaction + 1)
+        parts[#parts + 1] = self:FormatNumber(rep.max - rep.value) .. " to " .. self:StandingLabel(rep.reaction + 1)
     end
+    if sessionGain and sessionGain ~= 0 then
+        parts[#parts + 1] = (sessionGain > 0 and "+" or "") .. self:FormatNumber(sessionGain) .. " this session"
+    end
+    local detail = JoinDetail(parts)
     return {
         factionID = rep.factionID,
         name = rep.name,
@@ -272,7 +303,10 @@ end
 function TrackingPanel:TakeFactionSnapshot()
     self.factionSnapshot = {}
     for _, faction in ipairs(self:ReadKnownFactions()) do
-        if faction.value ~= nil then self.factionSnapshot[faction.id] = faction.value end
+        if faction.value ~= nil then
+            self.factionSnapshot[faction.id] = faction.value
+            self:RecordFactionStart(faction.id, faction.value)
+        end
     end
 end
 
@@ -350,6 +384,70 @@ function TrackingPanel:OnRowClick(data)
 end
 
 --------------------------------------------------------------------------------
+-- Session rate: XP per hour and reputation gained since login (a /reload starts again)
+--------------------------------------------------------------------------------
+
+-- The XP rate stays hidden until this much data exists
+TrackingPanel.MIN_RATE_SECONDS = 120
+
+function TrackingPanel:ResetSession()
+    -- startTime is set by the first XP reading; repStart holds each faction's first standing
+    self.session = { startTime = nil, xpGained = 0, lastXP = nil, repStart = {} }
+end
+TrackingPanel:ResetSession()
+
+-- Add the XP gained since the last reading. Only UnitXP is diffed, so the rested pool
+-- filling or draining never counts; rested bonus XP actually earned does. A level-up adds
+-- the rest of the old level plus the XP into the new one. UnitLevel can lag a moment behind
+-- UnitXP, so XP going down at the same level counts as the level-up, and the stored level
+-- moves on so the late level change is not counted again.
+function TrackingPanel:RecordXP(xp)
+    local s = self.session
+    if not s.startTime then
+        s.startTime = self:Now()
+        -- Show the rate as soon as it may, without waiting for the next XP event
+        if C_Timer then
+            C_Timer.After(self.MIN_RATE_SECONDS + 1, function() TrackingPanel:Refresh() end)
+        end
+    end
+    local last = s.lastXP
+    local level = xp.level
+    if last then
+        level = math.max(xp.level, last.level)
+        if xp.level > last.level or xp.current < last.current then
+            s.xpGained = s.xpGained + math.max(0, last.max - last.current) + xp.current
+            level = math.max(xp.level, last.level + 1)
+        else
+            s.xpGained = s.xpGained + (xp.current - last.current)
+        end
+    end
+    s.lastXP = { level = level, current = xp.current, max = xp.max }
+end
+
+-- XP per hour, or nil until two minutes of data and some XP exist
+function TrackingPanel:XPRate()
+    local s = self.session
+    if not s.startTime or s.xpGained <= 0 then return nil end
+    local elapsed = self:Now() - s.startTime
+    if elapsed < self.MIN_RATE_SECONDS then return nil end
+    return s.xpGained * 3600 / elapsed
+end
+
+-- The first standing seen this session is the baseline (from the login snapshot, or the first
+-- time the row is read, for factions the snapshot could not see)
+function TrackingPanel:RecordFactionStart(factionID, value)
+    if factionID and value ~= nil and self.session.repStart[factionID] == nil then
+        self.session.repStart[factionID] = value
+    end
+end
+
+function TrackingPanel:SessionRepGain(factionID, value)
+    local start = factionID and self.session.repStart[factionID]
+    if start == nil or value == nil then return nil end
+    return value - start
+end
+
+--------------------------------------------------------------------------------
 -- Rows and visibility
 --------------------------------------------------------------------------------
 
@@ -365,26 +463,42 @@ end
 -- XP, then the watched reputation, then pinned reputations in the order added.
 -- A pinned faction that is also watched is shown once, as the watched row.
 function TrackingPanel:CollectRows(db)
+    local showRate = db.showSessionRate
     if self.testModeActive then
-        return ApplyRowSettings({ self:BuildXPRow(SAMPLE_XP), self:BuildReputationRow(SAMPLE_REPUTATION) }, db)
+        return ApplyRowSettings({
+            self:BuildXPRow(SAMPLE_XP, showRate and SAMPLE_XP_RATE or nil),
+            self:BuildReputationRow(SAMPLE_REPUTATION, showRate and SAMPLE_REP_GAIN or nil),
+        }, db)
     end
     local rows = {}
     if db.showXP then
         local xp = self:ReadXP()
-        if xp and self:ShouldShowXP(xp, db) then rows[#rows + 1] = self:BuildXPRow(xp) end
+        if xp then
+            self:RecordXP(xp)
+            if self:ShouldShowXP(xp, db) then
+                rows[#rows + 1] = self:BuildXPRow(xp, showRate and self:XPRate() or nil)
+            end
+        end
     end
+
+    local function ReputationRow(rep)
+        self:RecordFactionStart(rep.factionID, rep.value)
+        local gain = showRate and self:SessionRepGain(rep.factionID, rep.value) or nil
+        rows[#rows + 1] = self:BuildReputationRow(rep, gain)
+    end
+
     local watchedID
     if db.showReputation then
         local rep = self:ReadWatchedFaction()
         if rep then
             watchedID = rep.factionID
-            rows[#rows + 1] = self:BuildReputationRow(rep)
+            ReputationRow(rep)
         end
     end
     for _, factionID in ipairs(self:GetPinnedFactions()) do
         if factionID ~= watchedID then
             local rep = self:ReadFactionByID(factionID)
-            if rep then rows[#rows + 1] = self:BuildReputationRow(rep) end
+            if rep then ReputationRow(rep) end
         end
     end
     ApplyRowSettings(rows, db)

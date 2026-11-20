@@ -26,6 +26,7 @@ describe("Tracking panel (TBC behaviour)", function()
         TP.pendingBlizzardBars = false
         TP:RestoreBlizzardBars()
         CastbornDB.characters = nil
+        TP:ResetSession()
         mainMenuBar = CreateFrame("Frame")
         _G.MainMenuExpBar = blizzardBar(mainMenuBar)
         _G.ReputationWatchBar = blizzardBar(mainMenuBar)
@@ -559,6 +560,174 @@ describe("Tracking panel (TBC behaviour)", function()
             gain(81, 25)
             db.trackOnGain = true
             assert.are.same({ "Orgrimmar" }, names(TP:CollectRows(db)))
+        end)
+    end)
+
+    describe("session rate", function()
+        local now = TP.Now
+        local clock
+
+        before_each(function()
+            clock = 5000
+            TP.Now = function() return clock end
+        end)
+
+        after_each(function()
+            TP.Now = now
+        end)
+
+        local function xp(level, current, max, rested)
+            return { level = level, current = current, max = max, rested = rested or 0, maxLevel = 70 }
+        end
+
+        it("adds XP gained within a level", function()
+            TP:RecordXP(xp(20, 1000, 10000))
+            TP:RecordXP(xp(20, 1600, 10000))
+            TP:RecordXP(xp(20, 2000, 10000))
+            assert.are.equal(1000, TP.session.xpGained)
+        end)
+
+        it("counts the rest of the old level and the XP into the new one across a level-up", function()
+            TP:RecordXP(xp(20, 9800, 10000))
+            TP:RecordXP(xp(21, 300, 11000))
+            assert.are.equal(500, TP.session.xpGained)
+            TP:RecordXP(xp(21, 900, 11000))
+            assert.are.equal(1100, TP.session.xpGained)
+        end)
+
+        it("counts a level-up once when UnitLevel lags behind UnitXP", function()
+            TP:RecordXP(xp(20, 9800, 10000))
+            TP:RecordXP(xp(20, 300, 10000))   -- XP wrapped, level not yet updated
+            assert.are.equal(500, TP.session.xpGained)
+            TP:RecordXP(xp(20, 300, 10000))   -- still lagging
+            TP:RecordXP(xp(21, 300, 11000))   -- level catches up
+            assert.are.equal(500, TP.session.xpGained)
+            TP:RecordXP(xp(21, 400, 11000))
+            assert.are.equal(600, TP.session.xpGained)
+        end)
+
+        it("never counts the rested pool", function()
+            TP:RecordXP(xp(20, 1000, 10000, 5000))
+            TP:RecordXP(xp(20, 1000, 10000, 2000))
+            TP:RecordXP(xp(20, 1000, 10000, 9000))
+            assert.are.equal(0, TP.session.xpGained)
+            -- Rested bonus XP earned shows up in UnitXP, so it counts like any other XP
+            TP:RecordXP(xp(20, 1400, 10000, 8800))
+            assert.are.equal(400, TP.session.xpGained)
+        end)
+
+        it("hides the rate until two minutes of data exist", function()
+            TP:RecordXP(xp(20, 1000, 10000))
+            TP:RecordXP(xp(20, 2000, 10000))
+            clock = 5000 + 119
+            assert.is_nil(TP:XPRate())
+            clock = 5000 + 120
+            assert.are.equal(30000, TP:XPRate())
+        end)
+
+        it("hides the rate when no XP has been gained", function()
+            TP:RecordXP(xp(20, 1000, 10000))
+            clock = 5000 + 600
+            assert.is_nil(TP:XPRate())
+        end)
+
+        it("shows XP per hour and time to level on the XP row's detail line", function()
+            local row = TP:BuildXPRow(xp(20, 2000, 20000), 36000)
+            assert.are.equal("36,000 XP/h - 30m to level", row.detail)
+            row = TP:BuildXPRow(xp(20, 2000, 20000, 4000), 7200)
+            assert.are.equal("Rested 4,000 - 7,200 XP/h - 2h 30m to level", row.detail)
+        end)
+
+        it("works out the rate across a level-up", function()
+            TP:RecordXP(xp(20, 9000, 10000))
+            clock = 5000 + 300
+            TP:RecordXP(xp(21, 2000, 12000))
+            -- 3,000 XP in five minutes is 36,000 an hour; 10,000 to go is 16m 40s
+            assert.are.equal(36000, TP:XPRate())
+            assert.are.equal("36,000 XP/h - 16m to level", TP:BuildXPRow(xp(21, 2000, 12000), TP:XPRate()).detail)
+        end)
+
+        it("formats durations", function()
+            assert.are.equal("<1m", TP:FormatDuration(59))
+            assert.are.equal("1m", TP:FormatDuration(60))
+            assert.are.equal("59m", TP:FormatDuration(3599))
+            assert.are.equal("1h 0m", TP:FormatDuration(3600))
+            assert.are.equal("2h 30m", TP:FormatDuration(9000))
+            assert.are.equal("99h+", TP:FormatDuration(360000))
+        end)
+
+        it("shows reputation gained this session against the first standing seen", function()
+            TP:RecordFactionStart(76, 4000)
+            TP:RecordFactionStart(76, 4100)
+            assert.are.equal(250, TP:SessionRepGain(76, 4250))
+            assert.is_nil(TP:SessionRepGain(530, 10000))
+            local rep = { factionID = 76, name = "Orgrimmar", reaction = 5, min = 3000, max = 9000, value = 4250 }
+            assert.are.equal("4,750 to Honored - +250 this session", TP:BuildReputationRow(rep, 250).detail)
+            assert.are.equal("4,750 to Honored - -100 this session", TP:BuildReputationRow(rep, -100).detail)
+            assert.are.equal("4,750 to Honored", TP:BuildReputationRow(rep, 0).detail)
+        end)
+
+        it("shows the session gain at Exalted, where there is no next standing", function()
+            local rep = { factionID = 76, name = "Orgrimmar", reaction = 8, min = 42000, max = 42999, value = 42500 }
+            assert.are.equal("+75 this session", TP:BuildReputationRow(rep, 75).detail)
+        end)
+
+        it("takes reputation baselines from the login snapshot", function()
+            local readKnown = TP.ReadKnownFactions
+            TP.ReadKnownFactions = function() return { { id = 76, name = "Orgrimmar", value = 4000 } } end
+            TP:TakeFactionSnapshot()
+            TP.ReadKnownFactions = readKnown
+            assert.are.equal(4000, TP.session.repStart[76])
+        end)
+
+        describe("in the rows", function()
+            local readXP, readWatched = TP.ReadXP, TP.ReadWatchedFaction
+            local current, standing
+
+            before_each(function()
+                current, standing = 1000, 4000
+                TP.ReadXP = function()
+                    return { level = 20, current = current, max = 10000, rested = 0, maxLevel = 70 }
+                end
+                TP.ReadWatchedFaction = function()
+                    return { factionID = 76, name = "Orgrimmar", reaction = 5, min = 3000, max = 9000, value = standing }
+                end
+            end)
+
+            after_each(function()
+                TP.ReadXP = readXP
+                TP.ReadWatchedFaction = readWatched
+            end)
+
+            it("adds the rate and the session gain once there is data", function()
+                local rows = TP:CollectRows(db)
+                assert.is_nil(rows[1].detail)
+                assert.are.equal("5,000 to Honored", rows[2].detail)
+                current, standing = 2000, 4300
+                clock = 5000 + 360
+                rows = TP:CollectRows(db)
+                -- 1,000 XP in six minutes is 10,000 an hour; 8,000 to go is 48 minutes
+                assert.are.equal("10,000 XP/h - 48m to level", rows[1].detail)
+                assert.are.equal("4,700 to Honored - +300 this session", rows[2].detail)
+            end)
+
+            it("leaves both out when the option is off", function()
+                TP:CollectRows(db)
+                current, standing = 2000, 4300
+                clock = 5000 + 360
+                db.showSessionRate = false
+                local rows = TP:CollectRows(db)
+                assert.is_nil(rows[1].detail)
+                assert.are.equal("4,700 to Honored", rows[2].detail)
+            end)
+
+            it("shows sample rates in test mode", function()
+                TP.testModeActive = true
+                local rows = TP:CollectRows(db)
+                assert.are.equal("Rested 21,300 - 48,200 XP/h - 51m to level", rows[1].detail)
+                assert.are.equal("4,704 to Revered - +250 this session", rows[2].detail)
+                TP.testModeActive = false
+            end)
         end)
     end)
 

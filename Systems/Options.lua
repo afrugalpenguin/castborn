@@ -3049,6 +3049,10 @@ function moduleBuilders.tracking(parent, db, y)
     -- A faction that gains reputation shows for ten minutes; click its row to pin it
     local gainCB = CreateCheckbox(parent, "Track reputation on gain", db, "trackOnGain", apply)
     gainCB:SetPoint("TOPLEFT", 220, y)
+    y = y - 30
+    -- XP per hour and time to level (after two minutes), and reputation gained this session
+    local rateCB = CreateCheckbox(parent, "Show session rate", db, "showSessionRate", apply)
+    rateCB:SetPoint("TOPLEFT", 0, y)
     y = y - 40
 
     -- Look

@@ -407,6 +407,7 @@ CB.defaults = {
         hideAtMaxLevel = true,
         showDetail = true,
         trackOnGain = true,
+        showSessionRate = true,
         width = 220,
         barHeight = 6,
         textSize = 11,
