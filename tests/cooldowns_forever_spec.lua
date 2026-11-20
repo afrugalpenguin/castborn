@@ -65,6 +65,29 @@ describe("Cooldowns on Forever", function()
         assert.are.equal(dur, got)
     end)
 
+    describe("IsOutOfMana", function()
+        it("is true when the power cost cannot be met", function()
+            _G.C_Spell.IsSpellUsable = function() return false, true end
+            assert.is_true(CT:IsOutOfMana("Holy Shock"))
+        end)
+
+        it("is false when the spell is usable", function()
+            _G.C_Spell.IsSpellUsable = function() return true, false end
+            assert.is_false(CT:IsOutOfMana("Holy Shock"))
+        end)
+
+        it("leaves the icon alone when the answer is secret", function()
+            _G.C_Spell.IsSpellUsable = function() return secret(), secret() end
+            local oom
+            assert.has_no.errors(function() oom = CT:IsOutOfMana("Holy Shock") end)
+            assert.is_false(oom)
+        end)
+
+        it("is false on a client without C_Spell.IsSpellUsable", function()
+            assert.is_false(CT:IsOutOfMana("Holy Shock"))
+        end)
+    end)
+
     describe("GetTrackedSpellName", function()
         local originalGetSpellInfo
 

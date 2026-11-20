@@ -58,6 +58,16 @@ function CooldownTracker:GetTargetCreatureType()
     return creatureType
 end
 
+-- IsUsableSpell is C_Spell.IsSpellUsable here. A secret answer is treated as affordable, so
+-- the icon keeps its normal look rather than guessing.
+function CooldownTracker:IsOutOfMana(spellName)
+    local isUsable = C_Spell and C_Spell.IsSpellUsable
+    if not isUsable then return false end
+    local _, noMana = isUsable(spellName)
+    if isSecret(noMana) then return false end
+    return noMana and true or false
+end
+
 -- When the creature type is secret (in combat), ask the range check instead. It stays plain
 -- in combat and answers nil when the spell cannot be cast on the target at all (a humanoid
 -- for Exorcism), and true or false, in or out of range, when it can.

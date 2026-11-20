@@ -97,7 +97,7 @@ read_globals = {
     "GetWeaponEnchantInfo",
     "GetRangedCritChance",
     "GetCritChance",
-    "IsCurrentSpell",
+    "IsCurrentSpell", "IsUsableSpell",
     "IsAutoRepeatSpell",
     "CombatLogGetCurrentEventInfo",
     "BOOKTYPE_SPELL",

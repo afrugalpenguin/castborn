@@ -554,6 +554,8 @@ end
 
 -- Icon brightness for a ready spell the target is the wrong creature type for
 local TARGET_DIM = 0.4
+-- The action bars' colour for a spell that cannot be afforded
+local OOM_R, OOM_G, OOM_B = 0.5, 0.5, 1.0
 
 -- Static glow for ready cooldowns
 local function StartEdgePulse(cdFrame)
@@ -739,6 +741,10 @@ function CooldownGroup:Update()
                     local targetFit = tracker:GetTargetFit(spell)
                     if targetFit == false then
                         cdFrame.icon:SetVertexColor(TARGET_DIM, TARGET_DIM, TARGET_DIM, 1)
+                        StopEdgePulse(cdFrame)
+                    elseif tracker:IsOutOfMana(spellName) then
+                        -- Blue, like the action bars, and no ready glow until it can be cast
+                        cdFrame.icon:SetVertexColor(OOM_R, OOM_G, OOM_B, 1)
                         StopEdgePulse(cdFrame)
                     else
                         cdFrame.icon:SetVertexColor(1, 1, 1, 1)
