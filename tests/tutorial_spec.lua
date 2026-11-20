@@ -47,7 +47,7 @@ describe("Tutorial steps", function()
             assert.are.same({
                 "welcome", "player_castbar", "castbar_companions", "cooldowns", "items",
                 "other_castbars", "dots", "procs", "interrupt", "absorbs", "armour",
-                "customise", "complete",
+                "progress", "customise", "complete",
             }, shownIds(load("MAGE")))
         end)
 
@@ -55,7 +55,7 @@ describe("Tutorial steps", function()
             assert.are.same({
                 "welcome", "player_castbar", "castbar_companions", "cooldowns", "items",
                 "other_castbars", "dots", "procs", "swing", "armour", "seals",
-                "customise", "complete",
+                "progress", "customise", "complete",
             }, shownIds(load("PALADIN")))
         end)
 
@@ -86,8 +86,8 @@ describe("Tutorial steps", function()
         it("counts only shown steps", function()
             local T = load("MAGE")
             local position, total = T:GetStepPosition(indexOf(T, "complete"))
-            assert.are.equal(13, total)
-            assert.are.equal(13, position)
+            assert.are.equal(14, total)
+            assert.are.equal(14, position)
         end)
     end)
 
@@ -95,14 +95,14 @@ describe("Tutorial steps", function()
         it("shows a mage only modules Forever loads", function()
             assert.are.same({
                 "welcome", "player_castbar", "castbar_companions", "cooldowns", "items",
-                "other_castbars", "procs", "interrupt", "armour", "customise", "complete",
+                "other_castbars", "procs", "interrupt", "armour", "progress", "customise", "complete",
             }, shownIds(load("MAGE", true)))
         end)
 
         it("shows a paladin the swing timer and seal tracker", function()
             assert.are.same({
                 "welcome", "player_castbar", "castbar_companions", "cooldowns", "items",
-                "other_castbars", "procs", "swing", "armour", "seals", "customise", "complete",
+                "other_castbars", "procs", "swing", "armour", "seals", "progress", "customise", "complete",
             }, shownIds(load("PALADIN", true)))
         end)
 
@@ -125,7 +125,7 @@ describe("Tutorial steps", function()
             local T = load("MAGE", true)
             local position, total = T:GetStepPosition(indexOf(T, "other_castbars"))
             assert.are.equal(6, position)
-            assert.are.equal(11, total)
+            assert.are.equal(12, total)
         end)
 
         it("describes the interrupt tracker without the lockout", function()
@@ -154,6 +154,25 @@ describe("Tutorial steps", function()
             local T = load("MAGE", true)
             local step = T.steps[indexOf(T, "armour")]
             assert.is_truthy(step.description:find("out of combat"))
+        end)
+    end)
+
+    describe("progress panel step", function()
+        after_each(function()
+            Castborn.ProgressPanel = nil
+        end)
+
+        it("switches the panel on and off with its own checkbox", function()
+            local T = load("MAGE")
+            assert.are.same({ "progress" }, T:GetShownKeys(T.steps[indexOf(T, "progress")]))
+        end)
+
+        it("applies the panel's settings when toggled, so Blizzard's bars come back at once", function()
+            local applied = 0
+            Castborn.ProgressPanel = { ApplySettings = function() applied = applied + 1 end }
+            local T = load("MAGE")
+            T.steps[indexOf(T, "progress")].onToggle()
+            assert.are.equal(1, applied)
         end)
     end)
 end)
