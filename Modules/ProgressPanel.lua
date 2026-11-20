@@ -588,6 +588,34 @@ function ProgressPanel:ShouldHideBlizzardBars(db)
     return db and db.enabled and db.hideBlizzardBars and true or false
 end
 
+-- Frames whose SetAlpha / EnableMouse are already hooked (hooks cannot be removed)
+ProgressPanel.hookedBars = {}
+
+-- Blizzard sets the alpha and mouse of these frames again (Forever's StatusTrackingBar
+-- containers came back at alpha 1). Post-hooks record what Blizzard asked for, so restoring
+-- gives back its latest wish, then put the frame back to hidden. They act only while the
+-- frame is in hiddenBars, so they stop interfering once the bars are restored.
+function ProgressPanel:HookAlphaBar(frame)
+    if self.hookedBars[frame] then return end
+    self.hookedBars[frame] = true
+    hooksecurefunc(frame, "SetAlpha", function(_, alpha)
+        local saved = self.hiddenBars[frame]
+        if not saved or self.forcingBar then return end
+        saved.alpha = alpha
+        self.forcingBar = true
+        frame:SetAlpha(0)
+        self.forcingBar = false
+    end)
+    hooksecurefunc(frame, "EnableMouse", function(_, enabled)
+        local saved = self.hiddenBars[frame]
+        if not saved or self.forcingBar then return end
+        saved.mouse = enabled and true or false
+        self.forcingBar = true
+        frame:EnableMouse(false)
+        self.forcingBar = false
+    end)
+end
+
 function ProgressPanel:HideBlizzardBars()
     for _, entry in ipairs(self:GetBlizzardBars()) do
         local frame = _G[entry.name]
@@ -596,8 +624,11 @@ function ProgressPanel:HideBlizzardBars()
             if entry.mode == "alpha" then
                 saved.alpha = frame:GetAlpha()
                 saved.mouse = frame:IsMouseEnabled()
+                self:HookAlphaBar(frame)
+                self.forcingBar = true
                 frame:SetAlpha(0)
                 frame:EnableMouse(false)
+                self.forcingBar = false
             else
                 saved.parent = frame:GetParent()
                 saved.points = {}
@@ -613,6 +644,8 @@ end
 
 function ProgressPanel:RestoreBlizzardBars()
     for frame, saved in pairs(self.hiddenBars) do
+        -- Out of hiddenBars first, so the alpha hooks let the restore through
+        self.hiddenBars[frame] = nil
         if saved.mode == "alpha" then
             frame:SetAlpha(saved.alpha or 1)
             frame:EnableMouse(saved.mouse and true or false)
@@ -623,7 +656,6 @@ function ProgressPanel:RestoreBlizzardBars()
                 frame:SetPoint(unpack(point))
             end
         end
-        self.hiddenBars[frame] = nil
     end
 end
 

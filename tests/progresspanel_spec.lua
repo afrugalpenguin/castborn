@@ -879,6 +879,67 @@ describe("Progress panel (TBC behaviour)", function()
             TP.GetBlizzardBars = original
         end)
 
+        describe("alpha mode against Blizzard showing the bar again", function()
+            local original = TP.GetBlizzardBars
+
+            before_each(function()
+                TP.GetBlizzardBars = function() return { { name = "MainMenuExpBar", mode = "alpha" } } end
+            end)
+
+            after_each(function()
+                TP.GetBlizzardBars = original
+            end)
+
+            it("keeps the bar at alpha 0 when Blizzard sets its alpha back", function()
+                TP:UpdateBlizzardBars()
+                _G.MainMenuExpBar:SetAlpha(1)
+                assert.are.equal(0, _G.MainMenuExpBar:GetAlpha())
+            end)
+
+            it("keeps the mouse off when Blizzard turns it back on", function()
+                TP:UpdateBlizzardBars()
+                _G.MainMenuExpBar:EnableMouse(true)
+                assert.is_false(_G.MainMenuExpBar:IsMouseEnabled())
+            end)
+
+            it("restores what Blizzard last asked for, not the state at login", function()
+                _G.MainMenuExpBar:SetAlpha(1)
+                TP:UpdateBlizzardBars()
+                _G.MainMenuExpBar:SetAlpha(0.6)
+                _G.MainMenuExpBar:EnableMouse(false)
+                db.enabled = false
+                TP:UpdateBlizzardBars()
+                assert.are.equal(0.6, _G.MainMenuExpBar:GetAlpha())
+                assert.is_false(_G.MainMenuExpBar:IsMouseEnabled())
+            end)
+
+            it("stops interfering once the panel is disabled", function()
+                TP:UpdateBlizzardBars()
+                db.enabled = false
+                TP:UpdateBlizzardBars()
+                _G.MainMenuExpBar:SetAlpha(0.7)
+                _G.MainMenuExpBar:EnableMouse(true)
+                assert.are.equal(0.7, _G.MainMenuExpBar:GetAlpha())
+                assert.is_true(_G.MainMenuExpBar:IsMouseEnabled())
+            end)
+
+            it("hooks each frame once, however often it is hidden", function()
+                local hooks = 0
+                local hook = _G.hooksecurefunc
+                _G.hooksecurefunc = function(...) hooks = hooks + 1 return hook(...) end
+                local frame = CreateFrame("Frame")
+                _G.MainMenuExpBar = frame
+                for _ = 1, 3 do
+                    db.enabled = true
+                    TP:UpdateBlizzardBars()
+                    db.enabled = false
+                    TP:UpdateBlizzardBars()
+                end
+                _G.hooksecurefunc = hook
+                assert.are.equal(2, hooks)
+            end)
+        end)
+
         it("queues a change in combat until combat ends", function()
             TP:UpdateBlizzardBars()
             _G.InCombatLockdown = function() return true end

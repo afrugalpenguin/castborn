@@ -91,6 +91,19 @@ local function newMockFrame()
     return frame
 end
 
+-- Post-hook a method on a table, or a global function, like WoW's hooksecurefunc
+_G.hooksecurefunc = function(target, name, hook)
+    if type(target) == "string" then
+        target, name, hook = _G, target, name
+    end
+    local original = target[name]
+    target[name] = function(...)
+        local results = { original(...) }
+        hook(...)
+        return unpack(results)
+    end
+end
+
 _G.CreateFrame = function(frameType, name, parent, template)
     local frame = newMockFrame()
     if name then _G[name] = frame end
