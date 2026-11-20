@@ -227,10 +227,10 @@ describe("Profiles", function()
 
         it("survives applying a profile", function()
             CastbornDB.characters = characters()
-            CastbornDB.profiles = { Other = { tracking = { width = 300 } } }
+            CastbornDB.profiles = { Other = { progress = { width = 300 } } }
             Profiles:ApplyProfile("Other")
             assert.are.same(characters(), CastbornDB.characters)
-            assert.are.equal(300, CastbornDB.tracking.width)
+            assert.are.equal(300, CastbornDB.progress.width)
         end)
 
         it("is never taken from a profile being applied", function()

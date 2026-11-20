@@ -396,7 +396,7 @@ CB.defaults = {
         yPct = -0.12,
     },
 
-    tracking = {
+    progress = {
         enabled = true,
         hideBlizzardBars = true,
         collapsed = false,

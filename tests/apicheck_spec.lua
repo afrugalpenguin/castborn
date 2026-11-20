@@ -473,7 +473,7 @@ describe("APICheck", function()
         end)
     end)
 
-    describe("tracking panel", function()
+    describe("progress panel", function()
         before_each(function()
             _G.CastbornDB = {}
         end)
@@ -554,7 +554,7 @@ describe("APICheck", function()
                 if event == "HONOR_XP_UPDATE" then error("unknown event") end
                 self.registered[event] = true
             end
-            local skipped = APICheck:RegisterOptionalEvents(frame, APICheck.trackingEvents)
+            local skipped = APICheck:RegisterOptionalEvents(frame, APICheck.progressEvents)
             assert.are.same({ "HONOR_XP_UPDATE" }, skipped)
             assert.is_true(frame.registered.PLAYER_XP_UPDATE)
             assert.is_true(frame.registered.CHAT_MSG_COMBAT_FACTION_CHANGE)
@@ -564,9 +564,9 @@ describe("APICheck", function()
             APICheck.skippedEvents = saved
         end)
 
-        it("registers every tracking event", function()
+        it("registers every progress panel event", function()
             assert.are.same({ "PLAYER_XP_UPDATE", "UPDATE_EXHAUSTION", "PLAYER_LEVEL_UP",
-                "UPDATE_FACTION", "CHAT_MSG_COMBAT_FACTION_CHANGE", "HONOR_XP_UPDATE" }, APICheck.trackingEvents)
+                "UPDATE_FACTION", "CHAT_MSG_COMBAT_FACTION_CHANGE", "HONOR_XP_UPDATE" }, APICheck.progressEvents)
         end)
 
         it("snapshots UnitXP on the first XP update in and out of combat", function()
@@ -583,7 +583,7 @@ describe("APICheck", function()
             assert.are.equal("secret", events["PLAYER_XP_UPDATE first UnitXP(player) [combat]"])
         end)
 
-        it("reports each Blizzard tracking bar frame", function()
+        it("reports each Blizzard XP and reputation bar frame", function()
             _G.MainMenuExpBar = { IsProtected = function() return true, false end }
             _G.StatusTrackingBarManager = { IsProtected = function() return false end, systemInfo = {} }
             local frames = APICheck:Run().frames

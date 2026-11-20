@@ -35,7 +35,7 @@ Modules/AbsorbTracker.lua
 Modules/ArmorTracker.lua
 Modules/SealTracker.lua
 Modules/ItemTracker.lua
-Modules/TrackingPanel.lua
+Modules/ProgressPanel.lua
 
 Systems/WhatsNew.lua
 Systems/Options.lua

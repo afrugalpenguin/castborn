@@ -1,10 +1,10 @@
 require("tests.mocks.wow_api")
 dofile("Core.lua")
-dofile("Modules/TrackingPanel.lua")
-dofile("Modules/TrackingPanel_Forever.lua")
+dofile("Modules/ProgressPanel.lua")
+dofile("Modules/ProgressPanel_Forever.lua")
 
-describe("Tracking panel on Forever", function()
-    local TP = Castborn.TrackingPanel
+describe("Progress panel on Forever", function()
+    local TP = Castborn.ProgressPanel
 
     after_each(function()
         _G.C_Reputation = nil

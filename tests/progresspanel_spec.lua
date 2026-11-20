@@ -1,9 +1,9 @@
 require("tests.mocks.wow_api")
 dofile("Core.lua")
-dofile("Modules/TrackingPanel.lua")
+dofile("Modules/ProgressPanel.lua")
 
-describe("Tracking panel (TBC behaviour)", function()
-    local TP = Castborn.TrackingPanel
+describe("Progress panel (TBC behaviour)", function()
+    local TP = Castborn.ProgressPanel
     local db
 
     -- A Blizzard bar that remembers its parent, points, alpha and mouse state
@@ -21,7 +21,7 @@ describe("Tracking panel (TBC behaviour)", function()
     before_each(function()
         db = Castborn:MergeDefaults({}, TP.defaults)
         Castborn.db = Castborn.db or {}
-        Castborn.db.tracking = db
+        Castborn.db.progress = db
         TP.testModeActive = false
         TP.pendingBlizzardBars = false
         TP:RestoreBlizzardBars()
@@ -238,7 +238,7 @@ describe("Tracking panel (TBC behaviour)", function()
             assert.is_false(TP:IsPinned(76))
         end)
 
-        it("stores faction IDs per character and realm, outside the tracking settings", function()
+        it("stores faction IDs per character and realm, outside the progress settings", function()
             TP:PinFaction(530)
             assert.are.same({ 530 }, CastbornDB.characters["TestPlayer-TestRealm"].trackedFactions)
             assert.is_nil(db.characters)
@@ -774,13 +774,13 @@ describe("Tracking panel (TBC behaviour)", function()
 
         it("saves the state the header button sets, so it survives a reload", function()
             TP:ToggleCollapsed()
-            assert.is_true(Castborn.db.tracking.collapsed)
+            assert.is_true(Castborn.db.progress.collapsed)
             -- A reload merges defaults into the saved table, which keeps the state
-            local reloaded = Castborn:MergeDefaults(Castborn.db.tracking, TP.defaults)
+            local reloaded = Castborn:MergeDefaults(Castborn.db.progress, TP.defaults)
             TP:ApplyStartCollapsed(reloaded)
             assert.is_true(reloaded.collapsed)
             TP:ToggleCollapsed()
-            assert.is_false(Castborn.db.tracking.collapsed)
+            assert.is_false(Castborn.db.progress.collapsed)
         end)
 
         it("starts collapsed when asked, whatever was saved", function()
@@ -858,9 +858,9 @@ describe("Tracking panel (TBC behaviour)", function()
 
         it("never hides them for test mode alone", function()
             db.enabled = false
-            Castborn:TestTrackingPanel()
+            Castborn:TestProgressPanel()
             assert.are.equal(mainMenuBar, _G.MainMenuExpBar:GetParent())
-            Castborn:EndTestTrackingPanel()
+            Castborn:EndTestProgressPanel()
             assert.are.equal(mainMenuBar, _G.MainMenuExpBar:GetParent())
         end)
 

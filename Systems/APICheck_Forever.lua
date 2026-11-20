@@ -305,7 +305,7 @@ APICheck.names = {
     -- Resource bars
     "UnitHealthMax", "UnitPowerType", "UnitHealthPercent", "UnitPowerPercent",
     "AbbreviateNumbers", "AbbreviateLargeNumbers", "PowerBarColor", "CurveConstants.ScaleTo100",
-    -- Tracking panel (AbbreviateNumbers is listed above)
+    -- Progress panel (AbbreviateNumbers is listed above)
     "C_Reputation", "C_Reputation.IsFactionParagon", "C_MajorFactions", "FACTION_BAR_COLORS",
 }
 
@@ -368,7 +368,7 @@ APICheck.probes = {
     { "UnitPowerType", "player" },
     { "UnitHealthPercent", "player" },
     { "UnitPowerPercent", "player" },
-    -- Tracking panel; run in and out of combat
+    -- Progress panel; run in and out of combat
     { "UnitXP", "player" },
     { "UnitXPMax", "player" },
     { "GetXPExhaustion" },
@@ -389,9 +389,9 @@ APICheck.probes = {
 -- By-ID faction lookups, called with the watched faction's ID (see DescribeWatchedFaction)
 APICheck.watchedFactionProbes = { "C_Reputation.GetFactionDataByID", "GetFactionInfoByID" }
 
--- Tracking panel events; registered through RegisterOptionalEvents, so a rejected one is
+-- Progress panel events; registered through RegisterOptionalEvents, so a rejected one is
 -- listed in the report instead of raising an error
-APICheck.trackingEvents = {
+APICheck.progressEvents = {
     "PLAYER_XP_UPDATE", "UPDATE_EXHAUSTION", "PLAYER_LEVEL_UP",
     "UPDATE_FACTION", "CHAT_MSG_COMBAT_FACTION_CHANGE", "HONOR_XP_UPDATE",
 }
@@ -424,8 +424,8 @@ function APICheck:DescribeWatchedFaction(path)
     return self:DescribeCall(path, id)
 end
 
--- Blizzard XP/reputation bar frames the tracking panel may hide later
-APICheck.trackingFrames = {
+-- Blizzard XP/reputation bar frames the progress panel may hide later
+APICheck.progressFrames = {
     "StatusTrackingBarManager", "MainStatusTrackingBarContainer", "SecondaryStatusTrackingBarContainer",
     "MainMenuExpBar", "ReputationWatchBar", "MainMenuBarMaxLevelBar", "ExhaustionTick",
 }
@@ -601,7 +601,7 @@ function APICheck:Run()
     end
     report.skippedEvents = #self.skippedEvents == 0 and "none" or table.concat(self.skippedEvents, ",")
     report.frames = {}
-    for _, name in ipairs(self.trackingFrames) do
+    for _, name in ipairs(self.progressFrames) do
         report.frames[name] = self:DescribeFrame(name)
     end
     for _, entry in ipairs(self.widgetMethods) do
@@ -655,7 +655,7 @@ function APICheck:Print(report)
     PrintSorted("Event counts", report.eventCounts)
     PrintSorted("Widget methods", report.widgets)
     PrintSorted("Values", report.values)
-    PrintSorted("Tracking bar frames", report.frames)
+    PrintSorted("XP and reputation bar frames", report.frames)
     print("  Combat log: registered=" .. tostring(report.cleu.registered)
         .. ", events=" .. report.cleu.count
         .. ", sample=" .. tostring(report.cleu.sample))
@@ -674,7 +674,7 @@ for _, event in ipairs({ "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_CHANNEL_START",
         "SPELL_ACTIVATION_OVERLAY_GLOW_SHOW", "SPELL_ACTIVATION_OVERLAY_GLOW_HIDE" }) do
     eventFrame:RegisterEvent(event)
 end
-APICheck.skippedEvents = APICheck:RegisterOptionalEvents(eventFrame, APICheck.trackingEvents)
+APICheck.skippedEvents = APICheck:RegisterOptionalEvents(eventFrame, APICheck.progressEvents)
 -- The combat log is not registered: Forever ignored it in two probe runs and it is the
 -- suspected cause of the "UI action blocked" message on login
 eventFrame:SetScript("OnEvent", function(_, event, ...)

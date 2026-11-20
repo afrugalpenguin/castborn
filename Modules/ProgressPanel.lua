@@ -1,48 +1,48 @@
 --[[
-    Castborn - Tracking Panel
+    Castborn - Progress Panel
     A floating window with one row per tracked item: XP and the watched reputation.
     Replaces Blizzard's XP and reputation bars, which it hides while enabled.
     Every read and every piece of maths on XP and reputation values is a named seam
     (ReadXP, ReadWatchedFaction, ReadFactionByID, ReadKnownFactions, ShouldShowXP, BuildXPRow,
     BuildReputationRow), and the
-    Blizzard frames to hide come from GetBlizzardBars; TrackingPanel_Forever.lua overrides
+    Blizzard frames to hide come from GetBlizzardBars; ProgressPanel_Forever.lua overrides
     only what differs on Forever.
 ]]
 
-local TrackingPanel = {}
-Castborn.TrackingPanel = TrackingPanel
+local ProgressPanel = {}
+Castborn.ProgressPanel = ProgressPanel
 
 local CB = Castborn
 
--- Defaults live in CB.defaults.tracking (Core.lua), so Reset Positions can find them
-local defaults = CB.defaults.tracking
-TrackingPanel.defaults = defaults
+-- Defaults live in CB.defaults.progress (Core.lua), so Reset Positions can find them
+local defaults = CB.defaults.progress
+ProgressPanel.defaults = defaults
 
-TrackingPanel.EVENTS = {
+ProgressPanel.EVENTS = {
     "PLAYER_XP_UPDATE", "UPDATE_EXHAUSTION", "PLAYER_LEVEL_UP", "UPDATE_FACTION",
     "PLAYER_ENTERING_WORLD", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED",
 }
 
 -- A plain boolean from PLAYER_REGEN_DISABLED / ENABLED only, for fading in combat
-TrackingPanel.inCombat = false
-TrackingPanel.COMBAT_ALPHA = 0.4
+ProgressPanel.inCombat = false
+ProgressPanel.COMBAT_ALPHA = 0.4
 
 -- Events the client rejected
-TrackingPanel.skippedEvents = {}
+ProgressPanel.skippedEvents = {}
 
-TrackingPanel.testModeActive = false
+ProgressPanel.testModeActive = false
 -- Set when a Blizzard bar change was asked for in combat; applied on PLAYER_REGEN_ENABLED
-TrackingPanel.pendingBlizzardBars = false
+ProgressPanel.pendingBlizzardBars = false
 -- Blizzard frames currently hidden, each mapped to what is needed to put it back
-TrackingPanel.hiddenBars = {}
+ProgressPanel.hiddenBars = {}
 
 -- Used when the client has no FACTION_STANDING_LABEL<n> globals
-TrackingPanel.standingLabels = {
+ProgressPanel.standingLabels = {
     "Hated", "Hostile", "Unfriendly", "Neutral", "Friendly", "Honored", "Revered", "Exalted",
 }
 
 -- Blizzard's standing colours, used when the client has no FACTION_BAR_COLORS
-TrackingPanel.fallbackStandingColors = {
+ProgressPanel.fallbackStandingColors = {
     [1] = { r = 0.8, g = 0.3, b = 0.22 },
     [2] = { r = 0.8, g = 0.3, b = 0.22 },
     [3] = { r = 0.75, g = 0.27, b = 0 },
@@ -75,7 +75,7 @@ local SAMPLE_XP_RATE = 48200
 local SAMPLE_REP_GAIN = 250
 
 local function GetDB()
-    return CB.db and CB.db.tracking
+    return CB.db and CB.db.progress
 end
 
 --------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ end
 --------------------------------------------------------------------------------
 
 -- 41300 -> "41,300"
-function TrackingPanel:FormatNumber(n)
+function ProgressPanel:FormatNumber(n)
     local s = tostring(math.floor(n + 0.5))
     local sign, digits = s:match("^(-?)(%d+)$")
     if not digits then return s end
@@ -91,11 +91,11 @@ function TrackingPanel:FormatNumber(n)
     return sign .. grouped
 end
 
-function TrackingPanel:StandingLabel(reaction)
+function ProgressPanel:StandingLabel(reaction)
     return _G["FACTION_STANDING_LABEL" .. tostring(reaction)] or self.standingLabels[reaction] or "Unknown"
 end
 
-function TrackingPanel:StandingColor(reaction)
+function ProgressPanel:StandingColor(reaction)
     local c = FACTION_BAR_COLORS and FACTION_BAR_COLORS[reaction]
     if not c then c = self.fallbackStandingColors[reaction] or self.fallbackStandingColors[4] end
     return c.r, c.g, c.b
@@ -109,7 +109,7 @@ end
 -- Seams over XP and reputation values (TBC behaviour; Forever overrides some)
 --------------------------------------------------------------------------------
 
-function TrackingPanel:ReadXP()
+function ProgressPanel:ReadXP()
     return {
         level = UnitLevel("player"),
         current = UnitXP("player"),
@@ -121,7 +121,7 @@ function TrackingPanel:ReadXP()
 end
 
 -- min and max are the standing's bounds, value the faction's standing; all absolute
-function TrackingPanel:ReadWatchedFaction()
+function ProgressPanel:ReadWatchedFaction()
     if not GetWatchedFactionInfo then return nil end
     local name, reaction, min, max, value, factionID = GetWatchedFactionInfo()
     if not name then return nil end
@@ -129,7 +129,7 @@ function TrackingPanel:ReadWatchedFaction()
 end
 
 -- A pinned faction, looked up by ID (indexes shift when reputation headers collapse)
-function TrackingPanel:ReadFactionByID(factionID)
+function ProgressPanel:ReadFactionByID(factionID)
     if not GetFactionInfoByID then return nil end
     local name, _, reaction, min, max, value = GetFactionInfoByID(factionID)
     if not name then return nil end
@@ -140,7 +140,7 @@ end
 -- reputation pane order (value is the absolute standing). Headers and inactive factions are
 -- skipped; hidden factions are never returned by the client. Factions under a collapsed
 -- header are not listed by the client either.
-function TrackingPanel:ReadKnownFactions()
+function ProgressPanel:ReadKnownFactions()
     local list = {}
     if not (GetNumFactions and GetFactionInfo) then return list end
     local underInactive = false
@@ -157,7 +157,7 @@ function TrackingPanel:ReadKnownFactions()
 end
 
 -- db is optional; without it the XP row hides at max level
-function TrackingPanel:ShouldShowXP(xp, db)
+function ProgressPanel:ShouldShowXP(xp, db)
     if xp.disabled then return false end
     local hideAtMax = not db or db.hideAtMaxLevel ~= false
     if hideAtMax and xp.maxLevel and xp.level >= xp.maxLevel then return false end
@@ -165,7 +165,7 @@ function TrackingPanel:ShouldShowXP(xp, db)
 end
 
 -- 3060 -> "51m", 4500 -> "1h 15m"
-function TrackingPanel:FormatDuration(seconds)
+function ProgressPanel:FormatDuration(seconds)
     local minutes = math.floor(seconds / 60)
     if minutes < 1 then return "<1m" end
     if minutes < 60 then return minutes .. "m" end
@@ -182,7 +182,7 @@ end
 
 -- A row is the texts, the bar range (0 to max) and fills, and colours.
 -- rate is XP per hour this session, or nil to leave the rate out.
-function TrackingPanel:BuildXPRow(xp, rate)
+function ProgressPanel:BuildXPRow(xp, rate)
     local current, max = xp.current or 0, xp.max or 0
     local percent = max > 0 and current * 100 / max or 0
     local rested = xp.rested or 0
@@ -206,7 +206,7 @@ function TrackingPanel:BuildXPRow(xp, rate)
 end
 
 -- sessionGain is the standing gained this session, or nil to leave it out
-function TrackingPanel:BuildReputationRow(rep, sessionGain)
+function ProgressPanel:BuildReputationRow(rep, sessionGain)
     local range = rep.max - rep.min
     local percent = range > 0 and (rep.value - rep.min) * 100 / range or 100
     local r, g, b = self:StandingColor(rep.reaction)
@@ -233,7 +233,7 @@ end
 -- The Blizzard frames the panel replaces. mode "reparent" moves the frame to a hidden parent;
 -- "alpha" fades it and turns its mouse off, for frames where reparenting risks taint.
 -- ExhaustionTick is a child of MainMenuExpBar and goes with it.
-function TrackingPanel:GetBlizzardBars()
+function ProgressPanel:GetBlizzardBars()
     return {
         { name = "MainMenuExpBar", mode = "reparent" },
         { name = "ReputationWatchBar", mode = "reparent" },
@@ -245,12 +245,12 @@ end
 -- Pinned reputations, per character (CastbornDB.characters, which profiles leave alone)
 --------------------------------------------------------------------------------
 
-function TrackingPanel:GetCharacterKey()
+function ProgressPanel:GetCharacterKey()
     return UnitName("player") .. "-" .. GetRealmName()
 end
 
 -- Faction IDs pinned by this character, in the order they were added
-function TrackingPanel:GetPinnedFactions()
+function ProgressPanel:GetPinnedFactions()
     CastbornDB.characters = CastbornDB.characters or {}
     local key = self:GetCharacterKey()
     local data = CastbornDB.characters[key] or {}
@@ -259,7 +259,7 @@ function TrackingPanel:GetPinnedFactions()
     return data.trackedFactions
 end
 
-function TrackingPanel:IsPinned(factionID)
+function ProgressPanel:IsPinned(factionID)
     for _, id in ipairs(self:GetPinnedFactions()) do
         if id == factionID then return true end
     end
@@ -267,7 +267,7 @@ function TrackingPanel:IsPinned(factionID)
 end
 
 -- Returns true if the faction was added
-function TrackingPanel:PinFaction(factionID)
+function ProgressPanel:PinFaction(factionID)
     if not factionID or self:IsPinned(factionID) then return false end
     local pinned = self:GetPinnedFactions()
     pinned[#pinned + 1] = factionID
@@ -275,7 +275,7 @@ function TrackingPanel:PinFaction(factionID)
 end
 
 -- Returns true if the faction was removed
-function TrackingPanel:UnpinFaction(factionID)
+function ProgressPanel:UnpinFaction(factionID)
     local pinned = self:GetPinnedFactions()
     for i, id in ipairs(pinned) do
         if id == factionID then
@@ -291,20 +291,20 @@ end
 --------------------------------------------------------------------------------
 
 -- An auto-added row is dropped after this long without another gain
-TrackingPanel.AUTO_ADD_EXPIRY = 600
-TrackingPanel.AUTO_ADD_NOTICE = "Auto-added - pin to keep"
+ProgressPanel.AUTO_ADD_EXPIRY = 600
+ProgressPanel.AUTO_ADD_NOTICE = "Auto-added - pin to keep"
 
 -- factionID -> absolute standing, taken on PLAYER_ENTERING_WORLD and kept up to date
-TrackingPanel.factionSnapshot = nil
+ProgressPanel.factionSnapshot = nil
 -- Temporary rows, oldest first: { factionID, lastGain, flash }
-TrackingPanel.autoAdded = {}
+ProgressPanel.autoAdded = {}
 
 -- The clock, a seam so specs can move time
-function TrackingPanel:Now()
+function ProgressPanel:Now()
     return GetTime()
 end
 
-function TrackingPanel:TakeFactionSnapshot()
+function ProgressPanel:TakeFactionSnapshot()
     self.factionSnapshot = {}
     for _, faction in ipairs(self:ReadKnownFactions()) do
         if faction.value ~= nil then
@@ -317,7 +317,7 @@ end
 -- Compare every faction with the snapshot and return the gains as { id, delta }. Factions
 -- not seen before (a header just expanded) are recorded, not counted. Chat messages are not
 -- parsed: their text may be secret on Forever.
-function TrackingPanel:DetectFactionGains()
+function ProgressPanel:DetectFactionGains()
     if not self.factionSnapshot then
         self:TakeFactionSnapshot()
         return {}
@@ -336,7 +336,7 @@ function TrackingPanel:DetectFactionGains()
 end
 
 -- Already a row of its own: pinned, or the watched faction while that row is shown
-function TrackingPanel:IsTracked(factionID, db)
+function ProgressPanel:IsTracked(factionID, db)
     if self:IsPinned(factionID) then return true end
     if db.showReputation then
         local watched = self:ReadWatchedFaction()
@@ -353,7 +353,7 @@ end
 
 -- A gain on an untracked faction adds it at the bottom (highlighted once), or keeps an
 -- existing temporary row for another ten minutes
-function TrackingPanel:NoteGain(factionID, db)
+function ProgressPanel:NoteGain(factionID, db)
     if not db.trackOnGain or self:IsTracked(factionID, db) then return end
     local now = self:Now()
     local _, entry = FindAutoAdded(self, factionID)
@@ -364,11 +364,11 @@ function TrackingPanel:NoteGain(factionID, db)
     end
     -- Nothing else may refresh the panel when the row runs out
     if C_Timer then
-        C_Timer.After(self.AUTO_ADD_EXPIRY + 1, function() TrackingPanel:Refresh() end)
+        C_Timer.After(self.AUTO_ADD_EXPIRY + 1, function() ProgressPanel:Refresh() end)
     end
 end
 
-function TrackingPanel:ExpireAutoAdded()
+function ProgressPanel:ExpireAutoAdded()
     local now = self:Now()
     for i = #self.autoAdded, 1, -1 do
         if now - self.autoAdded[i].lastGain >= self.AUTO_ADD_EXPIRY then
@@ -378,7 +378,7 @@ function TrackingPanel:ExpireAutoAdded()
 end
 
 -- Clicking a temporary row pins it, making it permanent
-function TrackingPanel:OnRowClick(data)
+function ProgressPanel:OnRowClick(data)
     if not data or not data.autoAdded or not data.factionID then return false end
     self:PinFaction(data.factionID)
     local i = FindAutoAdded(self, data.factionID)
@@ -392,26 +392,26 @@ end
 --------------------------------------------------------------------------------
 
 -- The XP rate stays hidden until this much data exists
-TrackingPanel.MIN_RATE_SECONDS = 120
+ProgressPanel.MIN_RATE_SECONDS = 120
 
-function TrackingPanel:ResetSession()
+function ProgressPanel:ResetSession()
     -- startTime is set by the first XP reading; repStart holds each faction's first standing
     self.session = { startTime = nil, xpGained = 0, lastXP = nil, repStart = {} }
 end
-TrackingPanel:ResetSession()
+ProgressPanel:ResetSession()
 
 -- Add the XP gained since the last reading. Only UnitXP is diffed, so the rested pool
 -- filling or draining never counts; rested bonus XP actually earned does. A level-up adds
 -- the rest of the old level plus the XP into the new one. UnitLevel can lag a moment behind
 -- UnitXP, so XP going down at the same level counts as the level-up, and the stored level
 -- moves on so the late level change is not counted again.
-function TrackingPanel:RecordXP(xp)
+function ProgressPanel:RecordXP(xp)
     local s = self.session
     if not s.startTime then
         s.startTime = self:Now()
         -- Show the rate as soon as it may, without waiting for the next XP event
         if C_Timer then
-            C_Timer.After(self.MIN_RATE_SECONDS + 1, function() TrackingPanel:Refresh() end)
+            C_Timer.After(self.MIN_RATE_SECONDS + 1, function() ProgressPanel:Refresh() end)
         end
     end
     local last = s.lastXP
@@ -429,7 +429,7 @@ function TrackingPanel:RecordXP(xp)
 end
 
 -- XP per hour, or nil until two minutes of data and some XP exist
-function TrackingPanel:XPRate()
+function ProgressPanel:XPRate()
     local s = self.session
     if not s.startTime or s.xpGained <= 0 then return nil end
     local elapsed = self:Now() - s.startTime
@@ -439,13 +439,13 @@ end
 
 -- The first standing seen this session is the baseline (from the login snapshot, or the first
 -- time the row is read, for factions the snapshot could not see)
-function TrackingPanel:RecordFactionStart(factionID, value)
+function ProgressPanel:RecordFactionStart(factionID, value)
     if factionID and value ~= nil and self.session.repStart[factionID] == nil then
         self.session.repStart[factionID] = value
     end
 end
 
-function TrackingPanel:SessionRepGain(factionID, value)
+function ProgressPanel:SessionRepGain(factionID, value)
     local start = factionID and self.session.repStart[factionID]
     if start == nil or value == nil then return nil end
     return value - start
@@ -466,7 +466,7 @@ end
 
 -- XP, then the watched reputation, then pinned reputations in the order added.
 -- A pinned faction that is also watched is shown once, as the watched row.
-function TrackingPanel:CollectRows(db)
+function ProgressPanel:CollectRows(db)
     local showRate = db.showSessionRate
     if self.testModeActive then
         return ApplyRowSettings({
@@ -533,43 +533,43 @@ end
 --------------------------------------------------------------------------------
 
 -- The header's button; the state is saved, so it survives a /reload
-function TrackingPanel:ToggleCollapsed()
+function ProgressPanel:ToggleCollapsed()
     local db = GetDB()
     db.collapsed = not db.collapsed
     self:Refresh()
 end
 
 -- At login, "Start collapsed" folds the panel; otherwise the saved state stands
-function TrackingPanel:ApplyStartCollapsed(db)
+function ProgressPanel:ApplyStartCollapsed(db)
     if db.startCollapsed then db.collapsed = true end
 end
 
 -- What hovering a collapsed bar shows: name and value, then the detail line
-function TrackingPanel:GetTooltipLines(data)
+function ProgressPanel:GetTooltipLines(data)
     return { left = data.name, right = data.value, detail = data.detail }
 end
 
 -- Rows take the mouse only while collapsed (for the tooltip) or when temporary (click to pin),
 -- and never while frames are unlocked, so they do not get in the way of dragging the panel
-function TrackingPanel:RowWantsMouse(data, db)
+function ProgressPanel:RowWantsMouse(data, db)
     if CastbornDB.locked == false then return false end
     return (db.collapsed or data.autoAdded) and true or false
 end
 
 -- Faded in combat when asked; never in test mode, so the panel can be positioned
-function TrackingPanel:GetPanelAlpha(db)
+function ProgressPanel:GetPanelAlpha(db)
     if db and db.fadeInCombat and self.inCombat and not self.testModeActive then
         return self.COMBAT_ALPHA
     end
     return 1
 end
 
-function TrackingPanel:ApplyAlpha()
+function ProgressPanel:ApplyAlpha()
     if self.frame then self.frame:SetAlpha(self:GetPanelAlpha(GetDB())) end
 end
 
 -- Shown when enabled and something is tracked, or always in test mode
-function TrackingPanel:GetVisibility(db, rowCount)
+function ProgressPanel:GetVisibility(db, rowCount)
     if not db or not db.enabled then return false end
     if self.testModeActive then return true end
     return rowCount > 0
@@ -580,15 +580,15 @@ end
 --------------------------------------------------------------------------------
 
 -- Hidden parent for reparented Blizzard frames
-TrackingPanel.hider = CreateFrame("Frame")
-TrackingPanel.hider:Hide()
+ProgressPanel.hider = CreateFrame("Frame")
+ProgressPanel.hider:Hide()
 
 -- Depends only on settings, never on test mode
-function TrackingPanel:ShouldHideBlizzardBars(db)
+function ProgressPanel:ShouldHideBlizzardBars(db)
     return db and db.enabled and db.hideBlizzardBars and true or false
 end
 
-function TrackingPanel:HideBlizzardBars()
+function ProgressPanel:HideBlizzardBars()
     for _, entry in ipairs(self:GetBlizzardBars()) do
         local frame = _G[entry.name]
         if frame and not self.hiddenBars[frame] then
@@ -611,7 +611,7 @@ function TrackingPanel:HideBlizzardBars()
     end
 end
 
-function TrackingPanel:RestoreBlizzardBars()
+function ProgressPanel:RestoreBlizzardBars()
     for frame, saved in pairs(self.hiddenBars) do
         if saved.mode == "alpha" then
             frame:SetAlpha(saved.alpha or 1)
@@ -628,7 +628,7 @@ function TrackingPanel:RestoreBlizzardBars()
 end
 
 -- Hide or restore to match the settings; in combat, wait for PLAYER_REGEN_ENABLED
-function TrackingPanel:UpdateBlizzardBars()
+function ProgressPanel:UpdateBlizzardBars()
     if InCombatLockdown and InCombatLockdown() then
         self.pendingBlizzardBars = true
         return
@@ -663,7 +663,7 @@ local function CreateStatusBar(parent)
     return bar
 end
 
-function TrackingPanel:CreateRow()
+function ProgressPanel:CreateRow()
     local f = self.frame
     local db = GetDB()
     local row = CreateFrame("Frame", nil, f)
@@ -685,7 +685,7 @@ function TrackingPanel:CreateRow()
 
     row:SetScript("OnEnter", function(self)
         if not self.data or not GetDB().collapsed then return end
-        local lines = TrackingPanel:GetTooltipLines(self.data)
+        local lines = ProgressPanel:GetTooltipLines(self.data)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         GameTooltip:AddDoubleLine(lines.left, lines.right, 1, 1, 1, 1, 1, 1)
         if lines.detail then
@@ -697,7 +697,7 @@ function TrackingPanel:CreateRow()
         GameTooltip:Hide()
     end)
     row:SetScript("OnMouseUp", function(self, button)
-        if button == "LeftButton" then TrackingPanel:OnRowClick(self.data) end
+        if button == "LeftButton" then ProgressPanel:OnRowClick(self.data) end
     end)
 
     -- A standing-coloured outline that fades out once when a row is auto-added
@@ -726,7 +726,7 @@ function TrackingPanel:CreateRow()
     return row
 end
 
-function TrackingPanel:FlashRow(row, color)
+function ProgressPanel:FlashRow(row, color)
     local outline = row.outline
     for _, edge in ipairs(outline.edges) do
         edge:SetColorTexture(color[1], color[2], color[3], 1)
@@ -736,9 +736,9 @@ function TrackingPanel:FlashRow(row, color)
     outline.fade:Play()
 end
 
-function TrackingPanel:CreateFrames()
+function ProgressPanel:CreateFrames()
     local db = GetDB()
-    local f = CreateFrame("Frame", "Castborn_TrackingPanel", UIParent)
+    local f = CreateFrame("Frame", "Castborn_ProgressPanel", UIParent)
     f:SetFrameStrata("MEDIUM")
     f:SetSize(db.width, HEADER_HEIGHT)
     CB:CreateBackdrop(f, db.bgColor)
@@ -746,23 +746,23 @@ function TrackingPanel:CreateFrames()
 
     f.title = CreateText(f, db.textSize, 1, 0.82, 0)
     f.title:SetPoint("TOPLEFT", f, "TOPLEFT", PADDING, -3)
-    f.title:SetText("Tracking")
+    f.title:SetText("Progress")
 
     -- In the header while expanded; a small handle beside the bars while collapsed
     local collapse = CreateFrame("Button", nil, f)
     collapse.text = CreateText(collapse, db.textSize + 2)
     collapse.text:SetPoint("CENTER", collapse, "CENTER", 0, 0)
     collapse:SetScript("OnClick", function()
-        TrackingPanel:ToggleCollapsed()
+        ProgressPanel:ToggleCollapsed()
     end)
     f.collapse = collapse
 
     f.rows = {}
 
     if CB.Anchoring then
-        CB.Anchoring:MakeDraggable(f, db, nil, "Tracking")
+        CB.Anchoring:MakeDraggable(f, db, nil, "Progress")
     end
-    CB:ApplyPosition(f, "tracking")
+    CB:ApplyPosition(f, "progress")
     return f
 end
 
@@ -771,7 +771,7 @@ local function ShowIf(region, shown)
 end
 
 -- Fill a row widget from row data and return the row's height
-function TrackingPanel:FillRow(row, data, db)
+function ProgressPanel:FillRow(row, data, db)
     row.data = data
     row:EnableMouse(self:RowWantsMouse(data, db))
     local collapsed = db.collapsed and true or false
@@ -811,7 +811,7 @@ function TrackingPanel:FillRow(row, data, db)
     return height
 end
 
-function TrackingPanel:Refresh()
+function ProgressPanel:Refresh()
     local f = self.frame
     local db = GetDB()
     if not f or not db then return end
@@ -856,7 +856,7 @@ function TrackingPanel:Refresh()
     if self:GetVisibility(db, #rows) then f:Show() else f:Hide() end
 end
 
-function TrackingPanel:ApplyFonts()
+function ProgressPanel:ApplyFonts()
     local f = self.frame
     local db = GetDB()
     if not f or not db then return end
@@ -872,8 +872,8 @@ function TrackingPanel:ApplyFonts()
     end
 end
 
--- Called whenever a tracking setting changes, including the General page toggle
-function TrackingPanel:ApplySettings()
+-- Called whenever a progress setting changes, including the General page toggle
+function ProgressPanel:ApplySettings()
     if self.frame then
         local db = GetDB()
         CB:PaintBackdrop(self.frame, db.bgColor or defaults.bgColor)
@@ -888,7 +888,7 @@ end
 --------------------------------------------------------------------------------
 
 -- Register each event, skipping any the client rejects
-function TrackingPanel:RegisterEvents(f)
+function ProgressPanel:RegisterEvents(f)
     self.skippedEvents = {}
     for _, event in ipairs(self.EVENTS) do
         if not pcall(f.RegisterEvent, f, event) then
@@ -897,7 +897,7 @@ function TrackingPanel:RegisterEvents(f)
     end
 end
 
-function TrackingPanel:OnEvent(event)
+function ProgressPanel:OnEvent(event)
     if event == "PLAYER_REGEN_DISABLED" then
         self.inCombat = true
         self:ApplyAlpha()
@@ -925,40 +925,40 @@ end
 --------------------------------------------------------------------------------
 
 CB:RegisterCallback("INIT", function()
-    CastbornDB.tracking = CB:MergeDefaults(CastbornDB.tracking or {}, defaults)
+    CastbornDB.progress = CB:MergeDefaults(CastbornDB.progress or {}, defaults)
 end)
 
 CB:RegisterCallback("READY", function()
-    TrackingPanel:ApplyStartCollapsed(CastbornDB.tracking)
-    TrackingPanel:CreateFrames()
+    ProgressPanel:ApplyStartCollapsed(CastbornDB.progress)
+    ProgressPanel:CreateFrames()
 
     local eventFrame = CreateFrame("Frame")
-    TrackingPanel:RegisterEvents(eventFrame)
+    ProgressPanel:RegisterEvents(eventFrame)
     eventFrame:SetScript("OnEvent", function(_, event)
-        TrackingPanel:OnEvent(event)
+        ProgressPanel:OnEvent(event)
     end)
 
-    TrackingPanel:ApplySettings()
+    ProgressPanel:ApplySettings()
 
-    CB.TestManager:Register("TrackingPanel",
-        function() CB:TestTrackingPanel() end,
-        function() CB:EndTestTrackingPanel() end
+    CB.TestManager:Register("ProgressPanel",
+        function() CB:TestProgressPanel() end,
+        function() CB:EndTestProgressPanel() end
     )
 end)
 
--- Repaint when the Tracking page's background picker changes
+-- Repaint when the Progress page's background picker changes
 CB:RegisterCallback("BACKGROUND_CHANGED", function(key)
-    if key == "tracking" then TrackingPanel:ApplySettings() end
+    if key == "progress" then ProgressPanel:ApplySettings() end
 end)
 
 -- Locking hides frames that were shown for positioning; put the panel back as it should be
 CB:RegisterCallback("FRAMES_LOCKED", function()
-    TrackingPanel:Refresh()
+    ProgressPanel:Refresh()
 end)
 
 -- Collapsed rows give up the mouse while unlocked, so the panel can be dragged by them
 CB:RegisterCallback("FRAMES_UNLOCKED", function()
-    TrackingPanel:Refresh()
+    ProgressPanel:Refresh()
 end)
 
 --------------------------------------------------------------------------------
@@ -966,14 +966,14 @@ end)
 --------------------------------------------------------------------------------
 
 -- Test mode shows sample rows only; it never hides or restores Blizzard's bars
-function CB:TestTrackingPanel()
-    TrackingPanel.testModeActive = true
-    TrackingPanel:Refresh()
+function CB:TestProgressPanel()
+    ProgressPanel.testModeActive = true
+    ProgressPanel:Refresh()
 end
 
-function CB:EndTestTrackingPanel()
-    TrackingPanel.testModeActive = false
-    TrackingPanel:Refresh()
+function CB:EndTestProgressPanel()
+    ProgressPanel.testModeActive = false
+    ProgressPanel:Refresh()
 end
 
-Castborn:RegisterModule("TrackingPanel", TrackingPanel)
+Castborn:RegisterModule("ProgressPanel", ProgressPanel)

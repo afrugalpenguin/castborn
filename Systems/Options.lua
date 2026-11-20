@@ -54,7 +54,7 @@ local categories = {
     { id = "general", name = "General" },
     { id = "castbars", name = "Castbars" },
     { id = "resources", name = "Resource Bars" },
-    { id = "tracking", name = "Tracking" },
+    { id = "progress", name = "Progress" },
     { id = "gcd", name = "GCD Indicator" },
     { id = "fsr", name = "5 Second Rule" },
     { id = "swing", name = "Swing Timer" },
@@ -80,7 +80,7 @@ local pageSubtitles = {
     general = "Lock and test your frames, and the essentials.",
     castbars = "Your castbar and those of your target, their target and your focus.",
     resources = "Your health and power, in their own movable frame.",
-    tracking = "Experience and reputations, in their own floating window.",
+    progress = "Experience and reputations, in their own floating window.",
     gcd = "A sweep that shows the global cooldown.",
     fsr = "The five-second rule for mana regeneration.",
     swing = "When your next auto attack lands.",
@@ -743,8 +743,8 @@ function Options:BuildGeneral(parent)
         { key = "resources", label = "Resource Bars", onChange = function()
             if Castborn.ResourceBars then Castborn.ResourceBars:ApplySettings() end
         end },
-        { key = "tracking", label = "Tracking Panel", onChange = function()
-            if Castborn.TrackingPanel then Castborn.TrackingPanel:ApplySettings() end
+        { key = "progress", label = "Progress Panel", onChange = function()
+            if Castborn.ProgressPanel then Castborn.ProgressPanel:ApplySettings() end
         end },
     }
 
@@ -2929,13 +2929,13 @@ function moduleBuilders.resources(parent, db, y)
     return y
 end
 
--- One menu for the Tracking page's Add reputation button: known factions not yet pinned
+-- One menu for the Progress page's Add reputation button: known factions not yet pinned
 local factionMenu
 
 local function ShowFactionMenu(anchor, onPick)
-    local TP = Castborn.TrackingPanel
+    local TP = Castborn.ProgressPanel
     if not factionMenu then
-        factionMenu = CreateFrame("Frame", "CastbornTrackingFactionMenu", UIParent, "UIDropDownMenuTemplate")
+        factionMenu = CreateFrame("Frame", "CastbornProgressFactionMenu", UIParent, "UIDropDownMenuTemplate")
     end
     UIDropDownMenu_Initialize(factionMenu, function(self, level)
         local added = 0
@@ -2963,8 +2963,8 @@ local function ShowFactionMenu(anchor, onPick)
     ToggleDropDownMenu(1, nil, factionMenu, anchor, 0, 0)
 end
 
-function moduleBuilders.tracking(parent, db, y)
-    local TP = Castborn.TrackingPanel
+function moduleBuilders.progress(parent, db, y)
+    local TP = Castborn.ProgressPanel
     local function apply()
         if TP then TP:ApplySettings() end
     end
@@ -3016,7 +3016,7 @@ function moduleBuilders.tracking(parent, db, y)
         removeBtn:SetScript("OnClick", function()
             TP:UnpinFaction(factionID)
             apply()
-            RebuildCategory("tracking")
+            RebuildCategory("progress")
         end)
         y = y - 26
     end
@@ -3027,7 +3027,7 @@ function moduleBuilders.tracking(parent, db, y)
         ShowFactionMenu(addBtn, function(factionID)
             TP:PinFaction(factionID)
             apply()
-            RebuildCategory("tracking")
+            RebuildCategory("progress")
         end)
     end)
     addBtn:SetPoint("TOPLEFT", 0, y)
@@ -3068,7 +3068,7 @@ function moduleBuilders.tracking(parent, db, y)
     textSlider:SetPoint("TOPLEFT", 0, y)
     y = y - 60
     local bgPicker = CreateColorPicker(parent, "Background Colour", db, "bgColor", function()
-        Castborn:FireCallback("BACKGROUND_CHANGED", "tracking")
+        Castborn:FireCallback("BACKGROUND_CHANGED", "progress")
     end)
     bgPicker:SetPoint("TOPLEFT", 0, y)
     y = y - 30
@@ -3181,8 +3181,8 @@ function Options:BuildModule(parent, key)
         y = y - 30
     end
 
-    -- Background colour picker (the tracking page draws its own, in its Look section)
-    if db.bgColor and key ~= "tracking" then
+    -- Background colour picker (the progress page draws its own, in its Look section)
+    if db.bgColor and key ~= "progress" then
         local bgPicker = CreateColorPicker(parent, "Background Colour", db, "bgColor", function()
             -- The module whose page this is repaints its own frames
             Castborn:FireCallback("BACKGROUND_CHANGED", key)
