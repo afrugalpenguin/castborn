@@ -20,8 +20,12 @@ TrackingPanel.defaults = defaults
 
 TrackingPanel.EVENTS = {
     "PLAYER_XP_UPDATE", "UPDATE_EXHAUSTION", "PLAYER_LEVEL_UP", "UPDATE_FACTION",
-    "PLAYER_ENTERING_WORLD", "PLAYER_REGEN_ENABLED",
+    "PLAYER_ENTERING_WORLD", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED",
 }
+
+-- A plain boolean from PLAYER_REGEN_DISABLED / ENABLED only, for fading in combat
+TrackingPanel.inCombat = false
+TrackingPanel.COMBAT_ALPHA = 0.4
 
 -- Events the client rejected
 TrackingPanel.skippedEvents = {}
@@ -552,6 +556,18 @@ function TrackingPanel:RowWantsMouse(data, db)
     return (db.collapsed or data.autoAdded) and true or false
 end
 
+-- Faded in combat when asked; never in test mode, so the panel can be positioned
+function TrackingPanel:GetPanelAlpha(db)
+    if db and db.fadeInCombat and self.inCombat and not self.testModeActive then
+        return self.COMBAT_ALPHA
+    end
+    return 1
+end
+
+function TrackingPanel:ApplyAlpha()
+    if self.frame then self.frame:SetAlpha(self:GetPanelAlpha(GetDB())) end
+end
+
 -- Shown when enabled and something is tracked, or always in test mode
 function TrackingPanel:GetVisibility(db, rowCount)
     if not db or not db.enabled then return false end
@@ -836,6 +852,7 @@ function TrackingPanel:Refresh()
     -- y ends one gap below the last row
     f:SetHeight(-y - gap + PADDING)
 
+    f:SetAlpha(self:GetPanelAlpha(db))
     if self:GetVisibility(db, #rows) then f:Show() else f:Hide() end
 end
 
@@ -881,7 +898,13 @@ function TrackingPanel:RegisterEvents(f)
 end
 
 function TrackingPanel:OnEvent(event)
-    if event == "PLAYER_REGEN_ENABLED" then
+    if event == "PLAYER_REGEN_DISABLED" then
+        self.inCombat = true
+        self:ApplyAlpha()
+        return
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        self.inCombat = false
+        self:ApplyAlpha()
         if self.pendingBlizzardBars then self:UpdateBlizzardBars() end
         return
     end

@@ -3053,6 +3053,8 @@ function moduleBuilders.tracking(parent, db, y)
     -- XP per hour and time to level (after two minutes), and reputation gained this session
     local rateCB = CreateCheckbox(parent, "Show session rate", db, "showSessionRate", apply)
     rateCB:SetPoint("TOPLEFT", 0, y)
+    local fadeCB = CreateCheckbox(parent, "Fade in combat", db, "fadeInCombat", apply)
+    fadeCB:SetPoint("TOPLEFT", 220, y)
     y = y - 40
 
     -- Look

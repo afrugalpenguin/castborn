@@ -731,6 +731,41 @@ describe("Tracking panel (TBC behaviour)", function()
         end)
     end)
 
+    describe("fade in combat", function()
+        after_each(function()
+            TP.inCombat = false
+            TP.testModeActive = false
+        end)
+
+        it("is off by default, so combat changes nothing", function()
+            assert.is_false(db.fadeInCombat)
+            TP:OnEvent("PLAYER_REGEN_DISABLED")
+            assert.are.equal(1, TP:GetPanelAlpha(db))
+        end)
+
+        it("lowers the alpha between PLAYER_REGEN_DISABLED and ENABLED", function()
+            db.fadeInCombat = true
+            assert.are.equal(1, TP:GetPanelAlpha(db))
+            TP:OnEvent("PLAYER_REGEN_DISABLED")
+            assert.are.equal(TP.COMBAT_ALPHA, TP:GetPanelAlpha(db))
+            TP:OnEvent("PLAYER_REGEN_ENABLED")
+            assert.are.equal(1, TP:GetPanelAlpha(db))
+        end)
+
+        it("stays fully visible in test mode", function()
+            db.fadeInCombat = true
+            TP:OnEvent("PLAYER_REGEN_DISABLED")
+            TP.testModeActive = true
+            assert.are.equal(1, TP:GetPanelAlpha(db))
+        end)
+
+        it("still applies queued Blizzard bar changes when combat ends", function()
+            TP.pendingBlizzardBars = true
+            TP:OnEvent("PLAYER_REGEN_ENABLED")
+            assert.is_false(TP.pendingBlizzardBars)
+        end)
+    end)
+
     describe("collapsed mode", function()
         it("is off by default", function()
             assert.is_false(db.collapsed)
@@ -878,7 +913,7 @@ describe("Tracking panel (TBC behaviour)", function()
             TP:RegisterEvents(frame)
             assert.are.same({ "UPDATE_EXHAUSTION" }, TP.skippedEvents)
             for _, event in ipairs({ "PLAYER_XP_UPDATE", "PLAYER_LEVEL_UP", "UPDATE_FACTION",
-                    "PLAYER_ENTERING_WORLD", "PLAYER_REGEN_ENABLED" }) do
+                    "PLAYER_ENTERING_WORLD", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }) do
                 assert.is_true(frame.events[event], event .. " is not registered")
             end
         end)

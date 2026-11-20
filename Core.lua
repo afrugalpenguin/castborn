@@ -408,6 +408,7 @@ CB.defaults = {
         showDetail = true,
         trackOnGain = true,
         showSessionRate = true,
+        fadeInCombat = false,
         width = 220,
         barHeight = 6,
         textSize = 11,
