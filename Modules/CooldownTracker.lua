@@ -567,6 +567,12 @@ function CooldownTracker:IsOutOfMana(spellName)
     return noMana and true or false
 end
 
+-- Full colour for a ready icon. CooldownTracker_Forever.lua overrides it to tint from a
+-- secret usability answer.
+function CooldownTracker:SetReadyIconColour(icon, spellName)
+    icon:SetVertexColor(1, 1, 1, 1)
+end
+
 --------------------------------------------------------------------------------
 -- Lifecycle
 --------------------------------------------------------------------------------

@@ -68,6 +68,25 @@ function CooldownTracker:IsOutOfMana(spellName)
     return noMana and true or false
 end
 
+-- Should the usability answer ever be secret, IsOutOfMana reads it as affordable; tint the
+-- icon from the secret answer instead, which the texture accepts, so the blue still shows.
+-- (The ready glow cannot be held back then, as that needs the answer read.)
+local oomColour, readyColour
+
+function CooldownTracker:SetReadyIconColour(icon, spellName)
+    local isUsable = C_Spell and C_Spell.IsSpellUsable
+    if isUsable and icon.SetVertexColorFromBoolean and CreateColor then
+        local _, noMana = isUsable(spellName)
+        if isSecret(noMana) then
+            oomColour = oomColour or CreateColor(0.5, 0.5, 1, 1)
+            readyColour = readyColour or CreateColor(1, 1, 1, 1)
+            icon:SetVertexColorFromBoolean(noMana, oomColour, readyColour)
+            return
+        end
+    end
+    icon:SetVertexColor(1, 1, 1, 1)
+end
+
 -- When the creature type is secret (in combat), ask the range check instead. It stays plain
 -- in combat and answers nil when the spell cannot be cast on the target at all (a humanoid
 -- for Exorcism), and true or false, in or out of range, when it can.

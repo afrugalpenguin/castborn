@@ -747,7 +747,7 @@ function CooldownGroup:Update()
                         cdFrame.icon:SetVertexColor(OOM_R, OOM_G, OOM_B, 1)
                         StopEdgePulse(cdFrame)
                     else
-                        cdFrame.icon:SetVertexColor(1, 1, 1, 1)
+                        tracker:SetReadyIconColour(cdFrame.icon, spellName)
                         local glowWanted = targetFit or self.lastCooldownDuration[spell.spellId]
                         -- Start edge pulse if enabled and was a real cooldown
                         if moduleSettings.showReadyGlow ~= false and glowWanted then
