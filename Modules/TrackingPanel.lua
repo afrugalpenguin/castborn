@@ -59,6 +59,11 @@ local PADDING = 4
 local ROW_GAP = 6
 local LINE_GAP = 2
 
+-- Collapsed mode: thin bars only, and a small handle to expand again
+local COLLAPSED_BAR_HEIGHT = 4
+local COLLAPSED_GAP = 2
+local HANDLE_SIZE = 12
+
 -- Sample values for test mode: level 42 at 58.7% with rested to 80%, Darkspear Raiders Honored 60.8%
 local SAMPLE_XP = { level = 42, current = 58700, max = 100000, rested = 21300, maxLevel = 70, disabled = false }
 local SAMPLE_REPUTATION = { name = "Darkspear Raiders", reaction = 6, min = 9000, max = 21000, value = 16296 }
@@ -285,6 +290,34 @@ function TrackingPanel:CollectRows(db)
     return ApplyRowSettings(rows, db)
 end
 
+--------------------------------------------------------------------------------
+-- Collapsed mode
+--------------------------------------------------------------------------------
+
+-- The header's button; the state is saved, so it survives a /reload
+function TrackingPanel:ToggleCollapsed()
+    local db = GetDB()
+    db.collapsed = not db.collapsed
+    self:Refresh()
+end
+
+-- At login, "Start collapsed" folds the panel; otherwise the saved state stands
+function TrackingPanel:ApplyStartCollapsed(db)
+    if db.startCollapsed then db.collapsed = true end
+end
+
+-- What hovering a collapsed bar shows: name and value, then the detail line
+function TrackingPanel:GetTooltipLines(data)
+    return { left = data.name, right = data.value, detail = data.detail }
+end
+
+-- Rows take the mouse only while collapsed (for the tooltip), and never while frames are
+-- unlocked, so they do not get in the way of dragging the panel
+function TrackingPanel:RowWantsMouse(data, db)
+    if CastbornDB.locked == false then return false end
+    return db.collapsed and true or false
+end
+
 -- Shown when enabled and something is tracked, or always in test mode
 function TrackingPanel:GetVisibility(db, rowCount)
     if not db or not db.enabled then return false end
@@ -399,6 +432,20 @@ function TrackingPanel:CreateRow()
 
     row.detail = CreateText(row, db.textSize - 2, DETAIL_COLOR[1], DETAIL_COLOR[2], DETAIL_COLOR[3])
     row.detail:SetPoint("TOPLEFT", row.track, "BOTTOMLEFT", 0, -LINE_GAP)
+
+    row:SetScript("OnEnter", function(self)
+        if not self.data or not GetDB().collapsed then return end
+        local lines = TrackingPanel:GetTooltipLines(self.data)
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:AddDoubleLine(lines.left, lines.right, 1, 1, 1, 1, 1, 1)
+        if lines.detail then
+            GameTooltip:AddLine(lines.detail, DETAIL_COLOR[1], DETAIL_COLOR[2], DETAIL_COLOR[3])
+        end
+        GameTooltip:Show()
+    end)
+    row:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
     return row
 end
 
@@ -414,15 +461,12 @@ function TrackingPanel:CreateFrames()
     f.title:SetPoint("TOPLEFT", f, "TOPLEFT", PADDING, -3)
     f.title:SetText("Tracking")
 
+    -- In the header while expanded; a small handle beside the bars while collapsed
     local collapse = CreateFrame("Button", nil, f)
-    collapse:SetSize(HEADER_HEIGHT, HEADER_HEIGHT)
-    collapse:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
     collapse.text = CreateText(collapse, db.textSize + 2)
     collapse.text:SetPoint("CENTER", collapse, "CENTER", 0, 0)
     collapse:SetScript("OnClick", function()
-        local current = GetDB()
-        current.collapsed = not current.collapsed
-        TrackingPanel:Refresh()
+        TrackingPanel:ToggleCollapsed()
     end)
     f.collapse = collapse
 
@@ -435,8 +479,17 @@ function TrackingPanel:CreateFrames()
     return f
 end
 
+local function ShowIf(region, shown)
+    if shown then region:Show() else region:Hide() end
+end
+
 -- Fill a row widget from row data and return the row's height
 function TrackingPanel:FillRow(row, data, db)
+    row.data = data
+    row:EnableMouse(self:RowWantsMouse(data, db))
+    local collapsed = db.collapsed and true or false
+    ShowIf(row.name, not collapsed)
+    ShowIf(row.value, not collapsed)
     row.name:SetText(data.name)
     row.value:SetText(data.value)
     row.bar:SetMinMaxValues(0, data.max)
@@ -451,14 +504,17 @@ function TrackingPanel:FillRow(row, data, db)
         row.rested:Hide()
     end
 
-    local nameHeight = db.textSize + 2
+    -- Collapsed: the bar alone, thin, at the top of the row
+    local nameHeight = collapsed and 0 or (db.textSize + 2)
+    local barTop = collapsed and 0 or (nameHeight + LINE_GAP)
+    local barHeight = collapsed and COLLAPSED_BAR_HEIGHT or db.barHeight
     row.track:ClearAllPoints()
-    row.track:SetPoint("TOPLEFT", row, "TOPLEFT", 0, -(nameHeight + LINE_GAP))
-    row.track:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, -(nameHeight + LINE_GAP))
-    row.track:SetHeight(db.barHeight)
+    row.track:SetPoint("TOPLEFT", row, "TOPLEFT", 0, -barTop)
+    row.track:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, -barTop)
+    row.track:SetHeight(barHeight)
 
-    local height = nameHeight + LINE_GAP + db.barHeight
-    if data.detail then
+    local height = barTop + barHeight
+    if data.detail and not collapsed then
         row.detail:SetText(data.detail)
         row.detail:Show()
         height = height + LINE_GAP + db.textSize
@@ -473,30 +529,40 @@ function TrackingPanel:Refresh()
     local db = GetDB()
     if not f or not db then return end
     local rows = self:CollectRows(db)
+    local collapsed = db.collapsed and true or false
 
     f:SetWidth(db.width)
-    f.collapse.text:SetText(db.collapsed and "+" or "-")
+    ShowIf(f.title, not collapsed)
+    local handle = f.collapse
+    handle:ClearAllPoints()
+    if collapsed then
+        handle:SetSize(HANDLE_SIZE, HANDLE_SIZE)
+        handle:SetPoint("TOPLEFT", f, "TOPRIGHT", 2, 0)
+        handle.text:SetText("+")
+    else
+        handle:SetSize(HEADER_HEIGHT, HEADER_HEIGHT)
+        handle:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
+        handle.text:SetText("-")
+    end
 
-    local y = -HEADER_HEIGHT
+    local gap = collapsed and COLLAPSED_GAP or ROW_GAP
+    local y = collapsed and -PADDING or -HEADER_HEIGHT
     for i, data in ipairs(rows) do
         local row = f.rows[i] or self:CreateRow()
         f.rows[i] = row
-        if db.collapsed then
-            row:Hide()
-        else
-            local height = self:FillRow(row, data, db)
-            row:ClearAllPoints()
-            row:SetPoint("TOPLEFT", f, "TOPLEFT", PADDING, y)
-            row:SetPoint("TOPRIGHT", f, "TOPRIGHT", -PADDING, y)
-            row:SetHeight(height)
-            row:Show()
-            y = y - height - ROW_GAP
-        end
+        local height = self:FillRow(row, data, db)
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", f, "TOPLEFT", PADDING, y)
+        row:SetPoint("TOPRIGHT", f, "TOPRIGHT", -PADDING, y)
+        row:SetHeight(height)
+        row:Show()
+        y = y - height - gap
     end
     for i = #rows + 1, #f.rows do
         f.rows[i]:Hide()
     end
-    f:SetHeight(-y + (db.collapsed and 0 or PADDING - ROW_GAP))
+    -- y ends one gap below the last row
+    f:SetHeight(-y - gap + PADDING)
 
     if self:GetVisibility(db, #rows) then f:Show() else f:Hide() end
 end
@@ -562,6 +628,7 @@ CB:RegisterCallback("INIT", function()
 end)
 
 CB:RegisterCallback("READY", function()
+    TrackingPanel:ApplyStartCollapsed(CastbornDB.tracking)
     TrackingPanel:CreateFrames()
 
     local eventFrame = CreateFrame("Frame")
@@ -585,6 +652,11 @@ end)
 
 -- Locking hides frames that were shown for positioning; put the panel back as it should be
 CB:RegisterCallback("FRAMES_LOCKED", function()
+    TrackingPanel:Refresh()
+end)
+
+-- Collapsed rows give up the mouse while unlocked, so the panel can be dragged by them
+CB:RegisterCallback("FRAMES_UNLOCKED", function()
     TrackingPanel:Refresh()
 end)
 

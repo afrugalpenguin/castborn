@@ -3042,6 +3042,10 @@ function moduleBuilders.tracking(parent, db, y)
     y = y - 30
     local blizzardCB = CreateCheckbox(parent, "Hide Blizzard's XP and reputation bars", db, "hideBlizzardBars", apply)
     blizzardCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+    -- Collapsed shows thin bars only; hover one for its details. The header's button toggles it.
+    local startCollapsedCB = CreateCheckbox(parent, "Start collapsed", db, "startCollapsed")
+    startCollapsedCB:SetPoint("TOPLEFT", 0, y)
     y = y - 40
 
     -- Look

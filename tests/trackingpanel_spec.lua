@@ -390,6 +390,53 @@ describe("Tracking panel (TBC behaviour)", function()
         end)
     end)
 
+    describe("collapsed mode", function()
+        it("is off by default", function()
+            assert.is_false(db.collapsed)
+            assert.is_false(db.startCollapsed)
+        end)
+
+        it("saves the state the header button sets, so it survives a reload", function()
+            TP:ToggleCollapsed()
+            assert.is_true(Castborn.db.tracking.collapsed)
+            -- A reload merges defaults into the saved table, which keeps the state
+            local reloaded = Castborn:MergeDefaults(Castborn.db.tracking, TP.defaults)
+            TP:ApplyStartCollapsed(reloaded)
+            assert.is_true(reloaded.collapsed)
+            TP:ToggleCollapsed()
+            assert.is_false(Castborn.db.tracking.collapsed)
+        end)
+
+        it("starts collapsed when asked, whatever was saved", function()
+            db.collapsed = false
+            db.startCollapsed = true
+            TP:ApplyStartCollapsed(db)
+            assert.is_true(db.collapsed)
+        end)
+
+        it("keeps the saved state when not starting collapsed", function()
+            db.collapsed = false
+            TP:ApplyStartCollapsed(db)
+            assert.is_false(db.collapsed)
+        end)
+
+        it("shows the row's name, value and detail in the hover tooltip", function()
+            local row = TP:BuildXPRow({ level = 42, current = 58700, max = 100000, rested = 21300 })
+            assert.are.same({ left = "Level 42", right = "58.7% (41,300 to go)", detail = "Rested 21,300" },
+                TP:GetTooltipLines(row))
+        end)
+
+        it("gives rows the mouse only while collapsed and locked", function()
+            CastbornDB.locked = true
+            assert.is_false(TP:RowWantsMouse({}, db))
+            db.collapsed = true
+            assert.is_true(TP:RowWantsMouse({}, db))
+            CastbornDB.locked = false
+            assert.is_false(TP:RowWantsMouse({}, db))
+            CastbornDB.locked = nil
+        end)
+    end)
+
     describe("Blizzard bars", function()
         it("lists the TBC bars, all reparented", function()
             local bars = TP:GetBlizzardBars()

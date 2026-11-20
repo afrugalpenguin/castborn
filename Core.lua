@@ -400,6 +400,7 @@ CB.defaults = {
         enabled = true,
         hideBlizzardBars = true,
         collapsed = false,
+        startCollapsed = false,
         showXP = true,
         showRested = true,
         showReputation = true,
@@ -827,6 +828,7 @@ end
 function CB:UnlockFrames()
     CastbornDB.locked = false
     if self.Anchoring then self.Anchoring:ShowDragIndicators(true) end
+    self:FireCallback("FRAMES_UNLOCKED")
 end
 
 -- Enter full test mode: unlock, fire callbacks, show test data, show panel
