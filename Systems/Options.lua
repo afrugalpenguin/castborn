@@ -54,6 +54,7 @@ local categories = {
     { id = "general", name = "General" },
     { id = "castbars", name = "Castbars" },
     { id = "resources", name = "Resource Bars" },
+    { id = "tracking", name = "Tracking" },
     { id = "gcd", name = "GCD Indicator" },
     { id = "fsr", name = "5 Second Rule" },
     { id = "swing", name = "Swing Timer" },
@@ -79,6 +80,7 @@ local pageSubtitles = {
     general = "Lock and test your frames, and the essentials.",
     castbars = "Your castbar and those of your target, their target and your focus.",
     resources = "Your health and power, in their own movable frame.",
+    tracking = "Experience and reputations, in their own floating window.",
     gcd = "A sweep that shows the global cooldown.",
     fsr = "The five-second rule for mana regeneration.",
     swing = "When your next auto attack lands.",
@@ -2927,6 +2929,140 @@ function moduleBuilders.resources(parent, db, y)
     return y
 end
 
+-- One menu for the Tracking page's Add reputation button: known factions not yet pinned
+local factionMenu
+
+local function ShowFactionMenu(anchor, onPick)
+    local TP = Castborn.TrackingPanel
+    if not factionMenu then
+        factionMenu = CreateFrame("Frame", "CastbornTrackingFactionMenu", UIParent, "UIDropDownMenuTemplate")
+    end
+    UIDropDownMenu_Initialize(factionMenu, function(self, level)
+        local added = 0
+        for _, faction in ipairs(TP:ReadKnownFactions()) do
+            if not TP:IsPinned(faction.id) then
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = faction.name
+                info.notCheckable = true
+                info.func = function()
+                    CloseDropDownMenus()
+                    onPick(faction.id)
+                end
+                UIDropDownMenu_AddButton(info, level)
+                added = added + 1
+            end
+        end
+        if added == 0 then
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = "No other reputations to add"
+            info.notCheckable = true
+            info.disabled = true
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end, "MENU")
+    ToggleDropDownMenu(1, nil, factionMenu, anchor, 0, 0)
+end
+
+function moduleBuilders.tracking(parent, db, y)
+    local TP = Castborn.TrackingPanel
+    local function apply()
+        if TP then TP:ApplySettings() end
+    end
+
+    local function Section(title)
+        local header = CreateHeader(parent, title)
+        header:SetPoint("TOPLEFT", 0, y)
+        header:SetPoint("TOPRIGHT", 0, y)
+        y = y - 30
+    end
+
+    -- Track
+    Section("Track")
+    local xpCB = CreateCheckbox(parent, "Experience", db, "showXP", apply)
+    xpCB:SetPoint("TOPLEFT", 0, y)
+    local restedCB = CreateCheckbox(parent, "Rested overlay", db, "showRested", apply)
+    restedCB:SetPoint("TOPLEFT", 220, y)
+    y = y - 30
+    local repCB = CreateCheckbox(parent, "Watched reputation", db, "showReputation", apply)
+    repCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 36
+
+    local pinnedLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
+    pinnedLabel:SetPoint("TOPLEFT", 0, y)
+    pinnedLabel:SetText("Pinned reputations")
+    y = y - 22
+
+    local pinned = TP and TP:GetPinnedFactions() or {}
+    if #pinned == 0 then
+        local none = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
+        none:SetPoint("TOPLEFT", 0, y)
+        none:SetText("None yet. Pinned reputations show below the watched one, in the order added.")
+        y = y - 22
+    end
+    for _, factionID in ipairs(pinned) do
+        local rep = TP:ReadFactionByID(factionID)
+        local row = CreateFrame("Frame", nil, parent)
+        row:SetHeight(26)
+        row:SetPoint("TOPLEFT", 0, y)
+        row:SetPoint("TOPRIGHT", 0, y)
+        StyleListRow(row)
+
+        local name = row:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
+        name:SetPoint("LEFT", 4, 0)
+        name:SetText(rep and rep.name or ("Faction #" .. tostring(factionID)))
+
+        local removeBtn = CreateRowButton(row, "remove")
+        removeBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+        removeBtn:SetScript("OnClick", function()
+            TP:UnpinFaction(factionID)
+            apply()
+            RebuildCategory("tracking")
+        end)
+        y = y - 26
+    end
+    y = y - 8
+
+    local addBtn
+    addBtn = CreateButton(parent, "Add reputation", 140, function()
+        ShowFactionMenu(addBtn, function(factionID)
+            TP:PinFaction(factionID)
+            apply()
+            RebuildCategory("tracking")
+        end)
+    end)
+    addBtn:SetPoint("TOPLEFT", 0, y)
+    y = y - 44
+
+    -- Behaviour
+    Section("Behaviour")
+    local maxLevelCB = CreateCheckbox(parent, "Hide XP at max level", db, "hideAtMaxLevel", apply)
+    maxLevelCB:SetPoint("TOPLEFT", 0, y)
+    local detailCB = CreateCheckbox(parent, "Show detail line", db, "showDetail", apply)
+    detailCB:SetPoint("TOPLEFT", 220, y)
+    y = y - 30
+    local blizzardCB = CreateCheckbox(parent, "Hide Blizzard's XP and reputation bars", db, "hideBlizzardBars", apply)
+    blizzardCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 40
+
+    -- Look
+    Section("Look")
+    local widthSlider = CreateSlider(parent, "Width", db, "width", 140, 400, 10, apply)
+    widthSlider:SetPoint("TOPLEFT", 0, y)
+    local barSlider = CreateSlider(parent, "Row Bar Height", db, "barHeight", 2, 20, 1, apply)
+    barSlider:SetPoint("TOPLEFT", 220, y)
+    y = y - 60
+    local textSlider = CreateSlider(parent, "Text Size", db, "textSize", 8, 18, 1, apply)
+    textSlider:SetPoint("TOPLEFT", 0, y)
+    y = y - 60
+    local bgPicker = CreateColorPicker(parent, "Background Colour", db, "bgColor", function()
+        Castborn:FireCallback("BACKGROUND_CHANGED", "tracking")
+    end)
+    bgPicker:SetPoint("TOPLEFT", 0, y)
+    y = y - 30
+
+    return y
+end
+
 function moduleBuilders.absorbs(parent, db, y)
     db.size = db.size or 48
     local sizeSlider = CreateSlider(parent, "Size", db, "size", 32, 128, 4, function(v)
@@ -3032,8 +3168,8 @@ function Options:BuildModule(parent, key)
         y = y - 30
     end
 
-    -- Background colour picker
-    if db.bgColor then
+    -- Background colour picker (the tracking page draws its own, in its Look section)
+    if db.bgColor and key ~= "tracking" then
         local bgPicker = CreateColorPicker(parent, "Background Colour", db, "bgColor", function()
             -- The module whose page this is repaints its own frames
             Castborn:FireCallback("BACKGROUND_CHANGED", key)

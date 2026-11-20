@@ -3,7 +3,8 @@
     A floating window with one row per tracked item: XP and the watched reputation.
     Replaces Blizzard's XP and reputation bars, which it hides while enabled.
     Every read and every piece of maths on XP and reputation values is a named seam
-    (ReadXP, ReadWatchedFaction, ShouldShowXP, BuildXPRow, BuildReputationRow), and the
+    (ReadXP, ReadWatchedFaction, ReadFactionByID, ReadKnownFactions, ShouldShowXP, BuildXPRow,
+    BuildReputationRow), and the
     Blizzard frames to hide come from GetBlizzardBars; TrackingPanel_Forever.lua overrides
     only what differs on Forever.
 ]]
@@ -111,14 +112,43 @@ end
 -- min and max are the standing's bounds, value the faction's standing; all absolute
 function TrackingPanel:ReadWatchedFaction()
     if not GetWatchedFactionInfo then return nil end
-    local name, reaction, min, max, value = GetWatchedFactionInfo()
+    local name, reaction, min, max, value, factionID = GetWatchedFactionInfo()
     if not name then return nil end
-    return { name = name, reaction = reaction, min = min, max = max, value = value }
+    return { factionID = factionID, name = name, reaction = reaction, min = min, max = max, value = value }
 end
 
-function TrackingPanel:ShouldShowXP(xp)
+-- A pinned faction, looked up by ID (indexes shift when reputation headers collapse)
+function TrackingPanel:ReadFactionByID(factionID)
+    if not GetFactionInfoByID then return nil end
+    local name, _, reaction, min, max, value = GetFactionInfoByID(factionID)
+    if not name then return nil end
+    return { factionID = factionID, name = name, reaction = reaction, min = min, max = max, value = value }
+end
+
+-- The factions the picker offers, as { id, name } in reputation pane order. Headers and
+-- inactive factions are skipped; hidden factions are never returned by the client.
+-- Factions under a collapsed header are not listed by the client either.
+function TrackingPanel:ReadKnownFactions()
+    local list = {}
+    if not (GetNumFactions and GetFactionInfo) then return list end
+    local underInactive = false
+    for i = 1, GetNumFactions() do
+        local name, _, _, _, _, _, _, _, isHeader, _, _, _, _, factionID = GetFactionInfo(i)
+        if isHeader then
+            underInactive = name ~= nil and name == FACTION_INACTIVE
+        elseif name and factionID and not underInactive
+                and not (IsFactionInactive and IsFactionInactive(i)) then
+            list[#list + 1] = { id = factionID, name = name }
+        end
+    end
+    return list
+end
+
+-- db is optional; without it the XP row hides at max level
+function TrackingPanel:ShouldShowXP(xp, db)
     if xp.disabled then return false end
-    if xp.maxLevel and xp.level >= xp.maxLevel then return false end
+    local hideAtMax = not db or db.hideAtMaxLevel ~= false
+    if hideAtMax and xp.maxLevel and xp.level >= xp.maxLevel then return false end
     return true
 end
 
@@ -170,23 +200,89 @@ function TrackingPanel:GetBlizzardBars()
 end
 
 --------------------------------------------------------------------------------
+-- Pinned reputations, per character (CastbornDB.characters, which profiles leave alone)
+--------------------------------------------------------------------------------
+
+function TrackingPanel:GetCharacterKey()
+    return UnitName("player") .. "-" .. GetRealmName()
+end
+
+-- Faction IDs pinned by this character, in the order they were added
+function TrackingPanel:GetPinnedFactions()
+    CastbornDB.characters = CastbornDB.characters or {}
+    local key = self:GetCharacterKey()
+    local data = CastbornDB.characters[key] or {}
+    CastbornDB.characters[key] = data
+    data.trackedFactions = data.trackedFactions or {}
+    return data.trackedFactions
+end
+
+function TrackingPanel:IsPinned(factionID)
+    for _, id in ipairs(self:GetPinnedFactions()) do
+        if id == factionID then return true end
+    end
+    return false
+end
+
+-- Returns true if the faction was added
+function TrackingPanel:PinFaction(factionID)
+    if not factionID or self:IsPinned(factionID) then return false end
+    local pinned = self:GetPinnedFactions()
+    pinned[#pinned + 1] = factionID
+    return true
+end
+
+-- Returns true if the faction was removed
+function TrackingPanel:UnpinFaction(factionID)
+    local pinned = self:GetPinnedFactions()
+    for i, id in ipairs(pinned) do
+        if id == factionID then
+            table.remove(pinned, i)
+            return true
+        end
+    end
+    return false
+end
+
+--------------------------------------------------------------------------------
 -- Rows and visibility
 --------------------------------------------------------------------------------
 
+-- Display settings that apply to every row, test mode included
+local function ApplyRowSettings(rows, db)
+    for _, row in ipairs(rows) do
+        if db.showRested == false then row.rested = nil end
+        if db.showDetail == false then row.detail = nil end
+    end
+    return rows
+end
+
+-- XP, then the watched reputation, then pinned reputations in the order added.
+-- A pinned faction that is also watched is shown once, as the watched row.
 function TrackingPanel:CollectRows(db)
     if self.testModeActive then
-        return { self:BuildXPRow(SAMPLE_XP), self:BuildReputationRow(SAMPLE_REPUTATION) }
+        return ApplyRowSettings({ self:BuildXPRow(SAMPLE_XP), self:BuildReputationRow(SAMPLE_REPUTATION) }, db)
     end
     local rows = {}
     if db.showXP then
         local xp = self:ReadXP()
-        if xp and self:ShouldShowXP(xp) then rows[#rows + 1] = self:BuildXPRow(xp) end
+        if xp and self:ShouldShowXP(xp, db) then rows[#rows + 1] = self:BuildXPRow(xp) end
     end
+    local watchedID
     if db.showReputation then
         local rep = self:ReadWatchedFaction()
-        if rep then rows[#rows + 1] = self:BuildReputationRow(rep) end
+        if rep then
+            watchedID = rep.factionID
+            rows[#rows + 1] = self:BuildReputationRow(rep)
+        end
     end
-    return rows
+    for _, factionID in ipairs(self:GetPinnedFactions()) do
+        if factionID ~= watchedID then
+            local rep = self:ReadFactionByID(factionID)
+            if rep then rows[#rows + 1] = self:BuildReputationRow(rep) end
+        end
+    end
+    return ApplyRowSettings(rows, db)
 end
 
 -- Shown when enabled and something is tracked, or always in test mode
@@ -480,6 +576,11 @@ CB:RegisterCallback("READY", function()
         function() CB:TestTrackingPanel() end,
         function() CB:EndTestTrackingPanel() end
     )
+end)
+
+-- Repaint when the Tracking page's background picker changes
+CB:RegisterCallback("BACKGROUND_CHANGED", function(key)
+    if key == "tracking" then TrackingPanel:ApplySettings() end
 end)
 
 -- Locking hides frames that were shown for positioning; put the panel back as it should be

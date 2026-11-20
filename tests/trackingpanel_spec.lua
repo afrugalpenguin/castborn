@@ -25,6 +25,7 @@ describe("Tracking panel (TBC behaviour)", function()
         TP.testModeActive = false
         TP.pendingBlizzardBars = false
         TP:RestoreBlizzardBars()
+        CastbornDB.characters = nil
         mainMenuBar = CreateFrame("Frame")
         _G.MainMenuExpBar = blizzardBar(mainMenuBar)
         _G.ReputationWatchBar = blizzardBar(mainMenuBar)
@@ -117,7 +118,7 @@ describe("Tracking panel (TBC behaviour)", function()
     describe("reputation row", function()
         -- Darkspear Raiders, Honored 7296 / 12000
         local function rep(overrides)
-            local t = { name = "Darkspear Raiders", reaction = 6, min = 9000, max = 21000, value = 16296 }
+            local t = { factionID = 530, name = "Darkspear Raiders", reaction = 6, min = 9000, max = 21000, value = 16296 }
             for k, v in pairs(overrides or {}) do t[k] = v end
             return t
         end
@@ -177,6 +178,80 @@ describe("Tracking panel (TBC behaviour)", function()
             _G.GetWatchedFactionInfo = function() return nil end
             assert.is_nil(TP:ReadWatchedFaction())
         end)
+
+        it("reads a faction by its ID", function()
+            _G.GetFactionInfoByID = function(id)
+                if id == 530 then return "Darkspear Raiders", "", 6, 9000, 21000, 16296 end
+            end
+            assert.are.same(rep(), TP:ReadFactionByID(530))
+            assert.is_nil(TP:ReadFactionByID(1))
+            _G.GetFactionInfoByID = nil
+        end)
+
+        it("lists known factions, skipping headers, inactive ones and any without an ID", function()
+            _G.FACTION_INACTIVE = "Inactive"
+            local rows = {
+                { "Horde", true },
+                { "Orgrimmar", false, 76 },
+                { "Darkspear Raiders", false, 530 },
+                { "Ravenholdt", false, 349 },          -- flagged inactive by the client
+                { "Nameless", false, nil },
+                { "Inactive", true },
+                { "Bloodsail Buccaneers", false, 87 },  -- under the Inactive header
+            }
+            _G.GetNumFactions = function() return #rows end
+            _G.GetFactionInfo = function(i)
+                local r = rows[i]
+                return r[1], "", 4, 0, 0, 0, false, false, r[2], false, false, false, false, r[3]
+            end
+            _G.IsFactionInactive = function(i) return i == 4 end
+            assert.are.same({ { id = 76, name = "Orgrimmar" }, { id = 530, name = "Darkspear Raiders" } },
+                TP:ReadKnownFactions())
+            _G.FACTION_INACTIVE = nil
+            _G.GetNumFactions = nil
+            _G.GetFactionInfo = nil
+            _G.IsFactionInactive = nil
+        end)
+    end)
+
+    describe("pinned reputations", function()
+        after_each(function()
+            _G.UnitName = function() return "TestPlayer" end
+        end)
+
+        it("pins a faction once, in the order added", function()
+            assert.is_true(TP:PinFaction(530))
+            assert.is_true(TP:PinFaction(76))
+            assert.is_false(TP:PinFaction(530))
+            assert.are.same({ 530, 76 }, TP:GetPinnedFactions())
+            assert.is_true(TP:IsPinned(76))
+        end)
+
+        it("unpins a faction and keeps the others in order", function()
+            TP:PinFaction(530)
+            TP:PinFaction(76)
+            TP:PinFaction(81)
+            assert.is_true(TP:UnpinFaction(76))
+            assert.is_false(TP:UnpinFaction(76))
+            assert.are.same({ 530, 81 }, TP:GetPinnedFactions())
+            assert.is_false(TP:IsPinned(76))
+        end)
+
+        it("stores faction IDs per character and realm, outside the tracking settings", function()
+            TP:PinFaction(530)
+            assert.are.same({ 530 }, CastbornDB.characters["TestPlayer-TestRealm"].trackedFactions)
+            assert.is_nil(db.characters)
+        end)
+
+        it("keeps each character's list separate", function()
+            TP:PinFaction(530)
+            _G.UnitName = function() return "Altchar" end
+            assert.are.same({}, TP:GetPinnedFactions())
+            TP:PinFaction(76)
+            _G.UnitName = function() return "TestPlayer" end
+            assert.are.same({ 530 }, TP:GetPinnedFactions())
+            assert.are.same({ 76 }, CastbornDB.characters["Altchar-TestRealm"].trackedFactions)
+        end)
     end)
 
     describe("rows and visibility", function()
@@ -225,6 +300,93 @@ describe("Tracking panel (TBC behaviour)", function()
             local rows = TP:CollectRows(db)
             assert.are.equal(1, #rows)
             assert.are.equal("Orgrimmar", rows[1].name)
+        end)
+    end)
+
+    describe("row order and settings", function()
+        local readXP, readWatchedFaction, readFactionByID = TP.ReadXP, TP.ReadWatchedFaction, TP.ReadFactionByID
+        local factions = {
+            [76] = { factionID = 76, name = "Orgrimmar", reaction = 5, min = 3000, max = 9000, value = 6000 },
+            [530] = { factionID = 530, name = "Darkspear Raiders", reaction = 6, min = 9000, max = 21000, value = 16296 },
+            [81] = { factionID = 81, name = "Thunder Bluff", reaction = 4, min = 0, max = 3000, value = 1500 },
+        }
+
+        before_each(function()
+            TP.ReadXP = function()
+                return { level = 42, current = 500, max = 1000, rested = 200, maxLevel = 70, disabled = false }
+            end
+            TP.ReadWatchedFaction = function() return factions[530] end
+            TP.ReadFactionByID = function(_, id) return factions[id] end
+        end)
+
+        after_each(function()
+            TP.ReadXP = readXP
+            TP.ReadWatchedFaction = readWatchedFaction
+            TP.ReadFactionByID = readFactionByID
+        end)
+
+        local function names(rows)
+            local list = {}
+            for _, row in ipairs(rows) do list[#list + 1] = row.name end
+            return list
+        end
+
+        it("puts XP first, then the watched reputation, then pinned ones in the order added", function()
+            TP:PinFaction(81)
+            TP:PinFaction(76)
+            assert.are.same({ "Level 42", "Darkspear Raiders", "Thunder Bluff", "Orgrimmar" }, names(TP:CollectRows(db)))
+        end)
+
+        it("shows a pinned faction that is also watched once, as the watched row", function()
+            TP:PinFaction(76)
+            TP:PinFaction(530)
+            assert.are.same({ "Level 42", "Darkspear Raiders", "Orgrimmar" }, names(TP:CollectRows(db)))
+        end)
+
+        it("shows a pinned faction in its own place when the watched row is off", function()
+            db.showReputation = false
+            TP:PinFaction(76)
+            TP:PinFaction(530)
+            assert.are.same({ "Level 42", "Orgrimmar", "Darkspear Raiders" }, names(TP:CollectRows(db)))
+        end)
+
+        it("skips a pinned faction the client cannot read", function()
+            TP:PinFaction(999)
+            TP:PinFaction(76)
+            assert.are.same({ "Level 42", "Darkspear Raiders", "Orgrimmar" }, names(TP:CollectRows(db)))
+        end)
+
+        it("drops the rested fill when the overlay is off", function()
+            db.showRested = false
+            local xpRow = TP:CollectRows(db)[1]
+            assert.is_nil(xpRow.rested)
+            assert.are.equal("Rested 200", xpRow.detail)
+        end)
+
+        it("drops every detail line when detail is off", function()
+            db.showDetail = false
+            TP:PinFaction(76)
+            for _, row in ipairs(TP:CollectRows(db)) do
+                assert.is_nil(row.detail, row.name .. " kept its detail")
+            end
+        end)
+
+        it("applies the settings to test mode's sample rows too", function()
+            db.showDetail = false
+            db.showRested = false
+            TP.testModeActive = true
+            local rows = TP:CollectRows(db)
+            assert.is_nil(rows[1].rested)
+            assert.is_nil(rows[1].detail)
+            TP.testModeActive = false
+        end)
+
+        it("keeps XP at max level when hiding it there is off", function()
+            local atMax = { level = 70, current = 0, max = 0, rested = 0, maxLevel = 70, disabled = false }
+            assert.is_false(TP:ShouldShowXP(atMax, db))
+            db.hideAtMaxLevel = false
+            assert.is_true(TP:ShouldShowXP(atMax, db))
+            assert.is_false(TP:ShouldShowXP({ level = 70, maxLevel = 70, disabled = true }, db))
         end)
     end)
 

@@ -32,6 +32,7 @@ read_globals = {
     -- WoW XP and reputation API (tracking panel)
     "UnitLevel", "UnitXP", "UnitXPMax", "GetXPExhaustion", "GetMaxPlayerLevel", "MAX_PLAYER_LEVEL",
     "IsXPUserDisabled", "GetWatchedFactionInfo", "FACTION_BAR_COLORS",
+    "GetFactionInfoByID", "GetNumFactions", "GetFactionInfo", "IsFactionInactive", "FACTION_INACTIVE",
 
     -- WoW Unit API
     "UnitClass",
