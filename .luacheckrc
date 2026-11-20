@@ -29,6 +29,11 @@ read_globals = {
     "hooksecurefunc",
     "BackdropTemplateMixin",
 
+    -- WoW XP and reputation API (progress panel)
+    "UnitLevel", "UnitXP", "UnitXPMax", "GetXPExhaustion", "GetMaxPlayerLevel", "MAX_PLAYER_LEVEL",
+    "IsXPUserDisabled", "GetWatchedFactionInfo", "FACTION_BAR_COLORS",
+    "GetFactionInfoByID", "GetNumFactions", "GetFactionInfo", "IsFactionInactive", "FACTION_INACTIVE",
+
     -- WoW Unit API
     "UnitClass",
     "UnitName",
@@ -204,5 +209,6 @@ files["**/*_Forever.lua"] = {
         "UnitHealthPercent", "UnitPowerPercent", "CurveConstants",
         "AbbreviateNumbers", "AbbreviateLargeNumbers",
         "AnchorUtil",
+        "C_Reputation",
     },
 }

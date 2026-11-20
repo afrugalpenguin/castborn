@@ -35,6 +35,8 @@ Modules/CooldownTracker_Forever.lua
 Modules/InterruptTracker.lua
 Modules/InterruptTracker_Forever.lua
 Modules/ItemTracker.lua
+Modules/ProgressPanel.lua
+Modules/ProgressPanel_Forever.lua
 Modules/ArmorTracker.lua
 Modules/ArmorTracker_Forever.lua
 Modules/SealTracker.lua

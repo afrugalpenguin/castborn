@@ -212,4 +212,38 @@ describe("Profiles", function()
             assert.is_false(success)
         end)
     end)
+
+    -- Per-character data (for example tracked reputations) belongs to the character, not a profile
+    describe("per-character data", function()
+        local function characters()
+            return { ["TestPlayer-TestRealm"] = { trackedFactions = { 530 } } }
+        end
+
+        it("is not saved into a profile", function()
+            CastbornDB.characters = characters()
+            Profiles:SaveCurrentToProfile("Test")
+            assert.is_nil(CastbornDB.profiles["Test"].characters)
+        end)
+
+        it("survives applying a profile", function()
+            CastbornDB.characters = characters()
+            CastbornDB.profiles = { Other = { progress = { width = 300 } } }
+            Profiles:ApplyProfile("Other")
+            assert.are.same(characters(), CastbornDB.characters)
+            assert.are.equal(300, CastbornDB.progress.width)
+        end)
+
+        it("is never taken from a profile being applied", function()
+            CastbornDB.characters = characters()
+            CastbornDB.profiles = { Other = { characters = { ["Someone-Else"] = { trackedFactions = { 76 } } } } }
+            Profiles:ApplyProfile("Other")
+            assert.are.same(characters(), CastbornDB.characters)
+        end)
+
+        it("is refused in an imported profile", function()
+            CastbornDB.profiles = { Bad = { characters = characters() } }
+            local exported = Profiles:ExportProfile("Bad")
+            assert.is_false(Profiles:ImportProfile("Imported", exported))
+        end)
+    end)
 end)

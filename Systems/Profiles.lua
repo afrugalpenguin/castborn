@@ -4,6 +4,11 @@ Castborn.Profiles = Profiles
 
 local DEFAULT_PROFILE_NAME = "Default"
 
+-- Top-level keys that belong to the account or a character, not to a profile: never copied
+-- into a profile, kept when one is applied, refused on import. characters holds
+-- per-character data keyed "Name-Realm", like profileKeys (for example tracked reputations).
+local METADATA_KEYS = { profiles = true, profileKeys = true, characters = true }
+
 function Profiles:GetCurrentProfileName()
     local charKey = UnitName("player") .. "-" .. GetRealmName()
     return CastbornDB.profileKeys and CastbornDB.profileKeys[charKey] or DEFAULT_PROFILE_NAME
@@ -33,7 +38,7 @@ function Profiles:SaveCurrentToProfile(profileName)
     -- Copy current settings (excluding profile metadata)
     local profile = {}
     for k, v in pairs(CastbornDB) do
-        if k ~= "profiles" and k ~= "profileKeys" then
+        if not METADATA_KEYS[k] then
             profile[k] = Castborn:DeepCopy(v)
         end
     end
@@ -46,17 +51,16 @@ function Profiles:ApplyProfile(profileName)
     if not profile then return end
 
     -- Preserve metadata
-    local profiles = CastbornDB.profiles
-    local profileKeys = CastbornDB.profileKeys
+    local metadata = {}
+    for k in pairs(METADATA_KEYS) do metadata[k] = CastbornDB[k] end
 
     -- Wipe and restore metadata
     wipe(CastbornDB)
-    CastbornDB.profiles = profiles
-    CastbornDB.profileKeys = profileKeys
+    for k, v in pairs(metadata) do CastbornDB[k] = v end
 
     -- Apply profile settings
     for k, v in pairs(profile) do
-        if k ~= "profiles" and k ~= "profileKeys" then
+        if not METADATA_KEYS[k] then
             CastbornDB[k] = Castborn:DeepCopy(v)
         end
     end
@@ -266,7 +270,7 @@ local function ValidateProfile(profile)
         return false, "Profile must be a table"
     end
     -- Ensure no profile metadata sneaks in
-    if profile.profiles or profile.profileKeys then
+    if profile.profiles or profile.profileKeys or profile.characters then
         return false, "Invalid profile data"
     end
     return true

@@ -395,6 +395,29 @@ CB.defaults = {
         xPct = 0,
         yPct = -0.12,
     },
+
+    progress = {
+        enabled = true,
+        hideBlizzardBars = true,
+        collapsed = false,
+        startCollapsed = false,
+        showXP = true,
+        showRested = true,
+        showReputation = true,
+        hideAtMaxLevel = true,
+        showDetail = true,
+        trackOnGain = true,
+        showSessionRate = true,
+        fadeInCombat = false,
+        width = 220,
+        barHeight = 6,
+        textSize = 11,
+        bgColor = { 0.05, 0.05, 0.05, 0.6 },
+        -- Right side of the screen, about two thirds up
+        point = "CENTER",
+        xPct = 0.38,
+        yPct = 0.17,
+    },
 }
 
 -- Initialize saved variables
@@ -808,6 +831,7 @@ end
 function CB:UnlockFrames()
     CastbornDB.locked = false
     if self.Anchoring then self.Anchoring:ShowDragIndicators(true) end
+    self:FireCallback("FRAMES_UNLOCKED")
 end
 
 -- Enter full test mode: unlock, fire callbacks, show test data, show panel
