@@ -50,9 +50,12 @@ describe("Armour reminder seams (TBC behaviour)", function()
         it("resizes an alert icon and its warning text", function()
             local f = recorder()
             f.warning = recorder()
+            f.glow = recorder()
             AT:ResizeSlotFrame(f, 60)
             assert.are.same({ 60, 60 }, f.calls.SetSize)
             assert.are.equal(24, f.warning.calls.SetFont[2])
+            -- the glow ring follows the icon (the last SetPoint is the bottom-right corner)
+            assert.are.same({ "BOTTOMRIGHT", 27, -27 }, f.glow.calls.SetPoint)
         end)
 
         it("re-skins the armour icons with Masque so the new size shows", function()
@@ -142,6 +145,113 @@ describe("Armour reminder seams (TBC behaviour)", function()
         it("does not track it before Righteous Fury is learned, even with the option on", function()
             knowsRF = false
             assert.is_false(AT:ShouldTrackRighteousFury(rf, { alwaysTrackRF = true }))
+        end)
+    end)
+
+    describe("alert animation", function()
+        local savedDB, f
+
+        -- An animation group that records whether it is playing
+        local function group()
+            local g = { playing = false }
+            function g:Play() self.playing = true end
+            function g:Stop() self.playing = false end
+            function g:IsPlaying() return self.playing end
+            return g
+        end
+
+        before_each(function()
+            savedDB = Castborn.db
+            Castborn.db = { armortracker = { enabled = true, animateAlert = true } }
+            local shown = true
+            f = {
+                pop = group(), pulse = group(), glowPulse = group(),
+                glow = { SetAlpha = function(self, a) self.alpha = a end },
+                IsShown = function() return shown end,
+                SetShown = function(_, v) shown = v end,
+            }
+        end)
+
+        after_each(function()
+            Castborn.db = savedDB
+            wipe(AT:GetSlots())
+        end)
+
+        it("pops when the alert appears", function()
+            AT:StartAlertAnimation(f)
+            assert.is_true(f.pop.playing)
+        end)
+
+        it("moves on to the pulse once the pop finishes", function()
+            AT:StartAlertAnimation(f)
+            AT:OnAlertPopFinished(f)
+            assert.is_true(f.pulse.playing)
+            assert.is_true(f.glowPulse.playing)
+        end)
+
+        it("does not pulse an alert hidden during the pop", function()
+            AT:StartAlertAnimation(f)
+            f:SetShown(false)
+            AT:OnAlertPopFinished(f)
+            assert.is_false(f.pulse.playing)
+        end)
+
+        it("stays still when the option is off", function()
+            Castborn.db.armortracker.animateAlert = false
+            AT:StartAlertAnimation(f)
+            assert.is_false(f.pop.playing)
+        end)
+
+        it("stops everything and clears the glow when the alert hides", function()
+            AT:StartAlertAnimation(f)
+            AT:OnAlertPopFinished(f)
+            AT:StopAlertAnimation(f)
+            assert.is_false(f.pop.playing)
+            assert.is_false(f.pulse.playing)
+            assert.is_false(f.glowPulse.playing)
+            assert.are.equal(0, f.glow.alpha)
+        end)
+
+        it("does nothing on a client without animation groups", function()
+            local bare = { IsShown = function() return true end }
+            assert.has_no.errors(function()
+                AT:StartAlertAnimation(bare)
+                AT:OnAlertPopFinished(bare)
+                AT:StopAlertAnimation(bare)
+            end)
+        end)
+
+        it("stops a showing alert when the option is turned off", function()
+            table.insert(AT:GetSlots(), { frame = f })
+            AT:StartAlertAnimation(f)
+            AT:OnAlertPopFinished(f)
+            Castborn.db.armortracker.animateAlert = false
+            AT:ApplyAlertAnimation()
+            assert.is_false(f.pulse.playing)
+        end)
+
+        it("starts a showing alert when the option is turned on", function()
+            table.insert(AT:GetSlots(), { frame = f })
+            Castborn.db.armortracker.animateAlert = false
+            AT:StartAlertAnimation(f)
+            Castborn.db.armortracker.animateAlert = true
+            AT:ApplyAlertAnimation()
+            assert.is_true(f.pop.playing)
+        end)
+
+        it("leaves hidden alerts alone when the option is turned on", function()
+            table.insert(AT:GetSlots(), { frame = f })
+            f:SetShown(false)
+            AT:ApplyAlertAnimation()
+            assert.is_false(f.pop.playing)
+        end)
+
+        it("is turned on by default", function()
+            local saved = _G.CastbornDB
+            _G.CastbornDB = {}
+            Castborn:FireCallback("INIT")
+            assert.is_true(CastbornDB.armortracker.animateAlert)
+            _G.CastbornDB = saved
         end)
     end)
 end)
