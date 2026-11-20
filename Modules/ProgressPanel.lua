@@ -67,6 +67,8 @@ local LINE_GAP = 2
 local COLLAPSED_BAR_HEIGHT = 4
 local COLLAPSED_GAP = 2
 local HANDLE_SIZE = 12
+-- Seconds between checks for the mouse over the panel (shows the collapse button)
+local HOVER_CHECK_INTERVAL = 0.1
 
 -- Sample values for test mode: level 42 at 58.7% with rested to 80%, Darkspear Raiders Honored 60.8%
 local SAMPLE_XP = { level = 42, current = 58700, max = 100000, rested = 21300, maxLevel = 70, disabled = false }
@@ -549,6 +551,25 @@ function ProgressPanel:GetTooltipLines(data)
     return { left = data.name, right = data.value, detail = data.detail }
 end
 
+-- The collapse button (- or +) shows only while the mouse is over the panel, and always while
+-- frames are unlocked or in test mode, so it can be found when positioning
+function ProgressPanel:ShouldShowHandle(isOver)
+    if CastbornDB.locked == false or self.testModeActive then return true end
+    return isOver and true or false
+end
+
+-- IsMouseOver offsets (top, bottom, left, right): collapsed, the + handle sits just outside
+-- the panel's right edge, so the hover area reaches it
+function ProgressPanel:GetHoverInsets(db)
+    if db.collapsed then return 0, 0, 0, HANDLE_SIZE + 2 end
+    return 0, 0, 0, 0
+end
+
+-- IsMouseOver works from the cursor position, so the locked panel stays click-through
+function ProgressPanel:IsMouseOverPanel(frame, db)
+    return frame:IsMouseOver(self:GetHoverInsets(db)) and true or false
+end
+
 -- Rows take the mouse only while collapsed (for the tooltip) or when temporary (click to pin),
 -- and never while frames are unlocked, so they do not get in the way of dragging the panel
 function ProgressPanel:RowWantsMouse(data, db)
@@ -789,6 +810,15 @@ function ProgressPanel:CreateFrames()
     end)
     f.collapse = collapse
 
+    -- Show the collapse button on hover; checked a few times a second while the panel is shown
+    local sinceHoverCheck = 0
+    f:SetScript("OnUpdate", function(_, elapsed)
+        sinceHoverCheck = sinceHoverCheck + elapsed
+        if sinceHoverCheck < HOVER_CHECK_INTERVAL then return end
+        sinceHoverCheck = 0
+        ProgressPanel:UpdateHandleVisibility()
+    end)
+
     f.rows = {}
 
     if CB.Anchoring then
@@ -886,6 +916,14 @@ function ProgressPanel:Refresh()
 
     f:SetAlpha(self:GetPanelAlpha(db))
     if self:GetVisibility(db, #rows) then f:Show() else f:Hide() end
+    self:UpdateHandleVisibility()
+end
+
+function ProgressPanel:UpdateHandleVisibility()
+    local f = self.frame
+    local db = GetDB()
+    if not f or not db then return end
+    ShowIf(f.collapse, self:ShouldShowHandle(self:IsMouseOverPanel(f, db)))
 end
 
 function ProgressPanel:ApplyFonts()

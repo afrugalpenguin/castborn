@@ -766,6 +766,46 @@ describe("Progress panel (TBC behaviour)", function()
         end)
     end)
 
+    describe("collapse button on hover", function()
+        after_each(function()
+            CastbornDB.locked = nil
+            TP.testModeActive = false
+        end)
+
+        it("shows only while the mouse is over the panel", function()
+            CastbornDB.locked = true
+            assert.is_false(TP:ShouldShowHandle(false))
+            assert.is_true(TP:ShouldShowHandle(true))
+        end)
+
+        it("always shows while frames are unlocked", function()
+            CastbornDB.locked = false
+            assert.is_true(TP:ShouldShowHandle(false))
+        end)
+
+        it("always shows in test mode", function()
+            CastbornDB.locked = true
+            TP.testModeActive = true
+            assert.is_true(TP:ShouldShowHandle(false))
+        end)
+
+        it("reaches the handle beside a collapsed panel, but not past an expanded one", function()
+            local top, bottom, left, right = TP:GetHoverInsets({ collapsed = true })
+            assert.are.same({ 0, 0, 0 }, { top, bottom, left })
+            assert.is_true(right > 0)
+            assert.are.same({ 0, 0, 0, 0 }, { TP:GetHoverInsets({ collapsed = false }) })
+        end)
+
+        it("checks the mouse without taking it, so the panel stays click-through", function()
+            local frame = CreateFrame("Frame")
+            local asked
+            frame.IsMouseOver = function(_, ...) asked = { ... } return true end
+            assert.is_true(TP:IsMouseOverPanel(frame, { collapsed = true }))
+            assert.are.equal(4, #asked)
+            assert.is_false(frame:IsMouseEnabled())
+        end)
+    end)
+
     describe("collapsed mode", function()
         it("is off by default", function()
             assert.is_false(db.collapsed)
