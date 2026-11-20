@@ -14,6 +14,16 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.7.0",
+        features = {
+            "New Progress panel: your XP and reputations in one floating window, replacing Blizzard's XP and reputation bars",
+            "XP per hour and time to level, and reputation gained this session",
+            "Pin reputations per character in Options > Progress; reputations you gain show for ten minutes, click one to keep it",
+            "Collapse the panel to thin bars with details on hover, and fade it in combat",
+        },
+        fixes = {},
+    },
+    {
         version = "8.6.0",
         features = {
             "Exorcism is tracked for paladins: it glows on Undead and Demon targets and dims on anything else",

@@ -1,5 +1,15 @@
 # Changelog
 
+**v8.7.0**
+
+- New Progress panel: a small floating window with your experience and reputations, in place of Blizzard's XP and reputation bars, which it hides while switched on and puts back when switched off
+- XP row: level, percentage and XP to go, with rested XP as a lighter fill. After a couple of minutes it adds your XP per hour and time to level
+- Reputation rows: your watched faction, coloured by standing, with the amount to the next standing and what you've gained this session. Pin more reputations on the new Progress options page; pinned reputations are kept per character, so alts don't share them
+- A reputation you gain is added to the panel for ten minutes, highlighted once. Click it to pin it
+- Collapse the panel to thin bars (hover a bar for its details), start it collapsed if you like, and fade it in combat. The collapse button only appears when you mouse over the panel
+- Using Bartender4? Its Status Tracking Bar is Bartender's own, so switch it off in /bt4 if you only want the Progress panel
+- The tutorial has a new Progress panel step
+
 **v8.6.0**
 
 - Cooldown Tracker: Exorcism is now tracked for paladins. While it's ready it glows when your target is Undead or Demon, and is dimmed for any other target or none, so you can see at a glance whether it can be used. Works in combat on Forever too
