@@ -78,6 +78,15 @@ local function newMockFrame()
     frame.SetPoint = function(self, ...) self.points[#self.points + 1] = { ... } end
     frame.ClearAllPoints = function(self) self.points = {} end
     frame.SetSize = function(self, w, h) self.size = { w, h } end
+    frame.GetNumPoints = function(self) return #self.points end
+    frame.GetPoint = function(self, i) return unpack(self.points[i or 1] or {}) end
+    -- Parent, alpha and mouse state are recorded so hiding Blizzard frames can be checked
+    frame.SetParent = function(self, parent) self.parent = parent end
+    frame.GetParent = function(self) return self.parent end
+    frame.SetAlpha = function(self, alpha) self.alpha = alpha end
+    frame.GetAlpha = function(self) return self.alpha or 1 end
+    frame.EnableMouse = function(self, enabled) self.mouseEnabled = enabled and true or false end
+    frame.IsMouseEnabled = function(self) return self.mouseEnabled or false end
     setmetatable(frame, { __index = function() return function() end end })
     return frame
 end

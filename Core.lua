@@ -395,6 +395,22 @@ CB.defaults = {
         xPct = 0,
         yPct = -0.12,
     },
+
+    tracking = {
+        enabled = true,
+        hideBlizzardBars = true,
+        collapsed = false,
+        showXP = true,
+        showReputation = true,
+        width = 220,
+        barHeight = 6,
+        textSize = 11,
+        bgColor = { 0.05, 0.05, 0.05, 0.6 },
+        -- Right side of the screen, about two thirds up
+        point = "CENTER",
+        xPct = 0.38,
+        yPct = 0.17,
+    },
 }
 
 -- Initialize saved variables

@@ -9,7 +9,7 @@ function CB:ResetPositions()
     -- Cooldowns are reset separately below: their position lives on the main group
     local positionKeys = {"player", "target", "targettarget", "focus", "dots", "fsr", "swing", "gcd",
                           "interrupt", "procs", "multidot", "totems", "absorbs", "armortracker",
-                          "seals", "resources"}
+                          "seals", "resources", "tracking"}
 
     for _, key in ipairs(positionKeys) do
         local def = CB.defaults[key]
@@ -119,6 +119,10 @@ function CB:ResetPositions()
             CB:ApplyPosition(resourceFrame, "resources")
         end
         if CB.ResourceBars then CB.ResourceBars:ApplySettings() end
+    end
+    local trackingFrame = _G["Castborn_TrackingPanel"]
+    if trackingFrame and CB.db.tracking then
+        CB:ApplyPosition(trackingFrame, "tracking")
     end
     CB:Print("All positions reset to defaults")
 end

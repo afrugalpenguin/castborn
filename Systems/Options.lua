@@ -741,6 +741,9 @@ function Options:BuildGeneral(parent)
         { key = "resources", label = "Resource Bars", onChange = function()
             if Castborn.ResourceBars then Castborn.ResourceBars:ApplySettings() end
         end },
+        { key = "tracking", label = "Tracking Panel", onChange = function()
+            if Castborn.TrackingPanel then Castborn.TrackingPanel:ApplySettings() end
+        end },
     }
 
     local col = 0
