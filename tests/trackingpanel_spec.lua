@@ -205,7 +205,7 @@ describe("Tracking panel (TBC behaviour)", function()
                 return r[1], "", 4, 0, 0, 0, false, false, r[2], false, false, false, false, r[3]
             end
             _G.IsFactionInactive = function(i) return i == 4 end
-            assert.are.same({ { id = 76, name = "Orgrimmar" }, { id = 530, name = "Darkspear Raiders" } },
+            assert.are.same({ { id = 76, name = "Orgrimmar", value = 0 }, { id = 530, name = "Darkspear Raiders", value = 0 } },
                 TP:ReadKnownFactions())
             _G.FACTION_INACTIVE = nil
             _G.GetNumFactions = nil
@@ -387,6 +387,178 @@ describe("Tracking panel (TBC behaviour)", function()
             db.hideAtMaxLevel = false
             assert.is_true(TP:ShouldShowXP(atMax, db))
             assert.is_false(TP:ShouldShowXP({ level = 70, maxLevel = 70, disabled = true }, db))
+        end)
+    end)
+
+    describe("reputation gains", function()
+        local readKnown, readByID, readWatched, now = TP.ReadKnownFactions, TP.ReadFactionByID,
+            TP.ReadWatchedFaction, TP.Now
+        local clock, standings, watched
+
+        local factions = {
+            [76] = { name = "Orgrimmar", reaction = 5, min = 3000, max = 9000 },
+            [530] = { name = "Darkspear Raiders", reaction = 6, min = 9000, max = 21000 },
+            [81] = { name = "Thunder Bluff", reaction = 4, min = 0, max = 3000 },
+        }
+
+        before_each(function()
+            clock = 1000
+            standings = { [76] = 4000, [530] = 10000, [81] = 100 }
+            watched = nil
+            TP.autoAdded = {}
+            TP.factionSnapshot = nil
+            TP.Now = function() return clock end
+            TP.ReadKnownFactions = function()
+                local list = {}
+                for _, id in ipairs({ 76, 530, 81 }) do
+                    list[#list + 1] = { id = id, name = factions[id].name, value = standings[id] }
+                end
+                return list
+            end
+            TP.ReadFactionByID = function(_, id)
+                local f = factions[id]
+                return { factionID = id, name = f.name, reaction = f.reaction, min = f.min, max = f.max,
+                    value = standings[id] }
+            end
+            TP.ReadWatchedFaction = function()
+                return watched and TP:ReadFactionByID(watched) or nil
+            end
+            db.showXP = false
+        end)
+
+        after_each(function()
+            TP.ReadKnownFactions = readKnown
+            TP.ReadFactionByID = readByID
+            TP.ReadWatchedFaction = readWatched
+            TP.Now = now
+            TP.autoAdded = {}
+            TP.factionSnapshot = nil
+        end)
+
+        local function gain(id, amount)
+            standings[id] = standings[id] + amount
+            TP:OnEvent("UPDATE_FACTION")
+        end
+
+        local function names(rows)
+            local list = {}
+            for _, row in ipairs(rows) do list[#list + 1] = row.name end
+            return list
+        end
+
+        it("detects gains by diffing against the snapshot", function()
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            standings[76] = 4250
+            standings[530] = 9900
+            assert.are.same({ { id = 76, delta = 250 } }, TP:DetectFactionGains())
+            assert.are.same({}, TP:DetectFactionGains())
+        end)
+
+        it("takes a snapshot instead of reporting gains when it has none", function()
+            assert.are.same({}, TP:DetectFactionGains())
+            standings[81] = 200
+            assert.are.same({ { id = 81, delta = 100 } }, TP:DetectFactionGains())
+        end)
+
+        it("adds an untracked faction that gains as a temporary row at the bottom", function()
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            TP:PinFaction(81)
+            gain(76, 25)
+            local rows = TP:CollectRows(db)
+            assert.are.same({ "Thunder Bluff", "Orgrimmar" }, names(rows))
+            assert.is_true(rows[2].autoAdded)
+            assert.are.equal("Auto-added - pin to keep", rows[2].detail)
+        end)
+
+        it("highlights a temporary row only once", function()
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            gain(76, 25)
+            assert.is_true(TP:CollectRows(db)[1].flash)
+            assert.is_false(TP:CollectRows(db)[1].flash)
+            gain(76, 25)
+            assert.is_false(TP:CollectRows(db)[1].flash)
+        end)
+
+        it("ignores gains on pinned and watched factions", function()
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            TP:PinFaction(81)
+            watched = 530
+            gain(81, 10)
+            gain(530, 10)
+            assert.are.equal(0, #TP.autoAdded)
+        end)
+
+        it("drops a temporary row after ten minutes without another gain", function()
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            gain(76, 25)
+            clock = 1000 + 599
+            assert.are.equal(1, #TP:CollectRows(db))
+            clock = 1000 + 600
+            assert.are.equal(0, #TP:CollectRows(db))
+            assert.are.equal(0, #TP.autoAdded)
+        end)
+
+        it("restarts the ten minutes on each gain", function()
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            gain(76, 25)
+            clock = 1000 + 300
+            gain(76, 25)
+            clock = 1000 + 899
+            assert.are.equal(1, #TP:CollectRows(db))
+            clock = 1000 + 900
+            assert.are.equal(0, #TP:CollectRows(db))
+        end)
+
+        it("keeps temporary rows in the order they first gained", function()
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            gain(81, 5)
+            gain(76, 5)
+            gain(81, 5)
+            assert.are.same({ "Thunder Bluff", "Orgrimmar" }, names(TP:CollectRows(db)))
+        end)
+
+        it("keeps the notice even with detail lines off", function()
+            db.showDetail = false
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            gain(76, 25)
+            assert.are.equal("Auto-added - pin to keep", TP:CollectRows(db)[1].detail)
+        end)
+
+        it("pins a temporary row when it is clicked", function()
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            gain(76, 25)
+            local row = TP:CollectRows(db)[1]
+            assert.is_true(TP:OnRowClick(row))
+            assert.are.same({ 76 }, TP:GetPinnedFactions())
+            assert.are.equal(0, #TP.autoAdded)
+            local rows = TP:CollectRows(db)
+            assert.are.equal(1, #rows)
+            assert.is_nil(rows[1].autoAdded)
+            -- Pinned now, so it outlives the ten minutes
+            clock = 1000 + 3600
+            assert.are.equal(1, #TP:CollectRows(db))
+        end)
+
+        it("does nothing when an ordinary row is clicked", function()
+            assert.is_false(TP:OnRowClick({ factionID = 76 }))
+            assert.is_false(TP:OnRowClick(nil))
+            assert.are.same({}, TP:GetPinnedFactions())
+        end)
+
+        it("gives a temporary row the mouse so it can be clicked", function()
+            CastbornDB.locked = true
+            assert.is_true(TP:RowWantsMouse({ autoAdded = true }, db))
+            CastbornDB.locked = nil
+        end)
+
+        it("adds nothing and shows nothing when the option is off", function()
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            gain(76, 25)
+            db.trackOnGain = false
+            assert.are.equal(0, #TP:CollectRows(db))
+            gain(81, 25)
+            db.trackOnGain = true
+            assert.are.same({ "Orgrimmar" }, names(TP:CollectRows(db)))
         end)
     end)
 

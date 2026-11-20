@@ -130,20 +130,21 @@ function TrackingPanel:ReadFactionByID(factionID)
     return { factionID = factionID, name = name, reaction = reaction, min = min, max = max, value = value }
 end
 
--- The factions the picker offers, as { id, name } in reputation pane order. Headers and
--- inactive factions are skipped; hidden factions are never returned by the client.
--- Factions under a collapsed header are not listed by the client either.
+-- The factions the picker offers and gains are detected on, as { id, name, value } in
+-- reputation pane order (value is the absolute standing). Headers and inactive factions are
+-- skipped; hidden factions are never returned by the client. Factions under a collapsed
+-- header are not listed by the client either.
 function TrackingPanel:ReadKnownFactions()
     local list = {}
     if not (GetNumFactions and GetFactionInfo) then return list end
     local underInactive = false
     for i = 1, GetNumFactions() do
-        local name, _, _, _, _, _, _, _, isHeader, _, _, _, _, factionID = GetFactionInfo(i)
+        local name, _, _, _, _, value, _, _, isHeader, _, _, _, _, factionID = GetFactionInfo(i)
         if isHeader then
             underInactive = name ~= nil and name == FACTION_INACTIVE
         elseif name and factionID and not underInactive
                 and not (IsFactionInactive and IsFactionInactive(i)) then
-            list[#list + 1] = { id = factionID, name = name }
+            list[#list + 1] = { id = factionID, name = name, value = value }
         end
     end
     return list
@@ -183,6 +184,7 @@ function TrackingPanel:BuildReputationRow(rep)
         detail = self:FormatNumber(rep.max - rep.value) .. " to " .. self:StandingLabel(rep.reaction + 1)
     end
     return {
+        factionID = rep.factionID,
         name = rep.name,
         value = string.format("|cff%02x%02x%02x%s|r %.1f%%", Hex(r), Hex(g), Hex(b),
             self:StandingLabel(rep.reaction), percent),
@@ -250,6 +252,104 @@ function TrackingPanel:UnpinFaction(factionID)
 end
 
 --------------------------------------------------------------------------------
+-- Reputation gains: untracked factions that gain are added as temporary rows
+--------------------------------------------------------------------------------
+
+-- An auto-added row is dropped after this long without another gain
+TrackingPanel.AUTO_ADD_EXPIRY = 600
+TrackingPanel.AUTO_ADD_NOTICE = "Auto-added - pin to keep"
+
+-- factionID -> absolute standing, taken on PLAYER_ENTERING_WORLD and kept up to date
+TrackingPanel.factionSnapshot = nil
+-- Temporary rows, oldest first: { factionID, lastGain, flash }
+TrackingPanel.autoAdded = {}
+
+-- The clock, a seam so specs can move time
+function TrackingPanel:Now()
+    return GetTime()
+end
+
+function TrackingPanel:TakeFactionSnapshot()
+    self.factionSnapshot = {}
+    for _, faction in ipairs(self:ReadKnownFactions()) do
+        if faction.value ~= nil then self.factionSnapshot[faction.id] = faction.value end
+    end
+end
+
+-- Compare every faction with the snapshot and return the gains as { id, delta }. Factions
+-- not seen before (a header just expanded) are recorded, not counted. Chat messages are not
+-- parsed: their text may be secret on Forever.
+function TrackingPanel:DetectFactionGains()
+    if not self.factionSnapshot then
+        self:TakeFactionSnapshot()
+        return {}
+    end
+    local gains = {}
+    for _, faction in ipairs(self:ReadKnownFactions()) do
+        if faction.value ~= nil then
+            local old = self.factionSnapshot[faction.id]
+            if old ~= nil and faction.value > old then
+                gains[#gains + 1] = { id = faction.id, delta = faction.value - old }
+            end
+            self.factionSnapshot[faction.id] = faction.value
+        end
+    end
+    return gains
+end
+
+-- Already a row of its own: pinned, or the watched faction while that row is shown
+function TrackingPanel:IsTracked(factionID, db)
+    if self:IsPinned(factionID) then return true end
+    if db.showReputation then
+        local watched = self:ReadWatchedFaction()
+        if watched and watched.factionID == factionID then return true end
+    end
+    return false
+end
+
+local function FindAutoAdded(self, factionID)
+    for i, entry in ipairs(self.autoAdded) do
+        if entry.factionID == factionID then return i, entry end
+    end
+end
+
+-- A gain on an untracked faction adds it at the bottom (highlighted once), or keeps an
+-- existing temporary row for another ten minutes
+function TrackingPanel:NoteGain(factionID, db)
+    if not db.trackOnGain or self:IsTracked(factionID, db) then return end
+    local now = self:Now()
+    local _, entry = FindAutoAdded(self, factionID)
+    if entry then
+        entry.lastGain = now
+    else
+        self.autoAdded[#self.autoAdded + 1] = { factionID = factionID, lastGain = now, flash = true }
+    end
+    -- Nothing else may refresh the panel when the row runs out
+    if C_Timer then
+        C_Timer.After(self.AUTO_ADD_EXPIRY + 1, function() TrackingPanel:Refresh() end)
+    end
+end
+
+function TrackingPanel:ExpireAutoAdded()
+    local now = self:Now()
+    for i = #self.autoAdded, 1, -1 do
+        if now - self.autoAdded[i].lastGain >= self.AUTO_ADD_EXPIRY then
+            table.remove(self.autoAdded, i)
+        end
+    end
+end
+
+-- Clicking a temporary row pins it, making it permanent
+function TrackingPanel:OnRowClick(data)
+    if not data or not data.autoAdded or not data.factionID then return false end
+    self:PinFaction(data.factionID)
+    local i = FindAutoAdded(self, data.factionID)
+    if i then table.remove(self.autoAdded, i) end
+    self:Refresh()
+    return true
+end
+
+--------------------------------------------------------------------------------
 -- Rows and visibility
 --------------------------------------------------------------------------------
 
@@ -287,7 +387,27 @@ function TrackingPanel:CollectRows(db)
             if rep then rows[#rows + 1] = self:BuildReputationRow(rep) end
         end
     end
-    return ApplyRowSettings(rows, db)
+    ApplyRowSettings(rows, db)
+
+    -- Temporary rows last; their detail line is the notice, whatever showDetail says
+    if db.trackOnGain then
+        self:ExpireAutoAdded()
+        for _, entry in ipairs(self.autoAdded) do
+            if entry.factionID ~= watchedID and not self:IsPinned(entry.factionID) then
+                local rep = self:ReadFactionByID(entry.factionID)
+                if rep then
+                    local row = self:BuildReputationRow(rep)
+                    row.autoAdded = true
+                    row.detail = self.AUTO_ADD_NOTICE
+                    row.rested = nil
+                    row.flash = entry.flash
+                    entry.flash = false
+                    rows[#rows + 1] = row
+                end
+            end
+        end
+    end
+    return rows
 end
 
 --------------------------------------------------------------------------------
@@ -311,11 +431,11 @@ function TrackingPanel:GetTooltipLines(data)
     return { left = data.name, right = data.value, detail = data.detail }
 end
 
--- Rows take the mouse only while collapsed (for the tooltip), and never while frames are
--- unlocked, so they do not get in the way of dragging the panel
+-- Rows take the mouse only while collapsed (for the tooltip) or when temporary (click to pin),
+-- and never while frames are unlocked, so they do not get in the way of dragging the panel
 function TrackingPanel:RowWantsMouse(data, db)
     if CastbornDB.locked == false then return false end
-    return db.collapsed and true or false
+    return (db.collapsed or data.autoAdded) and true or false
 end
 
 -- Shown when enabled and something is tracked, or always in test mode
@@ -446,7 +566,44 @@ function TrackingPanel:CreateRow()
     row:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
+    row:SetScript("OnMouseUp", function(self, button)
+        if button == "LeftButton" then TrackingPanel:OnRowClick(self.data) end
+    end)
+
+    -- A standing-coloured outline that fades out once when a row is auto-added
+    local outline = CreateFrame("Frame", nil, row)
+    outline:SetPoint("TOPLEFT", row, "TOPLEFT", -2, 2)
+    outline:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 2, -2)
+    outline:SetAlpha(0)
+    outline.edges = {}
+    -- Each edge runs between two corners; horizontal edges are 1 pixel high, vertical 1 wide
+    for _, side in ipairs({ { "TOPLEFT", "TOPRIGHT", true }, { "BOTTOMLEFT", "BOTTOMRIGHT", true },
+            { "TOPLEFT", "BOTTOMLEFT", false }, { "TOPRIGHT", "BOTTOMRIGHT", false } }) do
+        local edge = outline:CreateTexture(nil, "OVERLAY")
+        edge:SetPoint(side[1], outline, side[1], 0, 0)
+        edge:SetPoint(side[2], outline, side[2], 0, 0)
+        if side[3] then edge:SetHeight(1) else edge:SetWidth(1) end
+        outline.edges[#outline.edges + 1] = edge
+    end
+    local fade = outline:CreateAnimationGroup()
+    local alpha = fade:CreateAnimation("Alpha")
+    alpha:SetFromAlpha(1)
+    alpha:SetToAlpha(0)
+    alpha:SetDuration(1.5)
+    fade:SetScript("OnFinished", function() outline:SetAlpha(0) end)
+    outline.fade = fade
+    row.outline = outline
     return row
+end
+
+function TrackingPanel:FlashRow(row, color)
+    local outline = row.outline
+    for _, edge in ipairs(outline.edges) do
+        edge:SetColorTexture(color[1], color[2], color[3], 1)
+    end
+    outline.fade:Stop()
+    outline:SetAlpha(1)
+    outline.fade:Play()
 end
 
 function TrackingPanel:CreateFrames()
@@ -556,6 +713,7 @@ function TrackingPanel:Refresh()
         row:SetPoint("TOPRIGHT", f, "TOPRIGHT", -PADDING, y)
         row:SetHeight(height)
         row:Show()
+        if data.flash then self:FlashRow(row, data.color) end
         y = y - height - gap
     end
     for i = #rows + 1, #f.rows do
@@ -615,6 +773,12 @@ function TrackingPanel:OnEvent(event)
     end
     if event == "PLAYER_ENTERING_WORLD" then
         self:UpdateBlizzardBars()
+        self:TakeFactionSnapshot()
+    elseif event == "UPDATE_FACTION" then
+        local db = GetDB()
+        for _, gain in ipairs(self:DetectFactionGains()) do
+            self:NoteGain(gain.id, db)
+        end
     end
     self:Refresh()
 end

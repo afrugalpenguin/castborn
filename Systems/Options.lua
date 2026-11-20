@@ -3046,6 +3046,9 @@ function moduleBuilders.tracking(parent, db, y)
     -- Collapsed shows thin bars only; hover one for its details. The header's button toggles it.
     local startCollapsedCB = CreateCheckbox(parent, "Start collapsed", db, "startCollapsed")
     startCollapsedCB:SetPoint("TOPLEFT", 0, y)
+    -- A faction that gains reputation shows for ten minutes; click its row to pin it
+    local gainCB = CreateCheckbox(parent, "Track reputation on gain", db, "trackOnGain", apply)
+    gainCB:SetPoint("TOPLEFT", 220, y)
     y = y - 40
 
     -- Look

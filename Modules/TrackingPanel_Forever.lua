@@ -49,7 +49,7 @@ function TrackingPanel:ReadKnownFactions()
             underInactive = data.name ~= nil and data.name == FACTION_INACTIVE
         elseif data and data.name and data.factionID and data.factionID ~= 0 and not underInactive
                 and not (isActive and not isActive(i)) then
-            list[#list + 1] = { id = data.factionID, name = data.name }
+            list[#list + 1] = { id = data.factionID, name = data.name, value = data.currentStanding }
         end
     end
     return list

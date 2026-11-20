@@ -406,6 +406,7 @@ CB.defaults = {
         showReputation = true,
         hideAtMaxLevel = true,
         showDetail = true,
+        trackOnGain = true,
         width = 220,
         barHeight = 6,
         textSize = 11,
