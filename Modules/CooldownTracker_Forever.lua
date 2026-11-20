@@ -72,3 +72,82 @@ function CooldownTracker:GetTargetFit(spell)
     if isSecret(inRange) then return nil end
     return inRange ~= nil
 end
+
+--------------------------------------------------------------------------------
+-- Blizzard's Cooldown Manager
+--------------------------------------------------------------------------------
+
+-- The Essential and Utility rows duplicate the tracker; the buff viewers are left alone.
+-- They are Edit Mode system frames, so (as the progress panel does with the XP bars) they
+-- are faded and made click-through rather than reparented, which risks taint.
+CooldownTracker.blizzardViewers = { "EssentialCooldownViewer", "UtilityCooldownViewer" }
+CooldownTracker.hiddenViewers = {}
+
+Castborn:RegisterCallback("INIT", function()
+    if CastbornDB.cooldowns.hideBlizzardCooldowns == nil then
+        CastbornDB.cooldowns.hideBlizzardCooldowns = true
+    end
+end)
+
+function CooldownTracker:ShouldHideBlizzardCooldowns(db)
+    return db and db.enabled and db.hideBlizzardCooldowns and true or false
+end
+
+-- Viewers whose SetAlpha / EnableMouse are already hooked (hooks cannot be removed)
+local hookedViewers = {}
+local forcing = false
+
+-- Blizzard sets the viewers' alpha again (fading, opacity setting). Post-hooks record what it
+-- asked for, so restoring gives back its latest wish, then put the viewer back to hidden.
+-- They act only while the viewer is in hiddenViewers.
+local function HookViewer(self, frame)
+    if hookedViewers[frame] then return end
+    hookedViewers[frame] = true
+    hooksecurefunc(frame, "SetAlpha", function(_, alpha)
+        local saved = self.hiddenViewers[frame]
+        if not saved or forcing then return end
+        saved.alpha = alpha
+        forcing = true
+        frame:SetAlpha(0)
+        forcing = false
+    end)
+    hooksecurefunc(frame, "EnableMouse", function(_, enabled)
+        local saved = self.hiddenViewers[frame]
+        if not saved or forcing then return end
+        saved.mouse = enabled and true or false
+        forcing = true
+        frame:EnableMouse(false)
+        forcing = false
+    end)
+end
+
+-- Hide or restore the viewers to match the settings
+function CooldownTracker:UpdateBlizzardCooldowns()
+    local hide = self:ShouldHideBlizzardCooldowns(CastbornDB and CastbornDB.cooldowns)
+    for _, name in ipairs(self.blizzardViewers) do
+        local frame = _G[name]
+        local saved = frame and self.hiddenViewers[frame]
+        if frame and hide and not saved then
+            self.hiddenViewers[frame] = { alpha = frame:GetAlpha(), mouse = frame:IsMouseEnabled() }
+            HookViewer(self, frame)
+            forcing = true
+            frame:SetAlpha(0)
+            frame:EnableMouse(false)
+            forcing = false
+        elseif saved and not hide then
+            -- Out of hiddenViewers first, so the hooks let the restore through
+            self.hiddenViewers[frame] = nil
+            frame:SetAlpha(saved.alpha or 1)
+            frame:EnableMouse(saved.mouse and true or false)
+        end
+    end
+end
+
+-- Checked every tick, so toggling the tracker or the option, a profile change, or a viewer
+-- Blizzard builds late all take effect without extra plumbing
+local baseUpdateAll = CooldownTracker.UpdateAll
+
+function CooldownTracker:UpdateAll()
+    baseUpdateAll(self)
+    self:UpdateBlizzardCooldowns()
+end

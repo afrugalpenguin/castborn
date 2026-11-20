@@ -1678,6 +1678,15 @@ function moduleBuilders.cooldowns(parent, db, y)
 
     local trinketCB = CreateCheckbox(parent, "Track Trinket Cooldowns", db, "trackTrinkets")
     trinketCB:SetPoint("TOPLEFT", 0, y)
+
+    -- Forever only (CooldownTracker_Forever.lua)
+    if CT.UpdateBlizzardCooldowns then
+        y = y - 26
+        local blizzCB = CreateCheckbox(parent, "Hide Blizzard's Cooldown Bars", db, "hideBlizzardCooldowns", function()
+            CT:UpdateBlizzardCooldowns()
+        end)
+        blizzCB:SetPoint("TOPLEFT", 0, y)
+    end
     y = y - 40
 
     -- Group tabs: one per group, then "+ New group" while there is room
