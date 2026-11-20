@@ -142,6 +142,18 @@ local steps = {
         configKey = "seals",
     },
     {
+        id = "progress",
+        title = "Progress Panel",
+        description = "Your experience and reputations in one small window, in place of Blizzard's XP and reputation bars.\n\nAfter a couple of minutes the XP row shows your " .. HL .. "XP per hour|r and time to level. A reputation you gain shows up for ten minutes: " .. HL .. "click it|r to keep it.",
+        tip = "Pin reputations, collapse the panel to thin bars or fade it in combat in " .. HL .. "Options > Progress|r.",
+        getFrame = function() return _G["Castborn_ProgressPanel"] end,
+        configKey = "progress",
+        -- Turning the panel off must also put Blizzard's XP and reputation bars back
+        onToggle = function()
+            if Castborn.ProgressPanel then Castborn.ProgressPanel:ApplySettings() end
+        end,
+    },
+    {
         id = "customise",
         title = "Make It Yours",
         description = HL .. "/cb|r opens the options, where you can change sizes, colours and textures.\n" .. HL .. "/cb unlock|r lets you drag any frame.\n" .. HL .. "/cb grid|r shows a grid to line frames up.\n\nWhile frames are unlocked, " .. HL .. "Ctrl+Shift+Click|r a frame's label to hide it for now.",
@@ -854,6 +866,14 @@ local function ShowTestFrame(frameId)
         elseif CB.EndTestSealTracker then
             CB:EndTestSealTracker()
         end
+    elseif frameId == "progress" then
+        if CastbornDB.progress and CastbornDB.progress.enabled then
+            if CB.TestProgressPanel then CB:TestProgressPanel() end
+            local f = _G["Castborn_ProgressPanel"]
+            if f then return f end
+        elseif CB.EndTestProgressPanel then
+            CB:EndTestProgressPanel()
+        end
     elseif frameId == "customise" then
         -- No specific frame to highlight — this step explains commands
         return nil
@@ -1092,6 +1112,9 @@ function Tutorial:OnCheckboxClicked(cb, checked)
     if not key or not CastbornDB[key] then return end
     CastbornDB[key].enabled = checked
     Castborn:Print(cb.label .. " " .. (checked and "enabled" or "disabled"))
+    -- A module that must react straight away (the progress panel restores Blizzard's bars)
+    local step = steps[currentStep]
+    if step and step.onToggle then step.onToggle() end
     ShowStep(currentStep)
 end
 
@@ -1151,6 +1174,7 @@ function Tutorial:End()
     if CB.EndTestAbsorbTracker then CB:EndTestAbsorbTracker() end
     if CB.EndTestArmorTracker then CB:EndTestArmorTracker() end
     if CB.EndTestSealTracker then CB:EndTestSealTracker() end
+    if CB.EndTestProgressPanel then CB:EndTestProgressPanel() end
     if CB.EndTestItems then CB:EndTestItems() end
 
     if tutorialFrame then
