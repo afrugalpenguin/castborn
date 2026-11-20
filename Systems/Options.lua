@@ -2638,6 +2638,14 @@ function moduleBuilders.armortracker(parent, db, y)
         y = y - 30
     end
 
+    local animateCB = CreateCheckbox(parent, "Animate Alert", db, "animateAlert", function()
+        if Castborn.ArmorTracker and Castborn.ArmorTracker.ApplyAlertAnimation then
+            Castborn.ArmorTracker:ApplyAlertAnimation()
+        end
+    end)
+    animateCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 34
+
     local testBtn = CreateButton(parent, "Test Armour Alert", 120, function()
         StartPreview("TestArmorTracker", "EndTestArmorTracker")
     end)

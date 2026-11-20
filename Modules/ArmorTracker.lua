@@ -22,6 +22,7 @@ local defaults = {
     yPct = -0.185,
     selectedBlessing = "might",
     alwaysTrackRF = false,
+    animateAlert = true,      -- pop when an alert appears, then pulse until the buff is back
 }
 
 --------------------------------------------------------------------------------
@@ -132,6 +133,95 @@ local function WarningFontSize(size)
     return math.max(14, math.floor(size * 0.4))
 end
 
+-- The glow ring texture is drawn well inside its square, so it is sized past the icon
+local function GlowPadding(size)
+    return math.floor(size * 0.45)
+end
+
+local POP_SCALE = 1.35
+local PULSE_SCALE = 1.12
+local PULSE_SECONDS = 0.6
+
+-- The pop (grow, then settle back), the looping size pulse and the glow pulse.
+-- Clients without animation groups get none, and the Start/Stop methods do nothing.
+local function CreateAlertAnimation(f, size)
+    local glow = f:CreateTexture(nil, "OVERLAY")
+    glow:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
+    glow:SetBlendMode("ADD")
+    glow:SetVertexColor(1, 0.2, 0.2)
+    local pad = GlowPadding(size)
+    glow:SetPoint("TOPLEFT", -pad, pad)
+    glow:SetPoint("BOTTOMRIGHT", pad, -pad)
+    glow:SetAlpha(0)
+    f.glow = glow
+
+    local pop = f:CreateAnimationGroup()
+    local pulse = f:CreateAnimationGroup()
+    local glowPulse = glow:CreateAnimationGroup()
+    if not (pop and pulse and glowPulse) then return end
+
+    local grow = pop:CreateAnimation("Scale")
+    grow:SetScale(POP_SCALE, POP_SCALE)
+    grow:SetDuration(0.12)
+    grow:SetSmoothing("OUT")
+    grow:SetOrder(1)
+    local settle = pop:CreateAnimation("Scale")
+    settle:SetScale(1 / POP_SCALE, 1 / POP_SCALE)
+    settle:SetDuration(0.18)
+    settle:SetSmoothing("IN_OUT")
+    settle:SetOrder(2)
+    pop:SetScript("OnFinished", function() ArmorTracker:OnAlertPopFinished(f) end)
+
+    pulse:SetLooping("BOUNCE")
+    local swell = pulse:CreateAnimation("Scale")
+    swell:SetScale(PULSE_SCALE, PULSE_SCALE)
+    swell:SetDuration(PULSE_SECONDS)
+    swell:SetSmoothing("IN_OUT")
+
+    glowPulse:SetLooping("BOUNCE")
+    local shine = glowPulse:CreateAnimation("Alpha")
+    shine:SetFromAlpha(0.25)
+    shine:SetToAlpha(0.85)
+    shine:SetDuration(PULSE_SECONDS)
+    shine:SetSmoothing("IN_OUT")
+
+    f.pop, f.pulse, f.glowPulse = pop, pulse, glowPulse
+end
+
+-- Run from the alert's OnShow, so the 0.5s rescans that re-show a shown alert do not restart it
+function ArmorTracker:StartAlertAnimation(f)
+    if not f.pop then return end
+    self:StopAlertAnimation(f)
+    local db = CB.db.armortracker
+    if db and db.animateAlert then
+        f.pop:Play()
+    end
+end
+
+function ArmorTracker:OnAlertPopFinished(f)
+    if not f.pulse or not f:IsShown() then return end
+    f.pulse:Play()
+    f.glowPulse:Play()
+end
+
+function ArmorTracker:StopAlertAnimation(f)
+    if not f.pop then return end
+    f.pop:Stop()
+    f.pulse:Stop()
+    f.glowPulse:Stop()
+    f.glow:SetAlpha(0)
+end
+
+-- Start or stop the alerts on show to match the option (called by its checkbox)
+function ArmorTracker:ApplyAlertAnimation()
+    for _, slot in ipairs(slots) do
+        local f = slot.frame
+        if f and f:IsShown() then
+            self:StartAlertAnimation(f)
+        end
+    end
+end
+
 local function CreateSlotFrame(index)
     local db = CB.db.armortracker
     local size = db.iconSize or 50
@@ -191,6 +281,10 @@ local function CreateSlotFrame(index)
     warning:SetText("!")
     warning:SetTextColor(1, 0.2, 0.2, 1)
     f.warning = warning
+
+    CreateAlertAnimation(f, size)
+    f:HookScript("OnShow", function(self) ArmorTracker:StartAlertAnimation(self) end)
+    f:HookScript("OnHide", function(self) ArmorTracker:StopAlertAnimation(self) end)
 
     -- Positioning: first slot uses saved position, subsequent anchor to previous
     if index == 1 then
@@ -382,6 +476,12 @@ function ArmorTracker:ResizeSlotFrame(f, size)
     if f.warning then
         f.warning:SetFont(Castborn:GetBarFont(), WarningFontSize(size), "OUTLINE")
         Castborn:RegisterFontString(f.warning, WarningFontSize(size), "OUTLINE")
+    end
+    if f.glow then
+        local pad = GlowPadding(size)
+        f.glow:ClearAllPoints()
+        f.glow:SetPoint("TOPLEFT", -pad, pad)
+        f.glow:SetPoint("BOTTOMRIGHT", pad, -pad)
     end
 end
 
