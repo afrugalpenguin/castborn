@@ -1,5 +1,10 @@
 # Changelog
 
+**v8.8.0**
+
+- Progress panel: the XP bar turns blue while you're rested, like Blizzard's
+- Progress panel: a reputation you gain now shows for 12 seconds and fades out, rather than staying for ten minutes. Hover it to keep it on screen, and click it to pin it
+
 **v8.7.0**
 
 - New Progress panel: a small floating window with your experience and reputations, in place of Blizzard's XP and reputation bars, which it hides while switched on and puts back when switched off
