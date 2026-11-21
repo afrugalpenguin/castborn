@@ -144,7 +144,7 @@ local steps = {
     {
         id = "progress",
         title = "Progress Panel",
-        description = "Your experience and reputations in one small window, in place of Blizzard's XP and reputation bars.\n\nAfter a couple of minutes the XP row shows your " .. HL .. "XP per hour|r and time to level. A reputation you gain shows up for ten minutes: " .. HL .. "click it|r to keep it.",
+        description = "Your experience and reputations in one small window, in place of Blizzard's XP and reputation bars.\n\nAfter a couple of minutes the XP row shows your " .. HL .. "XP per hour|r and time to level. A reputation you gain shows up briefly, then fades: " .. HL .. "click it|r to keep it.",
         tip = "Pin reputations, collapse the panel to thin bars or fade it in combat in " .. HL .. "Options > Progress|r.",
         getFrame = function() return _G["Castborn_ProgressPanel"] end,
         configKey = "progress",
