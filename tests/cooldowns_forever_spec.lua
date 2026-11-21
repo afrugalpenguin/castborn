@@ -65,6 +65,67 @@ describe("Cooldowns on Forever", function()
         assert.are.equal(dur, got)
     end)
 
+    describe("IsOutOfMana", function()
+        it("is true when the power cost cannot be met", function()
+            _G.C_Spell.IsSpellUsable = function() return false, true end
+            assert.is_true(CT:IsOutOfMana("Holy Shock"))
+        end)
+
+        it("is false when the spell is usable", function()
+            _G.C_Spell.IsSpellUsable = function() return true, false end
+            assert.is_false(CT:IsOutOfMana("Holy Shock"))
+        end)
+
+        it("leaves the icon alone when the answer is secret", function()
+            _G.C_Spell.IsSpellUsable = function() return secret(), secret() end
+            local oom
+            assert.has_no.errors(function() oom = CT:IsOutOfMana("Holy Shock") end)
+            assert.is_false(oom)
+        end)
+
+        it("is false on a client without C_Spell.IsSpellUsable", function()
+            assert.is_false(CT:IsOutOfMana("Holy Shock"))
+        end)
+
+        describe("ready icon colour", function()
+            local icon
+
+            before_each(function()
+                _G.CreateColor = function(r, g, b, a) return { r, g, b, a } end
+                icon = {
+                    SetVertexColor = function(self, ...) self.colour = { ... } end,
+                    SetVertexColorFromBoolean = function(self, flag, onTrue, onFalse)
+                        self.fromBoolean = { flag, onTrue, onFalse }
+                    end,
+                }
+            end)
+
+            after_each(function() _G.CreateColor = nil end)
+
+            it("tints blue from a secret answer, through the texture", function()
+                local noMana = secret()
+                _G.C_Spell.IsSpellUsable = function() return secret(), noMana end
+                CT:SetReadyIconColour(icon, "Holy Shock")
+                assert.are.equal(noMana, icon.fromBoolean[1])
+                assert.are.same({ 0.5, 0.5, 1, 1 }, icon.fromBoolean[2])
+                assert.are.same({ 1, 1, 1, 1 }, icon.fromBoolean[3])
+                assert.is_nil(icon.colour)
+            end)
+
+            it("uses full colour when the answer is plain", function()
+                _G.C_Spell.IsSpellUsable = function() return true, false end
+                CT:SetReadyIconColour(icon, "Holy Shock")
+                assert.are.same({ 1, 1, 1, 1 }, icon.colour)
+                assert.is_nil(icon.fromBoolean)
+            end)
+
+            it("uses full colour on a client without C_Spell.IsSpellUsable", function()
+                CT:SetReadyIconColour(icon, "Holy Shock")
+                assert.are.same({ 1, 1, 1, 1 }, icon.colour)
+            end)
+        end)
+    end)
+
     describe("GetTrackedSpellName", function()
         local originalGetSpellInfo
 

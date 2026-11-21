@@ -43,6 +43,31 @@ describe("Cooldown seams (TBC behaviour)", function()
     end)
 end)
 
+describe("Out of mana check (TBC)", function()
+    local CT = Castborn.CooldownTracker
+
+    after_each(function() _G.IsUsableSpell = nil end)
+
+    it("is true when the spell cannot be afforded", function()
+        _G.IsUsableSpell = function() return false, true end
+        assert.is_true(CT:IsOutOfMana("Holy Shock"))
+    end)
+
+    it("is false when the spell is usable", function()
+        _G.IsUsableSpell = function() return true, false end
+        assert.is_false(CT:IsOutOfMana("Holy Shock"))
+    end)
+
+    it("is false when unusable for another reason", function()
+        _G.IsUsableSpell = function() return false, false end
+        assert.is_false(CT:IsOutOfMana("Holy Shock"))
+    end)
+
+    it("is false on a client without IsUsableSpell", function()
+        assert.is_false(CT:IsOutOfMana("Holy Shock"))
+    end)
+end)
+
 describe("Paladin cooldown defaults", function()
     local function indexOf(name)
         for i, spell in ipairs(Castborn.SpellData:GetClassCooldowns("PALADIN")) do
