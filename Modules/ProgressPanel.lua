@@ -55,6 +55,8 @@ ProgressPanel.fallbackStandingColors = {
 
 local EXALTED = 8
 local XP_COLOR = { 0.58, 0, 0.55 }
+-- Blizzard's rested XP colour
+local RESTED_XP_COLOR = { 0, 0.39, 0.88 }
 local RESTED_ALPHA = 0.35
 local DETAIL_COLOR = { 0.6, 0.6, 0.6 }
 
@@ -203,7 +205,8 @@ function ProgressPanel:BuildXPRow(xp, rate)
         max = barMax,
         fill = current,
         rested = math.min(current + rested, barMax),
-        color = { XP_COLOR[1], XP_COLOR[2], XP_COLOR[3] },
+        color = rested > 0 and { RESTED_XP_COLOR[1], RESTED_XP_COLOR[2], RESTED_XP_COLOR[3] }
+            or { XP_COLOR[1], XP_COLOR[2], XP_COLOR[3] },
     }
 end
 
@@ -292,8 +295,10 @@ end
 -- Reputation gains: untracked factions that gain are added as temporary rows
 --------------------------------------------------------------------------------
 
--- An auto-added row is dropped after this long without another gain
-ProgressPanel.AUTO_ADD_EXPIRY = 600
+-- An auto-added row is dropped after this long without another gain, fading out over the
+-- last AUTO_ADD_FADE seconds; the mouse over it holds it
+ProgressPanel.AUTO_ADD_EXPIRY = 12
+ProgressPanel.AUTO_ADD_FADE = 3
 ProgressPanel.AUTO_ADD_NOTICE = "Auto-added - pin to keep"
 
 -- factionID -> absolute standing, taken on PLAYER_ENTERING_WORLD and kept up to date
@@ -354,7 +359,7 @@ local function FindAutoAdded(self, factionID)
 end
 
 -- A gain on an untracked faction adds it at the bottom (highlighted once), or keeps an
--- existing temporary row for another ten minutes
+-- existing temporary row for another AUTO_ADD_EXPIRY seconds
 function ProgressPanel:NoteGain(factionID, db)
     if not db.trackOnGain or self:IsTracked(factionID, db) then return end
     local now = self:Now()
@@ -368,6 +373,20 @@ function ProgressPanel:NoteGain(factionID, db)
     if C_Timer then
         C_Timer.After(self.AUTO_ADD_EXPIRY + 1, function() ProgressPanel:Refresh() end)
     end
+end
+
+-- 1 until the fade starts, then down to 0 at expiry
+function ProgressPanel:AutoAddedAlpha(lastGain)
+    local left = lastGain + self.AUTO_ADD_EXPIRY - self:Now()
+    if left >= self.AUTO_ADD_FADE then return 1 end
+    if left <= 0 then return 0 end
+    return left / self.AUTO_ADD_FADE
+end
+
+-- Restart a temporary row's time, so it does not fade away under the mouse
+function ProgressPanel:HoldAutoAdded(factionID)
+    local _, entry = FindAutoAdded(self, factionID)
+    if entry then entry.lastGain = self:Now() end
 end
 
 function ProgressPanel:ExpireAutoAdded()
@@ -817,6 +836,7 @@ function ProgressPanel:CreateFrames()
         if sinceHoverCheck < HOVER_CHECK_INTERVAL then return end
         sinceHoverCheck = 0
         ProgressPanel:UpdateHandleVisibility()
+        ProgressPanel:UpdateAutoAddedFade()
     end)
 
     f.rows = {}
@@ -836,6 +856,8 @@ end
 function ProgressPanel:FillRow(row, data, db)
     row.data = data
     row:EnableMouse(self:RowWantsMouse(data, db))
+    -- Temporary rows are faded by UpdateAutoAddedFade; a reused row starts opaque
+    row:SetAlpha(1)
     local collapsed = db.collapsed and true or false
     ShowIf(row.name, not collapsed)
     ShowIf(row.value, not collapsed)
@@ -917,6 +939,24 @@ function ProgressPanel:Refresh()
     f:SetAlpha(self:GetPanelAlpha(db))
     if self:GetVisibility(db, #rows) then f:Show() else f:Hide() end
     self:UpdateHandleVisibility()
+end
+
+-- Fade temporary rows towards expiry, hold any under the mouse, and drop expired ones
+function ProgressPanel:UpdateAutoAddedFade()
+    local f = self.frame
+    if not f then return end
+    local expired = false
+    for _, row in ipairs(f.rows) do
+        local data = row.data
+        if row:IsShown() and data and data.autoAdded then
+            if row:IsMouseOver() then self:HoldAutoAdded(data.factionID) end
+            local _, entry = FindAutoAdded(self, data.factionID)
+            local alpha = entry and self:AutoAddedAlpha(entry.lastGain) or 0
+            row:SetAlpha(alpha)
+            if alpha <= 0 then expired = true end
+        end
+    end
+    if expired then self:Refresh() end
 end
 
 function ProgressPanel:UpdateHandleVisibility()

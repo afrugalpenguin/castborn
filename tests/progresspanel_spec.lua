@@ -85,6 +85,11 @@ describe("Progress panel (TBC behaviour)", function()
             assert.are.equal(80000, row.rested)
         end)
 
+        it("is purple when not rested and blue when rested", function()
+            assert.are.same({ 0.58, 0, 0.55 }, TP:BuildXPRow(xp()).color)
+            assert.are.same({ 0, 0.39, 0.88 }, TP:BuildXPRow(xp({ rested = 21300 })).color)
+        end)
+
         it("caps the rested fill at the level's max", function()
             assert.are.equal(100000, TP:BuildXPRow(xp({ rested = 60000 })).rested)
         end)
@@ -489,24 +494,47 @@ describe("Progress panel (TBC behaviour)", function()
             assert.are.equal(0, #TP.autoAdded)
         end)
 
-        it("drops a temporary row after ten minutes without another gain", function()
+        it("drops a temporary row after twelve seconds without another gain", function()
             TP:OnEvent("PLAYER_ENTERING_WORLD")
             gain(76, 25)
-            clock = 1000 + 599
+            clock = 1000 + 11.9
             assert.are.equal(1, #TP:CollectRows(db))
-            clock = 1000 + 600
+            clock = 1000 + 12
             assert.are.equal(0, #TP:CollectRows(db))
             assert.are.equal(0, #TP.autoAdded)
         end)
 
-        it("restarts the ten minutes on each gain", function()
+        it("restarts the twelve seconds on each gain", function()
             TP:OnEvent("PLAYER_ENTERING_WORLD")
             gain(76, 25)
-            clock = 1000 + 300
+            clock = 1000 + 8
             gain(76, 25)
-            clock = 1000 + 899
+            clock = 1000 + 19.9
             assert.are.equal(1, #TP:CollectRows(db))
-            clock = 1000 + 900
+            clock = 1000 + 20
+            assert.are.equal(0, #TP:CollectRows(db))
+        end)
+
+        it("fades a temporary row out over its last three seconds", function()
+            assert.are.equal(1, TP:AutoAddedAlpha(1000))
+            clock = 1000 + 9
+            assert.are.equal(1, TP:AutoAddedAlpha(1000))
+            clock = 1000 + 10.5
+            assert.are.near(0.5, TP:AutoAddedAlpha(1000), 1e-9)
+            clock = 1000 + 12
+            assert.are.equal(0, TP:AutoAddedAlpha(1000))
+            clock = 1000 + 30
+            assert.are.equal(0, TP:AutoAddedAlpha(1000))
+        end)
+
+        it("holds a temporary row while the mouse is over it", function()
+            TP:OnEvent("PLAYER_ENTERING_WORLD")
+            gain(76, 25)
+            clock = 1000 + 11
+            TP:HoldAutoAdded(76)
+            clock = 1000 + 22
+            assert.are.equal(1, #TP:CollectRows(db))
+            clock = 1000 + 23
             assert.are.equal(0, #TP:CollectRows(db))
         end)
 
@@ -535,7 +563,7 @@ describe("Progress panel (TBC behaviour)", function()
             local rows = TP:CollectRows(db)
             assert.are.equal(1, #rows)
             assert.is_nil(rows[1].autoAdded)
-            -- Pinned now, so it outlives the ten minutes
+            -- Pinned now, so it outlives the twelve seconds
             clock = 1000 + 3600
             assert.are.equal(1, #TP:CollectRows(db))
         end)
