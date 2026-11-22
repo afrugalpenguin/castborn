@@ -359,6 +359,8 @@ CB.defaults = {
         yPct = -0.185,
         selectedBlessing = "might",
         alwaysTrackRF = false,
+        trackFood = true,
+        foodMode = "instance",
     },
 
     seals = {

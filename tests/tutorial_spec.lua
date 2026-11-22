@@ -73,6 +73,10 @@ describe("Tutorial steps", function()
             assert.is_false(load("MAGE"):IsStepShown(indexOf(Castborn.Tutorial, "totems")))
         end)
 
+        it("shows the armour step to a warrior, for the food reminder", function()
+            assert.is_true(load("WARRIOR"):IsStepShown(indexOf(Castborn.Tutorial, "armour")))
+        end)
+
         it("drops the five-second rule checkbox for a warrior", function()
             local T = load("WARRIOR")
             assert.are.same({ "gcd" }, T:GetShownKeys(T.steps[indexOf(T, "castbar_companions")]))

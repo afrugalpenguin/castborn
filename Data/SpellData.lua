@@ -650,6 +650,11 @@ function SpellData:GetClassArmors(class)
     return self.armors[class]
 end
 
+-- Well Fed, for the armour tracker's food reminder. Every food's buff is called Well Fed, so the
+-- reminder matches the name (read from this ID in the client's language) instead of listing
+-- every food's buff ID. The ID also supplies the icon.
+SpellData.wellFed = { name = "Well Fed", spellIds = {19705} }
+
 -- Paladin seals for the seal tracker. Seals are matched by spell name (resolved from any ID
 -- the client knows), so each lists one or two known IDs rather than every rank.
 SpellData.seals = {
