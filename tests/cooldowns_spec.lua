@@ -68,6 +68,31 @@ describe("Out of mana check (TBC)", function()
     end)
 end)
 
+describe("Unusable check (TBC)", function()
+    local CT = Castborn.CooldownTracker
+
+    after_each(function() _G.IsUsableSpell = nil end)
+
+    it("is true when unusable for a reason other than mana, like Judgement with no seal", function()
+        _G.IsUsableSpell = function() return false, false end
+        assert.is_true(CT:IsUnusable("Judgement"))
+    end)
+
+    it("is false when the spell is usable", function()
+        _G.IsUsableSpell = function() return true, false end
+        assert.is_false(CT:IsUnusable("Judgement"))
+    end)
+
+    it("is false when only mana is lacking, which the blue tint shows", function()
+        _G.IsUsableSpell = function() return false, true end
+        assert.is_false(CT:IsUnusable("Judgement"))
+    end)
+
+    it("is false on a client without IsUsableSpell", function()
+        assert.is_false(CT:IsUnusable("Judgement"))
+    end)
+end)
+
 describe("Paladin cooldown defaults", function()
     local function indexOf(name)
         for i, spell in ipairs(Castborn.SpellData:GetClassCooldowns("PALADIN")) do
