@@ -288,7 +288,7 @@ APICheck.names = {
     "GetCursorInfo", "ClearCursor", "GetTalentInfo", "C_SpecializationInfo.GetTalentInfo",
     "GetTotemInfo", "UnitAttackSpeed", "UnitRangedDamage", "GetWeaponEnchantInfo",
     "UnitPower", "UnitPowerMax", "UnitHealth",
-    "GetShapeshiftForm", "GetNetStats",
+    "GetShapeshiftForm", "GetNetStats", "IsInInstance",
     "C_NamePlate.GetNamePlateForUnit",
     "InterfaceOptions_AddCategory", "Settings.RegisterCanvasLayoutCategory",
     "ColorPickerFrame.SetupColorPickerAndShow", "OpacitySliderFrame",

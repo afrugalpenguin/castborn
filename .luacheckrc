@@ -69,6 +69,7 @@ read_globals = {
     "GetCursorInfo",
     "ClearCursor",
     "GetSpellInfo",
+    "IsInInstance",
     "GetSpellSubtext",
     "GetSpellTexture",
     "GetSpellCooldown",

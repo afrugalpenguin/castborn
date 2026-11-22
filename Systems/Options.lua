@@ -67,7 +67,7 @@ local categories = {
     { id = "cooldowntext", name = "Cooldown Text", module = "CooldownText" },  -- Forever only
     { id = "totems", name = "Totems", class = "SHAMAN" },
     { id = "absorbs", name = "Absorbs", class = "MAGE" },
-    { id = "armortracker", name = "Armour", classes = {"MAGE", "WARLOCK", "PRIEST", "PALADIN"} },
+    { id = "armortracker", name = "Armour" },
     { id = "seals", name = "Seals", class = "PALADIN" },
     { divider = true },
     { id = "lookfeel", name = "Look & Feel" },
@@ -93,7 +93,7 @@ local pageSubtitles = {
     cooldowntext = "Countdown numbers on your action bars and Castborn icons.",
     totems = "Your totems and how long they have left.",
     absorbs = "Your absorb shields and what they have left.",
-    armortracker = "A reminder when your self-buff is missing.",
+    armortracker = "A reminder when your self-buff or food buff is missing.",
     seals = "Your active seal and its time left.",
     lookfeel = "The texture and font every Castborn bar uses.",
     profiles = "Save a set of settings and share it between characters.",
@@ -736,7 +736,7 @@ function Options:BuildGeneral(parent)
         { key = "itemtracker", label = "Item Tracker" },
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
         { key = "absorbs", label = "Absorb Tracker" },
-        { key = "armortracker", label = "Armour Tracker", classes = {"MAGE", "WARLOCK", "PRIEST", "PALADIN"} },
+        { key = "armortracker", label = "Armour Tracker" },
         { key = "seals", label = "Seal Tracker", class = "PALADIN" },
         { key = "interrupt", label = "Interrupt Tracker" },
         { key = "multidot", label = "Multi-DoT Tracker" },
@@ -2568,6 +2568,50 @@ function moduleBuilders.armortracker(parent, db, y)
     end)
     sizeSlider:SetPoint("TOPLEFT", 0, y)
     y = y - 50
+
+    -- Food reminder: on/off, and where it applies. The tracker's periodic scan picks up a
+    -- mode change, so the dropdown needs no callback.
+    local foodCB = CreateCheckbox(parent, "Remind me when Well Fed is missing", db, "trackFood", function()
+        if Castborn.ArmorTracker and Castborn.ArmorTracker.RebuildSlots then
+            Castborn.ArmorTracker:RebuildSlots()
+        end
+    end)
+    foodCB:SetPoint("TOPLEFT", 0, y)
+    y = y - 40
+
+    local foodLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
+    foodLabel:SetPoint("TOPLEFT", 0, y)
+    foodLabel:SetText("Food reminder shows:")
+    foodLabel:SetTextColor(unpack(C.grey))
+
+    local foodDropdown = CreateFrame("Frame", "CastbornFoodModeDropdown", parent, "UIDropDownMenuTemplate")
+    SkinDropdown(foodDropdown)
+    foodDropdown:SetPoint("TOPLEFT", 140, y + 6)
+    UIDropDownMenu_SetWidth(foodDropdown, 160)
+
+    local foodModes = {
+        { key = "always",   label = "Always" },
+        { key = "instance", label = "In dungeons and raids" },
+        { key = "raid",     label = "In raids only" },
+    }
+    local foodModeLabels = {}
+    for _, m in ipairs(foodModes) do foodModeLabels[m.key] = m.label end
+
+    UIDropDownMenu_Initialize(foodDropdown, function(self, level)
+        for _, m in ipairs(foodModes) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = m.label
+            info.value = m.key
+            info.checked = ((db.foodMode or "instance") == m.key)
+            info.func = function()
+                db.foodMode = m.key
+                UIDropDownMenu_SetText(foodDropdown, m.label)
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    UIDropDownMenu_SetText(foodDropdown, foodModeLabels[db.foodMode] or foodModeLabels.instance)
+    y = y - 40
 
     -- Paladin: blessing selection dropdown + RF note
     local _, optClass = UnitClass("player")

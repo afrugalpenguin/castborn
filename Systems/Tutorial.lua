@@ -128,8 +128,8 @@ local steps = {
     {
         id = "armour",
         title = "Armour Tracker",
-        description = "An alert when your self-buff is missing, such as Mage Armour or Demon Skin, so you rebuff after dying or zoning.\n\nPaladins get alerts for their chosen " .. HL .. "Blessing|r (Might, Wisdom, Kings or Sanctuary), their " .. HL .. "Aura|r, and " .. HL .. "Righteous Fury|r when Improved Righteous Fury is talented (or always, if you choose).",
-        tip = "Paladins choose the blessing to watch in " .. HL .. "Options > Armour|r.",
+        description = "An alert when your self-buff is missing, such as Mage Armour or Demon Skin, so you rebuff after dying or zoning.\n\nPaladins get alerts for their chosen " .. HL .. "Blessing|r (Might, Wisdom, Kings or Sanctuary), their " .. HL .. "Aura|r, and " .. HL .. "Righteous Fury|r when Improved Righteous Fury is talented (or always, if you choose).\n\nEvery class also gets a " .. HL .. "Well Fed|r reminder, in dungeons and raids by default.",
+        tip = "Choose where the food reminder shows, and paladins choose the blessing to watch, in " .. HL .. "Options > Armour|r.",
         getFrame = function() return _G["Castborn_ArmorTracker"] end,
         configKey = "armortracker",
     },
@@ -210,9 +210,8 @@ local keyForClass = {
     absorbs = function(class)
         return Castborn.SpellData ~= nil and SpellDataHasClass(Castborn.SpellData.absorbs, class)
     end,
-    armortracker = function(class)
-        return Castborn.SpellData ~= nil and Castborn.SpellData:GetClassArmors(class) ~= nil
-    end,
+    -- Every class gets the food reminder, even without a self-buff
+    armortracker = function(class) return true end,
     seals = function(class) return class == "PALADIN" end,
 }
 
