@@ -285,4 +285,83 @@ describe("Cooldowns on Forever", function()
             assert.is_nil(rangeAsked)
         end)
     end)
+
+    describe("Blizzard's cooldown bars", function()
+        local essential, utility, savedDB
+
+        before_each(function()
+            essential = CreateFrame("Frame", "EssentialCooldownViewer")
+            utility = CreateFrame("Frame", "UtilityCooldownViewer")
+            essential:EnableMouse(true)
+            utility:EnableMouse(true)
+            savedDB = _G.CastbornDB
+            _G.CastbornDB = { cooldowns = { enabled = true, hideBlizzardCooldowns = true } }
+            CT.hiddenViewers = {}
+        end)
+
+        after_each(function()
+            _G.EssentialCooldownViewer = nil
+            _G.UtilityCooldownViewer = nil
+            _G.CastbornDB = savedDB
+        end)
+
+        it("fades the Essential and Utility rows and turns their mouse off", function()
+            CT:UpdateBlizzardCooldowns()
+            assert.are.equal(0, essential:GetAlpha())
+            assert.are.equal(0, utility:GetAlpha())
+            assert.is_false(essential:IsMouseEnabled())
+            assert.is_false(utility:IsMouseEnabled())
+        end)
+
+        it("leaves the buff viewers alone", function()
+            local buffs = CreateFrame("Frame", "BuffIconCooldownViewer")
+            CT:UpdateBlizzardCooldowns()
+            assert.are.equal(1, buffs:GetAlpha())
+            _G.BuffIconCooldownViewer = nil
+        end)
+
+        it("keeps them hidden when Blizzard sets their alpha again", function()
+            CT:UpdateBlizzardCooldowns()
+            essential:SetAlpha(0.8)
+            essential:EnableMouse(true)
+            assert.are.equal(0, essential:GetAlpha())
+            assert.is_false(essential:IsMouseEnabled())
+        end)
+
+        it("restores Blizzard's latest alpha and mouse when the option is turned off", function()
+            CT:UpdateBlizzardCooldowns()
+            essential:SetAlpha(0.8)
+            CastbornDB.cooldowns.hideBlizzardCooldowns = false
+            CT:UpdateBlizzardCooldowns()
+            assert.are.equal(0.8, essential:GetAlpha())
+            assert.are.equal(1, utility:GetAlpha())
+            assert.is_true(essential:IsMouseEnabled())
+        end)
+
+        it("restores them when the cooldown tracker is disabled", function()
+            CT:UpdateBlizzardCooldowns()
+            CastbornDB.cooldowns.enabled = false
+            CT:UpdateBlizzardCooldowns()
+            assert.are.equal(1, essential:GetAlpha())
+            assert.is_true(utility:IsMouseEnabled())
+        end)
+
+        it("leaves them alone when the option is off", function()
+            CastbornDB.cooldowns.hideBlizzardCooldowns = false
+            CT:UpdateBlizzardCooldowns()
+            assert.are.equal(1, essential:GetAlpha())
+        end)
+
+        it("skips viewers this client does not have", function()
+            _G.UtilityCooldownViewer = nil
+            assert.has_no.errors(function() CT:UpdateBlizzardCooldowns() end)
+            assert.are.equal(0, essential:GetAlpha())
+        end)
+
+        it("is turned on by default", function()
+            _G.CastbornDB = { cooldowns = {} }
+            Castborn:FireCallback("INIT")
+            assert.is_true(CastbornDB.cooldowns.hideBlizzardCooldowns)
+        end)
+    end)
 end)
