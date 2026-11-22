@@ -14,6 +14,13 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.9.0",
+        features = {
+            "Cooldown icons turn blue when you can't afford them, and only glow as ready once you can",
+        },
+        fixes = {},
+    },
+    {
         version = "8.8.0",
         features = {
             "Progress panel: the XP bar turns blue while you're rested",

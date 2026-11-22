@@ -1,5 +1,9 @@
 # Changelog
 
+**v8.9.0**
+
+- Cooldown icons turn blue, like the action bars, when you don't have enough mana, rage or energy to cast them, and don't glow as ready until you can
+
 **v8.8.0**
 
 - Progress panel: the XP bar turns blue while you're rested, like Blizzard's
