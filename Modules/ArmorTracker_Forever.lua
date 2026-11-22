@@ -50,3 +50,16 @@ function ArmorTracker:FindPlayerBuff(spellIds)
     end
     return nil
 end
+
+-- Callers check CanReadAuras first (HasWellFed does)
+function ArmorTracker:FindPlayerBuffByName(buffName)
+    for i = 1, 40 do
+        local aura = C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
+        if not aura then break end
+        local name = aura.name
+        if not isSecret(name) and name == buffName then
+            return true
+        end
+    end
+    return false
+end

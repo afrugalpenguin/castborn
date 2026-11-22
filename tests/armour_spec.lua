@@ -254,4 +254,106 @@ describe("Armour reminder seams (TBC behaviour)", function()
             _G.CastbornDB = saved
         end)
     end)
+
+    describe("food reminder", function()
+        local instanceType
+
+        before_each(function()
+            instanceType = "none"
+            _G.IsInInstance = function() return instanceType ~= "none", instanceType end
+            AT.wellFed = nil
+        end)
+
+        after_each(function()
+            _G.IsInInstance = nil
+            _G.UnitBuff = nil
+            AT.wellFed = nil
+        end)
+
+        describe("FoodReminderWanted", function()
+            it("always applies in 'always' mode", function()
+                assert.is_true(AT:FoodReminderWanted("always"))
+            end)
+
+            it("applies in dungeons and raids, but not outside, in 'instance' mode", function()
+                assert.is_false(AT:FoodReminderWanted("instance"))
+                instanceType = "party"
+                assert.is_true(AT:FoodReminderWanted("instance"))
+                instanceType = "raid"
+                assert.is_true(AT:FoodReminderWanted("instance"))
+            end)
+
+            it("does not apply in battlegrounds or arenas in 'instance' mode", function()
+                instanceType = "pvp"
+                assert.is_false(AT:FoodReminderWanted("instance"))
+                instanceType = "arena"
+                assert.is_false(AT:FoodReminderWanted("instance"))
+            end)
+
+            it("applies only in raids in 'raid' mode", function()
+                instanceType = "party"
+                assert.is_false(AT:FoodReminderWanted("raid"))
+                instanceType = "raid"
+                assert.is_true(AT:FoodReminderWanted("raid"))
+            end)
+
+            it("treats an unknown mode as dungeons and raids", function()
+                instanceType = "party"
+                assert.is_true(AT:FoodReminderWanted(nil))
+            end)
+        end)
+
+        describe("FindPlayerBuffByName", function()
+            it("finds a buff by name", function()
+                local buffs = { "Arcane Intellect", "Well Fed" }
+                _G.UnitBuff = function(_, i) return buffs[i] end
+                assert.is_true(AT:FindPlayerBuffByName("Well Fed"))
+            end)
+
+            it("is false when the buff is not up", function()
+                _G.UnitBuff = function(_, i) if i == 1 then return "Food" end end
+                assert.is_false(AT:FindPlayerBuffByName("Well Fed"))
+            end)
+        end)
+
+        describe("HasWellFed", function()
+            local fed
+            local canReadAuras = AT.CanReadAuras
+
+            before_each(function()
+                fed = false
+                _G.UnitBuff = function(_, i) if i == 1 and fed then return "Well Fed" end end
+                _G.GetSpellInfo = function(id) if id == 19705 then return "Well Fed" end end
+            end)
+
+            after_each(function()
+                _G.GetSpellInfo = nil
+                AT.CanReadAuras = canReadAuras
+            end)
+
+            it("is true with the buff up and false without", function()
+                fed = true
+                assert.is_true(AT:HasWellFed())
+                fed = false
+                assert.is_false(AT:HasWellFed())
+            end)
+
+            it("keeps the last answer while auras cannot be read", function()
+                assert.is_false(AT:HasWellFed())
+                AT.CanReadAuras = function() return false end
+                fed = true
+                assert.is_false(AT:HasWellFed())
+            end)
+
+            it("assumes the player is fed before any read, so it never alerts on a guess", function()
+                AT.CanReadAuras = function() return false end
+                assert.is_true(AT:HasWellFed())
+            end)
+        end)
+
+        it("names the Well Fed buff in SpellData", function()
+            dofile("Data/SpellData.lua")
+            assert.are.same({ 19705 }, Castborn.SpellData.wellFed.spellIds)
+        end)
+    end)
 end)

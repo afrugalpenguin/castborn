@@ -58,6 +58,44 @@ function CooldownTracker:GetTargetCreatureType()
     return creatureType
 end
 
+-- IsUsableSpell is C_Spell.IsSpellUsable here. A secret answer is treated as affordable, so
+-- the icon keeps its normal look rather than guessing.
+function CooldownTracker:IsOutOfMana(spellName)
+    local isUsable = C_Spell and C_Spell.IsSpellUsable
+    if not isUsable then return false end
+    local _, noMana = isUsable(spellName)
+    if isSecret(noMana) then return false end
+    return noMana and true or false
+end
+
+-- As IsOutOfMana, a secret answer leaves the icon as it is.
+function CooldownTracker:IsUnusable(spellName)
+    local isUsable = C_Spell and C_Spell.IsSpellUsable
+    if not isUsable then return false end
+    local usable, noMana = isUsable(spellName)
+    if isSecret(usable) or isSecret(noMana) then return false end
+    return usable == false and not noMana
+end
+
+-- Should the usability answer ever be secret, IsOutOfMana reads it as affordable; tint the
+-- icon from the secret answer instead, which the texture accepts, so the blue still shows.
+-- (The ready glow cannot be held back then, as that needs the answer read.)
+local oomColour, readyColour
+
+function CooldownTracker:SetReadyIconColour(icon, spellName)
+    local isUsable = C_Spell and C_Spell.IsSpellUsable
+    if isUsable and icon.SetVertexColorFromBoolean and CreateColor then
+        local _, noMana = isUsable(spellName)
+        if isSecret(noMana) then
+            oomColour = oomColour or CreateColor(0.5, 0.5, 1, 1)
+            readyColour = readyColour or CreateColor(1, 1, 1, 1)
+            icon:SetVertexColorFromBoolean(noMana, oomColour, readyColour)
+            return
+        end
+    end
+    icon:SetVertexColor(1, 1, 1, 1)
+end
+
 -- When the creature type is secret (in combat), ask the range check instead. It stays plain
 -- in combat and answers nil when the spell cannot be cast on the target at all (a humanoid
 -- for Exorcism), and true or false, in or out of range, when it can.
@@ -71,4 +109,83 @@ function CooldownTracker:GetTargetFit(spell)
     local inRange = C_Spell.IsSpellInRange(self:GetTrackedSpellName(spell), "target")
     if isSecret(inRange) then return nil end
     return inRange ~= nil
+end
+
+--------------------------------------------------------------------------------
+-- Blizzard's Cooldown Manager
+--------------------------------------------------------------------------------
+
+-- The Essential and Utility rows duplicate the tracker; the buff viewers are left alone.
+-- They are Edit Mode system frames, so (as the progress panel does with the XP bars) they
+-- are faded and made click-through rather than reparented, which risks taint.
+CooldownTracker.blizzardViewers = { "EssentialCooldownViewer", "UtilityCooldownViewer" }
+CooldownTracker.hiddenViewers = {}
+
+Castborn:RegisterCallback("INIT", function()
+    if CastbornDB.cooldowns.hideBlizzardCooldowns == nil then
+        CastbornDB.cooldowns.hideBlizzardCooldowns = true
+    end
+end)
+
+function CooldownTracker:ShouldHideBlizzardCooldowns(db)
+    return db and db.enabled and db.hideBlizzardCooldowns and true or false
+end
+
+-- Viewers whose SetAlpha / EnableMouse are already hooked (hooks cannot be removed)
+local hookedViewers = {}
+local forcing = false
+
+-- Blizzard sets the viewers' alpha again (fading, opacity setting). Post-hooks record what it
+-- asked for, so restoring gives back its latest wish, then put the viewer back to hidden.
+-- They act only while the viewer is in hiddenViewers.
+local function HookViewer(self, frame)
+    if hookedViewers[frame] then return end
+    hookedViewers[frame] = true
+    hooksecurefunc(frame, "SetAlpha", function(_, alpha)
+        local saved = self.hiddenViewers[frame]
+        if not saved or forcing then return end
+        saved.alpha = alpha
+        forcing = true
+        frame:SetAlpha(0)
+        forcing = false
+    end)
+    hooksecurefunc(frame, "EnableMouse", function(_, enabled)
+        local saved = self.hiddenViewers[frame]
+        if not saved or forcing then return end
+        saved.mouse = enabled and true or false
+        forcing = true
+        frame:EnableMouse(false)
+        forcing = false
+    end)
+end
+
+-- Hide or restore the viewers to match the settings
+function CooldownTracker:UpdateBlizzardCooldowns()
+    local hide = self:ShouldHideBlizzardCooldowns(CastbornDB and CastbornDB.cooldowns)
+    for _, name in ipairs(self.blizzardViewers) do
+        local frame = _G[name]
+        local saved = frame and self.hiddenViewers[frame]
+        if frame and hide and not saved then
+            self.hiddenViewers[frame] = { alpha = frame:GetAlpha(), mouse = frame:IsMouseEnabled() }
+            HookViewer(self, frame)
+            forcing = true
+            frame:SetAlpha(0)
+            frame:EnableMouse(false)
+            forcing = false
+        elseif saved and not hide then
+            -- Out of hiddenViewers first, so the hooks let the restore through
+            self.hiddenViewers[frame] = nil
+            frame:SetAlpha(saved.alpha or 1)
+            frame:EnableMouse(saved.mouse and true or false)
+        end
+    end
+end
+
+-- Checked every tick, so toggling the tracker or the option, a profile change, or a viewer
+-- Blizzard builds late all take effect without extra plumbing
+local baseUpdateAll = CooldownTracker.UpdateAll
+
+function CooldownTracker:UpdateAll()
+    baseUpdateAll(self)
+    self:UpdateBlizzardCooldowns()
 end

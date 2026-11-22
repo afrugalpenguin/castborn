@@ -177,4 +177,23 @@ describe("Armour reminder on Forever", function()
             assert.are.equal(0, reads)
         end)
     end)
+
+    describe("FindPlayerBuffByName", function()
+        it("finds a buff by name through C_UnitAuras", function()
+            auras = { { name = "Arcane Intellect" }, { name = "Well Fed" } }
+            assert.is_true(AT:FindPlayerBuffByName("Well Fed"))
+        end)
+
+        it("is false when the buff is not up", function()
+            auras = { { name = "Food" } }
+            assert.is_false(AT:FindPlayerBuffByName("Well Fed"))
+        end)
+
+        it("skips auras whose name is secret", function()
+            auras = { { name = secret() }, { name = "Well Fed" } }
+            local found
+            assert.has_no.errors(function() found = AT:FindPlayerBuffByName("Well Fed") end)
+            assert.is_true(found)
+        end)
+    end)
 end)

@@ -15,7 +15,7 @@ for _, step in ipairs(Castborn.Tutorial.steps) do
         step.tip = "The bar shows " .. HL .. "READY|r when you can interrupt again."
     elseif step.id == "armour" then
         -- Buffs are only readable out of combat, and there is no Blessing of Sanctuary
-        step.description = "An alert when your self-buff is missing, such as Mage Armour or Demon Skin, so you rebuff after dying or zoning.\n\nPaladins get alerts for their chosen " .. HL .. "Blessing|r (Might, Wisdom or Kings), their " .. HL .. "Aura|r, and " .. HL .. "Righteous Fury|r when Improved Righteous Fury is talented (or always, if you choose).\n\nBuffs are checked out of combat, so the reminder holds its state during a fight."
+        step.description = "An alert when your self-buff is missing, such as Mage Armour or Demon Skin, so you rebuff after dying or zoning.\n\nPaladins get alerts for their chosen " .. HL .. "Blessing|r (Might, Wisdom or Kings), their " .. HL .. "Aura|r, and " .. HL .. "Righteous Fury|r when Improved Righteous Fury is talented (or always, if you choose).\n\nEvery class also gets a " .. HL .. "Well Fed|r reminder, in dungeons and raids by default.\n\nBuffs are checked out of combat, so the reminder holds its state during a fight."
     elseif step.id == "seals" then
         -- Judgement does not consume the seal on Forever
         step.description = "Your active seal, with a sweep for the time it has left.\n\nWhen no seal is up, the icon turns red with a |cffff3333!|r so you can reseal, for example before a pull."

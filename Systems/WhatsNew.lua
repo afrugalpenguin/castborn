@@ -14,6 +14,21 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.9.0",
+        features = {
+            "Cooldown icons turn blue when you can't afford them, and only glow as ready once you can",
+        },
+        fixes = {},
+    },
+    {
+        version = "8.8.0",
+        features = {
+            "Progress panel: the XP bar turns blue while you're rested",
+            "Progress panel: reputations you gain show for 12 seconds and fade out; hover to keep one, click to pin it",
+        },
+        fixes = {},
+    },
+    {
         version = "8.7.0",
         features = {
             "New Progress panel: your XP and reputations in one floating window, replacing Blizzard's XP and reputation bars",

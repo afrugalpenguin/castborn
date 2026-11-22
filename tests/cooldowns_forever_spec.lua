@@ -65,6 +65,98 @@ describe("Cooldowns on Forever", function()
         assert.are.equal(dur, got)
     end)
 
+    describe("IsOutOfMana", function()
+        it("is true when the power cost cannot be met", function()
+            _G.C_Spell.IsSpellUsable = function() return false, true end
+            assert.is_true(CT:IsOutOfMana("Holy Shock"))
+        end)
+
+        it("is false when the spell is usable", function()
+            _G.C_Spell.IsSpellUsable = function() return true, false end
+            assert.is_false(CT:IsOutOfMana("Holy Shock"))
+        end)
+
+        it("leaves the icon alone when the answer is secret", function()
+            _G.C_Spell.IsSpellUsable = function() return secret(), secret() end
+            local oom
+            assert.has_no.errors(function() oom = CT:IsOutOfMana("Holy Shock") end)
+            assert.is_false(oom)
+        end)
+
+        it("is false on a client without C_Spell.IsSpellUsable", function()
+            assert.is_false(CT:IsOutOfMana("Holy Shock"))
+        end)
+
+        describe("IsUnusable", function()
+            it("is true when unusable for a reason other than mana", function()
+                _G.C_Spell.IsSpellUsable = function() return false, false end
+                assert.is_true(CT:IsUnusable("Judgement"))
+            end)
+
+            it("is false when the spell is usable", function()
+                _G.C_Spell.IsSpellUsable = function() return true, false end
+                assert.is_false(CT:IsUnusable("Judgement"))
+            end)
+
+            it("is false when only mana is lacking", function()
+                _G.C_Spell.IsSpellUsable = function() return false, true end
+                assert.is_false(CT:IsUnusable("Judgement"))
+            end)
+
+            it("leaves the icon alone when either answer is secret", function()
+                local unusable
+                _G.C_Spell.IsSpellUsable = function() return secret(), false end
+                assert.has_no.errors(function() unusable = CT:IsUnusable("Judgement") end)
+                assert.is_false(unusable)
+                _G.C_Spell.IsSpellUsable = function() return false, secret() end
+                assert.has_no.errors(function() unusable = CT:IsUnusable("Judgement") end)
+                assert.is_false(unusable)
+            end)
+
+            it("is false on a client without C_Spell.IsSpellUsable", function()
+                assert.is_false(CT:IsUnusable("Judgement"))
+            end)
+        end)
+
+        describe("ready icon colour", function()
+            local icon
+
+            before_each(function()
+                _G.CreateColor = function(r, g, b, a) return { r, g, b, a } end
+                icon = {
+                    SetVertexColor = function(self, ...) self.colour = { ... } end,
+                    SetVertexColorFromBoolean = function(self, flag, onTrue, onFalse)
+                        self.fromBoolean = { flag, onTrue, onFalse }
+                    end,
+                }
+            end)
+
+            after_each(function() _G.CreateColor = nil end)
+
+            it("tints blue from a secret answer, through the texture", function()
+                local noMana = secret()
+                _G.C_Spell.IsSpellUsable = function() return secret(), noMana end
+                CT:SetReadyIconColour(icon, "Holy Shock")
+                assert.are.equal(noMana, icon.fromBoolean[1])
+                assert.are.same({ 0.5, 0.5, 1, 1 }, icon.fromBoolean[2])
+                assert.are.same({ 1, 1, 1, 1 }, icon.fromBoolean[3])
+                assert.is_nil(icon.colour)
+            end)
+
+            it("uses full colour when the answer is plain", function()
+                _G.C_Spell.IsSpellUsable = function() return true, false end
+                CT:SetReadyIconColour(icon, "Holy Shock")
+                assert.are.same({ 1, 1, 1, 1 }, icon.colour)
+                assert.is_nil(icon.fromBoolean)
+            end)
+
+            it("uses full colour on a client without C_Spell.IsSpellUsable", function()
+                CT:SetReadyIconColour(icon, "Holy Shock")
+                assert.are.same({ 1, 1, 1, 1 }, icon.colour)
+            end)
+        end)
+    end)
+
     describe("GetTrackedSpellName", function()
         local originalGetSpellInfo
 
@@ -191,6 +283,85 @@ describe("Cooldowns on Forever", function()
             _G.UnitExists = function() return false end
             assert.is_false(CT:GetTargetFit(exorcism))
             assert.is_nil(rangeAsked)
+        end)
+    end)
+
+    describe("Blizzard's cooldown bars", function()
+        local essential, utility, savedDB
+
+        before_each(function()
+            essential = CreateFrame("Frame", "EssentialCooldownViewer")
+            utility = CreateFrame("Frame", "UtilityCooldownViewer")
+            essential:EnableMouse(true)
+            utility:EnableMouse(true)
+            savedDB = _G.CastbornDB
+            _G.CastbornDB = { cooldowns = { enabled = true, hideBlizzardCooldowns = true } }
+            CT.hiddenViewers = {}
+        end)
+
+        after_each(function()
+            _G.EssentialCooldownViewer = nil
+            _G.UtilityCooldownViewer = nil
+            _G.CastbornDB = savedDB
+        end)
+
+        it("fades the Essential and Utility rows and turns their mouse off", function()
+            CT:UpdateBlizzardCooldowns()
+            assert.are.equal(0, essential:GetAlpha())
+            assert.are.equal(0, utility:GetAlpha())
+            assert.is_false(essential:IsMouseEnabled())
+            assert.is_false(utility:IsMouseEnabled())
+        end)
+
+        it("leaves the buff viewers alone", function()
+            local buffs = CreateFrame("Frame", "BuffIconCooldownViewer")
+            CT:UpdateBlizzardCooldowns()
+            assert.are.equal(1, buffs:GetAlpha())
+            _G.BuffIconCooldownViewer = nil
+        end)
+
+        it("keeps them hidden when Blizzard sets their alpha again", function()
+            CT:UpdateBlizzardCooldowns()
+            essential:SetAlpha(0.8)
+            essential:EnableMouse(true)
+            assert.are.equal(0, essential:GetAlpha())
+            assert.is_false(essential:IsMouseEnabled())
+        end)
+
+        it("restores Blizzard's latest alpha and mouse when the option is turned off", function()
+            CT:UpdateBlizzardCooldowns()
+            essential:SetAlpha(0.8)
+            CastbornDB.cooldowns.hideBlizzardCooldowns = false
+            CT:UpdateBlizzardCooldowns()
+            assert.are.equal(0.8, essential:GetAlpha())
+            assert.are.equal(1, utility:GetAlpha())
+            assert.is_true(essential:IsMouseEnabled())
+        end)
+
+        it("restores them when the cooldown tracker is disabled", function()
+            CT:UpdateBlizzardCooldowns()
+            CastbornDB.cooldowns.enabled = false
+            CT:UpdateBlizzardCooldowns()
+            assert.are.equal(1, essential:GetAlpha())
+            assert.is_true(utility:IsMouseEnabled())
+        end)
+
+        it("leaves them alone when the option is off", function()
+            CastbornDB.cooldowns.hideBlizzardCooldowns = false
+            CT:UpdateBlizzardCooldowns()
+            assert.are.equal(1, essential:GetAlpha())
+        end)
+
+        it("skips viewers this client does not have", function()
+            _G.UtilityCooldownViewer = nil
+            assert.has_no.errors(function() CT:UpdateBlizzardCooldowns() end)
+            assert.are.equal(0, essential:GetAlpha())
+        end)
+
+        it("is turned on by default", function()
+            _G.CastbornDB = { cooldowns = {} }
+            Castborn:FireCallback("INIT")
+            assert.is_true(CastbornDB.cooldowns.hideBlizzardCooldowns)
         end)
     end)
 end)

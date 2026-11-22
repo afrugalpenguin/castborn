@@ -352,11 +352,132 @@ describe("Live layout", function()
             assert.are.same({ 0.4, 0.4, 0.4, 1 }, icon(1).icon.vertexColor)
         end)
 
+        it("keeps the target dim over the out-of-mana tint", function()
+            fit = false
+            local originalOom = tracker.IsOutOfMana
+            tracker.IsOutOfMana = function() return true end
+            tick()
+            tracker.IsOutOfMana = originalOom
+            assert.are.same({ 0.4, 0.4, 0.4, 1 }, icon(1).icon.vertexColor)
+        end)
+
         it("restores full colour when the slot goes to another spell", function()
             fit = false
             tick()
             track({ 900 })
             tick()
+            assert.are.same({ 1, 1, 1, 1 }, icon(1).icon.vertexColor)
+        end)
+    end)
+
+    describe("a spell that cannot be afforded", function()
+        local tracker = Castborn.CooldownTracker
+        local oom
+        local originalOom = tracker.IsOutOfMana
+
+        before_each(function()
+            oom = false
+            tracker.IsOutOfMana = function() return oom end
+            _G.GetSpellCooldown = function() return 0, 0 end
+            configure("HORIZONTAL", "LEFT", 3)
+            track({ 900 })
+            Castborn:FireCallback("COOLDOWNS_GLOW_OFF")
+        end)
+
+        after_each(function()
+            tracker.IsOutOfMana = originalOom
+            _G.GetSpellCooldown = function() return 0, 0 end
+        end)
+
+        it("tints a ready icon Blizzard's out-of-mana blue", function()
+            oom = true
+            tick()
+            assert.are.same({ 0.5, 0.5, 1, 1 }, icon(1).icon.vertexColor)
+            assert.is_false(icon(1).icon.desaturated)
+        end)
+
+        it("holds back the ready glow while out of mana", function()
+            _G.GetSpellCooldown = function() return 100, 30 end
+            tick()
+            oom = true
+            _G.GetSpellCooldown = function() return 0, 0 end
+            tick()
+            assert.are.equal(0, icon(1).glow.alpha)
+        end)
+
+        it("returns to full colour, and the glow, once there is mana", function()
+            _G.GetSpellCooldown = function() return 100, 30 end
+            tick()
+            oom = true
+            _G.GetSpellCooldown = function() return 0, 0 end
+            tick()
+            oom = false
+            tick()
+            assert.are.same({ 1, 1, 1, 1 }, icon(1).icon.vertexColor)
+            assert.are.equal(0.3, icon(1).glow.alpha)
+        end)
+
+        it("shows the plain cooldown look while on cooldown", function()
+            oom = true
+            _G.GetSpellCooldown = function() return 100, 30 end
+            tick()
+            assert.is_true(icon(1).icon.desaturated)
+            assert.are.same({ 1, 1, 1, 1 }, icon(1).icon.vertexColor)
+        end)
+    end)
+
+    describe("a spell the game marks unusable", function()
+        local tracker = Castborn.CooldownTracker
+        local unusable
+        local originalUnusable = tracker.IsUnusable
+
+        before_each(function()
+            unusable = false
+            tracker.IsUnusable = function() return unusable end
+            _G.GetSpellCooldown = function() return 0, 0 end
+            configure("HORIZONTAL", "LEFT", 3)
+            track({ 900 })
+            Castborn:FireCallback("COOLDOWNS_GLOW_OFF")
+        end)
+
+        after_each(function()
+            tracker.IsUnusable = originalUnusable
+            _G.GetSpellCooldown = function() return 0, 0 end
+        end)
+
+        it("dims a ready icon, like Judgement with no seal", function()
+            unusable = true
+            tick()
+            assert.are.same({ 0.4, 0.4, 0.4, 1 }, icon(1).icon.vertexColor)
+            assert.is_false(icon(1).icon.desaturated)
+        end)
+
+        it("holds back the ready glow while unusable", function()
+            _G.GetSpellCooldown = function() return 100, 30 end
+            tick()
+            unusable = true
+            _G.GetSpellCooldown = function() return 0, 0 end
+            tick()
+            assert.are.equal(0, icon(1).glow.alpha)
+        end)
+
+        it("returns to full colour, and the glow, once usable", function()
+            _G.GetSpellCooldown = function() return 100, 30 end
+            tick()
+            unusable = true
+            _G.GetSpellCooldown = function() return 0, 0 end
+            tick()
+            unusable = false
+            tick()
+            assert.are.same({ 1, 1, 1, 1 }, icon(1).icon.vertexColor)
+            assert.are.equal(0.3, icon(1).glow.alpha)
+        end)
+
+        it("shows the plain cooldown look while on cooldown", function()
+            unusable = true
+            _G.GetSpellCooldown = function() return 100, 30 end
+            tick()
+            assert.is_true(icon(1).icon.desaturated)
             assert.are.same({ 1, 1, 1, 1 }, icon(1).icon.vertexColor)
         end)
     end)

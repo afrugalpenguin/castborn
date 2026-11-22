@@ -8,7 +8,7 @@ local CB = Castborn
 
 -- Addon info
 CB.name = "Castborn"
-CB.version = "8.7.0"
+CB.version = "8.9.0"
 
 -- Module registry and event bus
 CB.modules = {}
@@ -359,6 +359,8 @@ CB.defaults = {
         yPct = -0.185,
         selectedBlessing = "might",
         alwaysTrackRF = false,
+        trackFood = true,
+        foodMode = "instance",
     },
 
     seals = {

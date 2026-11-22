@@ -559,6 +559,29 @@ function CooldownTracker:GetTargetFit(spell)
     return false
 end
 
+-- True when the spell cannot be cast for lack of mana (or rage or energy), as the action
+-- bars show in blue. CooldownTracker_Forever.lua overrides it.
+function CooldownTracker:IsOutOfMana(spellName)
+    if not IsUsableSpell then return false end
+    local _, noMana = IsUsableSpell(spellName)
+    return noMana and true or false
+end
+
+-- True when the spell cannot be cast for a reason other than power, such as Judgement with
+-- no seal up or Execute above 20%, as the action bars show dimmed.
+-- CooldownTracker_Forever.lua overrides it.
+function CooldownTracker:IsUnusable(spellName)
+    if not IsUsableSpell then return false end
+    local usable, noMana = IsUsableSpell(spellName)
+    return usable == false and not noMana
+end
+
+-- Full colour for a ready icon. CooldownTracker_Forever.lua overrides it to tint from a
+-- secret usability answer.
+function CooldownTracker:SetReadyIconColour(icon, spellName)
+    icon:SetVertexColor(1, 1, 1, 1)
+end
+
 --------------------------------------------------------------------------------
 -- Lifecycle
 --------------------------------------------------------------------------------

@@ -23,6 +23,8 @@ local defaults = {
     selectedBlessing = "might",
     alwaysTrackRF = false,
     animateAlert = true,      -- pop when an alert appears, then pulse until the buff is back
+    trackFood = true,
+    foodMode = "instance",  -- "always", "instance" (dungeons and raids) or "raid"
 }
 
 --------------------------------------------------------------------------------
@@ -59,6 +61,57 @@ function ArmorTracker:FindPlayerBuff(spellIds)
         end
     end
     return nil
+end
+
+-- Whether a player buff with this name is up
+function ArmorTracker:FindPlayerBuffByName(buffName)
+    for i = 1, 40 do
+        local name = UnitBuff("player", i)
+        if not name then break end
+        if name == buffName then return true end
+    end
+    return false
+end
+
+--------------------------------------------------------------------------------
+-- Food (Well Fed)
+--------------------------------------------------------------------------------
+
+-- Whether the food reminder applies here: "always", "raid" (raids only), or by default
+-- "instance" (dungeons and raids, not battlegrounds or arenas)
+function ArmorTracker:FoodReminderWanted(mode)
+    if mode == "always" then return true end
+    local _, instanceType = IsInInstance()
+    if mode == "raid" then return instanceType == "raid" end
+    return instanceType == "party" or instanceType == "raid"
+end
+
+-- The Well Fed buff name in the client's language, or the English name if the client
+-- does not know the spell
+local wellFedName = nil
+function ArmorTracker:GetWellFedName()
+    local wellFed = Castborn.SpellData and Castborn.SpellData.wellFed
+    if not wellFedName and wellFed then
+        wellFedName = GetSpellInfo(wellFed.spellIds[1])
+    end
+    return wellFedName or "Well Fed"
+end
+
+-- Whether the player is Well Fed. While auras cannot be read the last answer stands, and before
+-- any read the player counts as fed, so the alert never shows on a guess.
+function ArmorTracker:HasWellFed()
+    if self:CanReadAuras() then
+        self.wellFed = self:FindPlayerBuffByName(self:GetWellFedName())
+    end
+    return self.wellFed ~= false
+end
+
+-- The food slot's check: true (no alert) when fed, or when the reminder does not apply here.
+-- Well Fed is read first either way, so the answer is known before entering a dungeon where
+-- auras may not be readable.
+local function CheckFood()
+    local fed = ArmorTracker:HasWellFed()
+    return fed or not ArmorTracker:FoodReminderWanted(CB.db.armortracker.foodMode)
 end
 
 local function UpdateSlotState(slot)
@@ -359,11 +412,11 @@ local function BuildSlots()
         DestroySlot(i)
     end
 
-    if not armorSpellList then return end
-
     local db = CB.db.armortracker
 
-    if playerClass == "PALADIN" then
+    if not armorSpellList then
+        -- No class self-buffs: only the food slot below
+    elseif playerClass == "PALADIN" then
         -- Blessing slot: only the selected blessing's spell IDs
         local selectedKey = ArmorTracker:GetSelectedBlessing(db)
         for _, entry in ipairs(armorSpellList) do
@@ -464,6 +517,19 @@ local function BuildSlots()
         }
     end
 
+    -- Food slot, for every class: alert when Well Fed is missing
+    local wellFed = Castborn.SpellData and Castborn.SpellData.wellFed
+    if db.trackFood and wellFed then
+        slots[#slots + 1] = {
+            spellIds = {},
+            frame = nil,
+            lastSpellId = nil,
+            category = "food",
+            entry = wellFed,
+            checkFn = CheckFood,
+        }
+    end
+
     -- Create frames for each slot
     for i, slot in ipairs(slots) do
         slot.frame = CreateSlotFrame(i)
@@ -496,9 +562,9 @@ function ArmorTracker:ApplyIconSize(size)
     end
 end
 
--- Rebuild every slot (called when the "always remind about Righteous Fury" option changes)
+-- Rebuild every slot (called when the Righteous Fury or food reminder options change)
 function ArmorTracker:RebuildSlots()
-    if not armorSpellList then return end
+    if not eventFrame then return end  -- the module did not start
     BuildSlots()
     UpdateAllSlots()
 end
@@ -537,10 +603,8 @@ end)
 CB:RegisterCallback("READY", function()
     local info = CB:GetPlayerInfo()
     playerClass = info.class
+    -- May be nil: a class without self-buffs still gets the food slot
     armorSpellList = Castborn.SpellData:GetClassArmors(playerClass)
-
-    -- No armor spells for this class — nothing to do
-    if not armorSpellList then return end
 
     local db = CB.db.armortracker
     if not db.enabled then return end
@@ -598,7 +662,7 @@ end)
 --------------------------------------------------------------------------------
 
 function CB:TestArmorTracker()
-    if #slots == 0 and armorSpellList then
+    if #slots == 0 then
         BuildSlots()
     end
     if #slots == 0 then return end
