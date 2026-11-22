@@ -87,6 +87,37 @@ describe("Cooldowns on Forever", function()
             assert.is_false(CT:IsOutOfMana("Holy Shock"))
         end)
 
+        describe("IsUnusable", function()
+            it("is true when unusable for a reason other than mana", function()
+                _G.C_Spell.IsSpellUsable = function() return false, false end
+                assert.is_true(CT:IsUnusable("Judgement"))
+            end)
+
+            it("is false when the spell is usable", function()
+                _G.C_Spell.IsSpellUsable = function() return true, false end
+                assert.is_false(CT:IsUnusable("Judgement"))
+            end)
+
+            it("is false when only mana is lacking", function()
+                _G.C_Spell.IsSpellUsable = function() return false, true end
+                assert.is_false(CT:IsUnusable("Judgement"))
+            end)
+
+            it("leaves the icon alone when either answer is secret", function()
+                local unusable
+                _G.C_Spell.IsSpellUsable = function() return secret(), false end
+                assert.has_no.errors(function() unusable = CT:IsUnusable("Judgement") end)
+                assert.is_false(unusable)
+                _G.C_Spell.IsSpellUsable = function() return false, secret() end
+                assert.has_no.errors(function() unusable = CT:IsUnusable("Judgement") end)
+                assert.is_false(unusable)
+            end)
+
+            it("is false on a client without C_Spell.IsSpellUsable", function()
+                assert.is_false(CT:IsUnusable("Judgement"))
+            end)
+        end)
+
         describe("ready icon colour", function()
             local icon
 

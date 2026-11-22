@@ -68,6 +68,15 @@ function CooldownTracker:IsOutOfMana(spellName)
     return noMana and true or false
 end
 
+-- As IsOutOfMana, a secret answer leaves the icon as it is.
+function CooldownTracker:IsUnusable(spellName)
+    local isUsable = C_Spell and C_Spell.IsSpellUsable
+    if not isUsable then return false end
+    local usable, noMana = isUsable(spellName)
+    if isSecret(usable) or isSecret(noMana) then return false end
+    return usable == false and not noMana
+end
+
 -- Should the usability answer ever be secret, IsOutOfMana reads it as affordable; tint the
 -- icon from the secret answer instead, which the texture accepts, so the blue still shows.
 -- (The ready glow cannot be held back then, as that needs the answer read.)

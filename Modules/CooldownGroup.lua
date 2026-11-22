@@ -739,7 +739,8 @@ function CooldownGroup:Update()
                     -- A spell limited to some creature types (Exorcism) glows while the
                     -- target is one of them and dims while it is not
                     local targetFit = tracker:GetTargetFit(spell)
-                    if targetFit == false then
+                    -- Unusable for another reason (Judgement with no seal) dims the same way
+                    if targetFit == false or tracker:IsUnusable(spellName) then
                         cdFrame.icon:SetVertexColor(TARGET_DIM, TARGET_DIM, TARGET_DIM, 1)
                         StopEdgePulse(cdFrame)
                     elseif tracker:IsOutOfMana(spellName) then
