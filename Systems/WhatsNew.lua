@@ -14,6 +14,15 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.11.0",
+        features = {
+            "Proc Tracker: tick or untick each of your class's procs to choose what it tracks",
+            "Proc Tracker: add your own procs by spell ID or by dropping a spell from your spellbook",
+            "Forever: proc changes take effect straight away, even in combat",
+        },
+        fixes = {},
+    },
+    {
         version = "8.10.2",
         features = {},
         fixes = {

@@ -1,5 +1,11 @@
 # Changelog
 
+**v8.11.0**
+
+- Proc Tracker: choose which procs to track. The Proc Tracker page lists your class's procs with a tick box each, so you can switch off one you don't want, such as Poised
+- Proc Tracker: add your own procs by spell ID, or by dropping a spell from your spellbook or an action bar, and remove them again
+- Forever: switching a proc on or off now takes effect straight away, even in combat
+
 **v8.10.2**
 
 - The Armour Tracker and Absorb Tracker checkboxes on the main options page now take effect straight away, without a reload
