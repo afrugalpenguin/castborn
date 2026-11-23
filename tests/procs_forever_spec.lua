@@ -357,9 +357,18 @@ describe("Forever proc tracker", function()
             withoutTrinket()
         end)
 
-        it("waits until combat ends", function()
+        it("applies straight away", function()
             inCombat = true
             PT:SetTrinketProcs(false)
+            assert.is_nil(filterIds()[33370])
+        end)
+
+        it("waits until combat ends if the game refuses the change", function()
+            local set = container.SetAuraGroupCandidateFilters
+            container.SetAuraGroupCandidateFilters = function() error("blocked in combat") end
+            inCombat = true
+            PT:SetTrinketProcs(false)
+            container.SetAuraGroupCandidateFilters = set
             assert.is_true(filterIds()[33370])
             inCombat = false
             PT:OnEvent("PLAYER_REGEN_ENABLED")
