@@ -357,6 +357,42 @@ describe("Armour reminder seams (TBC behaviour)", function()
         end)
     end)
 
+    describe("enable option", function()
+        local savedDB, savedStart, f, started
+
+        before_each(function()
+            savedDB = Castborn.db
+            savedStart = AT.Start
+            started = false
+            AT.Start = function() started = true end
+            local shown = true
+            f = {
+                IsShown = function() return shown end,
+                Show = function() shown = true end,
+                Hide = function() shown = false end,
+            }
+            table.insert(AT:GetSlots(), { frame = f, spellIds = {} })
+        end)
+
+        after_each(function()
+            Castborn.db = savedDB
+            AT.Start = savedStart
+            wipe(AT:GetSlots())
+        end)
+
+        it("hides showing alerts when turned off", function()
+            Castborn.db = { armortracker = { enabled = false } }
+            AT:SetEnabled(false)
+            assert.is_false(f:IsShown())
+        end)
+
+        it("starts the tracker when turned on, without a reload", function()
+            Castborn.db = { armortracker = { enabled = true } }
+            AT:SetEnabled(true)
+            assert.is_true(started)
+        end)
+    end)
+
     describe("paladin aura slot", function()
         local function auraIds()
             dofile("Data/SpellData.lua")

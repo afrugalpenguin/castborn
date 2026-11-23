@@ -606,8 +606,26 @@ CB:RegisterCallback("READY", function()
     -- May be nil: a class without self-buffs still gets the food slot
     armorSpellList = Castborn.SpellData:GetClassArmors(playerClass)
 
-    local db = CB.db.armortracker
-    if not db.enabled then return end
+    if CB.db.armortracker.enabled then
+        ArmorTracker:Start()
+    end
+end)
+
+-- Turn the tracker on or off from the options, without a reload
+function ArmorTracker:SetEnabled(enabled)
+    if enabled then
+        self:Start()
+    else
+        UpdateAllSlots()  -- every slot hides while disabled
+    end
+end
+
+-- Build the alerts and start listening. Runs once; later calls just rescan.
+function ArmorTracker:Start()
+    if eventFrame then
+        UpdateAllSlots()
+        return
+    end
 
     -- Build slots and frames
     BuildSlots()
@@ -645,7 +663,7 @@ CB:RegisterCallback("READY", function()
     -- Periodic fallback scan: UNIT_AURA can be delayed in raids with heavy
     -- aura traffic, so rescan every 0.5s to catch anything missed.
     CB:CreateThrottledUpdater(0.5, function()
-        if not testModeActive and db.enabled then
+        if not testModeActive and CB.db.armortracker.enabled then
             UpdateAllSlots()
         end
     end)
@@ -655,7 +673,7 @@ CB:RegisterCallback("READY", function()
         function() CB:TestArmorTracker() end,
         function() CB:EndTestArmorTracker() end
     )
-end)
+end
 
 --------------------------------------------------------------------------------
 -- Test Mode

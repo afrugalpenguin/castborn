@@ -2565,7 +2565,11 @@ function moduleBuilders.multidot(parent, db, y)
 end
 
 function moduleBuilders.armortracker(parent, db, y)
-    local enableCB = CreateCheckbox(parent, "Enable Armour Tracker", db, "enabled")
+    local enableCB = CreateCheckbox(parent, "Enable Armour Tracker", db, "enabled", function(v)
+        if Castborn.ArmorTracker and Castborn.ArmorTracker.SetEnabled then
+            Castborn.ArmorTracker:SetEnabled(v)
+        end
+    end)
     enableCB:SetPoint("TOPLEFT", 0, y)
     y = y - 30
 
@@ -3195,6 +3199,11 @@ function moduleBuilders.fsr(parent, db, y)
     return y - 30
 end
 
+-- Pages that get the shared "Anchor to Castbar" checkbox: the modules that register anchor
+-- callbacks (REATTACH_<KEY>). Dragging any frame sets its anchored flag, so the flag alone
+-- does not mean the module can anchor. Cooldowns and the five-second rule draw their own.
+local anchorablePages = { dots = true, gcd = true, procs = true, resources = true, swing = true }
+
 function Options:BuildModule(parent, key)
     local y = 0  -- the page header (CreatePageHeader) already names the page
 
@@ -3229,8 +3238,8 @@ function Options:BuildModule(parent, key)
         y = y - 60
     end
 
-    -- Anchor checkbox (the cooldowns and five-second rule pages draw their own)
-    if key ~= "cooldowns" and key ~= "fsr" and db.anchored ~= nil then
+    -- Anchor checkbox, for the modules that can anchor to the castbar
+    if anchorablePages[key] and db.anchored ~= nil then
         local anchorCB = CreateCheckbox(parent, "Anchor to Castbar", db, "anchored", function(v)
             if v then
                 Castborn:FireCallback("REATTACH_" .. string.upper(key))
