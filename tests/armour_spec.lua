@@ -356,4 +356,33 @@ describe("Armour reminder seams (TBC behaviour)", function()
             assert.are.same({ 19705 }, Castborn.SpellData.wellFed.spellIds)
         end)
     end)
+
+    describe("paladin aura slot", function()
+        local function auraIds()
+            dofile("Data/SpellData.lua")
+            for _, entry in ipairs(Castborn.SpellData:GetClassArmors("PALADIN")) do
+                if entry.category == "aura" then
+                    local ids = {}
+                    for _, id in ipairs(entry.spellIds) do ids[id] = true end
+                    return ids
+                end
+            end
+        end
+
+        -- Every rank of every aura, so the alert never shows with one of them up
+        local ranks = {
+            ["Retribution Aura"] = { 7294, 10298, 10299, 10300, 10301, 27150 },
+            ["Shadow Resistance Aura"] = { 19876, 19895, 19896, 27151 },
+            ["Frost Resistance Aura"] = { 19888, 19897, 19898, 27152 },
+            ["Fire Resistance Aura"] = { 19891, 19899, 19900, 27153 },
+        }
+        for auraName, ids in pairs(ranks) do
+            it("counts every rank of " .. auraName, function()
+                local known = auraIds()
+                for _, id in ipairs(ids) do
+                    assert.is_true(known[id] == true, auraName .. " " .. id .. " missing")
+                end
+            end)
+        end
+    end)
 end)
