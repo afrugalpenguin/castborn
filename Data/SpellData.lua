@@ -635,11 +635,11 @@ SpellData.armors = {
           talentTab = 2, talentIndex = 7,                                       -- Protection tree, Improved RF
           talentSpellIds = {20468, 20469, 20470} },                              -- Improved RF ranks 1-3 (Forever check)
         { name = "Aura",                   category = "aura", key = "aura",
-          spellIds = {7294, 10298, 10299, 10300, 27150,                         -- Retribution Aura (ranks 1-5)
+          spellIds = {7294, 10298, 10299, 10300, 10301, 27150,                  -- Retribution Aura (ranks 1-6)
                       19746,                                                     -- Concentration Aura
-                      19876, 19895, 27151,                                       -- Shadow Resistance Aura (ranks 1-3)
-                      19888, 19897, 27152,                                       -- Frost Resistance Aura (ranks 1-3)
-                      19891, 19899, 27153,                                       -- Fire Resistance Aura (ranks 1-3)
+                      19876, 19895, 19896, 27151,                                -- Shadow Resistance Aura (ranks 1-4)
+                      19888, 19897, 19898, 27152,                                -- Frost Resistance Aura (ranks 1-4)
+                      19891, 19899, 19900, 27153,                                -- Fire Resistance Aura (ranks 1-4)
                       20218,                                                     -- Sanctity Aura
                       32223,                                                     -- Crusader Aura
                       465, 10290, 643, 10291, 1032, 10292, 10293, 27149} },     -- Devotion Aura (ranks 1-8, last for icon)
