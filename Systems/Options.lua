@@ -735,8 +735,12 @@ function Options:BuildGeneral(parent)
         { key = "cooldowns", label = "Cooldowns" },
         { key = "itemtracker", label = "Item Tracker" },
         { key = "totems", label = "Totem Tracker", class = "SHAMAN" },
-        { key = "absorbs", label = "Absorb Tracker" },
-        { key = "armortracker", label = "Armour Tracker" },
+        { key = "absorbs", label = "Absorb Tracker", onChange = function(v)
+            if Castborn.AbsorbTracker and Castborn.AbsorbTracker.SetEnabled then Castborn.AbsorbTracker:SetEnabled(v) end
+        end },
+        { key = "armortracker", label = "Armour Tracker", onChange = function(v)
+            if Castborn.ArmorTracker and Castborn.ArmorTracker.SetEnabled then Castborn.ArmorTracker:SetEnabled(v) end
+        end },
         { key = "seals", label = "Seal Tracker", class = "PALADIN" },
         { key = "interrupt", label = "Interrupt Tracker" },
         { key = "multidot", label = "Multi-DoT Tracker" },
@@ -2462,7 +2466,11 @@ end
 
 function moduleBuilders.multidot(parent, db, y)
     db.maxTargets = db.maxTargets or 5
-    local maxSlider = CreateSlider(parent, "Max Targets", db, "maxTargets", 1, 10, 1)
+    local MDT = Castborn.MultiDoTTracker
+    local maxRows = (MDT and MDT.MAX_ROWS) or 10
+    local maxSlider = CreateSlider(parent, "Max Targets", db, "maxTargets", 1, maxRows, 1, function()
+        if MDT and MDT.ApplyLayout then MDT:ApplyLayout() end
+    end)
     maxSlider:SetPoint("TOPLEFT", 0, y)
     local sortCB = CreateCheckbox(parent, "Sort by Time", db, "sortByTime")
     sortCB:SetPoint("TOPLEFT", 220, y + 15)
@@ -2472,9 +2480,8 @@ function moduleBuilders.multidot(parent, db, y)
     local mdWidthSlider = CreateSlider(parent, "Width", db, "width", 100, 400, 10, function(v)
         local mdFrame = _G["Castborn_MultiDoTTracker"]
         if mdFrame then
-            local maxT = db.maxTargets or 5
             mdFrame:SetWidth(v)
-            for i = 1, maxT do
+            for i = 1, maxRows do
                 local row = _G["Castborn_MultiDoT_Row" .. i]
                 if row then row:SetWidth(v - 4) end
             end
@@ -2486,9 +2493,8 @@ function moduleBuilders.multidot(parent, db, y)
     local mdRowSlider = CreateSlider(parent, "Row Height", db, "rowHeight", 12, 32, 2, function(v)
         local mdFrame = _G["Castborn_MultiDoTTracker"]
         if mdFrame then
-            local maxT = db.maxTargets or 5
-            mdFrame:SetHeight(v * maxT + 18)
-            for i = 1, maxT do
+            if MDT and MDT.ApplyLayout then MDT:ApplyLayout() end
+            for i = 1, maxRows do
                 local row = _G["Castborn_MultiDoT_Row" .. i]
                 if row then
                     row:SetHeight(v)
@@ -2529,7 +2535,9 @@ function moduleBuilders.multidot(parent, db, y)
     y = y - 30
 
     db.nameplateIndicatorSize = db.nameplateIndicatorSize or 20
-    local npSizeSlider = CreateSlider(parent, "Indicator Size", db, "nameplateIndicatorSize", 14, 32, 1)
+    local npSizeSlider = CreateSlider(parent, "Indicator Size", db, "nameplateIndicatorSize", 14, 32, 1, function()
+        if MDT and MDT.RefreshIndicators then MDT:RefreshIndicators() end
+    end)
     npSizeSlider:SetPoint("TOPLEFT", 0, y)
 
     -- Position dropdown
@@ -2554,6 +2562,7 @@ function moduleBuilders.multidot(parent, db, y)
             info.func = function()
                 db.nameplateIndicatorPosition = pos
                 UIDropDownMenu_SetText(posDropdown, positionLabels[pos])
+                if MDT and MDT.RefreshIndicators then MDT:RefreshIndicators() end
             end
             UIDropDownMenu_AddButton(info)
         end

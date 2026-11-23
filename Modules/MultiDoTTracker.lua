@@ -4,13 +4,15 @@ Castborn.MultiDoTTracker = MultiDoTTracker
 
 local frame = nil
 local targetFrames = {}
-local MAX_TARGETS = 5
+local MAX_ROWS = 10  -- rows built up front; the Max Targets setting shows up to this many
+MultiDoTTracker.MAX_ROWS = MAX_ROWS
 
 local defaults = {
     enabled = true,
     displayMode = "panel",
     width = 220,
     rowHeight = 20,
+    maxTargets = 5,
     point = "CENTER",
     x = 660,
     y = -300,
@@ -383,11 +385,34 @@ local function CreateTargetRow(parent, index)
     return row
 end
 
+-- How many target rows to show: the Max Targets setting, kept within 1 and MAX_ROWS
+function MultiDoTTracker:GetVisibleRows()
+    local n = math.floor(tonumber(CastbornDB.multidot.maxTargets) or 5)
+    return math.max(1, math.min(MAX_ROWS, n))
+end
+
+-- Fit the panel to the row count and row height, and hide rows past the count
+function MultiDoTTracker:ApplyLayout()
+    if not frame then return end
+    local visible = self:GetVisibleRows()
+    frame:SetHeight(CastbornDB.multidot.rowHeight * visible + 18)
+    for i = visible + 1, MAX_ROWS do
+        if targetFrames[i] then targetFrames[i]:Hide() end
+    end
+end
+
+-- Re-attach nameplate indicators on the next update, so a new size or position shows at once
+function MultiDoTTracker:RefreshIndicators()
+    for _, indicator in pairs(nameplateIndicators) do
+        indicator.attachedTo = nil
+    end
+end
+
 local function CreateContainer()
     local db = CastbornDB.multidot
 
     frame = CreateFrame("Frame", "Castborn_MultiDoTTracker", UIParent, "BackdropTemplate")
-    frame:SetSize(db.width, db.rowHeight * MAX_TARGETS + 18)
+    frame:SetSize(db.width, db.rowHeight * MultiDoTTracker:GetVisibleRows() + 18)
     frame:SetPoint(db.point, UIParent, db.point, db.x, db.y)
 
     frame:SetBackdrop({
@@ -410,7 +435,7 @@ local function CreateContainer()
     frame.header:SetText("DoT Targets")
     frame.header:SetTextColor(0.8, 0.8, 0.8, 1)
 
-    for i = 1, MAX_TARGETS do
+    for i = 1, MAX_ROWS do
         local row = CreateTargetRow(frame, i)
         row:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -14 - (i - 1) * db.rowHeight)
         targetFrames[i] = row
@@ -588,9 +613,10 @@ local function UpdateDisplay()
 
     frame:Show()
 
-    for i = 1, MAX_TARGETS do
+    local visible = MultiDoTTracker:GetVisibleRows()
+    for i = 1, MAX_ROWS do
         local row = targetFrames[i]
-        local target = sorted[i]
+        local target = i <= visible and sorted[i]
 
         if target then
             row.name:SetText(target.name or "Unknown")
@@ -808,6 +834,11 @@ function Castborn:TestMultiDoT()
         }
     end
 
+    -- Show no more test rows than the Max Targets setting
+    for i = MultiDoTTracker:GetVisibleRows() + 1, #testTargets do
+        testTargets[i] = nil
+    end
+
     for i, target in ipairs(testTargets) do
         local row = targetFrames[i]
         if row then
@@ -851,7 +882,7 @@ function Castborn:TestMultiDoT()
     end
 
     -- Hide unused rows
-    for i = #testTargets + 1, MAX_TARGETS do
+    for i = #testTargets + 1, MAX_ROWS do
         if targetFrames[i] then targetFrames[i]:Hide() end
     end
 end
@@ -861,7 +892,7 @@ function Castborn:EndTestMultiDoT()
     testModeActive = false
     if frame then
         frame:Hide()
-        for i = 1, MAX_TARGETS do
+        for i = 1, MAX_ROWS do
             if targetFrames[i] then targetFrames[i]:Hide() end
         end
     end

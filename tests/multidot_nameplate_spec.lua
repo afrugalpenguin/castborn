@@ -124,3 +124,29 @@ describe("MultiDoTTracker nameplate unit lookup", function()
         end)
     end)
 end)
+
+describe("MultiDoTTracker Max Targets", function()
+    local MDT = Castborn.MultiDoTTracker
+    local savedDB
+
+    before_each(function() savedDB = _G.CastbornDB end)
+    after_each(function() _G.CastbornDB = savedDB end)
+
+    local function rowsFor(value)
+        _G.CastbornDB = { multidot = { maxTargets = value } }
+        return MDT:GetVisibleRows()
+    end
+
+    it("shows as many rows as the setting asks for", function()
+        assert.are.equal(8, rowsFor(8))
+    end)
+
+    it("defaults to five rows when unset", function()
+        assert.are.equal(5, rowsFor(nil))
+    end)
+
+    it("keeps the row count within the rows built", function()
+        assert.are.equal(1, rowsFor(0))
+        assert.are.equal(MDT.MAX_ROWS, rowsFor(99))
+    end)
+end)

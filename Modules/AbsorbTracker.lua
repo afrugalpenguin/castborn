@@ -565,7 +565,20 @@ CB:RegisterCallback("INIT", function()
 end)
 
 CB:RegisterCallback("READY", function()
-    if not CastbornDB.absorbs.enabled then return end
+    if CastbornDB.absorbs.enabled then
+        AbsorbTracker:Start()
+    end
+end)
+
+-- Turn the tracker on from the options without a reload. Turning it off needs nothing here:
+-- the update loop hides the container while disabled.
+function AbsorbTracker:SetEnabled(enabled)
+    if enabled then self:Start() end
+end
+
+-- Create the container and start listening. Runs once.
+function AbsorbTracker:Start()
+    if containerFrame then return end
 
     playerGUID = UnitGUID("player")
 
@@ -603,7 +616,7 @@ CB:RegisterCallback("READY", function()
         function() CB:TestAbsorbTracker() end,
         function() CB:EndTestAbsorbTracker() end
     )
-end)
+end
 
 --------------------------------------------------------------------------------
 -- Test Mode
