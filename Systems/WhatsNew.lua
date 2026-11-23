@@ -14,6 +14,15 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.10.2",
+        features = {},
+        fixes = {
+            "Armour and Absorb Tracker checkboxes on the main options page work without a reload",
+            "Multi-DoT Tracker: Max Targets now sets how many targets show, up to 10",
+            "Multi-DoT Tracker: nameplate indicator size and position changes apply at once",
+        },
+    },
+    {
         version = "8.10.1",
         features = {},
         fixes = {

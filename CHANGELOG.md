@@ -1,5 +1,11 @@
 # Changelog
 
+**v8.10.2**
+
+- The Armour Tracker and Absorb Tracker checkboxes on the main options page now take effect straight away, without a reload
+- Multi-DoT Tracker: Max Targets now sets how many targets the panel shows, up to 10. It used to have no effect, always showing five
+- Multi-DoT Tracker: changing the nameplate indicator size or position now applies at once
+
 **v8.10.1**
 
 - Paladins: the missing-aura alert no longer shows while Retribution Aura rank 5, or rank 3 of the Shadow, Frost or Fire Resistance Aura, is up
