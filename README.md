@@ -17,7 +17,7 @@
 
 ---
 
-Castborn replaces a handful of addons with one: castbars, a GCD sweep, a swing timer, cooldown and item tracking, cooldown numbers on your action bars, and reminders for the buffs you forget. It sets itself up for your class, walks you through everything on first login, and stays out of the way.
+Castborn replaces a handful of addons with one: castbars, health and power bars, a GCD sweep, a swing timer, cooldown, item and proc tracking, cooldown numbers on your action bars, an XP and reputation panel, and reminders for the buffs you forget. It sets itself up for your class, walks you through everything on first login, and stays out of the way.
 
 ## One addon, two games
 
@@ -26,17 +26,19 @@ The same files run on WoW Forever and TBC Anniversary. Forever hides some combat
 | Module | TBC | Forever | Notes on Forever |
 |---|:---:|:---:|---|
 | Castbars (player, target, focus, target of target) | Yes | Yes | No spark or latency overlay when the game hides a cast's timing |
+| Resource Bars (health and power) | Yes | Yes | |
 | GCD Indicator | Yes | Yes | |
 | Swing Timer | Yes | Yes | Main hand, off hand and ranged, with an out-of-range dim |
-| Cooldown Tracker | Yes | Yes | Short cooldowns can also get the ready glow |
+| Cooldown Tracker | Yes | Yes | Short cooldowns can also get the ready glow, and Blizzard's own cooldown bars can be hidden |
 | Cooldown Text | | Yes | Styled numbers on your action bars (including Bartender4) and Castborn's icons |
 | Interrupt Tracker | Yes | Yes | Cooldown only, no lockout timer |
 | Item Tracker | Yes | Yes | |
+| Proc Tracker | Yes | Yes | Blizzard draws the proc icons in combat, as addons can't read buffs there |
 | Armour Reminder | Yes | Yes | Checks your buffs out of combat; clears straight away when you rebuff in combat |
 | Seal Tracker | Yes | Yes | |
-| Five Second Rule | Yes | | |
+| Five Second Rule | Yes | Yes | Starts on any cast with a mana cost, including free Clearcasting casts |
+| Progress Panel (XP and reputation) | Yes | Yes | |
 | DoT and Multi-DoT Trackers | Yes | | |
-| Proc Tracker | Yes | | |
 | Totem Tracker | Yes | | |
 | Absorb Tracker | Yes | | |
 
@@ -70,11 +72,11 @@ Main hand, off hand and ranged swing bars with a glowing spark, a flash when eac
 
 ### Reminders
 
-The Armour Reminder flags a missing self-buff (mage and warlock armours, Inner Fire, paladin blessings, auras and Righteous Fury), and the Seal Tracker shows your active seal with its time left.
+The Armour Reminder flags a missing self-buff (mage and warlock armours, Inner Fire, paladin blessings, auras and Righteous Fury) or a missing Well Fed buff in dungeons and raids, and the alert pulses until you fix it. The Seal Tracker shows your active seal with its time left.
 
 <p align="center"><img src="images/reminders.png" width="644" alt="Seal tracker counting down, with two armour reminders"></p>
 
-## More from TBC Anniversary
+## More features
 
 <table>
   <tr>
@@ -85,14 +87,14 @@ The Armour Reminder flags a missing self-buff (mage and warlock armours, Inner F
     </td>
     <td width="50%" align="center">
       <img src="images/absorb.png" width="100%"><br>
-      <b>Absorb tracking</b><br>
+      <b>Absorb tracking</b> (TBC Anniversary)<br>
       Remaining shield amount and time left
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
       <img src="images/totems.png" width="100%"><br>
-      <b>Totem tracking</b><br>
+      <b>Totem tracking</b> (TBC Anniversary)<br>
       Durations, pulse pips and party range checks
     </td>
     <td width="50%" align="center">
