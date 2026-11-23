@@ -68,6 +68,7 @@ local sharedProcs = {
     { spellId = 33370, name = "Spell Haste" },       -- Quagmirran's Eye
     { spellId = 34597, name = "Power of Arcanagos" }, -- Robe of the Elder Scribes
 }
+ProcTracker.sharedProcs = sharedProcs  -- the options page leaves these out of the class list
 
 -- Lookup set for fast membership checks
 local sharedProcsSet = {}
@@ -94,6 +95,8 @@ local defaults = {
     showTrinketProcs = true,
     trackedSpells = {},  -- Will be populated with class defaults on first load
     anchored = false,
+    disabledProcs = {},   -- names the player switched off
+    customProcs = {},     -- spells the player added: { spellId, name }
 }
 
 local function CreateProcFrame(parent, index)
@@ -239,7 +242,7 @@ local function ScanProcs()
 
     wipe(scanById)
     wipe(scanByName)
-    for _, spell in ipairs(db.trackedSpells or {}) do
+    for _, spell in ipairs(Castborn:GetActiveProcSpells(db)) do
         scanById[spell.spellId] = spell
         scanByName[spell.name] = spell
     end
@@ -623,6 +626,12 @@ end)
 Castborn:RegisterAnchorCallbacks("PROCS", "Proc Tracker", function() return frame end, "procs", "BOTTOM", -2)
 
 function ProcTracker:UpdateLayout()
+    UpdateLayout()
+end
+
+-- The player switched a proc on or off, or added or removed one (from the options)
+function ProcTracker:RefreshProcList()
+    ScanProcs()
     UpdateLayout()
 end
 

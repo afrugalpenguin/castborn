@@ -1625,6 +1625,186 @@ function moduleBuilders.buffs(parent, db, y)
             UIDropDownMenu_AddButton(info)
         end
     end)
+    y = y - 40
+
+    y = Options:BuildProcList(parent, procsDB, y)
+
+    return y
+end
+
+-- The Proc Tracker's list: the class's procs with a tick box each, then the player's own
+-- additions with a remove button, and a box to add a spell by ID or by dropping it from the
+-- spellbook or an action bar. Choices are kept by name, so every ID of a buff goes together.
+function Options:BuildProcList(parent, procsDB, y)
+    procsDB.disabledProcs = procsDB.disabledProcs or {}
+    procsDB.customProcs = procsDB.customProcs or {}
+
+    local function refresh()
+        local tracker = Castborn.ProcTracker
+        if tracker and tracker.RefreshProcList then tracker:RefreshProcList() end
+    end
+
+    -- The class list, one row per name, trinket procs left to their own option
+    local shared = {}
+    for _, spell in ipairs((Castborn.ProcTracker and Castborn.ProcTracker.sharedProcs) or {}) do
+        shared[spell.spellId] = true
+    end
+    local classNames, seen = {}, {}
+    for _, spell in ipairs(procsDB.trackedSpells or {}) do
+        if not shared[spell.spellId] and not seen[spell.name] then
+            seen[spell.name] = true
+            classNames[#classNames + 1] = { name = spell.name, spellId = spell.spellId }
+        end
+    end
+
+    local header = CreateHeader(parent, "Tracked Procs")
+    header:SetPoint("TOPLEFT", 0, y)
+    header:SetPoint("TOPRIGHT", 0, y)
+    y = y - 30
+
+    local listContainer = CreateFrame("Frame", nil, parent)
+    listContainer:SetPoint("TOPLEFT", 0, y)
+    listContainer:SetPoint("TOPRIGHT", 0, y)
+    listContainer:SetHeight(1)
+
+    local function BuildList()
+        for _, child in ipairs({ listContainer:GetChildren() }) do
+            child:Hide()
+            child:SetParent(nil)
+        end
+        for _, region in ipairs({ listContainer:GetRegions() }) do
+            region:Hide()
+            region:SetParent(nil)
+        end
+
+        local listY = 0
+
+        local function AddRow(entry, customIndex)
+            local row = CreateFrame("Frame", nil, listContainer)
+            row:SetHeight(26)
+            row:SetPoint("TOPLEFT", 0, listY)
+            row:SetPoint("TOPRIGHT", 0, listY)
+            StyleListRow(row)
+
+            local label = customIndex and (entry.name .. " |cff888888(Custom)|r") or entry.name
+            local cb = CreateCheckbox(row, label, nil, nil, function(checked)
+                procsDB.disabledProcs[entry.name] = (not checked) or nil
+                refresh()
+            end)
+            cb:SetChecked(not procsDB.disabledProcs[entry.name])
+            cb:SetPoint("LEFT", 0, 0)
+
+            -- The spell's icon in a gilt frame, between the tick box and the name
+            local iconFrame = CreateFrame("Frame", nil, row)
+            iconFrame:SetSize(22, 22)
+            iconFrame:SetPoint("LEFT", cb, "RIGHT", 2, 0)
+            Theme:Chamfer(iconFrame, { cut = 3, fill = "inputBg", edge = "accent" })
+            local iconTexture = iconFrame:CreateTexture(nil, "ARTWORK")
+            iconTexture:SetPoint("TOPLEFT", 2, -2)
+            iconTexture:SetPoint("BOTTOMRIGHT", -2, 2)
+            iconTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            iconTexture:SetTexture(GetSpellTexture(entry.spellId) or "Interface\\Icons\\INV_Misc_QuestionMark")
+            cb.text:ClearAllPoints()
+            cb.text:SetPoint("LEFT", iconFrame, "RIGHT", 6, 0)
+            cb:SetHitRectInsets(0, -(iconFrame:GetWidth() + 8 + cb.text:GetStringWidth() + 8), 0, 0)
+
+            if customIndex then
+                local removeBtn = CreateRowButton(row, "remove")
+                removeBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+                removeBtn:SetScript("OnClick", function()
+                    table.remove(procsDB.customProcs, customIndex)
+                    procsDB.disabledProcs[entry.name] = nil
+                    refresh()
+                    BuildList()
+                    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+                end)
+            end
+
+            listY = listY - 26
+        end
+
+        for _, entry in ipairs(classNames) do AddRow(entry) end
+        for i, entry in ipairs(procsDB.customProcs) do AddRow(entry, i) end
+
+        -- Add a spell
+        local addY = listY - 10
+        local addLabel = listContainer:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
+        addLabel:SetPoint("TOPLEFT", 0, addY)
+        addLabel:SetText("Add Proc |cff888888(spell ID, or drop a spell from your spellbook)|r")
+        addY = addY - 20
+
+        local inputBox = CreateFrame("EditBox", nil, listContainer, "InputBoxTemplate")
+        SkinInput(inputBox)
+        inputBox:SetSize(120, 22)
+        inputBox:SetPoint("TOPLEFT", 0, addY)
+        inputBox:SetAutoFocus(false)
+        inputBox:SetNumeric(true)
+        inputBox:SetMaxLetters(8)  -- Forever spell IDs run to seven digits
+
+        -- Accept a spell dropped from the spellbook or an action bar
+        local function TakeCursorSpell(self)
+            local infoType, _, _, spellId = GetCursorInfo()
+            if infoType ~= "spell" or type(spellId) ~= "number" then return false end
+            self:SetText(tostring(spellId))
+            ClearCursor()
+            return true
+        end
+        inputBox:EnableMouse(true)
+        inputBox:SetScript("OnReceiveDrag", TakeCursorSpell)
+        inputBox:SetScript("OnMouseDown", function(self, button)
+            if button == "LeftButton" and TakeCursorSpell(self) then return end
+            self:SetFocus()
+        end)
+
+        local addBtn = CreateButton(listContainer, "Add", 60, nil, "primary")
+        addBtn:SetPoint("LEFT", inputBox, "RIGHT", 10, 0)
+
+        local statusText = listContainer:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
+        statusText:SetPoint("LEFT", addBtn, "RIGHT", 8, 0)
+        statusText:SetText("")
+
+        addBtn:SetScript("OnClick", function()
+            local spellId = tonumber(inputBox:GetText())
+            if not spellId or spellId <= 0 then
+                statusText:SetText("|cffff4444Enter a valid spell ID|r")
+                return
+            end
+            local name = GetSpellInfo(spellId)
+            if not name then
+                statusText:SetText("|cffff4444Spell not found|r")
+                return
+            end
+            -- Procs match by name, so a name already listed is already tracked
+            if seen[name] then
+                statusText:SetText("|cffff4444Already in the list|r")
+                return
+            end
+            for _, entry in ipairs(procsDB.customProcs) do
+                if entry.name == name then
+                    statusText:SetText("|cffff4444Already in the list|r")
+                    return
+                end
+            end
+
+            table.insert(procsDB.customProcs, { spellId = spellId, name = name })
+            procsDB.disabledProcs[name] = nil
+            inputBox:SetText("")
+            statusText:SetText("|cff44ff44Added: " .. name .. "|r")
+            refresh()
+            BuildList()
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        end)
+
+        inputBox:SetScript("OnEnterPressed", function() addBtn:Click() end)
+        inputBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+
+        addY = addY - 30
+        listContainer:SetHeight(math.abs(addY) + 4)
+    end
+
+    BuildList()
+
+    y = y - (26 * (#classNames + #procsDB.customProcs)) - 70
 
     return y
 end

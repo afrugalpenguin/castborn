@@ -894,6 +894,20 @@ end
 -- Utility Functions
 --------------------------------------------------------------------------------
 
+-- The procs to track: the saved class and trinket list plus the player's own additions, less
+-- any name the player switched off. Shared by the TBC and Forever proc trackers. The player's
+-- choices live outside trackedSpells, which the trackers rebuild on login.
+function CB:GetActiveProcSpells(db)
+    local disabled = db.disabledProcs or {}
+    local list = {}
+    for _, source in ipairs({ db.trackedSpells or {}, db.customProcs or {} }) do
+        for _, spell in ipairs(source) do
+            if not disabled[spell.name] then list[#list + 1] = spell end
+        end
+    end
+    return list
+end
+
 function CB:IsSpellKnown(spellId)
     if IsSpellKnown and IsSpellKnown(spellId) then
         return true

@@ -166,6 +166,8 @@ local defaults = {
     trackedSpells = {},
     anchored = false,
     learnedIds = {},
+    disabledProcs = {},   -- names the player switched off
+    customProcs = {},     -- spells the player added: { spellId, name }
 }
 
 ProcTracker.status = "not built"
@@ -257,7 +259,7 @@ end
 
 local function TrackedNames()
     local names = {}
-    for _, spell in ipairs(DB().trackedSpells or {}) do names[spell.name] = true end
+    for _, spell in ipairs(Castborn:GetActiveProcSpells(DB())) do names[spell.name] = true end
     return names
 end
 
@@ -265,7 +267,7 @@ end
 function ProcTracker:GetFilterIds()
     local db = DB()
     local ids = {}
-    for _, spell in ipairs(db.trackedSpells or {}) do
+    for _, spell in ipairs(Castborn:GetActiveProcSpells(db)) do
         ids[spell.spellId] = true
         for id in pairs((db.learnedIds or {})[spell.name] or {}) do ids[id] = true end
     end
@@ -282,6 +284,11 @@ local function ApplyEnabled()
     if not container then return end
     local on = DB().enabled and not testActive and HasIds(ProcTracker:GetFilterIds())
     pcall(container.SetAuraGroupEnabled, container, GROUP_KEY, on and true or false)
+end
+
+-- The player switched a proc on or off, or added or removed one (from the options)
+function ProcTracker:RefreshProcList()
+    self:RefreshFilter()
 end
 
 -- Filter changes wait for the end of combat
@@ -640,7 +647,7 @@ function Castborn:TestProcs()
     local size = db.iconSize or 28
     local step = size + (db.spacing or 4)
     local samples = {}
-    for _, spell in ipairs(db.trackedSpells or {}) do
+    for _, spell in ipairs(Castborn:GetActiveProcSpells(db)) do
         if #samples >= 3 then break end
         samples[#samples + 1] = GetSpellTexture(spell.spellId) or "Interface\\Icons\\INV_Misc_QuestionMark"
     end
