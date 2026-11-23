@@ -367,6 +367,52 @@ describe("Forever proc tracker", function()
         end)
     end)
 
+    describe("choosing procs", function()
+        after_each(function()
+            CastbornDB.procs.disabledProcs = {}
+            CastbornDB.procs.customProcs = {}
+            CastbornDB.procs.learnedIds = {}
+            PT:RefreshProcList()
+        end)
+
+        it("stops tracking a proc switched off, and tracks it again when switched back on", function()
+            CastbornDB.procs.disabledProcs = { Vengeance = true }
+            PT:RefreshProcList()
+            assert.is_nil(filterIds()[20050])
+            CastbornDB.procs.disabledProcs = {}
+            PT:RefreshProcList()
+            assert.is_true(filterIds()[20050])
+        end)
+
+        it("tracks a spell the player adds", function()
+            CastbornDB.procs.customProcs = { { spellId = 12345, name = "Custom Buff" } }
+            PT:RefreshProcList()
+            assert.is_true(filterIds()[12345])
+        end)
+
+        it("learns the real ID of an added spell by name", function()
+            CastbornDB.procs.customProcs = { { spellId = 12345, name = "Custom Buff" } }
+            buffs = { { name = "Custom Buff", spellId = 54321 } }
+            PT:OnEvent("UNIT_AURA", "player", { isFullUpdate = true })
+            assert.is_true(filterIds()[54321])
+        end)
+
+        it("learns no IDs for a proc switched off", function()
+            CastbornDB.procs.disabledProcs = { Vengeance = true }
+            buffs = { { name = "Vengeance", spellId = 99999 } }
+            PT:OnEvent("UNIT_AURA", "player", { isFullUpdate = true })
+            assert.is_nil(filterIds()[99999])
+        end)
+
+        it("keeps the player's choices when the class list reloads", function()
+            CastbornDB.procs.disabledProcs = { Vengeance = true }
+            CastbornDB.procs.customProcs = { { spellId = 12345, name = "Custom Buff" } }
+            Castborn:FireCallback("INIT")
+            assert.is_true(CastbornDB.procs.disabledProcs.Vengeance)
+            assert.are.equal(12345, CastbornDB.procs.customProcs[1].spellId)
+        end)
+    end)
+
     describe("trinket procs", function()
         before_each(withTrinket)
         after_each(withoutTrinket)

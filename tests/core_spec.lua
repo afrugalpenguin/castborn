@@ -148,3 +148,37 @@ describe("Core utilities", function()
         end)
     end)
 end)
+
+describe("GetActiveProcSpells", function()
+    local CB = Castborn
+
+    local function names(list)
+        local out = {}
+        for _, s in ipairs(list) do out[#out + 1] = s.name end
+        return out
+    end
+
+    it("tracks the saved list and the player's own additions", function()
+        local db = {
+            trackedSpells = { { spellId = 16870, name = "Clearcasting" } },
+            customProcs = { { spellId = 12345, name = "Custom Buff" } },
+        }
+        assert.are.same({ "Clearcasting", "Custom Buff" }, names(CB:GetActiveProcSpells(db)))
+    end)
+
+    it("leaves out every ID of a name the player switched off", function()
+        local db = {
+            trackedSpells = {
+                { spellId = 16870, name = "Clearcasting" },
+                { spellId = 1330763, name = "Poised" },
+                { spellId = 1330741, name = "Poised" },
+            },
+            disabledProcs = { Poised = true },
+        }
+        assert.are.same({ "Clearcasting" }, names(CB:GetActiveProcSpells(db)))
+    end)
+
+    it("copes with settings saved before these lists existed", function()
+        assert.are.same({}, CB:GetActiveProcSpells({}))
+    end)
+end)
