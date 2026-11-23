@@ -1,5 +1,12 @@
 # Changelog
 
+**v8.10.0**
+
+- Armour Reminder can now remind you to eat: a Well Fed alert for every class, shown in dungeons and raids by default, or always, or in raids only
+- A missing-buff alert now bounces in when it appears, then pulses with a red glow until the buff is back. Turn it off with Animate Alert on the Armour page
+- Cooldown icons dim, like the action bars, when the spell can't be cast for some other reason (such as Judgement with no seal up), and don't glow as ready until it can
+- Forever: Blizzard's own cooldown bars are hidden while the cooldown tracker is on, with an option to keep them. Blizzard's buff bars are left alone
+
 **v8.9.0**
 
 - Cooldown icons turn blue, like the action bars, when you don't have enough mana, rage or energy to cast them, and don't glow as ready until you can

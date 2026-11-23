@@ -14,6 +14,16 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.10.0",
+        features = {
+            "Armour Reminder alerts you when you're not Well Fed, for every class",
+            "Missing-buff alerts bounce in and pulse with a red glow until the buff is back",
+            "Cooldown icons dim when the spell can't be cast, such as Judgement with no seal",
+            "Forever: Blizzard's cooldown bars are hidden while the cooldown tracker is on",
+        },
+        fixes = {},
+    },
+    {
         version = "8.9.0",
         features = {
             "Cooldown icons turn blue when you can't afford them, and only glow as ready once you can",
