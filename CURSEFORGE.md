@@ -61,7 +61,7 @@ The Armour Reminder flags a missing self-buff (mage and warlock armours, Inner F
 
 ## More features
 
-**Proc tracking**: live icons with remaining duration.
+**Proc tracking**: live icons with remaining duration. Choose which of your class's procs to show, and add your own by spell ID or by dragging a spell from your spellbook.
 
 ![Proc tracking](https://raw.githubusercontent.com/afrugalpenguin/castborn/main/images/procs.png)
 

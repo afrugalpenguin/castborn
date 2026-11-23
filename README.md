@@ -83,7 +83,7 @@ The Armour Reminder flags a missing self-buff (mage and warlock armours, Inner F
     <td width="50%" align="center">
       <img src="images/procs.png" width="100%"><br>
       <b>Proc tracking</b><br>
-      Live icons with remaining duration
+      Live icons with remaining duration; pick your procs or add your own
     </td>
     <td width="50%" align="center">
       <img src="images/absorb.png" width="100%"><br>
