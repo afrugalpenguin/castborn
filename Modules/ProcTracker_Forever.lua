@@ -291,18 +291,16 @@ function ProcTracker:RefreshProcList()
     self:RefreshFilter()
 end
 
--- Filter changes wait for the end of combat
+-- Hand the filter over straight away, in combat too. If the game refuses it in combat, try
+-- again when combat ends (PLAYER_REGEN_ENABLED).
 function ProcTracker:RefreshFilter()
     if not container then return end
-    if InCombat() then
-        filterPending = true
-        return
-    end
-    filterPending = false
     local ids = self:GetFilterIds()
+    local ok = true
     if HasIds(ids) then
-        pcall(container.SetAuraGroupCandidateFilters, container, GROUP_KEY, { includeSpellIDs = ids })
+        ok = pcall(container.SetAuraGroupCandidateFilters, container, GROUP_KEY, { includeSpellIDs = ids })
     end
+    filterPending = (not ok) and InCombat() or false
     ApplyEnabled()
 end
 
