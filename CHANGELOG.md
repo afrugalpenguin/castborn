@@ -1,5 +1,11 @@
 # Changelog
 
+**v8.10.1**
+
+- Paladins: the missing-aura alert no longer shows while Retribution Aura rank 5, or rank 3 of the Shadow, Frost or Fire Resistance Aura, is up
+- Enable Armour Tracker now turns the tracker on or off straight away, without a reload
+- Removed the Anchor to Castbar option from pages where it did nothing (Armour, Totems, Absorbs, Items, Seals, Multi-DoT, Progress, Interrupt). It appeared after dragging those frames
+
 **v8.10.0**
 
 - Armour Reminder can now remind you to eat: a Well Fed alert for every class, shown in dungeons and raids by default, or always, or in raids only

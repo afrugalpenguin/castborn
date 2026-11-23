@@ -14,6 +14,15 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.10.1",
+        features = {},
+        fixes = {
+            "Paladins: the missing-aura alert no longer shows with Retribution Aura rank 5 or rank 3 resistance auras up",
+            "Enable Armour Tracker takes effect straight away, without a reload",
+            "Removed the Anchor to Castbar option from pages where it did nothing",
+        },
+    },
+    {
         version = "8.10.0",
         features = {
             "Armour Reminder alerts you when you're not Well Fed, for every class",
