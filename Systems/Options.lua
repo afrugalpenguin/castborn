@@ -1823,6 +1823,13 @@ local function RebuildCategory(catId)
     Options:ShowCategory(catId)
 end
 
+-- Set by the Cooldowns page each time it is built: redraws its spell list when the group
+-- with the given id was reordered by dragging its icons on screen
+local refreshCooldownList
+Castborn:RegisterCallback("COOLDOWN_ORDER_CHANGED", function(id)
+    if refreshCooldownList then refreshCooldownList(id) end
+end)
+
 -- One menu shared by every spell row's Move to button: the other groups, full ones greyed
 local moveMenu
 
@@ -2098,13 +2105,132 @@ function moduleBuilders.cooldowns(parent, db, y)
         end
     end
 
+    -- The preview's icons can be dragged on screen too
+    local arrangeBtn = CreateButton(parent, "Arrange on screen", 150, function()
+        StartPreview("TestCooldowns", "EndTestCooldowns")
+    end)
+    arrangeBtn:SetPoint("TOPLEFT", 0, y)
+    local arrangeHint = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsSmall")
+    arrangeHint:SetPoint("LEFT", arrangeBtn, "RIGHT", 10, 0)
+    arrangeHint:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
+    arrangeHint:SetJustifyH("LEFT")
+    arrangeHint:SetText("Drag a row, or an icon on screen, to reorder. The first spell sits on the Grow side.")
+    y = y - 40
+
     -- Container for spell rows (so we can rebuild on reorder)
     local spellListContainer = CreateFrame("Frame", nil, parent)
     spellListContainer:SetPoint("TOPLEFT", 0, y)
     spellListContainer:SetPoint("TOPRIGHT", 0, y)
     spellListContainer:SetHeight(1)  -- Will be resized
 
-    local function BuildSpellList()
+    -- Dragging a row: a copy follows the cursor and a gold line marks where it will land.
+    -- These live on their own layer because every redraw clears the list's children.
+    local ROW_HEIGHT = 26
+    local scrollFrame = parent:GetParent()
+    local BuildSpellList
+    local drag  -- { from, spell, row, slot } while a row is being dragged
+
+    local dragLayer = CreateFrame("Frame", nil, parent)
+    dragLayer:SetAllPoints(spellListContainer)
+    dragLayer:SetFrameLevel(spellListContainer:GetFrameLevel() + 20)
+
+    local insertLine = dragLayer:CreateTexture(nil, "OVERLAY")
+    insertLine:SetHeight(2)
+    insertLine:SetColorTexture(Theme:Color("accent"))
+    insertLine:Hide()
+
+    local dragCopy = CreateFrame("Frame", nil, dragLayer)
+    dragCopy:SetHeight(ROW_HEIGHT)
+    Theme:Chamfer(dragCopy, { cut = 4, fill = "inputBg", edge = "accent" })
+    local copyIcon = dragCopy:CreateTexture(nil, "ARTWORK")
+    copyIcon:SetSize(18, 18)
+    copyIcon:SetPoint("LEFT", 6, 0)
+    copyIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    local copyText = dragCopy:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
+    copyText:SetPoint("LEFT", copyIcon, "RIGHT", 6, 0)
+    dragCopy:Hide()
+
+    -- The gap nearest the cursor: slot k is the gap just above row k (#spells + 1: the end).
+    -- Also returns the cursor's height below the list's top edge.
+    local function SlotAtCursor()
+        local _, cursorY = GetCursorPosition()
+        local offset = cursorY / spellListContainer:GetEffectiveScale() - spellListContainer:GetTop()
+        local slot = math.floor(-offset / ROW_HEIGHT + 0.5) + 1
+        return math.max(1, math.min(slot, #group.spells + 1)), offset
+    end
+
+    local function EndDragVisuals()
+        insertLine:Hide()
+        dragCopy:Hide()
+        if drag and drag.row then drag.row:SetAlpha(1) end
+        drag = nil
+    end
+
+    local function StartRowDrag(index, spell, row, texture, name)
+        EndDragVisuals()
+        drag = { from = index, spell = spell, row = row }
+        row:SetAlpha(0.35)
+        copyIcon:SetTexture(texture)
+        copyText:SetText(name)
+        dragCopy:SetWidth(copyText:GetStringWidth() + 42)
+        dragCopy:Show()
+    end
+
+    local function StopRowDrag()
+        if not drag then return end
+        local from, spell, slot = drag.from, drag.spell, drag.slot
+        EndDragVisuals()
+        -- Let go away from the page, or back where it started: nothing changes
+        if not slot or not scrollFrame:IsMouseOver() then return end
+        local to = CT.InsertIndex(from, slot)
+        if to == from then return end
+        local ok, reason = CT:MoveSpell(spell.spellId, group.id, to)
+        if ok then
+            BuildSpellList()
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+        else
+            Refuse(reason)
+        end
+    end
+
+    dragLayer:SetScript("OnUpdate", function(_, elapsed)
+        if not drag then return end
+        local slot, offset = SlotAtCursor()
+        drag.slot = slot
+
+        dragCopy:ClearAllPoints()
+        dragCopy:SetPoint("LEFT", spellListContainer, "TOPLEFT", 24, offset)
+
+        if CT.InsertIndex(drag.from, slot) == drag.from then
+            insertLine:Hide()
+        else
+            local lineY = -(slot - 1) * ROW_HEIGHT + 1
+            insertLine:ClearAllPoints()
+            insertLine:SetPoint("TOPLEFT", spellListContainer, "TOPLEFT", 0, lineY)
+            insertLine:SetPoint("TOPRIGHT", spellListContainer, "TOPRIGHT", 0, lineY)
+            insertLine:Show()
+        end
+
+        -- Near the top or bottom of the page, scroll it so any row can be reached
+        local EDGE, SPEED = 30, 400
+        local _, cursorY = GetCursorPosition()
+        cursorY = cursorY / scrollFrame:GetEffectiveScale()
+        local step = 0
+        if cursorY > scrollFrame:GetTop() - EDGE then
+            step = -SPEED * elapsed
+        elseif cursorY < scrollFrame:GetBottom() + EDGE then
+            step = SPEED * elapsed
+        end
+        if step ~= 0 then
+            local scroll = scrollFrame:GetVerticalScroll() + step
+            scrollFrame:SetVerticalScroll(math.max(0, math.min(scroll, scrollFrame:GetVerticalScrollRange())))
+        end
+    end)
+
+    function BuildSpellList()
+        -- A redraw mid-drag drops the drag: its row is about to go
+        EndDragVisuals()
+
         -- Clear existing children (frames)
         for _, child in ipairs({spellListContainer:GetChildren()}) do
             child:Hide()
@@ -2143,11 +2269,27 @@ function moduleBuilders.cooldowns(parent, db, y)
             iconTexture:SetPoint("TOPLEFT", 2, -2)
             iconTexture:SetPoint("BOTTOMRIGHT", -2, 2)
             iconTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-            iconTexture:SetTexture(GetSpellTexture(spellName) or GetSpellTexture(spell.spellId)
-                or "Interface\\Icons\\INV_Misc_QuestionMark")
+            local texture = GetSpellTexture(spellName) or GetSpellTexture(spell.spellId)
+                or "Interface\\Icons\\INV_Misc_QuestionMark"
+            iconTexture:SetTexture(texture)
             cb.text:ClearAllPoints()
             cb.text:SetPoint("LEFT", iconFrame, "RIGHT", 6, 0)
             cb:SetHitRectInsets(0, -(iconFrame:GetWidth() + 8 + cb.text:GetStringWidth() + 8), 0, 0)
+
+            -- The whole row drags: the tick box (which covers the name), the icon and the
+            -- space around them. A plain click still ticks the box.
+            local function MakeDragHandle(f)
+                f:RegisterForDrag("LeftButton")
+                f:SetScript("OnDragStart", function()
+                    StartRowDrag(i, spell, row, texture, spellName)
+                end)
+                f:SetScript("OnDragStop", StopRowDrag)
+            end
+            row:EnableMouse(true)
+            MakeDragHandle(row)
+            iconFrame:EnableMouse(true)
+            MakeDragHandle(iconFrame)
+            MakeDragHandle(cb)
 
             -- Down arrow
             local downBtn = CreateRowButton(row, "down")
@@ -2157,8 +2299,7 @@ function moduleBuilders.cooldowns(parent, db, y)
                 downBtn:Disable()
             end
             downBtn:SetScript("OnClick", function()
-                if i < total then
-                    group.spells[i], group.spells[i + 1] = group.spells[i + 1], group.spells[i]
+                if i < total and CT:MoveSpell(spell.spellId, group.id, i + 1) then
                     BuildSpellList()
                     PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
                 end
@@ -2172,8 +2313,7 @@ function moduleBuilders.cooldowns(parent, db, y)
                 upBtn:Disable()
             end
             upBtn:SetScript("OnClick", function()
-                if i > 1 then
-                    group.spells[i], group.spells[i - 1] = group.spells[i - 1], group.spells[i]
+                if i > 1 and CT:MoveSpell(spell.spellId, group.id, i - 1) then
                     BuildSpellList()
                     PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
                 end
@@ -2186,6 +2326,7 @@ function moduleBuilders.cooldowns(parent, db, y)
                 removeBtn:SetPoint("RIGHT", upBtn, "LEFT", -6, 0)
                 removeBtn:SetScript("OnClick", function()
                     table.remove(group.spells, i)
+                    CT:RefreshTestGroup(group.id)
                     BuildSpellList()
                     PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
                 end)
@@ -2278,6 +2419,7 @@ function moduleBuilders.cooldowns(parent, db, y)
                 enabled = true,
                 custom = true,
             })
+            CT:RefreshTestGroup(group.id)
 
             inputBox:SetText("")
             statusText:SetText("|cff44ff44Added: " .. name .. "|r")
@@ -2298,6 +2440,11 @@ function moduleBuilders.cooldowns(parent, db, y)
     end
 
     BuildSpellList()
+
+    -- Dropping an icon on screen redraws this list, even while the page is hidden
+    refreshCooldownList = function(id)
+        if id == group.id then BuildSpellList() end
+    end
 
     y = y - (26 * #group.spells) - 60
 

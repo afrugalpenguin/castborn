@@ -487,6 +487,20 @@ function CooldownTracker:MoveSpell(spellId, toGroupId, index)
     return true
 end
 
+-- Where a row lifted from index from lands when dropped into the gap before row slot
+-- (1 to #spells + 1), as the index MoveSpell takes. Lifting the row out first moves every
+-- later row up one, so a gap below the row is one less.
+function CooldownTracker.InsertIndex(from, slot)
+    if slot > from then return slot - 1 end
+    return slot
+end
+
+-- Redraw a group's preview in its current order, for changes made outside MoveSpell
+function CooldownTracker:RefreshTestGroup(id)
+    local group = self:GetGroup(id)
+    if group then RefreshTest(group) end
+end
+
 -- Reset Positions: every group but main goes back below the group before it
 function CooldownTracker:RestackGroups()
     for index, data in ipairs(self:GetGroups()) do
