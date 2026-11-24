@@ -409,6 +409,7 @@ SpellData.cooldowns = {
         { spellId = 26573, name = "Consecration" },
         { spellId = 879, name = "Exorcism" },  -- rank 1; other ranks match by name
         { spellId = 1310994, name = "Swift Judgement", forever = true },  -- Protection talent, 60s
+        { spellId = 1311015, name = "Templar's Bulwark", forever = true },  -- absorb shield, 5 min
     },
     DRUID = {
         { spellId = 17116, name = "Nature's Swiftness" },

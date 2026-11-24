@@ -133,6 +133,14 @@ describe("Paladin cooldown defaults", function()
             assert.are.equal(1310994, spell.spellId)
         end)
 
+        it("tracks Templar's Bulwark on Forever only", function()
+            assert.is_nil(indexOf("Templar's Bulwark"))
+            Castborn.isForever = true
+            local _, spell = indexOf("Templar's Bulwark")
+            assert.is_not_nil(spell, "Templar's Bulwark is not tracked")
+            assert.are.equal(1311015, spell.spellId)
+        end)
+
         it("does not change the stored list when filtering", function()
             Castborn.isForever = nil
             Castborn.SpellData:GetClassCooldowns("PALADIN")
