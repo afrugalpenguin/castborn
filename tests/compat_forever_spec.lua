@@ -130,4 +130,8 @@ describe("Compat_Forever", function()
         assert.is_nil(Castborn.unavailableOptions.interrupt)
         assert.is_true(Castborn.unavailableOptions["interrupt.lockout"])
     end)
+
+    it("marks the build as Forever, for Forever-only spell data", function()
+        assert.is_true(Castborn.isForever)
+    end)
 end)

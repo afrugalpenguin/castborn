@@ -408,6 +408,7 @@ SpellData.cooldowns = {
         { spellId = 20066, name = "Repentance" },
         { spellId = 26573, name = "Consecration" },
         { spellId = 879, name = "Exorcism" },  -- rank 1; other ranks match by name
+        { spellId = 1310994, name = "Swift Judgement", forever = true },  -- Protection talent, 60s
     },
     DRUID = {
         { spellId = 17116, name = "Nature's Swiftness" },
@@ -511,8 +512,15 @@ SpellData.racialCooldowns = {
     },
 }
 
+-- Entries marked forever exist only on WoW Forever, so TBC leaves them out
 function SpellData:GetClassCooldowns(class)
-    return self.cooldowns[class] or {}
+    local spells = self.cooldowns[class] or {}
+    if Castborn.isForever then return spells end
+    local list = {}
+    for _, spell in ipairs(spells) do
+        if not spell.forever then list[#list + 1] = spell end
+    end
+    return list
 end
 
 function SpellData:GetRacialCooldowns(race)

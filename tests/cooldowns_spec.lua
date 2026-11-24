@@ -117,6 +117,32 @@ describe("Paladin cooldown defaults", function()
         assert.is_not_nil(spell, "Exorcism is not tracked")
         assert.are.equal(879, spell.spellId)
     end)
+
+    describe("Forever-only spells", function()
+        after_each(function() Castborn.isForever = nil end)
+
+        it("leaves Swift Judgement out on TBC", function()
+            Castborn.isForever = nil
+            assert.is_nil(indexOf("Swift Judgement"))
+        end)
+
+        it("tracks Swift Judgement by its castable ID on Forever", function()
+            Castborn.isForever = true
+            local _, spell = indexOf("Swift Judgement")
+            assert.is_not_nil(spell, "Swift Judgement is not tracked")
+            assert.are.equal(1310994, spell.spellId)
+        end)
+
+        it("does not change the stored list when filtering", function()
+            Castborn.isForever = nil
+            Castborn.SpellData:GetClassCooldowns("PALADIN")
+            local found = false
+            for _, spell in ipairs(Castborn.SpellData.cooldowns.PALADIN) do
+                if spell.spellId == 1310994 then found = true end
+            end
+            assert.is_true(found)
+        end)
+    end)
 end)
 
 describe("Target creature type check", function()
