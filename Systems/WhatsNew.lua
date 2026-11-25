@@ -14,6 +14,18 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.12.0",
+        features = {
+            "Cooldowns: drag rows on the Cooldowns page, or icons on screen, to reorder spells",
+            "GCD Indicator: new Anchor to Swing Timer option, with the 5 Second Rule stacking above it",
+            "Forever: Swift Judgement and Templar's Bulwark added to the Paladin cooldown list",
+        },
+        fixes = {
+            "Forever: TBC-only Paladin talents no longer show in the cooldown list",
+            "Forever: the Add Custom Spell ID box takes seven-digit spell IDs",
+        },
+    },
+    {
         version = "8.11.0",
         features = {
             "Proc Tracker: tick or untick each of your class's procs to choose what it tracks",

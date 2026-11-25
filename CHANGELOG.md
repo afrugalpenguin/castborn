@@ -1,5 +1,14 @@
 # Changelog
 
+**v8.12.0**
+
+- Cooldowns: drag rows on the Cooldowns page up and down to reorder spells. A gold line shows where the row will land, and the arrow buttons still work
+- Cooldowns: the new Arrange on screen button opens the preview, where you can drag icons into order too
+- GCD Indicator: new Anchor to Swing Timer option puts the GCD bar directly above your swing timer, for melee who rarely see the castbar. If the 5 Second Rule also sits on the swing timer, it stacks above the GCD bar. Saved per class, off by default
+- Forever: Swift Judgement and Templar's Bulwark are now in the Paladin cooldown list
+- Forever: Divine Illumination, Avenging Wrath and Avenger's Shield no longer appear in the Paladin cooldown list, as they are TBC talents
+- Forever: the Add Custom Spell ID box takes seven-digit spell IDs, so dropping a Forever spell such as Swift Judgement on it works
+
 **v8.11.0**
 
 - Proc Tracker: choose which procs to track. The Proc Tracker page lists your class's procs with a tick box each, so you can switch off one you don't want, such as Poised
