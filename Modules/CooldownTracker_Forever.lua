@@ -112,6 +112,69 @@ function CooldownTracker:GetTargetFit(spell)
 end
 
 --------------------------------------------------------------------------------
+-- Class cooldown lists
+--------------------------------------------------------------------------------
+
+-- TBC talents Forever does not have (see ForeverDB), and cooldowns only Forever has
+local notOnForever = {
+    [31842] = true,  -- Divine Illumination
+    [31884] = true,  -- Avenging Wrath
+    [31935] = true,  -- Avenger's Shield
+}
+
+local foreverCooldowns = {
+    PALADIN = {
+        { spellId = 1310994, name = "Swift Judgement" },
+    },
+}
+
+-- Built once per class, so callers get the same list each time, as on TBC
+local SpellData = Castborn.SpellData
+local baseGetClassCooldowns = SpellData.GetClassCooldowns
+local classLists = {}
+
+function SpellData:GetClassCooldowns(class)
+    if not classLists[class] then
+        local list = {}
+        for _, spell in ipairs(baseGetClassCooldowns(self, class)) do
+            if not notOnForever[spell.spellId] then list[#list + 1] = spell end
+        end
+        for _, spell in ipairs(foreverCooldowns[class] or {}) do
+            list[#list + 1] = spell
+        end
+        classLists[class] = list
+    end
+    return classLists[class]
+end
+
+-- Saved lists made before this still hold the TBC talents; a spell the player added
+-- themselves is left alone
+function CooldownTracker:DropSpellsNotOnForever()
+    for _, group in ipairs(self:GetGroups()) do
+        local spells = group.spells or {}
+        for i = #spells, 1, -1 do
+            if notOnForever[spells[i].spellId] and not spells[i].custom then
+                table.remove(spells, i)
+            end
+        end
+    end
+end
+
+local baseLoadDefaultSpells = CooldownTracker.LoadDefaultSpells
+
+function CooldownTracker:LoadDefaultSpells()
+    baseLoadDefaultSpells(self)
+    self:DropSpellsNotOnForever()
+end
+
+-- Another profile can still hold them too
+Castborn:RegisterCallback("PROFILE_CHANGED", function()
+    if CastbornDB.cooldowns then
+        CooldownTracker:DropSpellsNotOnForever()
+    end
+end)
+
+--------------------------------------------------------------------------------
 -- Blizzard's Cooldown Manager
 --------------------------------------------------------------------------------
 

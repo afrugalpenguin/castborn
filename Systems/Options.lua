@@ -2361,7 +2361,7 @@ function moduleBuilders.cooldowns(parent, db, y)
         inputBox:SetPoint("TOPLEFT", 0, customY)
         inputBox:SetAutoFocus(false)
         inputBox:SetNumeric(true)
-        inputBox:SetMaxLetters(6)
+        inputBox:SetMaxLetters(8)  -- Forever spell IDs run to seven digits
 
         -- Accept a spell dropped from the spellbook or an action bar
         local function TakeCursorSpell(self)

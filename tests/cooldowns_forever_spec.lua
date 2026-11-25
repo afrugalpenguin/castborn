@@ -364,4 +364,51 @@ describe("Cooldowns on Forever", function()
             assert.is_true(CastbornDB.cooldowns.hideBlizzardCooldowns)
         end)
     end)
+
+    describe("class cooldown lists", function()
+        local function ids(list)
+            local out = {}
+            for _, spell in ipairs(list) do out[spell.spellId] = true end
+            return out
+        end
+
+        it("leaves out the Paladin's TBC talents", function()
+            local paladin = ids(Castborn.SpellData:GetClassCooldowns("PALADIN"))
+            assert.is_nil(paladin[31842])  -- Divine Illumination
+            assert.is_nil(paladin[31884])  -- Avenging Wrath
+            assert.is_nil(paladin[31935])  -- Avenger's Shield
+            assert.is_true(paladin[853])   -- Hammer of Justice stays
+        end)
+
+        it("adds Swift Judgement for the Paladin", function()
+            assert.is_true(ids(Castborn.SpellData:GetClassCooldowns("PALADIN"))[1310994])
+        end)
+
+        it("gives the same list each time", function()
+            assert.are.equal(Castborn.SpellData:GetClassCooldowns("PALADIN"),
+                Castborn.SpellData:GetClassCooldowns("PALADIN"))
+        end)
+
+        it("returns an empty list for an unknown class", function()
+            assert.are.same({}, Castborn.SpellData:GetClassCooldowns("NOBODY"))
+        end)
+
+        it("drops saved TBC talents from every group, keeping custom entries", function()
+            _G.CastbornDB = { cooldowns = { groups = {
+                { id = "main", spells = {
+                    { spellId = 31842, name = "Divine Illumination" },
+                    { spellId = 853, name = "Hammer of Justice" },
+                    { spellId = 31884, name = "Avenging Wrath" },
+                } },
+                { id = "g1", spells = {
+                    { spellId = 31935, name = "Avenger's Shield" },
+                    { spellId = 31884, name = "Avenging Wrath", custom = true },
+                } },
+            } } }
+            CT:DropSpellsNotOnForever()
+            local groups = CastbornDB.cooldowns.groups
+            assert.are.same({ { spellId = 853, name = "Hammer of Justice" } }, groups[1].spells)
+            assert.are.same({ { spellId = 31884, name = "Avenging Wrath", custom = true } }, groups[2].spells)
+        end)
+    end)
 end)
