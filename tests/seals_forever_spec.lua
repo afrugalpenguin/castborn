@@ -1,6 +1,7 @@
 require("tests.mocks.wow_api")
 _G.RAID_CLASS_COLORS = {}
 dofile("Core.lua")
+Castborn.isForever = true  -- set by Compat_Forever.lua on Forever
 dofile("Data/SpellData.lua")
 dofile("Modules/SealTracker.lua")
 dofile("Modules/SealTracker_Forever.lua")

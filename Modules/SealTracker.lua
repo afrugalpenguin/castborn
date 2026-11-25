@@ -47,7 +47,7 @@ function SealTracker:BuildNames()
     fallbackSpellId = nil
     local data = Castborn.SpellData
     if not data or not data.seals then return end
-    for _, seal in ipairs(data.seals) do
+    for _, seal in ipairs(data:GetSeals()) do
         local name, id = FirstKnownName(seal.spellIds)
         if name then
             sealNames[name] = true

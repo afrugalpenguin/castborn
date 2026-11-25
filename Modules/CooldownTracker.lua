@@ -610,6 +610,7 @@ end)
 Castborn:RegisterCallback("PROFILE_CHANGED", function()
     if CastbornDB.cooldowns then
         PrepareGroups(CastbornDB.cooldowns)
+        CooldownTracker:DropOtherClientSpells()
         CooldownTracker:SyncGroups(true)
     end
 end)
@@ -728,6 +729,23 @@ function CooldownTracker:LoadDefaultSpells()
         end
         db.defaultsLoaded = currentVersion
         db.loadedForClass = class
+    end
+    self:DropOtherClientSpells()
+end
+
+-- Saved lists can hold defaults from the other client (a list made before the spell data was
+-- split, or a profile copied across). Drop those from every group; spells the player added
+-- themselves are left alone.
+function CooldownTracker:DropOtherClientSpells()
+    local data = Castborn.SpellData
+    if not data then return end
+    for _, group in ipairs(self:GetGroups()) do
+        local spells = group.spells or {}
+        for i = #spells, 1, -1 do
+            if not spells[i].custom and data:IsOtherClientOnly(spells[i].spellId) then
+                table.remove(spells, i)
+            end
+        end
     end
 end
 
