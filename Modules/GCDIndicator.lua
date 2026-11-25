@@ -9,9 +9,6 @@ Castborn.GCDIndicator = GCDIndicator
 local CB = Castborn
 CB.gcdFrame = nil
 
--- Reference to player castbar for anchoring
-local playerCastbar = nil
-
 local gcdStart = 0
 local gcdDuration = 0
 local gcdActive = false
@@ -145,14 +142,74 @@ function CB:CheckGCD()
     end
 end
 
+-- Whether this class's bar sits on the swing timer. Saved per class, as the 5 Second Rule
+-- choice is: settings are account-wide, and melee and casters want different places.
+function GCDIndicator:AnchorsToSwing()
+    local cfg = CastbornDB.gcd
+    local class = CB:GetPlayerInfo().class
+    local choice = cfg and cfg.anchorToSwingByClass and cfg.anchorToSwingByClass[class]
+    return choice == true
+end
+
+function GCDIndicator:SetAnchorsToSwing(value)
+    CastbornDB.gcd = CastbornDB.gcd or {}
+    CastbornDB.gcd.anchorToSwingByClass = CastbornDB.gcd.anchorToSwingByClass or {}
+    CastbornDB.gcd.anchorToSwingByClass[CB:GetPlayerInfo().class] = value and true or false
+end
+
+-- The top swing bar, when the bar should sit on the swing timer instead of the castbar
+local function SwingAnchor()
+    if not GCDIndicator:AnchorsToSwing() then return nil end
+    return CB.swingTimers and CB.swingTimers.mainhand
+end
+
+-- The GCD bar, while it is turned on and sits on the swing timer, so the 5 Second Rule
+-- (when it is anchored to the swing timer too) stacks above it
+function GCDIndicator:FrameOnSwing()
+    local cfg = CastbornDB.gcd
+    if not (CB.gcdFrame and cfg and cfg.enabled ~= false and cfg.anchored ~= false) then return nil end
+    if not SwingAnchor() then return nil end
+    return CB.gcdFrame
+end
+
 local function SyncGCDWidth()
     if not CB.gcdFrame then return end
     if CastbornDB.gcd and CastbornDB.gcd.anchored ~= false then
-        local width = Castborn.Anchoring and Castborn.Anchoring:GetCastbarBarWidth()
+        local swing = SwingAnchor()
+        local width
+        if swing then
+            width = swing:GetWidth()
+        else
+            width = Castborn.Anchoring and Castborn.Anchoring:GetCastbarBarWidth()
+        end
         if width then
             CB.gcdFrame:SetWidth(width)
         end
     end
+end
+
+-- The 5 Second Rule stacks on this bar when both sit on the swing timer, so re-place it
+-- whenever this bar changes where it sits
+local function RestackFSR()
+    local fsr = CB.FiveSecondRule
+    if fsr and CastbornDB.fsr and CastbornDB.fsr.anchored ~= false then
+        fsr:Reattach()
+    end
+end
+GCDIndicator.RestackFSR = RestackFSR
+
+-- Anchor directly above the swing timer if chosen and present, otherwise below the castbar
+function GCDIndicator:Reattach()
+    local frame, cfg = CB.gcdFrame, CastbornDB.gcd
+    if not (frame and cfg and Castborn.Anchoring) then return false end
+    local swing = SwingAnchor()
+    if swing then
+        cfg.anchored = true
+        Castborn.Anchoring:Anchor(frame, swing, "TOP", 0, 2)
+        SyncGCDWidth()
+        return true
+    end
+    return Castborn.Anchoring:ReattachToCastbar(frame, cfg, "BOTTOM", -2, SyncGCDWidth)
 end
 
 function CB:InitGCD()
@@ -160,11 +217,8 @@ function CB:InitGCD()
 
     -- If player castbar already exists and we should be anchored, attach now
     local cfg = CastbornDB.gcd
-    if cfg and cfg.anchored ~= false and Castborn.Anchoring then
-        playerCastbar = playerCastbar or (CB.castbars and CB.castbars.player)
-        if playerCastbar then
-            Castborn.Anchoring:ReattachToCastbar(CB.gcdFrame, CastbornDB.gcd, "BOTTOM", -2, SyncGCDWidth)
-        end
+    if cfg and cfg.anchored ~= false then
+        GCDIndicator:Reattach()
     end
 
     local eventFrame = CreateFrame("Frame")
@@ -191,11 +245,8 @@ function CB:TestGCD()
 
     -- Ensure anchoring is applied in test mode
     local cfg = CastbornDB.gcd
-    if cfg and cfg.anchored ~= false and Castborn.Anchoring then
-        playerCastbar = playerCastbar or (CB.castbars and CB.castbars.player)
-        if playerCastbar then
-            Castborn.Anchoring:ReattachToCastbar(CB.gcdFrame, CastbornDB.gcd, "BOTTOM", -2, SyncGCDWidth)
-        end
+    if cfg and cfg.anchored ~= false then
+        GCDIndicator:Reattach()
     end
 
     gcdStart = GetTime()
@@ -220,18 +271,30 @@ end
 
 -- Listen for player castbar creation and anchor to it
 CB:RegisterCallback("PLAYER_CASTBAR_CREATED", function(frame)
-    playerCastbar = frame
-
-    -- Anchor BELOW the player castbar if configured
-    if CB.gcdFrame and CastbornDB.gcd and CastbornDB.gcd.anchored ~= false and Castborn.Anchoring then
-        Castborn.Anchoring:ReattachToCastbar(CB.gcdFrame, CastbornDB.gcd, "BOTTOM", -2, SyncGCDWidth)
+    -- Anchor BELOW the player castbar (or above the swing timer) if configured
+    if CB.gcdFrame and CastbornDB.gcd and CastbornDB.gcd.anchored ~= false then
+        GCDIndicator:Reattach()
     end
 end)
 
--- Detach / reattach GCD from castbar
+-- Detach / reattach GCD
 CB:RegisterAnchorCallbacks("GCD", "GCD", function() return CB.gcdFrame end, "gcd", "BOTTOM", -2, {
     syncCallback = SyncGCDWidth,
+    reattach = function()
+        GCDIndicator:Reattach()
+        RestackFSR()
+    end,
+    onDetach = RestackFSR,
 })
+
+-- The swing timer is built after this bar, so move above it once everything exists
+CB:RegisterCallback("READY", function()
+    if CastbornDB.gcd and CastbornDB.gcd.anchored ~= false and SwingAnchor() then
+        GCDIndicator:Reattach()
+    end
+end)
+
+CB:RegisterCallback("SWING_RESIZED", SyncGCDWidth)
 
 --------------------------------------------------------------------------------
 -- SkinEngine Integration

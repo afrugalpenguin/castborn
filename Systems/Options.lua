@@ -727,7 +727,10 @@ function Options:BuildGeneral(parent)
         { key = "target", label = "Target Castbar" },
         { key = "focus", label = "Focus Castbar" },
         { key = "targettarget", label = "Target of Target" },
-        { key = "gcd", label = "GCD Indicator" },
+        { key = "gcd", label = "GCD Indicator", onChange = function()
+            -- The 5 Second Rule stacks on the GCD bar when both sit on the swing timer
+            if Castborn.GCDIndicator then Castborn.GCDIndicator.RestackFSR() end
+        end },
         { key = "fsr", label = "5 Second Rule" },
         { key = "swing", label = "Swing Timer" },
         { key = "dots", label = "DoT Tracker" },
@@ -1500,7 +1503,39 @@ end
 -- settings table, and the running y offset, and returns the updated offset.
 local moduleBuilders = {}
 
+-- "Anchor to Castbar" and "Anchor to Swing Timer", for a bar that can sit on either. The two
+-- boxes are one choice: ticking one unticks the other, unticking either detaches. The module
+-- saves which one (AnchorsToSwing / SetAnchorsToSwing) and handles REATTACH_ / DETACH_<name>.
+local function CreateAnchorChoice(parent, db, y, module, name)
+    local castbarCB, swingCB
+    local function sync()
+        local toSwing = module:AnchorsToSwing()
+        castbarCB:SetChecked(db.anchored ~= false and not toSwing)
+        swingCB:SetChecked(db.anchored ~= false and toSwing)
+    end
+    local function choose(toSwing, checked)
+        if checked then
+            module:SetAnchorsToSwing(toSwing)
+            db.anchored = true
+            Castborn:FireCallback("REATTACH_" .. name)
+        else
+            db.anchored = false
+            Castborn:FireCallback("DETACH_" .. name)
+        end
+        sync()
+    end
+
+    castbarCB = CreateCheckbox(parent, "Anchor to Castbar", nil, nil, function(v) choose(false, v) end)
+    castbarCB:SetPoint("TOPLEFT", 0, y)
+    swingCB = CreateCheckbox(parent, "Anchor to Swing Timer", nil, nil, function(v) choose(true, v) end)
+    swingCB:SetPoint("TOPLEFT", 220, y)
+    sync()
+    return y - 30
+end
+
+-- The bar sits below the castbar or, for melee who rarely cast, directly on the swing timer
 function moduleBuilders.gcd(parent, db, y)
+    y = CreateAnchorChoice(parent, db, y, Castborn.GCDIndicator, "GCD")
     local alwaysCB = CreateCheckbox(parent, "Always Show (even when ready)", db, "alwaysShow")
     alwaysCB:SetPoint("TOPLEFT", 0, y)
     y = y - 30
@@ -3505,40 +3540,15 @@ function moduleBuilders.absorbs(parent, db, y)
     return y
 end
 
--- The bar sits above the castbar or, for melee who rarely cast, above the swing timer.
--- The two boxes are one choice: ticking one unticks the other, unticking either detaches.
+-- The bar sits on the castbar or, for melee who rarely cast, on the swing timer.
 function moduleBuilders.fsr(parent, db, y)
-    local FSR = Castborn.FiveSecondRule
-    local castbarCB, swingCB
-    local function sync()
-        local toSwing = FSR:AnchorsToSwing()
-        castbarCB:SetChecked(db.anchored ~= false and not toSwing)
-        swingCB:SetChecked(db.anchored ~= false and toSwing)
-    end
-    local function choose(toSwing, checked)
-        if checked then
-            FSR:SetAnchorsToSwing(toSwing)
-            db.anchored = true
-            Castborn:FireCallback("REATTACH_FSR")
-        else
-            db.anchored = false
-            Castborn:FireCallback("DETACH_FSR")
-        end
-        sync()
-    end
-
-    castbarCB = CreateCheckbox(parent, "Anchor to Castbar", nil, nil, function(v) choose(false, v) end)
-    castbarCB:SetPoint("TOPLEFT", 0, y)
-    swingCB = CreateCheckbox(parent, "Anchor to Swing Timer", nil, nil, function(v) choose(true, v) end)
-    swingCB:SetPoint("TOPLEFT", 220, y)
-    sync()
-    return y - 30
+    return CreateAnchorChoice(parent, db, y, Castborn.FiveSecondRule, "FSR")
 end
 
 -- Pages that get the shared "Anchor to Castbar" checkbox: the modules that register anchor
 -- callbacks (REATTACH_<KEY>). Dragging any frame sets its anchored flag, so the flag alone
--- does not mean the module can anchor. Cooldowns and the five-second rule draw their own.
-local anchorablePages = { dots = true, gcd = true, procs = true, resources = true, swing = true }
+-- does not mean the module can anchor. Cooldowns, the GCD and the five-second rule draw their own.
+local anchorablePages = { dots = true, procs = true, resources = true, swing = true }
 
 function Options:BuildModule(parent, key)
     local y = 0  -- the page header (CreatePageHeader) already names the page

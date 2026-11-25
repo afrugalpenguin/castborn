@@ -148,4 +148,36 @@ describe("Five second rule anchoring", function()
         CB:FireCallback("READY")
         assert.is_nil(anchoredTo)
     end)
+
+    describe("with the GCD bar on the swing timer", function()
+        local realGCD, gcdFrame
+
+        before_each(function()
+            realGCD = CB.GCDIndicator
+            gcdFrame = sized(180)
+            CB.GCDIndicator = { FrameOnSwing = function() return gcdFrame end }
+        end)
+
+        after_each(function() CB.GCDIndicator = realGCD end)
+
+        it("stacks above the GCD bar", function()
+            FSR:SetAnchorsToSwing(true)
+            FSR:Reattach()
+            assert.are.equal(gcdFrame, anchoredTo.parent)
+            assert.are.equal("TOP", anchoredTo.position)
+        end)
+
+        it("still sits above the castbar when not chosen", function()
+            FSR:Reattach()
+            assert.are.equal(1, castbarReattaches)
+            assert.is_nil(anchoredTo)
+        end)
+
+        it("sits on the main-hand bar when the GCD bar is not there", function()
+            gcdFrame = nil
+            FSR:SetAnchorsToSwing(true)
+            FSR:Reattach()
+            assert.are.equal(CB.swingTimers.mainhand, anchoredTo.parent)
+        end)
+    end)
 end)
