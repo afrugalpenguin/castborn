@@ -5,6 +5,9 @@
     Loaded only by Castborn_Camelot.toc, straight after Core.lua.
 ]]
 
+-- Lets shared data such as SpellData keep spells that exist only on Forever
+Castborn.isForever = true
+
 -- GetSpellInfo with the TBC return order: name, rank, icon, castTime, minRange, maxRange, spellID
 if not GetSpellInfo and C_Spell and C_Spell.GetSpellInfo then
     function GetSpellInfo(spell)

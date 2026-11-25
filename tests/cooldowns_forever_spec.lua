@@ -1,6 +1,7 @@
 require("tests.mocks.wow_api")
 _G.RAID_CLASS_COLORS = {}
 dofile("Core.lua")
+Castborn.isForever = true  -- set by Compat_Forever.lua on Forever
 dofile("Data/SpellData.lua")
 dofile("Modules/CooldownGroup.lua")
 dofile("Modules/CooldownTracker.lua")
@@ -380,8 +381,12 @@ describe("Cooldowns on Forever", function()
             assert.is_true(paladin[853])   -- Hammer of Justice stays
         end)
 
-        it("adds Swift Judgement for the Paladin", function()
-            assert.is_true(ids(Castborn.SpellData:GetClassCooldowns("PALADIN"))[1310994])
+        it("lists Swift Judgement once for the Paladin", function()
+            local count = 0
+            for _, spell in ipairs(Castborn.SpellData:GetClassCooldowns("PALADIN")) do
+                if spell.spellId == 1310994 then count = count + 1 end
+            end
+            assert.are.equal(1, count)
         end)
 
         it("gives the same list each time", function()

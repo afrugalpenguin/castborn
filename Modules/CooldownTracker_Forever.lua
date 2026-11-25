@@ -115,17 +115,12 @@ end
 -- Class cooldown lists
 --------------------------------------------------------------------------------
 
--- TBC talents Forever does not have (see ForeverDB), and cooldowns only Forever has
+-- TBC talents Forever does not have (see ForeverDB). Spells only Forever has are marked
+-- forever in SpellData instead.
 local notOnForever = {
     [31842] = true,  -- Divine Illumination
     [31884] = true,  -- Avenging Wrath
     [31935] = true,  -- Avenger's Shield
-}
-
-local foreverCooldowns = {
-    PALADIN = {
-        { spellId = 1310994, name = "Swift Judgement" },
-    },
 }
 
 -- Built once per class, so callers get the same list each time, as on TBC
@@ -138,9 +133,6 @@ function SpellData:GetClassCooldowns(class)
         local list = {}
         for _, spell in ipairs(baseGetClassCooldowns(self, class)) do
             if not notOnForever[spell.spellId] then list[#list + 1] = spell end
-        end
-        for _, spell in ipairs(foreverCooldowns[class] or {}) do
-            list[#list + 1] = spell
         end
         classLists[class] = list
     end
