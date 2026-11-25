@@ -258,6 +258,53 @@ describe("Group API", function()
         assert.are.same({ 101, 102, 103, 105, 104 }, ids("main"))
     end)
 
+    describe("dropping a row into the gap before row slot", function()
+        -- InsertIndex(from, slot): the index MoveSpell needs once the row has been lifted out
+        it("moves a row up", function()
+            assert.are.equal(1, CT.InsertIndex(3, 1))
+            assert.are.equal(2, CT.InsertIndex(4, 2))
+        end)
+
+        it("moves a row down", function()
+            assert.are.equal(3, CT.InsertIndex(1, 4))
+            assert.are.equal(4, CT.InsertIndex(2, 5))
+        end)
+
+        it("moves a row to the end", function()
+            assert.are.equal(5, CT.InsertIndex(1, 6))
+        end)
+
+        it("leaves a row in place when dropped either side of itself", function()
+            assert.are.equal(3, CT.InsertIndex(3, 3))
+            assert.are.equal(3, CT.InsertIndex(3, 4))
+        end)
+
+        it("matches what MoveSpell then does", function()
+            assert.is_true(CT:MoveSpell(102, "main", CT.InsertIndex(2, 5)))
+            assert.are.same({ 101, 103, 104, 102, 105 }, ids("main"))
+            assert.is_true(CT:MoveSpell(105, "main", CT.InsertIndex(5, 1)))
+            assert.are.same({ 105, 101, 103, 104, 102 }, ids("main"))
+        end)
+    end)
+
+    it("redraws a group's preview in its current order on request", function()
+        Castborn:TestCooldowns()
+        local spells = CT:GetMainGroup().spells
+        spells[1], spells[2] = spells[2], spells[1]
+        assert.are.equal("Interface\\Icons\\101", icon("main", 1).icon.texture)
+        CT:RefreshTestGroup("main")
+        assert.are.equal("Interface\\Icons\\102", icon("main", 1).icon.texture)
+        assert.are.equal("Interface\\Icons\\101", icon("main", 2).icon.texture)
+        Castborn:EndTestCooldowns()
+    end)
+
+    it("ignores a preview refresh outside test mode or for an unknown group", function()
+        assert.has_no.errors(function()
+            CT:RefreshTestGroup("main")
+            CT:RefreshTestGroup("nope")
+        end)
+    end)
+
     it("refuses an unknown spell or group, and a full group", function()
         CT:AddGroup("Test")
         local g = CT:GetGroup("g1")
