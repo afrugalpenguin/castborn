@@ -1047,7 +1047,9 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
 
         local fromSlot = self.visibleIndex
         local visibleToTrackIndex = group.visibleToTrackIndex
+        local moved = false
         if fromSlot ~= targetSlot and visibleToTrackIndex[fromSlot] and visibleToTrackIndex[targetSlot] then
+            moved = true
             -- Move the spell in the spell list
             local spells = group:GetSpells()
             local fromTrack = visibleToTrackIndex[fromSlot]
@@ -1080,6 +1082,11 @@ function CooldownGroup:SetupDragReorder(cdFrame, visibleIndex)
             if cdFrames[i] and cdFrames[i]:IsShown() then
                 group:SetupDragReorder(cdFrames[i], i)
             end
+        end
+
+        -- Let the options page redraw its list of this group's spells
+        if moved then
+            Castborn:FireCallback("COOLDOWN_ORDER_CHANGED", group.id)
         end
     end)
 

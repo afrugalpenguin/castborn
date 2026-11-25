@@ -666,6 +666,31 @@ describe("Test mode drag to reorder", function()
         assert.are.same({ 1, 4, 2, 3, 5 }, trackedIds())
     end)
 
+    describe("announcing the new order", function()
+        local heard
+        Castborn:RegisterCallback("COOLDOWN_ORDER_CHANGED", function(id)
+            if heard then heard[#heard + 1] = id end
+        end)
+        before_each(function() heard = {} end)
+        after_each(function() heard = nil end)
+
+        it("fires with the group id after a drop that moves a spell", function()
+            configure("HORIZONTAL", "RIGHT", 10)
+            track({ 1, 2, 3, 4, 5 })
+            Castborn:TestCooldowns()
+            dragAndDrop(4, 2)
+            assert.are.same({ "main" }, heard)
+        end)
+
+        it("stays quiet when a spell is dropped where it started", function()
+            configure("HORIZONTAL", "RIGHT", 10)
+            track({ 1, 2, 3, 4, 5 })
+            Castborn:TestCooldowns()
+            dragAndDrop(3, 3)
+            assert.are.same({}, heard)
+        end)
+    end)
+
     it("keeps a disabled spell in place when dragging past it", function()
         configure("HORIZONTAL", "RIGHT", 10)
         -- Test mode shows 1, 3, 4 and 5; spell 2 is disabled and hidden

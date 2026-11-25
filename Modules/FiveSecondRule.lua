@@ -188,10 +188,13 @@ function FiveSecondRule:SetAnchorsToSwing(value)
     CastbornDB.fsr.anchorToSwingByClass[CB:GetPlayerInfo().class] = value and true or false
 end
 
--- The top swing bar, when the bar should sit above the swing timer instead of the castbar
+-- The top swing bar, when the bar should sit above the swing timer instead of the castbar.
+-- The GCD bar sits there too when it is anchored to the swing timer, so stack on top of it.
 local function SwingAnchor()
     if not FiveSecondRule:AnchorsToSwing() then return nil end
-    return CB.swingTimers and CB.swingTimers.mainhand
+    local mainhand = CB.swingTimers and CB.swingTimers.mainhand
+    if not mainhand then return nil end
+    return CB.GCDIndicator and CB.GCDIndicator:FrameOnSwing() or mainhand
 end
 
 local function SyncFSRWidth()
