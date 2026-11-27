@@ -1,5 +1,13 @@
 # Changelog
 
+**v8.13.0**
+
+- Armour Reminder: the Paladin blessing reminder now accepts any blessing (Might, Wisdom, Kings or Sanctuary, including Greater versions), so swapping blessings no longer shows one as missing. The dropdown, now called Blessing icon, only picks the icon shown before a blessing has been seen
+- Forever: around 80 Forever class spells with a real cooldown are now in the default cooldown lists. TBC defaults are unchanged
+- Forever: Warriors get Shield Bash as their interrupt from level 12, before Pummel
+- Forever: TBC-only cooldowns, racials, armours and seals no longer appear, and spell IDs that mean a different spell on Forever (such as Cold Snap and Ice Block) now track the right one
+- Forever: the armour reminder no longer shows a blank icon before it has seen the buff
+
 **v8.12.0**
 
 - Cooldowns: drag rows on the Cooldowns page up and down to reorder spells. A gold line shows where the row will land, and the arrow buttons still work

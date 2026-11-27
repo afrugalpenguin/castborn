@@ -14,6 +14,18 @@ local whatsNewFrame = nil
 
 local changelog = {
     {
+        version = "8.13.0",
+        features = {
+            "Armour Reminder: any Paladin blessing now counts, so swapping Wisdom for Kings no longer shows it as missing",
+            "Forever: around 80 Forever class cooldowns added to the default lists",
+            "Forever: Warriors get Shield Bash as their interrupt from level 12",
+        },
+        fixes = {
+            "Forever: TBC-only cooldowns, racials, armours and seals no longer appear",
+            "Forever: the armour reminder no longer shows a blank icon before it has seen the buff",
+        },
+    },
+    {
         version = "8.12.0",
         features = {
             "Cooldowns: drag rows on the Cooldowns page, or icons on screen, to reorder spells",
