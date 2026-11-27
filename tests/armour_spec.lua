@@ -90,6 +90,28 @@ describe("Armour reminder seams (TBC behaviour)", function()
         end)
     end)
 
+    describe("BuildBlessingLookup", function()
+        local list = {
+            { category = "blessing", key = "might",  spellIds = { 19740, 25782 } },
+            { category = "blessing", key = "kings",  spellIds = { 20217 } },
+            { category = "rf",       key = "rf",     spellIds = { 25780 } },
+            { category = "aura",     key = "aura",   spellIds = { 7294 } },
+        }
+
+        it("counts every blessing, not just the selected one", function()
+            local lookup = AT:BuildBlessingLookup(list)
+            assert.is_true(lookup[19740])
+            assert.is_true(lookup[25782])
+            assert.is_true(lookup[20217])
+        end)
+
+        it("leaves out Righteous Fury and auras", function()
+            local lookup = AT:BuildBlessingLookup(list)
+            assert.is_nil(lookup[25780])
+            assert.is_nil(lookup[7294])
+        end)
+    end)
+
     describe("HasTalent", function()
         after_each(function() _G.GetTalentInfo = nil end)
 

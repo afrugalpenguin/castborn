@@ -3003,7 +3003,7 @@ function moduleBuilders.armortracker(parent, db, y)
         y = y - 10
         local blessLabel = parent:CreateFontString(nil, "OVERLAY", "CastbornOptionsText")
         blessLabel:SetPoint("TOPLEFT", 0, y)
-        blessLabel:SetText("Blessing to track:")
+        blessLabel:SetText("Blessing icon:")
         blessLabel:SetTextColor(unpack(C.grey))
 
         local blessDropdown = CreateFrame("Frame", "CastbornBlessingDropdown", parent, "UIDropDownMenuTemplate")

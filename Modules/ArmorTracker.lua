@@ -381,6 +381,19 @@ function ArmorTracker:GetSelectedBlessing(db)
     return key
 end
 
+-- Every blessing's spell IDs: paladins swap blessings, so any blessing satisfies the reminder
+function ArmorTracker:BuildBlessingLookup(list)
+    local lookup = {}
+    for _, entry in ipairs(list) do
+        if entry.category == "blessing" then
+            for _, id in ipairs(entry.spellIds) do
+                lookup[id] = true
+            end
+        end
+    end
+    return lookup
+end
+
 -- Whether the SpellData entry's talent has points; ArmorTracker_Forever.lua overrides it
 function ArmorTracker:HasTalent(entry)
     if not entry.talentTab or not entry.talentIndex then return false end
@@ -417,12 +430,12 @@ local function BuildSlots()
     if not armorSpellList then
         -- No class self-buffs: only the food slot below
     elseif playerClass == "PALADIN" then
-        -- Blessing slot: only the selected blessing's spell IDs
+        -- Blessing slot: any blessing counts; the selected one only picks the missing icon
         local selectedKey = ArmorTracker:GetSelectedBlessing(db)
         for _, entry in ipairs(armorSpellList) do
             if entry.category == "blessing" and entry.key == selectedKey then
                 local slot = {
-                    spellIds = BuildSpellIdLookup(entry),
+                    spellIds = ArmorTracker:BuildBlessingLookup(armorSpellList),
                     frame = nil,
                     lastSpellId = nil,
                     category = "blessing",
@@ -569,7 +582,7 @@ function ArmorTracker:RebuildSlots()
     UpdateAllSlots()
 end
 
---- Rebuild just the blessing slot's spell ID lookup (called when dropdown changes).
+--- Point the blessing slot's missing icon at the selected blessing (called when dropdown changes).
 function ArmorTracker:RebuildBlessingSlot()
     if playerClass ~= "PALADIN" then return end
     local db = CB.db.armortracker
@@ -579,7 +592,6 @@ function ArmorTracker:RebuildBlessingSlot()
         if slot.category == "blessing" then
             for _, entry in ipairs(armorSpellList) do
                 if entry.category == "blessing" and entry.key == selectedKey then
-                    slot.spellIds = BuildSpellIdLookup(entry)
                     slot.entry = entry
                     slot.lastSpellId = nil
                     break
