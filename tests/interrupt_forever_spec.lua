@@ -1,6 +1,7 @@
 require("tests.mocks.wow_api")
 _G.RAID_CLASS_COLORS = {}
 dofile("Core.lua")
+Castborn.isForever = true  -- set by Compat_Forever.lua on Forever
 dofile("Modules/InterruptTracker.lua")
 dofile("Modules/InterruptTracker_Forever.lua")
 
@@ -172,11 +173,63 @@ describe("Interrupt tracker on Forever", function()
 end)
 
 describe("Interrupt spell data on Forever", function()
-    it("uses the Forever Feral Charge talent for druids and leaves other classes alone", function()
+    local known
+
+    before_each(function()
+        known = {}
         dofile("Data/SpellData.lua")
-        local pummel = Castborn.SpellData.interrupts.WARRIOR.spellId
-        dofile("Modules/InterruptTracker_Forever.lua")
-        assert.are.equal(1238122, Castborn.SpellData.interrupts.DRUID.spellId)
-        assert.are.equal(pummel, Castborn.SpellData.interrupts.WARRIOR.spellId)
+        _G.IsSpellKnown = function(id) return known[id] == true end
+        _G.GetSpellInfo = function() return nil end
+    end)
+
+    after_each(function()
+        _G.IsSpellKnown, _G.GetSpellInfo = nil, nil
+    end)
+
+    it("uses the Forever Feral Charge talent for druids", function()
+        assert.are.equal(1238122, Castborn.SpellData:GetInterrupt("DRUID").spellId)
+    end)
+
+    it("gives hunters no interrupt, as Silencing Shot is not on Forever", function()
+        assert.is_nil(Castborn.SpellData:GetInterrupt("HUNTER"))
+    end)
+
+    it("uses Pummel for a warrior who knows it", function()
+        known[6552], known[72] = true, true
+        assert.are.equal(6552, Castborn.SpellData:GetInterrupt("WARRIOR").spellId)
+    end)
+
+    it("uses Shield Bash for a warrior below Pummel's level", function()
+        known[72] = true
+        assert.are.equal(72, Castborn.SpellData:GetInterrupt("WARRIOR").spellId)
+    end)
+
+    it("falls back to the first interrupt when none is known", function()
+        assert.are.equal(6552, Castborn.SpellData:GetInterrupt("WARRIOR").spellId)
+    end)
+end)
+
+describe("Interrupt spell data on TBC", function()
+    before_each(function()
+        Castborn.isForever = nil
+        dofile("Data/SpellData.lua")
+        _G.IsSpellKnown = function() return false end
+        _G.GetSpellInfo = function() return nil end
+    end)
+
+    after_each(function()
+        Castborn.isForever = true
+        _G.IsSpellKnown, _G.GetSpellInfo = nil, nil
+    end)
+
+    it("keeps the TBC interrupts", function()
+        assert.are.equal(16979, Castborn.SpellData:GetInterrupt("DRUID").spellId)
+        assert.are.equal(34490, Castborn.SpellData:GetInterrupt("HUNTER").spellId)
+        assert.are.equal(6552, Castborn.SpellData:GetInterrupt("WARRIOR").spellId)
+    end)
+
+    it("does not offer Shield Bash", function()
+        _G.IsSpellKnown = function(id) return id == 72 end
+        assert.are.equal(6552, Castborn.SpellData:GetInterrupt("WARRIOR").spellId)
     end)
 end)

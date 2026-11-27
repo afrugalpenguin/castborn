@@ -1,6 +1,7 @@
 require("tests.mocks.wow_api")
 _G.RAID_CLASS_COLORS = {}
 dofile("Core.lua")
+Castborn.isForever = true  -- set by Compat_Forever.lua on Forever
 dofile("Modules/ArmorTracker.lua")
 dofile("Modules/ArmorTracker_Forever.lua")
 
@@ -88,13 +89,46 @@ describe("Armour reminder on Forever", function()
         end)
     end)
 
-    it("lists the Improved Righteous Fury ranks in SpellData", function()
+    it("lists Improved Righteous Fury's one Forever rank in SpellData", function()
         dofile("Data/SpellData.lua")
         for _, e in ipairs(Castborn.SpellData:GetClassArmors("PALADIN")) do
             if e.category == "rf" then
-                assert.are.same({ 20468, 20469, 20470 }, e.talentSpellIds)
+                assert.are.same({ 20468 }, e.talentSpellIds)
             end
         end
+    end)
+
+    describe("slot icon", function()
+        after_each(function() _G.GetSpellTexture = nil end)
+
+        it("skips top ranks this client does not have", function()
+            -- Only 10220 exists here; 27124 is a TBC rank
+            _G.GetSpellTexture = function(id) return id == 10220 and "ice" or nil end
+            local slot = { entry = { spellIds = { 7302, 10220, 27124 } } }
+            assert.are.equal("ice", AT:GetSlotTexture(slot))
+        end)
+
+        it("prefers the buff seen last", function()
+            _G.GetSpellTexture = function(id) return id == 7302 and "seen" or "top" end
+            local slot = { lastSpellId = 7302, entry = { spellIds = { 7302, 27124 } } }
+            assert.are.equal("seen", AT:GetSlotTexture(slot))
+        end)
+    end)
+
+    describe("armour lists", function()
+        local function names(class)
+            dofile("Data/SpellData.lua")
+            local out = {}
+            for _, e in ipairs(Castborn.SpellData:GetClassArmors(class)) do out[e.name] = true end
+            return out
+        end
+
+        it("leave out the TBC-only armours and Blessing of Sanctuary", function()
+            assert.is_nil(names("MAGE")["Molten Armor"])
+            assert.is_nil(names("WARLOCK")["Fel Armor"])
+            assert.is_nil(names("PALADIN")["Blessing of Sanctuary"])
+            assert.is_true(names("MAGE")["Mage Armor"])
+        end)
     end)
 
     describe("OnPlayerCast", function()

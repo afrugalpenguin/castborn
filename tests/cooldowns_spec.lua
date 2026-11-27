@@ -217,3 +217,73 @@ describe("Target creature type check", function()
         assert.is_false(CT:GetTargetFit({ spellId = 879, name = "Exorcism" }))
     end)
 end)
+
+describe("Spell data for each client", function()
+    local SD = Castborn.SpellData
+
+    after_each(function() Castborn.isForever = nil end)
+
+    local function eachList(fn)
+        for owner, list in pairs(SD.cooldowns) do fn("cooldowns." .. owner, SD:GetClassCooldowns(owner), list) end
+        for owner, list in pairs(SD.racialCooldowns) do fn("racials." .. owner, SD:GetRacialCooldowns(owner), list) end
+        for owner, list in pairs(SD.interrupts) do fn("interrupts." .. owner, SD:ForClient(list), list) end
+    end
+
+    for _, forever in ipairs({ false, true }) do
+        local client = forever and "Forever" or "TBC"
+
+        it("never lists an ID twice on " .. client, function()
+            Castborn.isForever = forever or nil
+            eachList(function(where, list)
+                local seen = {}
+                for _, spell in ipairs(list) do
+                    assert.is_nil(seen[spell.spellId], where .. " lists " .. spell.spellId .. " twice")
+                    seen[spell.spellId] = true
+                end
+            end)
+        end)
+    end
+
+    it("gives every entry an ID, a name and at most one client", function()
+        eachList(function(where, _, raw)
+            for _, spell in ipairs(raw or {}) do
+                assert.is_number(spell.spellId, where)
+                assert.is_string(spell.name, where)
+                assert.is_false(spell.tbc == true and spell.forever == true, where .. " " .. spell.name)
+            end
+        end)
+    end)
+
+    it("keeps the TBC class lists as they were", function()
+        local function names(class)
+            local out = {}
+            for _, spell in ipairs(SD:GetClassCooldowns(class)) do out[#out + 1] = spell.name end
+            return table.concat(out, ",")
+        end
+        assert.are.equal("Ice Block,Ice Barrier,Cold Snap,Icy Veins,Summon Water Elemental,"
+            .. "Arcane Power,Presence of Mind,Combustion,Evocation,Counterspell,Blast Wave,"
+            .. "Dragon's Breath", names("MAGE"))
+        assert.are.equal("Death Wish,Sweeping Strikes,Bloodthirst,Mortal Strike,Shield Wall,"
+            .. "Recklessness,Berserker Rage,Spell Reflection,Intercept,Intimidating Shout,"
+            .. "Last Stand,Retaliation", names("WARRIOR"))
+        assert.are.equal(2, #SD:GetRacialCooldowns("Draenei"))
+    end)
+
+    it("drops a saved Forever-only default on TBC", function()
+        local CT = Castborn.CooldownTracker
+        local realDB = _G.CastbornDB
+        _G.CastbornDB = { cooldowns = { groups = {
+            { id = "main", spells = {
+                { spellId = 1310994, name = "Swift Judgement" },
+                { spellId = 853, name = "Hammer of Justice" },
+                { spellId = 402174, name = "Penance", custom = true },
+            } },
+        } } }
+        CT:DropOtherClientSpells()
+        assert.are.same({
+            { spellId = 853, name = "Hammer of Justice" },
+            { spellId = 402174, name = "Penance", custom = true },
+        }, CastbornDB.cooldowns.groups[1].spells)
+        _G.CastbornDB = realDB
+    end)
+end)

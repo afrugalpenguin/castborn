@@ -394,6 +394,69 @@ describe("Cooldowns on Forever", function()
                 Castborn.SpellData:GetClassCooldowns("PALADIN"))
         end)
 
+        -- Checked against ForeverDB: not on Forever, or a Season of Discovery leftover
+        local tbcOnly = {
+            MAGE = { 45438, 31687, 31661 },
+            WARLOCK = { 30283, 29858 },
+            PRIEST = { 32379, 33206, 34433 },
+            DRUID = { 33831, 16979 },
+            SHAMAN = { 30823, 2894, 2062, 974, 24398, 32182, 2825 },
+            HUNTER = { 34490, 34477, 34026, 19386 },
+            ROGUE = { 31224, 36554 },
+        }
+
+        for class, spellIds in pairs(tbcOnly) do
+            it("leaves out the TBC-only " .. class .. " cooldowns", function()
+                local list = ids(Castborn.SpellData:GetClassCooldowns(class))
+                for _, id in ipairs(spellIds) do
+                    assert.is_nil(list[id], class .. " lists " .. id)
+                end
+            end)
+        end
+
+        local function nameOf(class, spellId)
+            for _, spell in ipairs(Castborn.SpellData:GetClassCooldowns(class)) do
+                if spell.spellId == spellId then return spell.name end
+            end
+        end
+
+        it("names IDs after what they are on Forever", function()
+            assert.are.equal("Cold Snap", nameOf("MAGE", 12472))
+            assert.are.equal("Ice Block", nameOf("MAGE", 11958))
+            assert.are.equal("Sweeping Strikes", nameOf("WARRIOR", 12292))
+            assert.are.equal("Death Wish", nameOf("WARRIOR", 12328))
+            assert.are.equal("Lightning Mastery", nameOf("SHAMAN", 16166))
+            assert.are.equal("Feral Charge", nameOf("DRUID", 1238122))
+            assert.are.equal("Shadow Word: Death", nameOf("PRIEST", 1309595))
+        end)
+
+        it("adds Forever cooldowns such as Shield Bash and Penance", function()
+            assert.are.equal("Shield Bash", nameOf("WARRIOR", 72))
+            assert.are.equal("Penance", nameOf("PRIEST", 402174))
+            assert.are.equal("Riptide", nameOf("SHAMAN", 408521))
+        end)
+
+        it("leaves out the TBC racials", function()
+            assert.are.same({}, Castborn.SpellData:GetRacialCooldowns("Draenei"))
+            assert.are.same({}, Castborn.SpellData:GetRacialCooldowns("BloodElf"))
+            local orc = Castborn.SpellData:GetRacialCooldowns("Orc")
+            assert.are.equal(1, #orc)
+            assert.are.equal(20572, orc[1].spellId)
+        end)
+
+        it("drops a saved TBC-only default but keeps an ID Forever also lists", function()
+            _G.CastbornDB = { cooldowns = { groups = {
+                { id = "main", spells = {
+                    { spellId = 31687, name = "Summon Water Elemental" },
+                    { spellId = 12472, name = "Icy Veins" },
+                    { spellId = 28880, name = "Gift of the Naaru" },
+                } },
+            } } }
+            CT:DropOtherClientSpells()
+            assert.are.same({ { spellId = 12472, name = "Icy Veins" } },
+                CastbornDB.cooldowns.groups[1].spells)
+        end)
+
         it("returns an empty list for an unknown class", function()
             assert.are.same({}, Castborn.SpellData:GetClassCooldowns("NOBODY"))
         end)
@@ -410,7 +473,7 @@ describe("Cooldowns on Forever", function()
                     { spellId = 31884, name = "Avenging Wrath", custom = true },
                 } },
             } } }
-            CT:DropSpellsNotOnForever()
+            CT:DropOtherClientSpells()
             local groups = CastbornDB.cooldowns.groups
             assert.are.same({ { spellId = 853, name = "Hammer of Justice" } }, groups[1].spells)
             assert.are.same({ { spellId = 31884, name = "Avenging Wrath", custom = true } }, groups[2].spells)

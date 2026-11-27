@@ -31,15 +31,17 @@ local defaults = {
 -- Helpers
 --------------------------------------------------------------------------------
 
-local function GetSlotTexture(slot)
+function ArmorTracker:GetSlotTexture(slot)
     if slot.lastSpellId then
         return GetSpellTexture(slot.lastSpellId)
     end
-    -- Fallback: first spell ID in the slot's entry list
-    if slot.entry then
-        local ids = slot.entry.spellIds
-        if ids and ids[1] then
-            return GetSpellTexture(ids[#ids])
+    -- Fallback: the last ID in the entry's list (the top rank) that this client knows. The TBC
+    -- top ranks are not on Forever, so walk back to one that is.
+    local ids = slot.entry and slot.entry.spellIds
+    if ids then
+        for i = #ids, 1, -1 do
+            local texture = GetSpellTexture(ids[i])
+            if texture then return texture end
         end
     end
     return nil
@@ -141,7 +143,7 @@ local function UpdateSlotState(slot)
     if isActive then
         slot.frame:Hide()
     else
-        local texture = GetSlotTexture(slot)
+        local texture = ArmorTracker:GetSlotTexture(slot)
         if texture then
             slot.frame.icon:SetTexture(texture)
         end
@@ -701,7 +703,7 @@ function CB:TestArmorTracker()
 
     for _, slot in ipairs(slots) do
         if slot.frame then
-            local texture = GetSlotTexture(slot)
+            local texture = ArmorTracker:GetSlotTexture(slot)
             if texture then
                 slot.frame.icon:SetTexture(texture)
             end
